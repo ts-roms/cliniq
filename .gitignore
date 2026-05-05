@@ -47,3 +47,58 @@ Thumbs.db
 .claude/settings.local.json
 .nx/polygraph
 .nx/self-healing
+
+# Next.js
+.next
+out
+
+test-output
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Prisma generated client
+libs/db/src/generated/
+
+# OpenAPI generated client
+libs/api-client/src/generated/
+apps/api/openapi.json
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Expo
+node_modules/
+.expo/
+.yarn/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+cache/
+
+
+
+storybook-static

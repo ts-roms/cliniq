@@ -1,107 +1,210 @@
-# New Nx Repository
+# ClinIQ
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+> The clinic management system with a brain. Multi-tenant SaaS for Filipino clinics with an AI co-pilot.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+Planning docs live in [`../docs/`](../docs/). This is the implementation monorepo.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/js?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-## Finish your Nx platform setup
+---
 
-🚀 [Finish setting up your workspace](https://cloud.nx.app/connect/43OajWj8z4) to get faster builds with remote caching, distributed task execution, and self-healing CI. [Learn more about Nx Cloud](https://nx.dev/ci/intro/why-nx-cloud).
-
-## Generate a library
-
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
-```
-
-## Run tasks
-
-To build the library use:
-
-```sh
-npx nx build pkg1
-```
-
-To run any task with Nx use:
-
-```sh
-npx nx <target> <project-name>
-```
-
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Versioning and releasing
-
-To version and release the library use
+## Workspace layout
 
 ```
-npx nx release
+cliniq/
+├── apps/
+│   ├── web/             Next.js 15 — clinic app + patient portal (React 19)
+│   ├── api/             NestJS 11 — core REST API (port 4000)
+│   ├── api-e2e/         E2E tests for api
+│   ├── ai-service/      NestJS 11 — Bedrock proxy (port 4100)
+│   ├── ai-service-e2e/  E2E tests for ai-service
+│   └── mobile/          Expo 54 + React Native + NativeWind v4 (shares design tokens)
+├── libs/
+│   ├── db/          Prisma schema + client (Postgres)
+│   ├── shared-types Cross-app TypeScript types
+│   ├── ui/          shadcn-style React component library + Tailwind preset
+│   ├── api-client/  Generated TS client for the api
+│   ├── auth/        JWT, RBAC, tenant resolution helpers
+│   └── ai-prompts/  Versioned prompt templates + eval harness
+└── infra/
+    └── terraform/   AWS IaC: VPC + RDS + ECS Fargate + S3/KMS + Bedrock IAM
 ```
 
-Pass `--dry-run` to see what would happen without actually releasing the library.
+## Stack
 
-[Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+| Layer | Choice |
+|---|---|
+| Monorepo | Nx 22 + pnpm workspaces |
+| Web app | Next.js 15 + React 19 + Tailwind + shadcn |
+| Marketing | React 19 + Vite + Tailwind + shadcn (shared `libs/ui`) |
+| Mobile | Expo 54 + React Native |
+| API | NestJS 11 + Webpack build |
+| Database | PostgreSQL + Prisma 7 |
+| Forms | react-hook-form + zod |
+| Data | TanStack Query (with Devtools) |
+| Auth | JWT (planned: WebAuthn for clinical roles) |
+| AI | Bedrock (Claude Sonnet/Haiku) — see `docs/07` and `docs/08` |
 
-## Keep TypeScript project references up to date
+## Prerequisites
 
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
+- Node 22+
+- pnpm 10+
+- PostgreSQL 16 (local or Docker) — set `DATABASE_URL` in `.env`
 
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
+## Quick start
 
-```sh
-npx nx sync
+### Option A — Docker (one command, full stack)
+
+The fastest way to run the whole thing locally. Brings up postgres,
+runs every Prisma migration, then starts the api + ai-service + web.
+
+```bash
+cp .env.example .env
+# edit .env — at minimum set JWT_SECRET to a 32+ char string
+# (if you had an older .env from a previous version, copy the new
+# .env.example over it — NEXT_PUBLIC_API_URL must point at port 4000)
+
+docker compose up -d --build
+
+# Browse:
+#   http://localhost:3000      web (Next.js)
+#   http://localhost:4000/api  api (NestJS) — health: /api/health
+#   http://localhost:4100/ai   ai-service (Bedrock proxy, stub-fallback)
+
+docker compose logs -f api          # tail any service
+docker compose run --rm migrate     # re-run after a schema change
+docker compose down                 # stop (keeps the postgres volume)
+docker compose down -v              # stop + wipe data
 ```
 
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
+The `migrate` service is a one-shot — it blocks `api`/`web` boot via
+`service_completed_successfully` so the first request never races a
+half-applied schema. `prisma migrate deploy` is idempotent, so re-runs are
+no-ops once everything's applied.
 
-```sh
-npx nx sync:check
+The mobile app (Expo) is **not** in the compose stack — run it on your host
+with `pnpm nx start @org/mobile` and point `EXPO_PUBLIC_API_URL` at
+`http://<your-LAN-ip>:4000`.
+
+### Option B — Native dev (fastest hot-reload)
+
+```bash
+pnpm install
+cp .env.example .env       # edit DATABASE_URL to your local postgres
+
+# One-time: apply migrations against your local DB
+pnpm --dir libs/db exec prisma migrate deploy
+
+# Run apps in separate terminals
+pnpm nx serve @org/api          # http://localhost:4000/api
+pnpm nx serve @org/ai-service   # http://localhost:4100
+pnpm nx dev   @org/web          # http://localhost:3000
+pnpm nx start @org/mobile       # Expo dev menu
 ```
 
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
+## Useful Nx commands
 
-## Nx Cloud
-
-Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Set up CI (non-Github Actions CI)
-
-**Note:** This is only required if your CI provider is not GitHub Actions.
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+```bash
+pnpm nx graph                        # interactive dependency graph
+pnpm nx show projects                # list all projects
+pnpm nx run-many -t build            # build everything
+pnpm nx run-many -t lint             # lint everything
+pnpm nx affected -t build            # only what changed since main
+pnpm nx sync                         # sync TS project references
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Module boundaries (enforced by ESLint)
 
-## Install Nx Console
+Tags applied to every project:
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+| Project | tags |
+|---|---|
+| `@org/web`        | `scope:web`, `type:app` |
+| `@org/marketing`  | `scope:marketing`, `type:app` |
+| `@org/api`        | `scope:api`, `type:app` |
+| `@org/mobile`     | `scope:mobile`, `type:app` |
+| `@org/ui`, `@org/db`, `@org/shared-types`, `@org/auth`, `@org/api-client`, `@org/ai-prompts` | `scope:shared`, `type:lib` |
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Apps may only depend on `scope:shared` libs — never on each other. Enforced by `@nx/enforce-module-boundaries` in `eslint.config.mjs`.
 
-## Useful links
+## Adding new pieces
 
-Learn more:
+```bash
+# A new shared lib (TS only)
+pnpm nx g @nx/js:lib --directory=libs/<name> --linter=eslint --unitTestRunner=jest --bundler=tsc
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/js?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+# A new React shared lib
+pnpm nx g @nx/react:lib --directory=libs/<name> --bundler=vite --linter=eslint --unitTestRunner=vitest
 
-And join the Nx community:
+# A new NestJS module inside the api
+pnpm nx g @nx/nest:module --project=@org/api --directory=apps/api/src/<name>
+```
 
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+After generating, add `tags` in the new project's `package.json`:
+```json
+{ "nx": { "tags": ["scope:shared", "type:lib"] } }
+```
+
+## Prisma
+
+```bash
+cd libs/db
+pnpm exec prisma generate          # regen client after schema changes
+pnpm exec prisma migrate dev       # create & apply a dev migration
+pnpm exec prisma studio            # browse data
+```
+
+The schema lives in `libs/db/prisma/schema.prisma`. The full target schema is in [`../docs/05-data-model-prisma.md`](../docs/05-data-model-prisma.md) — current schema is a starter (Tenant, User, TenantUser, Patient). Expand model-by-model as features ship.
+
+## Tailwind + shadcn
+
+`libs/ui` owns:
+- The shared Tailwind preset (`tailwind.preset.cjs`)
+- The shadcn CSS variables (`src/globals.css`)
+- The `cn()` helper and reusable components
+
+Apps `web` and `marketing` extend the preset and `@import` `globals.css`. Add new shadcn components inside `libs/ui/src/lib/components/` and re-export from `libs/ui/src/index.ts`.
+
+## What's NOT done yet (read this first)
+
+- DB migration files exist (`libs/db/prisma/migrations/`) but haven't been applied to a live database — `cd libs/db && pnpm exec prisma migrate deploy` once Postgres is running.
+- AWS bootstrap is scripted at `infra/bootstrap/bootstrap.sh` (idempotent — creates the GitHub OIDC provider, the `cliniq-<env>-deploy` IAM role, the Terraform admin role, the KMS-encrypted state bucket, and the DynamoDB lock table). Run once per AWS account. After it prints the backend block, paste it into `infra/terraform/environments/<env>/main.tf` and run `terraform init && terraform apply`.
+- API has `auth` (JWT + RBAC, global guards), `tenants`, `patients` (full CRUD with soft-delete + search), and `health` modules wired. `TenantContextMiddleware` resolves the tenant from subdomain or JWT and sets the AsyncLocalStorage context; every patients query goes through `prisma.withTenant()` which sets the RLS GUCs on the transaction. Swagger UI at `/api/docs` and the spec is exported via `node apps/api/dist/main.js --emit-openapi`.
+- Typed TS client: `pnpm nx run @org/api-client:generate` runs the api once with `--emit-openapi`, then runs `@hey-api/openapi-ts` over `apps/api/openapi.json`. Output lands at `libs/api-client/src/generated/` and is re-exported as `@org/api-client`. Web + mobile import the generated SDK functions instead of hand-rolling fetch. `configureAuth(getter)` wires token injection.
+- Mobile app uses NativeWind v4 + the shared design tokens but has no clinical screens yet.
+- GitHub Actions live in `.github/workflows/`: `ci.yml` (Postgres service, lint/test/build affected, RLS leak test), `cd-api.yml` + `cd-web.yml` (ECR build/push + ECS deploy on `main`), `terraform.yml` (plan on PRs, apply on dispatch). Set repo secrets: `AWS_DEPLOY_ROLE_ARN`, `DATABASE_URL`, `ACM_CERTIFICATE_ARN`, `API_IMAGE_URI`.
+- Nx Cloud workspace is provisioned but not connected — visit the URL printed at install time, or `pnpm nx connect`.
+
+## Auth quickstart
+
+```bash
+# Bootstrap the first owner (public route on TenantsController)
+curl -X POST http://localhost:4000/api/tenants \
+  -H 'content-type: application/json' \
+  -d '{"slug":"acme","name":"Acme Clinic","ownerEmail":"doc@acme.ph","ownerName":"Dr. Cruz"}'
+
+# Login (returns access + refresh tokens)
+curl -X POST http://localhost:4000/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"doc@acme.ph","password":"hunter2hunter2"}'
+
+# Use the token on protected routes
+curl http://localhost:4000/api/auth/me -H "Authorization: Bearer <token>"
+```
+
+Gate any controller route with the action vocabulary from `@org/auth`:
+
+```ts
+import { Actions } from '@org/auth';
+import { Requires } from '../auth/decorators/requires.decorator.js';
+
+@Get(':id')
+@Requires(Actions.PATIENT_READ)
+findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  return this.patients.findById(id, user); // service uses prisma.withTenant(user.tenantId, ...)
+}
+```
+
+`@Public()` opts a route out of authentication (e.g. `/auth/login`, `/health`).
+
+## Reference
+
+All product, business, and architectural decisions live in [`../docs/`](../docs/). Read `docs/00-overview.md` first.

@@ -1,0 +1,41 @@
+{
+  "family": "cliniq-dev-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "REPLACE_WITH_TASK_EXECUTION_ROLE_ARN_FROM_TERRAFORM",
+  "taskRoleArn": "REPLACE_WITH_TASK_ROLE_ARN_FROM_TERRAFORM",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "REPLACE_ME_WILL_BE_REPLACED_BY_RENDER_STEP",
+      "essential": true,
+      "portMappings": [{ "containerPort": 4000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "4000" },
+        { "name": "AWS_REGION", "value": "ap-southeast-1" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-dev/database-url:DATABASE_URL::" },
+        { "name": "JWT_SECRET",   "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-dev/jwt-secret:JWT_SECRET::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cliniq-dev/api",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}

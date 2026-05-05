@@ -1,0 +1,21 @@
+{
+  "name": "@org/web",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "tags": ["scope:web", "type:app"]
+  },
+  "dependencies": {
+    "@hookform/resolvers": "*",
+    "@org/api-client": "workspace:*",
+    "@org/auth": "workspace:*",
+    "@org/ui": "workspace:*",
+    "@tanstack/react-query": "*",
+    "@tanstack/react-query-devtools": "*",
+    "next": "~16.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "*",
+    "zod": "*"
+  }
+}

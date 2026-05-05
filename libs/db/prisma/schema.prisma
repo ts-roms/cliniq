@@ -1,0 +1,1413 @@
+// ClinIQ — multi-tenant clinic management system
+// Full schema lives in docs/05-data-model-prisma.md.
+// This starter defines the tenancy primitives + a Patient stub so the workspace boots.
+// Expand model-by-model from the docs as you implement each feature slice.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pgcrypto, pg_trgm]
+}
+
+// ──────────────────────────────────────────────
+// TENANCY
+// ──────────────────────────────────────────────
+
+model Tenant {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  type        ClinicType   @default(GENERAL)
+  status      TenantStatus @default(TRIAL)
+  plan        Plan         @default(GOLD)
+  country     String       @default("PH")
+  timezone    String       @default("Asia/Manila")
+  currency    String       @default("PHP")
+  trialEndsAt DateTime?
+  // Free-form settings: branding (primaryColor, logoUrl), operating hours,
+  // payment methods accepted, default invoice notes, tax config. Schema is
+  // validated in TenantSettingsService.
+  settings    Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users     TenantUser[]
+  patients  Patient[]
+  locations Location[]
+
+  @@index([slug])
+  @@map("tenants")
+}
+
+enum ClinicType {
+  GENERAL
+  DENTAL
+  PEDIATRIC
+  DERMATOLOGY
+  OBGYN
+  CARDIOLOGY
+  PSYCH
+  OTHER
+}
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+}
+
+enum Plan {
+  GOLD
+  PREMIUM
+  DIAMOND
+  ENTERPRISE
+}
+
+// ──────────────────────────────────────────────
+// USERS & RBAC
+// ──────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String
+  passwordHash  String?
+  // Provider credentials — required for valid e-prescriptions in PH (PRC =
+  // Professional Regulation Commission). Captured per-user; included on the
+  // Rx PDF and snapshotted on the Prescription row at issue time.
+  prcLicenseNumber  String?
+  prcLicenseExpiry  DateTime?
+  prcSpecialty      String?
+  signatureFileId   String?  // FileObject id for signature image (PNG, transparent bg)
+
+  // MFA — TOTP. `mfaSecret` is the base32 seed shared with the authenticator
+  // app; null = not enrolled. `mfaEnabled` is the explicit flag the login
+  // path checks (so we can require re-confirmation on enrollment).
+  mfaEnabled    Boolean   @default(false)
+  mfaSecret     String?
+  // Hashed (bcrypt) one-time backup codes. Each entry is consumed on use.
+  mfaBackupCodes String[] @default([])
+
+  lastLogin     DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenants       TenantUser[]
+  consultations Consultation[] @relation("ConsultProvider")
+  prescriptions Prescription[] @relation("RxProvider")
+  appointments  Appointment[]  @relation("ApptProvider")
+  delegationsGranted  Delegation[] @relation("DelegationGranter")
+  delegationsReceived Delegation[] @relation("DelegationGrantee")
+
+  @@index([email])
+  @@map("users")
+}
+
+model TenantUser {
+  id        String       @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      Role
+  status    MemberStatus @default(ACTIVE)
+  // For role=PATIENT only — links the portal account to its Patient record so
+  // self-scoped /api/me/* controllers can derive the patient context from JWT
+  // alone (no client-supplied patientId; can't impersonate other patients).
+  patientId String?
+  joinedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, userId])
+  @@unique([tenantId, patientId])
+  @@index([tenantId, role])
+  @@map("tenant_users")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  PATIENT
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+// ──────────────────────────────────────────────
+// PATIENTS (stub — expand from docs/05)
+// ──────────────────────────────────────────────
+
+model Patient {
+  id          String   @id @default(cuid())
+  tenantId    String
+  mrn         String
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  sex         Sex
+  email       String?
+  phone       String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consultations  Consultation[]
+  prescriptions  Prescription[]
+  appointments   Appointment[]
+  vitals         Vital[]
+  allergies      Allergy[]
+  medications    Medication[]
+  conditions     Condition[]
+  invoices       Invoice[]
+  dsrRequests    DataSubjectRequest[]
+  portalAccounts TenantUser[]
+  hmoMemberships HmoMembership[]
+  hmoClaims      HmoClaim[]
+  labOrders      LabOrder[]
+  teleSessions   TeleSession[]
+  dentalCharts   DentalChart[]
+
+  @@unique([tenantId, mrn])
+  @@index([tenantId, lastName, firstName])
+  @@map("patients")
+}
+
+enum Sex {
+  FEMALE
+  MALE
+  OTHER
+  UNDISCLOSED
+}
+
+// ──────────────────────────────────────────────
+// CONSULTATIONS (encounters)
+// ──────────────────────────────────────────────
+
+model Consultation {
+  id          String   @id @default(cuid())
+  tenantId   String
+  patientId  String
+  providerId String   // user.id of the doctor
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+
+  // SOAP — JSON to allow rich text (Tiptap doc) without extra tables in MVP
+  subjective Json?
+  objective  Json?
+  assessment Json?
+  plan       Json?
+
+  diagnosisCodes String[] @default([])    // ICD-10
+  status         ConsultStatus @default(IN_PROGRESS)
+  lockedAt       DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider      User           @relation("ConsultProvider", fields: [providerId], references: [id])
+  suggestions   AiSuggestion[]
+  prescriptions Prescription[]
+  labOrders     LabOrder[]
+  dentalCharts  DentalChart[]
+
+  @@index([tenantId, patientId, startedAt])
+  @@index([tenantId, providerId, startedAt])
+  @@map("consultations")
+}
+
+enum ConsultStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model AiSuggestion {
+  id             String   @id @default(cuid())
+  tenantId       String
+  consultationId String
+  kind           AiSuggestionKind
+  promptVersion  String
+  model          String
+  draftJson      Json
+  status         AiSuggestionStatus @default(PENDING)
+  acceptedAt     DateTime?
+  acceptedBy     String?
+  editDistance   Int?
+
+  createdAt DateTime @default(now())
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consultationId, kind])
+  @@map("ai_suggestions")
+}
+
+enum AiSuggestionKind {
+  SOAP_DRAFT
+  TRIAGE
+  INTERACTION_CHECK
+  DERM_DIFFERENTIAL
+  SUMMARY
+}
+
+enum AiSuggestionStatus {
+  PENDING
+  ACCEPTED
+  EDITED_ACCEPTED
+  REJECTED
+}
+
+// ──────────────────────────────────────────────
+// PRESCRIPTIONS
+// ──────────────────────────────────────────────
+
+model Prescription {
+  id             String   @id @default(cuid())
+  tenantId       String
+  patientId      String
+  providerId     String
+  consultationId String?
+
+  number     String
+  issuedAt   DateTime @default(now())
+  validUntil DateTime?
+  status     RxStatus @default(ISSUED)
+  notes      String?
+
+  // Provider credentials snapshotted at issue time so a later edit to the
+  // user's PRC info (rotation, expiry update) doesn't retroactively change
+  // what was on a signed Rx. Source of truth on legal artifacts.
+  providerName     String?
+  providerLicense  String?
+  providerSpecialty String?
+
+  pdfUrl     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient      Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider     User               @relation("RxProvider", fields: [providerId], references: [id])
+  consultation Consultation?      @relation(fields: [consultationId], references: [id])
+  items        PrescriptionItem[]
+
+  @@unique([tenantId, number])
+  @@index([tenantId, patientId, issuedAt])
+  @@map("prescriptions")
+}
+
+enum RxStatus {
+  ISSUED
+  DISPENSED
+  CANCELLED
+}
+
+model PrescriptionItem {
+  id             String   @id @default(cuid())
+  tenantId       String
+  prescriptionId String
+
+  // Optional reference into the global Drug catalog. When set, the snapshot
+  // fields below are populated from the catalog at issue time but are still
+  // stored explicitly so historical Rx don't drift if the catalog updates.
+  drugId       String?
+
+  drugName     String
+  strength     String?
+  form         String?  // tab, syrup, drops
+  dose         String   // "1 tab"
+  frequency    String   // "BID"
+  durationDays Int?
+  quantity     String?
+  instructions String?
+  refills      Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  drug         Drug?        @relation(fields: [drugId], references: [id])
+
+  @@index([tenantId, prescriptionId])
+  @@index([drugId])
+  @@map("prescription_items")
+}
+
+// ──────────────────────────────────────────────
+// AUDIT LOG
+// ──────────────────────────────────────────────
+
+model AuditLog {
+  id               String   @id @default(cuid())
+  tenantId         String?  // null only for system-level events (e.g. tenant create)
+  userId           String?
+  // When the actor was operating under a delegation, this is the user whose
+  // authority they were exercising. The trail reads as "userId acted on behalf
+  // of onBehalfOfUserId at <occurredAt>".
+  onBehalfOfUserId String?
+  actorEmail       String?  // captured at event time so user deletes don't blank it
+  action           String   // dot-namespaced, e.g. "patient.create", "rx.sign"
+  entityType       String?
+  entityId         String?
+  ip               String?
+  userAgent        String?
+  metadata         Json?
+  occurredAt       DateTime @default(now())
+
+  @@index([tenantId, occurredAt])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([onBehalfOfUserId])
+  @@map("audit_logs")
+}
+
+// ──────────────────────────────────────────────
+// FILES
+// ──────────────────────────────────────────────
+
+model FileObject {
+  id         String       @id @default(cuid())
+  tenantId   String
+  s3Key      String       @unique
+  filename   String
+  mimeType   String
+  sizeBytes  Int          @default(0)
+  category   FileCategory
+  isPhi      Boolean      @default(true)
+  uploadedBy String?
+  status     FileStatus   @default(PENDING)
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([tenantId, category, createdAt])
+  @@map("files")
+}
+
+enum FileCategory {
+  PATIENT_DOC
+  CONSULT_ATTACHMENT
+  CONSULT_AUDIO
+  RX_PDF
+  INVOICE_PDF
+  RECEIPT_PDF
+  AVATAR
+  CLINIC_LOGO
+  SIGNATURE
+  OTHER
+}
+
+enum FileStatus {
+  PENDING   // presign issued, upload not yet confirmed
+  READY     // upload confirmed
+  DELETED
+}
+
+// ──────────────────────────────────────────────
+// CONSENT (DPA + NPC Advisory 2024-04 — AI processing)
+// ──────────────────────────────────────────────
+
+model PatientConsent {
+  id               String      @id @default(cuid())
+  tenantId         String
+  patientId        String
+  type             ConsentType
+  granted          Boolean
+  version          String      @default("v1")
+  acceptedAt       DateTime?
+  withdrawnAt      DateTime?
+  withdrawalReason String?
+  recordedBy       String?     // user id of staff who toggled (null = patient self-serve)
+  ip               String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, patientId, type])
+  @@index([tenantId, patientId])
+  @@map("patient_consents")
+}
+
+enum ConsentType {
+  TREATMENT
+  AI_PROCESSING
+  REMINDERS
+  MARKETING
+  RESEARCH
+}
+
+// ──────────────────────────────────────────────
+// AI BUDGET (per-tenant monthly cap)
+// ──────────────────────────────────────────────
+
+model AiBudget {
+  id             String  @id @default(cuid())
+  tenantId       String
+  monthYear      String  // "2026-05"
+  budgetCentavos Int
+  spentCentavos  Int     @default(0)
+  alertsSent     Int     @default(0)
+  hardStopped    Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, monthYear])
+  @@index([tenantId])
+  @@map("ai_budgets")
+}
+
+// ──────────────────────────────────────────────
+// APPOINTMENTS + VITALS
+// ──────────────────────────────────────────────
+
+model Appointment {
+  id             String            @id @default(cuid())
+  tenantId       String
+  patientId      String
+  providerId     String
+  startsAt       DateTime
+  endsAt         DateTime
+  type           AppointmentType   @default(CONSULT)
+  status         AppointmentStatus @default(SCHEDULED)
+  reason         String?
+  notes          String?
+  reminderSentAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider     User          @relation("ApptProvider", fields: [providerId], references: [id])
+  teleSessions TeleSession[]
+
+  @@index([tenantId, startsAt])
+  @@index([tenantId, providerId, startsAt])
+  @@index([tenantId, status, startsAt])
+  @@map("appointments")
+}
+
+enum AppointmentType {
+  CONSULT
+  FOLLOWUP
+  PROCEDURE
+  TELEMED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model Vital {
+  id             String   @id @default(cuid())
+  tenantId       String
+  patientId      String
+  consultationId String?
+  measuredAt     DateTime @default(now())
+
+  systolic  Int?
+  diastolic Int?
+  heartRate Int?
+  respRate  Int?
+  tempC     Decimal? @db.Decimal(4, 2)
+  spo2      Int?
+  weightKg  Decimal? @db.Decimal(5, 2)
+  heightCm  Decimal? @db.Decimal(5, 2)
+  bmi       Decimal? @db.Decimal(4, 2)
+  painScore Int?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId, measuredAt])
+  @@map("vitals")
+}
+
+// ──────────────────────────────────────────────
+// CLINICAL HISTORY (allergies, meds, conditions)
+// ──────────────────────────────────────────────
+
+model Allergy {
+  id        String      @id @default(cuid())
+  tenantId  String
+  patientId String
+  substance String
+  type      AllergyType
+  severity  Severity
+  reaction  String?
+  notedAt   DateTime    @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@map("allergies")
+}
+
+enum AllergyType {
+  DRUG
+  FOOD
+  ENVIRONMENTAL
+  OTHER
+}
+
+enum Severity {
+  MILD
+  MODERATE
+  SEVERE
+  LIFE_THREATENING
+}
+
+model Medication {
+  id        String    @id @default(cuid())
+  tenantId  String
+  patientId String
+  drugName  String
+  dose      String?
+  frequency String?
+  startedOn DateTime?
+  stoppedOn DateTime?
+  status    MedStatus @default(ACTIVE)
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId, status])
+  @@map("medications")
+}
+
+enum MedStatus {
+  ACTIVE
+  STOPPED
+  COMPLETED
+}
+
+model Condition {
+  id          String          @id @default(cuid())
+  tenantId    String
+  patientId   String
+  name        String
+  icd10Code   String?
+  status      ConditionStatus @default(ACTIVE)
+  diagnosedOn DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId, status])
+  @@map("conditions")
+}
+
+enum ConditionStatus {
+  ACTIVE
+  RESOLVED
+  CHRONIC
+}
+
+// ──────────────────────────────────────────────
+// BILLING (services, invoices, payments)
+// ──────────────────────────────────────────────
+
+model Service {
+  id            String  @id @default(cuid())
+  tenantId      String
+  code          String?
+  name          String
+  category      String?
+  priceCentavos Int
+  currency      String  @default("PHP")
+  active        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items InvoiceItem[]
+
+  @@index([tenantId, active])
+  @@map("services")
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  tenantId         String
+  patientId        String
+  number           String
+  issuedAt         DateTime      @default(now())
+  dueAt            DateTime?
+  subtotalCentavos Int           @default(0)
+  discountCentavos Int           @default(0)
+  taxCentavos      Int           @default(0)
+  totalCentavos    Int           @default(0)
+  paidCentavos     Int           @default(0)
+  currency         String        @default("PHP")
+  status           InvoiceStatus @default(DRAFT)
+  notes            String?
+  createdById      String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient  Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  items    InvoiceItem[]
+  payments Payment[]
+  hmoClaims HmoClaim[]
+
+  @@unique([tenantId, number])
+  @@index([tenantId, patientId, issuedAt])
+  @@index([tenantId, status])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model InvoiceItem {
+  id                String  @id @default(cuid())
+  tenantId          String
+  invoiceId         String
+  serviceId         String?
+  description       String
+  quantity          Int     @default(1)
+  unitPriceCentavos Int
+  totalCentavos     Int
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id])
+
+  @@index([tenantId, invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  tenantId       String
+  invoiceId      String
+  amountCentavos Int
+  currency       String        @default("PHP")
+  method         PaymentMethod
+  reference      String?
+  paidAt         DateTime      @default(now())
+  status         PaymentStatus @default(SUCCEEDED)
+  metadata       Json?
+
+  createdAt DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId, paidAt])
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  GCASH
+  MAYA
+  BANK_TRANSFER
+  CARD
+  HMO
+  INSURANCE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// ──────────────────────────────────────────────
+// DATA SUBJECT REQUESTS (DPA Sec 16)
+// ──────────────────────────────────────────────
+
+model DataSubjectRequest {
+  id         String    @id @default(cuid())
+  tenantId   String
+  patientId  String
+  type       DsrType
+  status     DsrStatus @default(OPEN)
+  details    String?
+  resolution String?
+  filedBy    String?
+  resolvedBy String?
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, patientId])
+  @@map("dsr_requests")
+}
+
+enum DsrType {
+  ACCESS
+  CORRECTION
+  ERASURE
+  OBJECTION
+  PORTABILITY
+}
+
+enum DsrStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+// ──────────────────────────────────────────────
+// INVENTORY (pharmacy stock + supplies)
+// ──────────────────────────────────────────────
+//
+// Three-table model: catalog (InventoryItem) → batches (StockBatch, lot+expiry)
+// → immutable ledger (StockMovement). On-hand qty is derived from
+// SUM(batches.remainingQty) so the ledger and balance can never drift.
+// FEFO (first-expiry-first-out) is the default dispense order.
+
+model InventoryItem {
+  id                   String           @id @default(cuid())
+  tenantId             String
+  sku                  String
+  name                 String
+  category             String?
+  unit                 String           @default("each")  // tablet, mL, vial, kit, each
+  reorderLevel         Int              @default(0)
+  defaultPriceCentavos Int              @default(0)
+  isControlled         Boolean          @default(false)
+  active               Boolean          @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  batches   StockBatch[]
+  movements StockMovement[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, active, name])
+  @@map("inventory_items")
+}
+
+model StockBatch {
+  id              String    @id @default(cuid())
+  tenantId        String
+  itemId          String
+  lotNumber       String?
+  expiresOn       DateTime?
+  receivedQty     Int
+  remainingQty    Int
+  unitCostCentavos Int      @default(0)
+  supplierName    String?
+  receivedAt      DateTime  @default(now())
+  receivedBy      String?
+
+  item      InventoryItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  movements StockMovement[]
+
+  // FEFO indexes — partial: only consider batches with stock left.
+  @@index([tenantId, itemId, expiresOn])
+  @@index([tenantId, itemId, remainingQty])
+  @@map("stock_batches")
+}
+
+enum StockMovementKind {
+  RECEIVE
+  DISPENSE
+  ADJUST
+  EXPIRE
+  RETURN
+}
+
+model StockMovement {
+  id             String            @id @default(cuid())
+  tenantId       String
+  itemId         String
+  batchId        String?
+  kind           StockMovementKind
+  quantity       Int               // signed: + receive/return, - dispense/expire/adjust-down
+  reason         String?
+  prescriptionId String?
+  performedBy    String?
+  occurredAt     DateTime          @default(now())
+
+  item  InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  batch StockBatch?   @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId, itemId, occurredAt])
+  @@index([tenantId, prescriptionId])
+  @@map("stock_movements")
+}
+
+// ──────────────────────────────────────────────
+// HMO CLAIMS (PH market — Maxicare, Medicard, Intellicare, PhilHealth, …)
+// ──────────────────────────────────────────────
+//
+// Three-table model: catalog (HmoProvider) → patient cards (HmoMembership)
+// → submitted claims (HmoClaim). When an HMO approves a claim, recordHmoPayment
+// creates a `Payment` row on the linked Invoice with `method=HMO` so the
+// existing billing flow recomputes invoice.paidCentavos + status.
+
+model HmoProvider {
+  id           String  @id @default(cuid())
+  tenantId     String
+  name         String
+  payerCode    String?  // PhilHealth PHIC code, HMO accreditation no., etc.
+  contactPhone String?
+  contactEmail String?
+  active       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships HmoMembership[]
+  claims      HmoClaim[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, active])
+  @@map("hmo_providers")
+}
+
+model HmoMembership {
+  id          String    @id @default(cuid())
+  tenantId    String
+  patientId   String
+  providerId  String
+  memberId    String    // patient's HMO member number / card number
+  validFrom   DateTime?
+  validUntil  DateTime?
+  active      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient  Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider HmoProvider @relation(fields: [providerId], references: [id])
+  claims   HmoClaim[]
+
+  @@unique([tenantId, patientId, providerId])
+  @@index([tenantId, patientId])
+  @@map("hmo_memberships")
+}
+
+enum HmoClaimStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PARTIAL
+  DENIED
+  PAID
+  CANCELLED
+}
+
+model HmoClaim {
+  id                          String         @id @default(cuid())
+  tenantId                    String
+  invoiceId                   String
+  patientId                   String
+  providerId                  String
+  membershipId                String?
+  number                      String         // per-tenant claim number, e.g. CLM-202605-0001
+  status                      HmoClaimStatus @default(DRAFT)
+  authNumber                  String?        // approval number from the HMO
+  claimedCentavos             Int            @default(0)
+  approvedCentavos            Int            @default(0)
+  patientResponsibilityCentavos Int          @default(0)
+  denialReason                String?
+  notes                       String?
+  submittedAt                 DateTime?
+  resolvedAt                  DateTime?
+  createdById                 String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  invoice    Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  patient    Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider   HmoProvider    @relation(fields: [providerId], references: [id])
+  membership HmoMembership? @relation(fields: [membershipId], references: [id])
+
+  @@unique([tenantId, number])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, patientId])
+  @@map("hmo_claims")
+}
+
+// ──────────────────────────────────────────────
+// LAB ORDERS + RESULTS
+// ──────────────────────────────────────────────
+//
+// One LabOrder per order slip, multiple LabOrderItems per order (one per
+// test). Results are stored inline on the item — for panels that produce
+// many values (e.g. CBC), each value gets its own item. Abnormal flags are
+// computed at result entry from referenceLow/referenceHigh.
+
+enum LabOrderStatus {
+  PENDING
+  COLLECTED
+  RECEIVED
+  REPORTED
+  CANCELLED
+}
+
+enum LabAbnormalFlag {
+  NORMAL
+  HIGH
+  LOW
+  CRITICAL_HIGH
+  CRITICAL_LOW
+  ABNORMAL
+}
+
+model LabOrder {
+  id             String         @id @default(cuid())
+  tenantId       String
+  consultationId String?
+  patientId      String
+  providerId     String
+  number         String         // per-tenant slip number, e.g. LAB-202605-0001
+  vendor         String?        // e.g. "Hi-Precision", "Makati Med Lab", in-house
+  externalRef    String?        // lab's own reference number
+  status         LabOrderStatus @default(PENDING)
+  notes          String?
+
+  collectedAt DateTime?
+  receivedAt  DateTime?
+  reportedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  patient      Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultation Consultation?  @relation(fields: [consultationId], references: [id])
+  items        LabOrderItem[]
+
+  @@unique([tenantId, number])
+  @@index([tenantId, patientId, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, consultationId])
+  @@map("lab_orders")
+}
+
+model LabOrderItem {
+  id             String           @id @default(cuid())
+  tenantId       String
+  orderId        String
+  testCode       String?          // e.g. LOINC or local code
+  testName       String
+  category       String?          // CBC, Chem, Urinalysis, Imaging, …
+  resultValue    String?          // free-form: numbers, "Negative", "Reactive"
+  resultUnit     String?
+  referenceLow   Float?
+  referenceHigh  Float?
+  abnormalFlag   LabAbnormalFlag?
+  comment        String?
+  reportedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, orderId])
+  @@map("lab_order_items")
+}
+
+// ──────────────────────────────────────────────
+// TELEMEDICINE (WebRTC peer-to-peer)
+// ──────────────────────────────────────────────
+//
+// 1:1 doctor↔patient sessions. Media flows P2P over a public TURN server
+// (env-configured); we only relay signaling (offer/answer/ICE) via short-poll
+// HTTP — no WebSocket infra needed for MVP. Patient joins via a one-shot
+// joinToken so they don't need a portal account.
+
+enum TeleSessionStatus {
+  PENDING
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum TeleSignalKind {
+  OFFER
+  ANSWER
+  ICE
+  JOIN
+  LEAVE
+  CHAT
+  CONSENT_REQUEST   // doctor → patient: "may I record this session?"
+  CONSENT_RESPONSE  // patient → doctor: { granted: boolean }
+}
+
+enum TeleRole {
+  DOCTOR
+  PATIENT
+}
+
+model TeleSession {
+  id             String            @id @default(cuid())
+  tenantId       String
+  appointmentId  String?
+  consultationId String?
+  patientId      String
+  providerId     String
+  joinToken      String            // shared with patient via link
+  patientToken   String            // bearer for /tele/* signaling after exchange
+  status         TeleSessionStatus @default(PENDING)
+  startedAt      DateTime?
+  endedAt        DateTime?
+  // Consent ledger for in-call recording. Both fields stay null when the
+  // doctor never asked; recordingConsentAt is set when the patient grants;
+  // recordingDeclinedAt is set when refused. Once a recording is uploaded,
+  // recordingFileId points at a FileObject. (Recording upload itself is
+  // deferred — schema first so the consent flow can ship without ambiguity.)
+  recordingConsentAt   DateTime?
+  recordingDeclinedAt  DateTime?
+  recordingFileId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+  signals     TeleSignal[]
+
+  @@unique([tenantId, joinToken])
+  @@index([tenantId, status])
+  @@index([tenantId, providerId])
+  @@map("tele_sessions")
+}
+
+model TeleSignal {
+  id        String         @id @default(cuid())
+  tenantId  String
+  sessionId String
+  seq       Int
+  fromRole  TeleRole
+  kind      TeleSignalKind
+  payload   Json
+  createdAt DateTime       @default(now())
+
+  session TeleSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, seq])
+  @@index([sessionId, createdAt])
+  @@map("tele_signals")
+}
+
+// ──────────────────────────────────────────────
+// IN-APP NOTIFICATIONS
+// ──────────────────────────────────────────────
+//
+// Per-user, per-tenant feed. Other services call NotificationsService.notify()
+// for async events (HMO claim resolved, lab abnormal, low stock, DSR filed,
+// reminder fired). Email/SMS remain separate channels — Notification is the
+// in-app surface. Severity drives bell badge color.
+
+enum NotificationKind {
+  APPOINTMENT_REMINDER
+  HMO_CLAIM_UPDATE
+  LAB_REPORTED
+  LAB_ABNORMAL
+  INVENTORY_LOW
+  DSR_FILED
+  DSR_RESOLVED
+  AI_BUDGET_ALERT
+  GENERAL
+}
+
+enum NotificationSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model Notification {
+  id        String               @id @default(cuid())
+  tenantId  String
+  userId    String               // recipient
+  kind      NotificationKind
+  severity  NotificationSeverity @default(INFO)
+  title     String
+  body      String?
+  link      String?              // optional in-app link, e.g. /admin/claims#<id>
+  entityId  String?              // optional FK-shaped pointer (no DB constraint)
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
+
+  @@index([tenantId, userId, readAt, createdAt])
+  @@index([tenantId, userId, kind])
+  @@map("notifications")
+}
+
+// ── Dental / Odontogram ───────────────────────────────────────
+// Per-consultation snapshot of the patient's dental chart. A patient can have
+// many charts over time; the latest one (by createdAt) is the "current" view.
+// Tooth codes use FDI/ISO numbering (11–48 adult permanent, 51–85 deciduous).
+
+enum Dentition {
+  ADULT
+  DECIDUOUS
+  MIXED
+}
+
+enum ToothStatus {
+  PRESENT
+  MISSING
+  EXTRACTED
+  IMPLANT
+  CROWNED
+  ROOT_CANAL
+  EXTRACTION_NEEDED
+  UNERUPTED
+}
+
+enum ToothSurface {
+  M  // mesial
+  O  // occlusal/incisal
+  D  // distal
+  B  // buccal/facial/labial
+  L  // lingual/palatal
+}
+
+enum SurfaceFinding {
+  CARIES
+  RESTORATION_AMALGAM
+  RESTORATION_COMPOSITE
+  SEALANT
+  FRACTURE
+  WEAR
+}
+
+model DentalChart {
+  id             String     @id @default(cuid())
+  tenantId       String
+  patientId      String
+  consultationId String?
+  dentition      Dentition  @default(ADULT)
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  patient      Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultation Consultation?      @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  teeth        DentalToothEntry[]
+
+  @@index([tenantId, patientId, createdAt])
+  @@index([tenantId, consultationId])
+  @@map("dental_charts")
+}
+
+model DentalToothEntry {
+  id        String      @id @default(cuid())
+  tenantId  String
+  chartId   String
+  toothCode String      // FDI: "11"-"48" adult, "51"-"85" deciduous
+  status    ToothStatus @default(PRESENT)
+  notes     String?
+
+  chart    DentalChart            @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  surfaces DentalSurfaceFinding[]
+
+  @@unique([chartId, toothCode])
+  @@index([tenantId, chartId])
+  @@map("dental_tooth_entries")
+}
+
+model DentalSurfaceFinding {
+  id           String         @id @default(cuid())
+  tenantId     String
+  toothEntryId String
+  surface      ToothSurface
+  finding      SurfaceFinding
+  notes        String?
+
+  toothEntry DentalToothEntry @relation(fields: [toothEntryId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, toothEntryId])
+  @@map("dental_surface_findings")
+}
+
+// ── Delegations / acting-as ──────────────────────────────────
+// A doctor (delegator) can grant temporary authority to an assistant
+// (delegatee) to act on their behalf within [startsAt, endsAt]. Permission
+// checks at runtime override the delegatee's role with the delegator's role
+// when the request carries a valid X-Acting-For: <delegatorId> header.
+//
+// Audit trail records both userId (the actual person) and onBehalfOfUserId
+// (the delegator) on every action — so the history reads
+// "Maria signed Rx as Dr. Cruz at 14:32".
+
+model Delegation {
+  id           String           @id @default(cuid())
+  tenantId     String
+  delegatorId  String           // the doctor granting authority
+  delegateeId  String           // the assistant/secretary receiving it
+  startsAt     DateTime
+  endsAt       DateTime
+  reason       String?
+  // Empty array = full proxy (delegatee inherits all of the delegator's
+  // role permissions). Otherwise: list of Action strings (e.g. "rx:sign")
+  // that filters which @Requires() actions are honored under delegation.
+  scope        String[]         @default([])
+  status       DelegationStatus @default(ACTIVE)
+  revokedAt    DateTime?
+  revokedById  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  delegator User @relation("DelegationGranter", fields: [delegatorId], references: [id], onDelete: Cascade)
+  delegatee User @relation("DelegationGrantee", fields: [delegateeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, delegateeId, status, startsAt, endsAt])
+  @@index([tenantId, delegatorId, status])
+  @@map("delegations")
+}
+
+enum DelegationStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+// ── Drug catalog (global, optionally tenant-overridable) ────────────────
+// Seeded with common PH drugs (generic + brand). Free-text Rx still permitted
+// (drugId is optional) so unusual prescriptions aren't blocked, but the
+// autocomplete experience should always start from the catalog.
+
+model Drug {
+  id           String     @id @default(cuid())
+  // Null tenantId = global / built-in. Non-null = tenant override or custom
+  // entry. Lookup query filters: WHERE tenantId IS NULL OR tenantId = :current.
+  tenantId     String?
+  // Generic INN-style name. "amoxicillin", "paracetamol".
+  generic      String
+  // Optional brand name. "Amoxil", "Biogesic".
+  brand        String?
+  // Strength as a string ("500 mg", "250 mg/5 ml") so we don't lose unit
+  // semantics. Validation lives in the form.
+  strength     String?
+  // Dosage form (TAB, CAP, SYRUP, DROPS, etc.). Open string to keep flexible.
+  form         String?
+  // ATC code if known — anatomical-therapeutic-chemical, used for grouping
+  // and interaction checks once we wire those.
+  atcCode      String?
+  // RxNorm CUI if mapped. Optional, but useful for future interop.
+  rxnormCode   String?
+  // Free-text classes (e.g. "penicillin", "NSAID") — used for allergy
+  // matching at prescribe time when we don't have full ATC coverage.
+  classes      String[]   @default([])
+  // Whether this is a controlled / dangerous-drug class. UI shows a banner.
+  controlled   Boolean    @default(false)
+  active       Boolean    @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prescriptionItems PrescriptionItem[]
+
+  // pg_trgm index defined in migration SQL (Prisma can't express it).
+  @@index([tenantId, generic])
+  @@index([tenantId, brand])
+  @@map("drugs")
+}
+
+// ── ICD-10 catalog (global, read-only seed) ─────────────────────────────
+// Seeded with WHO ICD-10 codes (subset relevant to PH OPD). Used by the
+// consultation diagnosis autocomplete and validated on save.
+
+model IcdCode {
+  // The ICD-10 code itself ("J06.9", "I10", etc.) is the natural primary
+  // key — no separate id needed, codes are stable.
+  code        String   @id
+  description String
+  // Top-level chapter ("X — Diseases of the respiratory system"). Used for
+  // grouping in the UI.
+  chapter     String?
+  // Whether the code is a "billable" leaf node (vs an aggregate parent).
+  // PhilHealth eClaims only accept billable leaves.
+  billable    Boolean  @default(true)
+
+  @@index([description])
+  @@map("icd_codes")
+}
+
+// ── Locations (clinic branches) ─────────────────────────────────────────
+// A clinic may operate one or more physical/virtual locations. Most v1
+// tenants will have exactly one. Multi-branch UI surfaces this when count > 1.
+
+model Location {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  addressLine1 String?
+  addressLine2 String?
+  city      String?
+  province  String?
+  postalCode String?
+  country   String   @default("PH")
+  phone     String?
+  // The "primary" location is the default selected in the UI and the one
+  // printed on Rx/invoice headers when no per-location override is set.
+  isPrimary Boolean  @default(false)
+  active    Boolean  @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isPrimary])
+  @@map("locations")
+}

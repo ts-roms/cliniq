@@ -1,0 +1,54 @@
+{
+  "name": "@org/ai-prompts",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "tags": ["scope:shared", "type:lib"],
+    "targets": {
+      "eval-soap": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "tsx evals/soap/run.ts",
+          "cwd": "libs/ai-prompts"
+        },
+        "cache": false
+      },
+      "eval-derm": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "tsx evals/dermatology/run.ts",
+          "cwd": "libs/ai-prompts"
+        },
+        "cache": false
+      },
+      "eval-all": {
+        "executor": "nx:run-commands",
+        "options": {
+          "commands": [
+            "tsx evals/soap/run.ts",
+            "tsx evals/dermatology/run.ts"
+          ],
+          "parallel": false,
+          "cwd": "libs/ai-prompts"
+        },
+        "cache": false
+      }
+    }
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}

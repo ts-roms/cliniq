@@ -1,0 +1,75 @@
+name: CD — web (Next.js)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'libs/ui/**'
+      - 'libs/shared-types/**'
+      - 'libs/api-client/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/cd-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  build:
+    name: Build & deploy web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm exec nx run @org/web:build
+
+      # Option A — Vercel (uncomment if hosting there)
+      # - uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+      #     working-directory: apps/web
+      #     vercel-args: '--prod'
+
+      # Option B — push container to ECR like the api (current default).
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPO: cliniq-dev-web
+          SHA: ${{ github.sha }}
+        run: |
+          IMAGE="${REGISTRY}/${REPO}:${SHA}"
+          docker build -f apps/web/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "Pushed $IMAGE"

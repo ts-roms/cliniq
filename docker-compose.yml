@@ -1,0 +1,130 @@
+# ClinIQ local development stack.
+#
+# Brings up postgres → runs prisma migrations once → starts api + ai-service +
+# web. Migrations are an explicit one-shot service so they don't race the api
+# on cold boot. All services share the workspace `.env` (copy `.env.example`
+# to `.env` first).
+#
+# Usage:
+#   cp .env.example .env
+#   docker compose up -d --build
+#   docker compose logs -f api          # tail any service
+#   docker compose run --rm migrate     # re-run migrations after a schema change
+#   docker compose down                 # stop (keeps the postgres volume)
+#   docker compose down -v              # stop + wipe data
+
+name: cliniq
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cliniq-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cliniq}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/00-cliniq-app-role.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cliniq}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot prisma migrate. `service_completed_successfully` blocks api/web
+  # boot until this finishes, so the first request never races a half-applied
+  # schema. Re-run manually after schema changes:
+  #   docker compose run --rm migrate
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/migrate.Dockerfile
+    container_name: cliniq-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Migrations run as the postgres superuser so RLS policies + role grants
+      # in the `20260501000001_rls_policies` migration can take effect.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cliniq}?schema=public
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: cliniq-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # App connects via the cliniq_app role so RLS policies engage.
+      DATABASE_URL: postgresql://cliniq_app:cliniq_app@postgres:5432/${POSTGRES_DB:-cliniq}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (32+ chars)}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      AI_SERVICE_URL: http://ai-service:4100
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-http://localhost:3000}
+      # Optional integration env. Mailer/Sms/TURN go no-op when unset.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SMS_PROVIDER: ${SMS_PROVIDER:-}
+      SEMAPHORE_API_KEY: ${SEMAPHORE_API_KEY:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM: ${TWILIO_FROM:-}
+      TURN_URLS: ${TURN_URLS:-}
+      TURN_USERNAME: ${TURN_USERNAME:-}
+      TURN_CREDENTIAL: ${TURN_CREDENTIAL:-}
+      APPT_REMINDERS_ENABLED: ${APPT_REMINDERS_ENABLED:-false}
+    ports:
+      - "${API_PORT:-4000}:4000"
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: apps/ai-service/Dockerfile
+    container_name: cliniq-ai-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4100
+      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
+      # Bedrock creds are optional in dev — when missing, ai-service falls
+      # back to stub responses for the SOAP/derm endpoints.
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      BEDROCK_MODEL_SOAP: ${BEDROCK_MODEL_SOAP:-}
+      BEDROCK_MODEL_DERM: ${BEDROCK_MODEL_DERM:-}
+    ports:
+      - "${AI_PORT:-4100}:4100"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: cliniq-web
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Public env: baked into the client bundle at build time. To change it,
+      # rebuild the web image.
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+volumes:
+  postgres-data:
+    name: cliniq-postgres-data

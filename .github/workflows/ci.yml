@@ -2,39 +2,215 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   actions: read
   contents: read
 
+env:
+  PNPM_VERSION: '10'
+  NODE_VERSION: '22'
+
 jobs:
-  main:
+  # ────────────────────────────────────────────────────────────
+  # Lint + typecheck + unit tests + build for affected projects.
+  # Postgres service runs so the API + db tests have a real DB.
+  # ────────────────────────────────────────────────────────────
+  affected:
+    name: Lint / test / build (affected)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cliniq
+          POSTGRES_PASSWORD: cliniq
+          POSTGRES_DB: cliniq_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cliniq -d cliniq_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://cliniq:cliniq@localhost:5432/cliniq_test?schema=public
+      DATABASE_URL_APP: postgresql://cliniq_app:cliniq_app@localhost:5432/cliniq_test?schema=public
+      JWT_SECRET: test-secret-must-be-at-least-32-characters-long
+      NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
+
     steps:
       - uses: actions/checkout@v4
         with:
           filter: tree:0
           fetch-depth: 0
 
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
-      # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e-ci"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
 
-      # Cache node_modules
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - run: npm ci
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      # Prepend any command with "nx record --" to record its logs to Nx Cloud
-      - run: npx nx record -- npx nx format:check  --base="remotes/origin/main"
-      - run: npx nx run-many -t lint test build typecheck e2e-ci
-      # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
-      - run: npx nx fix-ci
+      # Set the SHAs Nx will use for `nx affected`
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Apply Prisma migrations
+        working-directory: libs/db
+        run: pnpm exec prisma migrate deploy
+
+      - name: Provision cliniq_app role for RLS tests
+        env:
+          PGPASSWORD: cliniq
+        run: |
+          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
+
+      - name: Sync Nx project references
+        run: pnpm exec nx sync:check || pnpm exec nx sync
+
+      - name: Format check
+        run: pnpm exec nx format:check
+
+      - name: Lint (affected)
+        run: pnpm exec nx affected -t lint --parallel=3
+
+      - name: Test (affected, includes RLS leak test)
+        run: pnpm exec nx affected -t test --parallel=3
+
+      - name: Build (affected)
+        run: pnpm exec nx affected -t build --parallel=3
+
+  # ────────────────────────────────────────────────────────────
+  # Boot the built api binary against a real Postgres + run the
+  # end-to-end smoke script. Catches runtime regressions that
+  # `nx test` (unit) can't see — wiring, auth, real CRUD, RLS.
+  # ────────────────────────────────────────────────────────────
+  api-integration:
+    name: API integration smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: affected
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cliniq
+          POSTGRES_PASSWORD: cliniq
+          POSTGRES_DB: cliniq_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cliniq -d cliniq_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://cliniq:cliniq@localhost:5432/cliniq_test?schema=public
+      JWT_SECRET: integration-test-secret-must-be-32-chars-long-yes-it-is
+      NODE_ENV: production
+      PORT: '4000'
+      CORS_ORIGINS: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: '10' }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        working-directory: libs/db
+        run: |
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+
+      - name: Provision cliniq_app role
+        env: { PGPASSWORD: cliniq }
+        run: |
+          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+
+      - name: Build api
+        run: pnpm exec nx run @org/api:build
+
+      - name: Boot stub-ai-service in background
+        run: |
+          node apps/api-e2e/src/integration/stub-ai-service.mjs > ai.log 2>&1 &
+          echo $! > ai.pid
+
+      - name: Boot api in background
+        env:
+          AI_SERVICE_URL: http://localhost:4100
+        run: |
+          node apps/api/dist/main.js > api.log 2>&1 &
+          echo $! > api.pid
+
+      - name: Run smoke
+        env:
+          API_URL: http://localhost:4000
+        run: node apps/api-e2e/src/integration/smoke.mjs
+
+      - name: Stop services
         if: always()
+        run: |
+          if [[ -f api.pid ]]; then kill "$(cat api.pid)" 2>/dev/null || true; fi
+          if [[ -f ai.pid ]];  then kill "$(cat ai.pid)"  2>/dev/null || true; fi
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-integration-logs
+          path: |
+            api.log
+            ai.log
+          if-no-files-found: ignore
+
+  # ────────────────────────────────────────────────────────────
+  # Build the api Docker image on every PR for sanity. On main,
+  # the cd.yml workflow pushes it to ECR and deploys.
+  # ────────────────────────────────────────────────────────────
+  docker-api:
+    name: Build api image (smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build api image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: cliniq-api:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

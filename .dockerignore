@@ -1,0 +1,32 @@
+**/node_modules
+**/dist
+**/build
+**/.next
+**/.expo
+**/.turbo
+**/storybook-static
+**/coverage
+**/test-output
+**/.cache
+**/.nx/cache
+**/.nx/workspace-data
+
+# Source-control + editor noise
+.git
+.github
+.vscode
+.idea
+**/*.log
+
+# Local dotenvs & secrets
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Big media not needed for runtime
+**/*.gif
+**/*.mp4
+docs/

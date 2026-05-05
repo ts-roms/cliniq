@@ -1,0 +1,8 @@
+# Copy to dev.tfvars and fill in.
+# dev.tfvars is gitignored.
+
+# Issue an ACM cert for *.cliniq.app or your dev subdomain in ap-southeast-1, then paste its ARN.
+acm_certificate_arn = "arn:aws:acm:ap-southeast-1:123456789012:certificate/REPLACE-ME"
+
+# Override only after the api image has been pushed to ECR.
+# api_image = "<account>.dkr.ecr.ap-southeast-1.amazonaws.com/cliniq-dev-api:latest"

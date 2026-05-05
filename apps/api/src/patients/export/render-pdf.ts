@@ -1,0 +1,197 @@
+import PDFDocument from 'pdfkit';
+
+interface ExportBundle {
+  exportedAt: string;
+  exportedBy: { userId: string | null; email?: string | null; role?: string | null };
+  tenantId: string | null;
+  patient: {
+    mrn: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: Date | string;
+    sex: string;
+    email?: string | null;
+    phone?: string | null;
+  };
+  consultations: Array<{
+    id: string;
+    startedAt: Date | string;
+    status: string;
+    diagnosisCodes: string[];
+    assessment?: unknown;
+    plan?: unknown;
+  }>;
+  prescriptions: Array<{
+    number: string;
+    issuedAt: Date | string;
+    status: string;
+    items: Array<{ drugName: string; strength?: string | null; dose: string; frequency: string }>;
+  }>;
+  files: Array<{ filename: string; category: string; createdAt: Date | string }>;
+  auditTrail: Array<{ action: string; occurredAt: Date | string; actorEmail?: string | null }>;
+}
+
+/**
+ * Render the patient export bundle as a printable PDF. Returns a Buffer
+ * suitable for `res.send()`. Layout is intentionally plain — clinical
+ * documents print and scan better than design-y ones.
+ */
+export function renderPatientExportPdf(bundle: ExportBundle): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: 'ClinIQ patient record' } });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    title(doc, 'Patient record export');
+    meta(doc, [
+      `Exported at: ${fmtDate(bundle.exportedAt)}`,
+      `Exported by: ${bundle.exportedBy.email ?? bundle.exportedBy.userId ?? '—'}`,
+      `Tenant: ${bundle.tenantId ?? '—'}`,
+    ]);
+
+    section(doc, 'Patient');
+    keyValueGrid(doc, [
+      ['MRN', bundle.patient.mrn],
+      ['Name', `${bundle.patient.lastName}, ${bundle.patient.firstName}`],
+      ['Date of birth', fmtDate(bundle.patient.dateOfBirth)],
+      ['Sex', bundle.patient.sex],
+      ['Email', bundle.patient.email ?? '—'],
+      ['Phone', bundle.patient.phone ?? '—'],
+    ]);
+
+    section(doc, `Consultations (${bundle.consultations.length})`);
+    if (bundle.consultations.length === 0) {
+      doc.fontSize(10).fillColor('#666').text('No consultations recorded.');
+      doc.fillColor('black');
+    } else {
+      for (const c of bundle.consultations) {
+        doc.fontSize(11).text(`${fmtDate(c.startedAt)} — ${c.status}`, { continued: false });
+        if (c.diagnosisCodes.length > 0) {
+          doc.fontSize(9).fillColor('#666').text(`ICD-10: ${c.diagnosisCodes.join(', ')}`);
+          doc.fillColor('black');
+        }
+        const summary = collapseAssessment(c.assessment);
+        if (summary) doc.fontSize(10).text(summary, { indent: 12 });
+        doc.moveDown(0.5);
+      }
+    }
+
+    section(doc, `Prescriptions (${bundle.prescriptions.length})`);
+    if (bundle.prescriptions.length === 0) {
+      doc.fontSize(10).fillColor('#666').text('No prescriptions recorded.');
+      doc.fillColor('black');
+    } else {
+      for (const rx of bundle.prescriptions) {
+        doc.fontSize(11).text(`${rx.number} — ${rx.status} — ${fmtDate(rx.issuedAt)}`);
+        for (const item of rx.items) {
+          doc
+            .fontSize(10)
+            .text(
+              `• ${item.drugName}${item.strength ? ` ${item.strength}` : ''} — ${item.dose} ${item.frequency}`,
+              { indent: 12 },
+            );
+        }
+        doc.moveDown(0.4);
+      }
+    }
+
+    section(doc, `Files (${bundle.files.length})`);
+    if (bundle.files.length === 0) {
+      doc.fontSize(10).fillColor('#666').text('No files on record.');
+      doc.fillColor('black');
+    } else {
+      for (const f of bundle.files.slice(0, 50)) {
+        doc.fontSize(10).text(`${fmtDate(f.createdAt)}  ${f.category.padEnd(18, ' ')}  ${f.filename}`);
+      }
+      if (bundle.files.length > 50) {
+        doc.fontSize(9).fillColor('#666').text(`(+${bundle.files.length - 50} more — see JSON export)`);
+        doc.fillColor('black');
+      }
+    }
+
+    section(doc, `Audit trail (${bundle.auditTrail.length})`);
+    if (bundle.auditTrail.length === 0) {
+      doc.fontSize(10).fillColor('#666').text('No audit entries.');
+      doc.fillColor('black');
+    } else {
+      for (const a of bundle.auditTrail.slice(0, 100)) {
+        doc
+          .fontSize(9)
+          .text(`${fmtDate(a.occurredAt)}  ${a.action.padEnd(28, ' ')}  ${a.actorEmail ?? '—'}`);
+      }
+      if (bundle.auditTrail.length > 100) {
+        doc.fontSize(9).fillColor('#666').text(`(+${bundle.auditTrail.length - 100} more — see JSON export)`);
+        doc.fillColor('black');
+      }
+    }
+
+    doc
+      .moveDown()
+      .fontSize(8)
+      .fillColor('#999')
+      .text(
+        'Issued under Republic Act 10173 (Data Privacy Act of 2012), Section 16 right of access. ' +
+          'Generated by ClinIQ.',
+        { align: 'center' },
+      );
+
+    doc.end();
+  });
+}
+
+function title(doc: PDFKit.PDFDocument, text: string) {
+  doc.fontSize(20).text(text);
+  doc.moveDown(0.5);
+}
+
+function meta(doc: PDFKit.PDFDocument, lines: string[]) {
+  doc.fontSize(9).fillColor('#666');
+  for (const line of lines) doc.text(line);
+  doc.fillColor('black').moveDown(0.5);
+}
+
+function section(doc: PDFKit.PDFDocument, label: string) {
+  doc.moveDown(0.6);
+  doc.fontSize(13).text(label);
+  doc
+    .moveTo(doc.x, doc.y)
+    .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+    .strokeColor('#ddd')
+    .lineWidth(0.5)
+    .stroke()
+    .strokeColor('black');
+  doc.moveDown(0.3);
+}
+
+function keyValueGrid(doc: PDFKit.PDFDocument, entries: Array<[string, string]>) {
+  for (const [k, v] of entries) {
+    doc.fontSize(9).fillColor('#666').text(k, { continued: true, width: 100 });
+    doc.fillColor('black').text(`  ${v}`);
+  }
+}
+
+function fmtDate(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function collapseAssessment(assessment: unknown): string {
+  if (!Array.isArray(assessment)) {
+    if (assessment && typeof assessment === 'object') {
+      const a = assessment as Record<string, unknown>;
+      if (typeof a.text === 'string') return a.text.slice(0, 400);
+    }
+    return '';
+  }
+  return assessment
+    .map((entry) => {
+      const e = entry as Record<string, unknown>;
+      const problem = typeof e.problem === 'string' ? e.problem : '';
+      const icd = typeof e.icd10 === 'string' ? ` (${e.icd10})` : '';
+      return problem ? `• ${problem}${icd}` : '';
+    })
+    .filter(Boolean)
+    .join('\n');
+}

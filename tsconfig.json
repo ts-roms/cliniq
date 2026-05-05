@@ -2,5 +2,42 @@
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
-  "references": []
+  "references": [
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./apps/api-e2e"
+    },
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/mobile"
+    },
+    {
+      "path": "./libs/shared-types"
+    },
+    {
+      "path": "./libs/db"
+    },
+    {
+      "path": "./libs/auth"
+    },
+    {
+      "path": "./libs/ai-prompts"
+    },
+    {
+      "path": "./libs/api-client"
+    },
+    {
+      "path": "./libs/ui"
+    },
+    {
+      "path": "./apps/ai-service-e2e"
+    },
+    {
+      "path": "./apps/ai-service"
+    }
+  ]
 }

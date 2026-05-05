@@ -1,0 +1,6 @@
+// Golden SOAP cases. Each line is a JSON object with id + input (transcript +
+// patient context) + optional `expected` (subset to deep-match) and/or `mustNot`
+// (substring blacklist). Add cases when you find a real-world failure mode.
+{"id":"soap-001-acute-pharyngitis","input":{"transcript":"Patient is a 28-year-old female reporting sore throat for 3 days, low-grade fever, no cough, no rhinorrhea. Exam: erythematous pharynx, no exudates, tender anterior cervical lymph nodes.","patient":{"age":28,"sex":"FEMALE"}},"expected":{"assessment":[{"problem":"acute pharyngitis"}]},"mustNot":["amoxicillin","azithromycin"]}
+{"id":"soap-002-too-short","input":{"transcript":"sore throat","patient":{"age":40,"sex":"MALE"}},"expected":{"uncertainty":["transcript insufficient"]}}
+{"id":"soap-003-penicillin-allergy","input":{"transcript":"Doctor recommends amoxicillin 500mg TID for 7 days for likely strep throat.","patient":{"age":34,"sex":"FEMALE","allergies":["penicillin"]}},"mustNot":["amoxicillin","ampicillin"]}
