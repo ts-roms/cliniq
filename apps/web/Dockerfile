@@ -23,6 +23,13 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY . .
+# Build-time public env. Next.js inlines NEXT_PUBLIC_* into the client bundle
+# during `next build`, so the value MUST be present at this stage. Railway
+# passes service variables as build args only when the Dockerfile declares
+# them with ARG — runtime-only env wouldn't reach Next.js's compiler.
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Regenerate the typed api-client SDK from apps/api/openapi.json (committed in
 # git as the contract snapshot). Done inline rather than via the nx target so we
 # don't transitively trigger an api build, which would require a live DB.
