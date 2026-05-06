@@ -36,6 +36,11 @@ between services.
 
 ## One-time setup
 
+> **Quick path:** after `railway login` + `railway init`, run
+> [`tools/scripts/railway-setup.sh`](../tools/scripts/railway-setup.sh) to
+> create all four services + Postgres in one shot. Then jump to step 5
+> ([Service env vars](#service-env-vars)).
+
 ### 1. Create the project
 
 ```bash
