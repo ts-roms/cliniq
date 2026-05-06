@@ -204,6 +204,55 @@ The catalog seed (`libs/db/prisma/seed/index.ts`) runs via
 railway run --service api sh -c "cd /workspace/libs/db && pnpm exec prisma db seed"
 ```
 
+### Bootstrap the platform admin (superadmin)
+
+The first time you stand up an environment, you need a `platform_admin`
+row so someone can sign in at `/platform/login` and manage tenants.
+Use [`tools/scripts/seed-platform-admin.ts`](../tools/scripts/seed-platform-admin.ts) — idempotent, prod-safe (touches
+`platform_admins` only), takes inputs from env vars.
+
+```bash
+# Pick a strong password (the script enforces ≥12 chars):
+PASS=$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)
+
+# Run from your local machine, with Railway's api env injected:
+railway run --service api \
+  env PLATFORM_ADMIN_EMAIL=you@yourcompany.com \
+      PLATFORM_ADMIN_NAME='Your Name' \
+      PLATFORM_ADMIN_PASSWORD="$PASS" \
+  pnpm seed:platform-admin
+
+echo "Admin password: $PASS"   # save it once, then delete from your shell history
+```
+
+Re-running the script with the **same email** is a password reset — it
+updates `name` + `passwordHash` in place and preserves MFA state. Use
+this if you ever need to recover a locked-out admin.
+
+> ⚠️  Never put `PLATFORM_ADMIN_PASSWORD` in a Railway service Variable. It's
+> a one-shot bootstrap, not a runtime secret. The script reads it from the
+> shell env at invocation time only.
+
+After the script succeeds, sign in at:
+
+```
+https://<web-domain>/platform/login
+```
+
+…with the email you just seeded. Enroll MFA from the platform console
+on first session (TODO: that flow isn't built yet — see notes).
+
+### Add another platform admin
+
+Repeat the same `seed:platform-admin` invocation with a different
+`PLATFORM_ADMIN_EMAIL`. The script doesn't have a delete path; to
+revoke an admin, mark them deleted in SQL:
+
+```bash
+railway run --service Postgres bash -c \
+  'psql "$DATABASE_URL" -c "UPDATE platform_admins SET \"deletedAt\" = NOW() WHERE email = '\''old@admin.com'\''"'
+```
+
 ### Logs
 
 ```bash

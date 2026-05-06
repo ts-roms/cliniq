@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "db:seed": "pnpm --dir libs/db exec prisma db seed && tsx --env-file=.env tools/scripts/seed-dev.ts",
-    "db:reset": "pnpm --dir libs/db exec prisma migrate reset --force"
+    "db:reset": "pnpm --dir libs/db exec prisma migrate reset --force",
+    "seed:platform-admin": "tsx tools/scripts/seed-platform-admin.ts"
   },
   "private": true,
   "devDependencies": {
