@@ -52,12 +52,18 @@ export class AuthService {
       const user = await tx.user.create({
         data: { email: dto.email, name: dto.name, passwordHash },
       });
+      // First registrant on a fresh tenant becomes OWNER so the split signup
+      // flow leaves someone with promotion rights. Subsequent registrations
+      // default to RECEPTIONIST and need an OWNER/ADMIN to promote them.
+      const memberCount = await tx.tenantUser.count({ where: { tenantId: tenant.id } });
+      const role = memberCount === 0 ? DbRole.OWNER : DbRole.RECEPTIONIST;
       const tenantUser = await tx.tenantUser.create({
         data: {
           tenantId: tenant.id,
           userId: user.id,
-          role: DbRole.RECEPTIONIST, // default role; promote later
+          role,
           status: MemberStatus.ACTIVE,
+          joinedAt: memberCount === 0 ? new Date() : undefined,
         },
       });
       return { user, tenantUser };

@@ -23,10 +23,14 @@ export class CreateTenantDto {
   @MaxLength(120)
   ownerName!: string;
 
+  // Optional. The split signup flow creates the tenant first (no password)
+  // and registers the owner via /api/auth/register in a follow-up call.
+  // Legacy "everything in one shot" callers can still pass it.
+  @IsOptional()
   @IsString()
   @MinLength(8)
   @MaxLength(128)
-  ownerPassword!: string;
+  ownerPassword?: string;
 
   @IsOptional()
   @IsEnum(Plan)

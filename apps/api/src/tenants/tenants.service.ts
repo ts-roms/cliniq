@@ -17,7 +17,9 @@ export class TenantsService {
 
     // Hash outside the transaction — bcrypt at cost=12 is ~250ms and we don't
     // want to hold the row lock for that long.
-    const passwordHash = await hashPassword(dto.ownerPassword);
+    const passwordHash = dto.ownerPassword
+      ? await hashPassword(dto.ownerPassword)
+      : null;
 
     return this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
@@ -29,6 +31,14 @@ export class TenantsService {
           trialEndsAt: this.addDays(new Date(), 30),
         },
       });
+
+      // No password = split signup flow: caller will register the owner via
+      // /api/auth/register, which creates the User + TenantUser. Skip owner
+      // provisioning here so we don't conflict on the unique email.
+      if (!passwordHash) {
+        this.logger.log(`Created tenant ${tenant.slug} (${tenant.id}) without owner — pending /auth/register`);
+        return tenant;
+      }
 
       // Upsert: existing User keeps its passwordHash (don't trample creds for
       // a user who happens to be bootstrapping a second tenant). New User
