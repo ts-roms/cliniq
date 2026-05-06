@@ -179,20 +179,30 @@ curl -I https://<web-domain>
 
 ## Operations
 
-### Re-run migrations manually
+### Run migrations
 
-The api's `preDeployCommand` runs migrations on every deploy. To re-run
-without a code change:
-
-```bash
-railway redeploy --service api
-```
-
-Or run a one-off:
+**Migrations run manually**, not on every deploy. The `preDeployCommand`
+was removed from [`apps/api/railway.json`](../apps/api/railway.json) because
+Railway's pre-deploy stage failed to run prisma reliably on this stack. The
+fix-forward flow:
 
 ```bash
-railway run --service api sh -c "cd /workspace/libs/db && pnpm exec prisma migrate deploy"
+# Get the Postgres public URL from the dashboard:
+#   cliniq-postgres → Connect → Public Network → copy DATABASE_URL.
+# Then run from your local machine:
+DATABASE_URL='postgresql://postgres:<password>@<public-host>:<port>/railway' \
+  pnpm --dir libs/db exec prisma migrate deploy
 ```
+
+Idempotent — re-runs are no-ops once everything's applied. Run this any
+time you merge a PR with new files in `libs/db/prisma/migrations/`.
+
+> **To re-enable on-deploy migrations later**, add this back to the
+> `deploy` block in [`apps/api/railway.json`](../apps/api/railway.json):
+> ```json
+> "preDeployCommand": "cd /workspace/libs/db && pnpm exec prisma migrate deploy"
+> ```
+> Then debug whatever was making it fail silently.
 
 ### Seed data
 

@@ -6,7 +6,6 @@
   },
   "deploy": {
     "startCommand": "node dist/main.js",
-    "preDeployCommand": "cd /workspace/libs/db && pnpm exec prisma migrate deploy",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
