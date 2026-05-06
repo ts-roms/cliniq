@@ -677,7 +677,7 @@ model TenantUser {
   // self-scoped /api/me/* controllers can derive the patient context from JWT
   // alone (no client-supplied patientId; can't impersonate other patients).
   patientId String?
-  joinedAt  DateTime?
+  joinedAt  DateTime  @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
