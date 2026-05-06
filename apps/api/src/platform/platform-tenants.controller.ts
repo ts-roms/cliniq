@@ -36,8 +36,8 @@ export class PlatformTenantsController {
 
   @Get()
   @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'status', required: false, enum: TenantStatus })
-  @ApiQuery({ name: 'plan', required: false, enum: Plan })
+  @ApiQuery({ name: 'status', required: false, enum: TenantStatus, enumName: 'TenantStatus' })
+  @ApiQuery({ name: 'plan', required: false, enum: Plan, enumName: 'Plan' })
   @ApiQuery({ name: 'cursor', required: false })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   list(

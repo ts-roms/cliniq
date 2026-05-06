@@ -9,12 +9,15 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Plan, TenantStatus, ClinicType } from '@org/db';
 
 export class UpdateTenantDto {
-  @ApiPropertyOptional({ enum: Plan })
+  // `enumName` is required when the enum comes from @org/db (Prisma 7).
+  // Without it, Swagger treats the enum object as a class and recurses into
+  // its values, throwing "circular dependency on property TRIAL/etc."
+  @ApiPropertyOptional({ enum: Plan, enumName: 'Plan' })
   @IsOptional()
   @IsEnum(Plan)
   plan?: Plan;
 
-  @ApiPropertyOptional({ enum: TenantStatus })
+  @ApiPropertyOptional({ enum: TenantStatus, enumName: 'TenantStatus' })
   @IsOptional()
   @IsEnum(TenantStatus)
   status?: TenantStatus;
@@ -42,12 +45,12 @@ export class CreateTenantDto {
   @Length(1, 200)
   name!: string;
 
-  @ApiPropertyOptional({ enum: ClinicType })
+  @ApiPropertyOptional({ enum: ClinicType, enumName: 'ClinicType' })
   @IsOptional()
   @IsEnum(ClinicType)
   type?: ClinicType;
 
-  @ApiPropertyOptional({ enum: Plan, default: Plan.STARTER })
+  @ApiPropertyOptional({ enum: Plan, enumName: 'Plan', default: Plan.STARTER })
   @IsOptional()
   @IsEnum(Plan)
   plan?: Plan;
