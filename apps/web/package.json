@@ -9,6 +9,7 @@
     "@hookform/resolvers": "*",
     "@org/api-client": "workspace:*",
     "@org/auth": "workspace:*",
+    "@org/shared-types": "workspace:*",
     "@org/ui": "workspace:*",
     "@tanstack/react-query": "*",
     "@tanstack/react-query-devtools": "*",

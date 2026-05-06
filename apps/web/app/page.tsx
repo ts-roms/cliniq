@@ -128,6 +128,9 @@ export default function LandingPage() {
         </Link>
         <nav className="flex items-center gap-2 sm:gap-3">
           <Button asChild variant="ghost" size="sm">
+            <Link href="/pricing">Pricing</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
             <Link href="/login">Sign in</Link>
           </Button>
           <AuthAwareCta className="h-9 px-4" />

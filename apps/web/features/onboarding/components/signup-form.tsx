@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, PasswordInput } from '@org/ui';
+import { ALL_PLANS, PLAN_META, type Plan } from '@org/shared-types';
 import { FormField } from '@/shared/components/forms/form-field';
 import {
   clinicStepSchema,
@@ -16,36 +17,89 @@ import { useSignup } from '../hooks/use-signup';
 
 type Step = 'clinic' | 'owner';
 
+function planFromQuery(value: string | null): Plan | null {
+  if (!value) return null;
+  return (ALL_PLANS as readonly string[]).includes(value) ? (value as Plan) : null;
+}
+
 export function SignupForm() {
   const router = useRouter();
+  const search = useSearchParams();
+  const initialPlan = planFromQuery(search?.get('plan') ?? null);
+
   const [step, setStep] = useState<Step>('clinic');
   const [clinic, setClinic] = useState<ClinicStepInput | null>(null);
+  const [plan, setPlan] = useState<Plan>(initialPlan ?? 'STARTER');
 
   const signup = useSignup({ onSuccess: () => router.push('/patients') });
 
-  return step === 'clinic' || !clinic ? (
-    <ClinicStep
-      defaultValues={clinic ?? undefined}
-      onNext={(values) => {
-        setClinic(values);
-        setStep('owner');
-      }}
-    />
-  ) : (
-    <OwnerStep
-      onBack={() => setStep('clinic')}
-      submitting={signup.isPending}
-      error={signup.error ? (signup.error as Error).message : null}
-      onSubmit={(owner) =>
-        signup.mutate({
-          clinicName: clinic.clinicName,
-          slug: clinic.slug,
-          ownerName: owner.ownerName,
-          ownerEmail: owner.ownerEmail,
-          password: owner.password,
-        })
-      }
-    />
+  return (
+    <>
+      <SelectedPlanPill plan={plan} onChange={setPlan} />
+      {step === 'clinic' || !clinic ? (
+        <ClinicStep
+          defaultValues={clinic ?? undefined}
+          onNext={(values) => {
+            setClinic(values);
+            setStep('owner');
+          }}
+        />
+      ) : (
+        <OwnerStep
+          onBack={() => setStep('clinic')}
+          submitting={signup.isPending}
+          error={signup.error ? (signup.error as Error).message : null}
+          onSubmit={(owner) =>
+            signup.mutate({
+              clinicName: clinic.clinicName,
+              slug: clinic.slug,
+              ownerName: owner.ownerName,
+              ownerEmail: owner.ownerEmail,
+              password: owner.password,
+              plan,
+            })
+          }
+        />
+      )}
+    </>
+  );
+}
+
+function SelectedPlanPill({
+  plan,
+  onChange,
+}: {
+  plan: Plan;
+  onChange: (p: Plan) => void;
+}) {
+  const meta = PLAN_META[plan];
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            Selected plan
+          </p>
+          <p className="text-sm font-medium">{meta.label}</p>
+          <p className="text-xs text-muted-foreground">{meta.tagline}</p>
+        </div>
+        <select
+          value={plan}
+          onChange={(e) => onChange(e.target.value as Plan)}
+          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+          aria-label="Change plan"
+        >
+          {ALL_PLANS.map((id) => (
+            <option key={id} value={id}>
+              {PLAN_META[id].label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Free 30-day trial. Switch tiers any time from the platform console.
+      </p>
+    </div>
   );
 }
 

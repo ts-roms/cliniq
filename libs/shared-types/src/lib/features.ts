@@ -82,13 +82,20 @@ export function maxLocationsForPlan(plan: Plan): number {
 }
 
 // Human-readable plan metadata for the platform admin UI + marketing pages.
-// Pricing is illustrative — wire to the real billing source-of-truth later.
+// Pricing values are placeholders — wire to the real billing source-of-truth
+// (Stripe/PayMongo/Maya) later. Stored in minor units (centavos for PHP)
+// so we can do tax math without floats.
 export interface PlanMeta {
   id: Plan;
   label: string;
   tagline: string;
   features: Feature[];
   maxLocations: number;
+  /** Monthly price in minor units (centavos). null = "Talk to us / custom". */
+  priceMonthly: number | null;
+  currency: string;
+  highlight?: boolean;
+  cta?: string;
 }
 
 export const PLAN_META: Record<Plan, PlanMeta> = {
@@ -98,6 +105,9 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     tagline: 'Solo practitioners and single-location clinics.',
     features: [...STARTER_FEATURES],
     maxLocations: 1,
+    priceMonthly: 149900, // ₱1,499 / month — placeholder
+    currency: 'PHP',
+    cta: 'Start free trial',
   },
   PRO: {
     id: 'PRO',
@@ -105,6 +115,10 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     tagline: 'Growing clinics with telemedicine, labs, and HMO billing.',
     features: [...PRO_FEATURES],
     maxLocations: 3,
+    priceMonthly: 499900, // ₱4,999 / month — placeholder
+    currency: 'PHP',
+    highlight: true,
+    cta: 'Start free trial',
   },
   PREMIUM: {
     id: 'PREMIUM',
@@ -112,7 +126,23 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     tagline: 'Multi-location groups with full AI suite, integrations, and custom retention.',
     features: [...PREMIUM_FEATURES],
     maxLocations: Number.POSITIVE_INFINITY,
+    priceMonthly: 1499900, // ₱14,999 / month — placeholder
+    currency: 'PHP',
+    cta: 'Start free trial',
   },
 };
+
+/** Format a minor-units price as "₱4,999" (or null → "Custom"). */
+export function formatPlanPrice(meta: PlanMeta): string {
+  if (meta.priceMonthly === null) return 'Custom';
+  const major = meta.priceMonthly / 100;
+  const formatter = new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: meta.currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+  return formatter.format(major);
+}
 
 export const ALL_PLANS: Plan[] = ['STARTER', 'PRO', 'PREMIUM'];

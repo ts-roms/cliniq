@@ -651,6 +651,9 @@ importers:
       '@org/auth':
         specifier: workspace:*
         version: link:../../libs/auth
+      '@org/shared-types':
+        specifier: workspace:*
+        version: link:../../libs/shared-types
       '@org/ui':
         specifier: workspace:*
         version: link:../../libs/ui

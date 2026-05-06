@@ -12,13 +12,16 @@ import type { SignupInput } from '../schemas/signup';
 export function useSignup(opts?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (input: SignupInput): Promise<Session> => {
-      // 1. Create the tenant + owner shell user (no password yet)
+      // 1. Create the tenant + owner shell user (no password yet).
+      //    `plan` is forwarded when the user picks one on the pricing page;
+      //    omitted = api uses Plan.STARTER default.
       const { data: tenant, error: tErr } = await tenantsControllerCreate({
         body: {
           slug: input.slug,
           name: input.clinicName,
           ownerEmail: input.ownerEmail,
           ownerName: input.ownerName,
+          ...(input.plan ? { plan: input.plan as 'STARTER' | 'PRO' | 'PREMIUM' } : {}),
         },
       });
       if (tErr || !tenant) {

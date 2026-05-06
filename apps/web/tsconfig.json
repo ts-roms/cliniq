@@ -64,6 +64,9 @@
       "path": "../../libs/api-client"
     },
     {
+      "path": "../../libs/shared-types"
+    },
+    {
       "path": "../../libs/ui"
     }
   ]
