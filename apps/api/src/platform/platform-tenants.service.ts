@@ -217,6 +217,7 @@ export class PlatformTenantsService {
               userId: existingUser.id,
               role: DbRole.OWNER,
               status: MemberStatus.ACTIVE,
+              joinedAt: new Date(),
             },
           });
         } else {
@@ -234,6 +235,7 @@ export class PlatformTenantsService {
               userId: owner.id,
               role: DbRole.OWNER,
               status: MemberStatus.ACTIVE,
+              joinedAt: new Date(),
             },
           });
         }

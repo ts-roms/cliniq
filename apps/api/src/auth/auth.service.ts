@@ -63,7 +63,9 @@ export class AuthService {
           userId: user.id,
           role,
           status: MemberStatus.ACTIVE,
-          joinedAt: memberCount === 0 ? new Date() : undefined,
+          // joinedAt is non-null in the DB (older migration); always populate
+          // even though the Prisma schema marks it optional.
+          joinedAt: new Date(),
         },
       });
       return { user, tenantUser };
@@ -160,6 +162,7 @@ export class AuthService {
           patientId: patient.id,
           role: DbRole.PATIENT,
           status: MemberStatus.ACTIVE,
+          joinedAt: new Date(),
         },
       });
       return { user, tenantUser, patientId: patient.id };
