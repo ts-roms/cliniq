@@ -13,7 +13,14 @@ import {
   TenantStatus,
 } from '@org/db';
 import { hashPassword } from '@org/auth';
-import { ALL_PLANS, PLAN_META, type Plan as PlanT } from '@org/shared-types';
+import {
+  ALL_LAB_PLANS,
+  ALL_PLANS,
+  LAB_PLAN_META,
+  PLAN_META,
+  type LabPlan as LabPlanT,
+  type Plan as PlanT,
+} from '@org/shared-types';
 import type { CreateTenantDto, UpdateTenantDto } from './dto/update-tenant.dto.js';
 
 export interface ListTenantsQuery {
@@ -108,12 +115,19 @@ export class PlatformTenantsService {
       }),
     );
     if (!t || t.deletedAt) throw new NotFoundException('tenant not found');
+    // Resolve the right plan meta based on tenant kind. Clinic tenants have
+    // `plan`; lab tenants have `labPlan`. Either may legitimately be null
+    // during a transitional state (e.g. cancelled subscription).
+    const planMeta =
+      t.kind === 'LAB'
+        ? (t.labPlan ? LAB_PLAN_META[t.labPlan as LabPlanT] : null)
+        : (t.plan ? PLAN_META[t.plan as PlanT] : null);
     return {
       ...t,
       userCount: t._count.users,
       locationCount: t._count.locations,
       patientCount: t._count.patients,
-      planMeta: PLAN_META[t.plan as PlanT],
+      planMeta,
     };
   }
 
@@ -255,7 +269,8 @@ export class PlatformTenantsService {
   /** Plan catalog for the platform admin UI (drop-down + tooltip metadata). */
   catalog() {
     return {
-      plans: ALL_PLANS.map((id) => PLAN_META[id]),
+      clinicPlans: ALL_PLANS.map((id) => PLAN_META[id]),
+      labPlans: ALL_LAB_PLANS.map((id) => LAB_PLAN_META[id]),
     };
   }
 }

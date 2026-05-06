@@ -13,15 +13,18 @@ export function useSignup(opts?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (input: SignupInput): Promise<Session> => {
       // 1. Create the tenant + owner shell user (no password yet).
-      //    `plan` is forwarded when the user picks one on the pricing page;
-      //    omitted = api uses Plan.STARTER default.
+      //    Forwards `kind` (CLINIC | LAB), and either `plan` or `labPlan`
+      //    depending on the audience the user came in through. Omitted =
+      //    api defaults to CLINIC + Plan.STARTER.
       const { data: tenant, error: tErr } = await tenantsControllerCreate({
         body: {
           slug: input.slug,
           name: input.clinicName,
           ownerEmail: input.ownerEmail,
           ownerName: input.ownerName,
-          ...(input.plan ? { plan: input.plan as 'STARTER' | 'PRO' | 'PREMIUM' } : {}),
+          ...(input.kind ? { kind: input.kind } : {}),
+          ...(input.plan ? { plan: input.plan } : {}),
+          ...(input.labPlan ? { labPlan: input.labPlan } : {}),
         },
       });
       if (tErr || !tenant) {

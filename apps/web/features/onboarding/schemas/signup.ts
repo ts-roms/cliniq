@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ALL_PLANS } from '@org/shared-types';
+import { ALL_LAB_PLANS, ALL_PLANS } from '@org/shared-types';
 
 export const clinicStepSchema = z.object({
   clinicName: z.string().min(2, 'clinic name required').max(120),
@@ -30,7 +30,9 @@ export const signupInputSchema = clinicStepSchema.merge(
     ownerName: z.string().min(2).max(120),
     ownerEmail: z.string().email(),
     password: z.string().min(8),
+    kind: z.enum(['CLINIC', 'LAB']).optional(),
     plan: z.enum(ALL_PLANS as [string, ...string[]]).optional(),
+    labPlan: z.enum(ALL_LAB_PLANS as [string, ...string[]]).optional(),
   }),
 );
 

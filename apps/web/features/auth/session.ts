@@ -13,6 +13,8 @@ export interface Session {
     id: string;
     email: string;
     tenantId: string;
+    /** Tenant discriminator — drives which UI shell (clinic vs lab) is shown. */
+    tenantKind?: 'CLINIC' | 'LAB';
     role: string;
     /** Set only for PATIENT role (portal accounts). */
     patientId?: string | null;

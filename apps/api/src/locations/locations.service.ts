@@ -32,12 +32,17 @@ export class LocationsService {
     // Plan cap. Looked up once per create — the tenant.plan is cheap to read
     // and we don't expect this path to be hot. Throws 402 (Payment Required)
     // so the client can render an upgrade CTA distinct from validation errors.
+    // Only CLINIC tenants have a `plan`; LAB tenants don't have location caps
+    // here (lab equivalent is multi-lab + delivery centers, separate flow).
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: user.tenantId },
-      select: { plan: true },
+      select: { kind: true, plan: true },
     });
     if (!tenant) throw new NotFoundException('tenant not found');
-    const cap = maxLocationsForPlan(tenant.plan as Plan);
+    const cap =
+      tenant.kind === 'CLINIC' && tenant.plan
+        ? maxLocationsForPlan(tenant.plan as Plan)
+        : Number.POSITIVE_INFINITY;
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       if (Number.isFinite(cap)) {

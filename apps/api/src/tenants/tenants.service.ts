@@ -1,5 +1,13 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService, Plan, Role, MemberStatus, TenantStatus } from '@org/db';
+import {
+  LabPlan,
+  MemberStatus,
+  Plan,
+  PrismaService,
+  Role,
+  TenantKind,
+  TenantStatus,
+} from '@org/db';
 import { hashPassword } from '@org/auth';
 import { CreateTenantDto } from './dto/create-tenant.dto.js';
 
@@ -21,20 +29,24 @@ export class TenantsService {
       ? await hashPassword(dto.ownerPassword)
       : null;
 
+    const kind = dto.kind ?? TenantKind.CLINIC;
     return this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           slug: dto.slug,
           name: dto.name,
-          plan: dto.plan ?? Plan.GOLD,
+          kind,
+          // Clinic tenants get a Plan; lab tenants get a LabPlan.
+          plan: kind === TenantKind.CLINIC ? (dto.plan ?? Plan.STARTER) : null,
+          labPlan: kind === TenantKind.LAB ? (dto.labPlan ?? LabPlan.LAB_BASIC) : null,
           status: TenantStatus.TRIAL,
           trialEndsAt: this.addDays(new Date(), 30),
         },
       });
 
-      // No password = split signup flow: caller will register the owner via
-      // /api/auth/register, which creates the User + TenantUser. Skip owner
-      // provisioning here so we don't conflict on the unique email.
+      // No password = new split signup flow: caller will register the owner
+      // via /api/auth/register, which creates the User + TenantUser. Skip
+      // owner provisioning here so we don't conflict on the unique email.
       if (!passwordHash) {
         this.logger.log(`Created tenant ${tenant.slug} (${tenant.id}) without owner — pending /auth/register`);
         return tenant;

@@ -1,5 +1,5 @@
 import { IsEmail, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
-import { Plan } from '@org/db';
+import { LabPlan, Plan, TenantKind } from '@org/db';
 
 export class CreateTenantDto {
   @IsString()
@@ -23,7 +23,7 @@ export class CreateTenantDto {
   @MaxLength(120)
   ownerName!: string;
 
-  // Optional. The split signup flow creates the tenant first (no password)
+  // Optional. The new signup flow creates the tenant first (no password)
   // and registers the owner via /api/auth/register in a follow-up call.
   // Legacy "everything in one shot" callers can still pass it.
   @IsOptional()
@@ -33,6 +33,14 @@ export class CreateTenantDto {
   ownerPassword?: string;
 
   @IsOptional()
+  @IsEnum(TenantKind)
+  kind?: TenantKind;
+
+  @IsOptional()
   @IsEnum(Plan)
   plan?: Plan;
+
+  @IsOptional()
+  @IsEnum(LabPlan)
+  labPlan?: LabPlan;
 }

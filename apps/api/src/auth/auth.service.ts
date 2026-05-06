@@ -52,9 +52,9 @@ export class AuthService {
       const user = await tx.user.create({
         data: { email: dto.email, name: dto.name, passwordHash },
       });
-      // First registrant on a fresh tenant becomes OWNER so the split signup
-      // flow leaves someone with promotion rights. Subsequent registrations
-      // default to RECEPTIONIST and need an OWNER/ADMIN to promote them.
+      // First user of a fresh tenant becomes OWNER so the signup flow has
+      // someone with promotion rights. Subsequent registrations default to
+      // RECEPTIONIST and rely on an OWNER/ADMIN to promote them.
       const memberCount = await tx.tenantUser.count({ where: { tenantId: tenant.id } });
       const role = memberCount === 0 ? DbRole.OWNER : DbRole.RECEPTIONIST;
       const tenantUser = await tx.tenantUser.create({
@@ -214,22 +214,30 @@ export class AuthService {
     const accessTtl = this.config.get<string>('JWT_EXPIRES_IN') ?? '15m';
     const refreshTtl = this.config.get<string>('REFRESH_TOKEN_EXPIRES_IN') ?? '7d';
 
+    // Snapshot tenant kind into the token so the web client knows which UI
+    // shell to render without an extra round-trip.
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { kind: true },
+    });
+    const tk = tenant?.kind === 'LAB' ? 'LAB' : 'CLINIC';
+
     const access = await signJwt(
-      { sub: userId, tid: tenantId, role, email, ...(patientId ? { pid: patientId } : {}) },
+      { sub: userId, tid: tenantId, role, email, tk, ...(patientId ? { pid: patientId } : {}) },
       { secret, expiresIn: accessTtl },
     );
     const refresh = await signJwt(
-      { sub: userId, tid: tenantId, role, ...(patientId ? { pid: patientId } : {}) },
+      { sub: userId, tid: tenantId, role, tk, ...(patientId ? { pid: patientId } : {}) },
       { secret, expiresIn: refreshTtl, audience: JWT_AUDIENCES.TENANT_REFRESH },
     );
 
-    this.logger.log(`Issued tokens for user ${userId} in tenant ${tenantId}`);
+    this.logger.log(`Issued tokens for user ${userId} in tenant ${tenantId} (kind=${tk})`);
     return {
       accessToken: access,
       refreshToken: refresh,
       tokenType: 'Bearer',
       expiresIn: accessTtl,
-      user: { id: userId, email, tenantId, role, patientId: patientId ?? null },
+      user: { id: userId, email, tenantId, tenantKind: tk, role, patientId: patientId ?? null },
     };
   }
 }

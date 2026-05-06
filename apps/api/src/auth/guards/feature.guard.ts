@@ -8,7 +8,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '@org/db';
-import { planHasFeature, type Feature, type Plan } from '@org/shared-types';
+import {
+  labPlanHasFeature,
+  planHasFeature,
+  type Feature,
+  type LabPlan,
+  type Plan,
+} from '@org/shared-types';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { IS_PLATFORM_KEY } from '../../platform/decorators/platform-auth.decorator.js';
 import { REQUIRES_FEATURE_KEY } from '../decorators/requires-feature.decorator.js';
@@ -58,20 +64,41 @@ export class FeatureGuard implements CanActivate {
 
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: req.user.tenantId },
-      select: { plan: true },
+      select: { kind: true, plan: true, labPlan: true },
     });
     if (!tenant) throw new UnauthorizedException('tenant not found');
 
-    const plan = tenant.plan as Plan;
-    const missing = required.filter((f) => !planHasFeature(plan, f));
+    // Pick the right plan ladder based on tenant kind. Lab features are only
+    // satisfied by lab plans; clinic features by clinic plans.
+    const isLab = tenant.kind === 'LAB';
+    const activePlan: Plan | LabPlan | null = isLab
+      ? (tenant.labPlan as LabPlan | null)
+      : (tenant.plan as Plan | null);
+    if (!activePlan) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.PAYMENT_REQUIRED,
+          message: `tenant has no active ${isLab ? 'lab' : 'clinic'} plan`,
+          requiredFeatures: required,
+          missingFeatures: required,
+          currentPlan: null,
+        },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
+
+    const has = isLab
+      ? (f: Feature) => labPlanHasFeature(activePlan as LabPlan, f)
+      : (f: Feature) => planHasFeature(activePlan as Plan, f);
+    const missing = required.filter((f) => !has(f));
     if (missing.length > 0) {
       throw new HttpException(
         {
           statusCode: HttpStatus.PAYMENT_REQUIRED,
-          message: `plan ${plan} does not include: ${missing.join(', ')}`,
+          message: `plan ${activePlan} does not include: ${missing.join(', ')}`,
           requiredFeatures: required,
           missingFeatures: missing,
-          currentPlan: plan,
+          currentPlan: activePlan,
         },
         HttpStatus.PAYMENT_REQUIRED,
       );

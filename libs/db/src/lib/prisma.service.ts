@@ -84,6 +84,23 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get icdCode() { return this.client.icdCode; }
   get location() { return this.client.location; }
   get platformAdmin() { return this.client.platformAdmin; }
+  get labClinicLink() { return this.client.labClinicLink; }
+  get labProductCategory() { return this.client.labProductCategory; }
+  get labProduct() { return this.client.labProduct; }
+  get labCase() { return this.client.labCase; }
+  get labCaseFile() { return this.client.labCaseFile; }
+  get labCasePhaseEvent() { return this.client.labCasePhaseEvent; }
+  get labCaseNote() { return this.client.labCaseNote; }
+  get labCaseMessage() { return this.client.labCaseMessage; }
+  get labCaseTag() { return this.client.labCaseTag; }
+  get labCaseTagAssignment() { return this.client.labCaseTagAssignment; }
+  get labShipment() { return this.client.labShipment; }
+  get labMaterial() { return this.client.labMaterial; }
+  get labMaterialLot() { return this.client.labMaterialLot; }
+  get labMaterialUsage() { return this.client.labMaterialUsage; }
+  get labConformityDocTemplate() { return this.client.labConformityDocTemplate; }
+  get labConsentTemplate() { return this.client.labConsentTemplate; }
+  get labConsentSignature() { return this.client.labConsentSignature; }
 
   $transaction<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T>;
   $transaction<T>(promises: Array<Promise<T>>): Promise<T[]>;

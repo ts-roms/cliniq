@@ -22,9 +22,17 @@ model Tenant {
   id          String       @id @default(cuid())
   slug        String       @unique
   name        String
+  // Top-level discriminator. CLINIC tenants use `type`/`plan`; LAB tenants
+  // use `labSpecialty`/`labPlan`. Each side ignores the other's fields.
+  // See docs/lab-module-plan.md for the rationale.
+  kind        TenantKind   @default(CLINIC)
   type        ClinicType   @default(GENERAL)
+  labSpecialty LabSpecialty?
   status      TenantStatus @default(TRIAL)
-  plan        Plan         @default(STARTER)
+  // Clinic-side subscription. Null on LAB tenants.
+  plan        Plan?        @default(STARTER)
+  // Lab-side subscription. Null on CLINIC tenants.
+  labPlan     LabPlan?
   country     String       @default("PH")
   timezone    String       @default("Asia/Manila")
   currency    String       @default("PHP")
@@ -42,8 +50,530 @@ model Tenant {
   patients  Patient[]
   locations Location[]
 
+  // Lab-side (kind=LAB) connections to clinics that send orders here.
+  labLinks    LabClinicLink[] @relation("LabLinks")
+  // Clinic-side (kind=CLINIC) connections to labs they place orders with.
+  clinicLinks LabClinicLink[] @relation("ClinicLinks")
+  // Inverse relations to LabCase (dental lab manufacturing cases).
+  labCases     LabCase[] @relation("LabCases")
+  clinicCases  LabCase[] @relation("ClinicCases")
+
   @@index([slug])
+  @@index([kind])
   @@map("tenants")
+}
+
+// ──────────────────────────────────────────────
+// LAB ↔ CLINIC LINKING
+// ──────────────────────────────────────────────
+
+enum LabClinicLinkStatus {
+  PENDING    // lab invited the clinic; awaiting clinic response
+  ACTIVE     // both sides connected; orders can flow
+  REJECTED   // clinic declined
+  REVOKED    // lab cancelled the invitation
+  SUSPENDED  // temporarily paused by either side
+}
+
+// Many-to-many between LAB tenants and CLINIC tenants. A lab can have many
+// clinic customers; a clinic can place orders with many labs. The pair is
+// unique. See docs/lab-module-plan.md for the rationale on
+// "free access for associated clinics" — once status=ACTIVE, the linked
+// clinic gets the lab-ordering UI even without a paid clinic plan.
+model LabClinicLink {
+  id              String              @id @default(cuid())
+  labTenantId     String
+  clinicTenantId  String
+  status          LabClinicLinkStatus @default(PENDING)
+  // User on the lab side who initiated the invitation.
+  invitedByUserId String
+  invitedAt       DateTime            @default(now())
+  // When the clinic accepted/rejected, or the lab revoked.
+  respondedAt     DateTime?
+  // Optional message attached to the invitation.
+  inviteNote      String?
+  // Future: per-clinic price overrides. Null = use lab's default rate card.
+  // rateProfileId String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  lab    Tenant @relation("LabLinks",    fields: [labTenantId],    references: [id], onDelete: Cascade)
+  clinic Tenant @relation("ClinicLinks", fields: [clinicTenantId], references: [id], onDelete: Cascade)
+
+  @@unique([labTenantId, clinicTenantId])
+  @@index([labTenantId, status])
+  @@index([clinicTenantId, status])
+  @@map("lab_clinic_links")
+}
+
+// ──────────────────────────────────────────────
+// LAB PRODUCT CATALOG
+// ──────────────────────────────────────────────
+
+// A category/folder in the lab's product catalog. Self-referential for
+// nesting (e.g. "Crowns > Zirconia > Anatomical").
+model LabProductCategory {
+  id          String  @id @default(cuid())
+  tenantId    String  // owning lab
+  parentId    String?
+  name        String
+  description String?
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  parent   LabProductCategory?  @relation("LabProductCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children LabProductCategory[] @relation("LabProductCategoryHierarchy")
+  products LabProduct[]
+
+  @@index([tenantId, parentId])
+  @@map("lab_product_categories")
+}
+
+enum LabProductPricingMode {
+  // Lab sets a fixed price visible to all customers. Default.
+  FIXED
+  // Lab sets a price per rate profile (Phase 4 feature). Today this behaves
+  // like FIXED with a `defaultPrice` until rate profiles ship.
+  PER_RATE_PROFILE
+  // No price on the product itself; lab adjusts price when accepting the order.
+  ADJUST_ON_ORDER
+  // Variable price based on customer's tier. Phase 4.
+  VARIABLE_PER_TIER
+}
+
+// A product (e.g. "Zirconia crown - anatomical"). Each product has an
+// optional dynamic form schema captured under `formSchema` and renders
+// inside the order request UI.
+model LabProduct {
+  id           String                 @id @default(cuid())
+  tenantId     String                 // owning lab
+  categoryId   String?
+  sku          String?                // optional internal SKU
+  name         String
+  description  String?
+  // Default price (centavos / minor units). When `pricingMode` is
+  // ADJUST_ON_ORDER, this is null and the lab fills in on order intake.
+  defaultPrice Int?
+  currency     String                 @default("PHP")
+  pricingMode  LabProductPricingMode  @default(FIXED)
+  // Free-form schema for the dynamic form rendered to the clinic on order.
+  // Validated in the service layer; structure is something like:
+  // { fields: [{ key, label, type, required, options?: [...] }, ...] }
+  formSchema   Json?
+  // Deliverable phases (e.g. ["wax-up", "milling", "glazing", "qc"]).
+  // Phase 2 ships the manufacturing tracker that consumes this.
+  phases       String[]               @default([])
+  // Customer-facing tags / filters.
+  tags         String[]               @default([])
+  isActive     Boolean                @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  category            LabProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  cases               LabCase[]
+  conformityTemplates LabConformityDocTemplate[]
+  consentTemplates    LabConsentTemplate[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, isActive])
+  @@map("lab_products")
+}
+
+// ──────────────────────────────────────────────
+// LAB ORDERS / CASES
+// ──────────────────────────────────────────────
+
+enum LabCaseUrgency {
+  STANDARD
+  URGENT
+}
+
+enum LabCaseStatus {
+  DRAFT             // clinic is composing
+  SUBMITTED         // submitted to lab, awaiting review
+  IN_PROGRESS       // lab accepted, manufacturing
+  AWAITING_PICKUP   // ready for clinic to collect
+  SHIPPED           // shipped to clinic
+  DELIVERED         // received by clinic
+  CANCELLED         // cancelled by either side before completion
+  REJECTED          // lab rejected (e.g. files unusable)
+}
+
+enum LabCaseFileStatus {
+  PENDING  // S3 PUT not yet confirmed
+  READY    // confirmed in S3
+}
+
+// A dental-lab case placed by a CLINIC tenant against a LAB tenant.
+// (Distinct from the clinical `LabOrder` model used for blood work etc. —
+// the dental lab calls these "cases".) Both sides see and mutate the row
+// per the transition matrix in apps/api/src/lab/orders/lab-orders.service.ts.
+model LabCase {
+  id              String         @id @default(cuid())
+  // Sequential per-lab reference number (computed at submit time).
+  refNumber       Int?
+  labTenantId     String
+  clinicTenantId  String
+  productId       String
+  // Snapshot of the price at submit time (centavos). Null when product uses
+  // ADJUST_ON_ORDER and the lab hasn't filled in yet.
+  unitPrice       Int?
+  currency        String         @default("PHP")
+  status          LabCaseStatus  @default(DRAFT)
+  urgency         LabCaseUrgency @default(STANDARD)
+  dueAt           DateTime?
+  // Snapshot of the dynamic form data filled in by the clinic.
+  formData        Json?
+  // Free-text labels from the clinic — we deliberately don't FK to Patient
+  // here to avoid cross-tenant joins. The clinic owns its patient mapping.
+  patientLabel    String?
+  doctorLabel     String?
+  deliveryCenter  String?
+  notes           String?
+
+  createdByUserId  String
+  acceptedByUserId String?
+
+  submittedAt    DateTime?
+  acceptedAt     DateTime?
+  completedAt    DateTime?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  cancelledAt    DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  product LabProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  lab     Tenant     @relation("LabCases",    fields: [labTenantId],    references: [id], onDelete: Cascade)
+  clinic  Tenant     @relation("ClinicCases", fields: [clinicTenantId], references: [id], onDelete: Cascade)
+
+  files          LabCaseFile[]
+  phaseEvents    LabCasePhaseEvent[]
+  internalNotes  LabCaseNote[]
+  messages       LabCaseMessage[]
+  tagAssignments    LabCaseTagAssignment[]
+  shipment          LabShipment?
+  materialUsages    LabMaterialUsage[]
+  consentSignatures LabConsentSignature[]
+
+  @@unique([labTenantId, refNumber])
+  @@index([labTenantId, status])
+  @@index([clinicTenantId, status])
+  @@index([labTenantId, createdAt])
+  @@map("lab_cases")
+}
+
+// File attachment on a LabCase. Stored in S3 via presigned upload; this row
+// is the durable index. Visible to both the lab and the clinic on the
+// owning case. The uploader's tenant (lab or clinic) is tracked.
+model LabCaseFile {
+  id                 String             @id @default(cuid())
+  caseId             String
+  s3Key              String             @unique
+  filename           String
+  mimeType           String
+  sizeBytes          Int
+  uploadedByUserId   String
+  uploadedByTenantId String
+  status             LabCaseFileStatus  @default(PENDING)
+
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+  deletedAt   DateTime?
+
+  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("lab_case_files")
+}
+
+// ──────────────────────────────────────────────
+// LAB MATERIALS / LOT TRACKING (Phase 3)
+// ──────────────────────────────────────────────
+
+// A material the lab consumes — e.g. zirconia disc, alloy ingot, ceramic.
+// Tenant-owned, free-form category for the lab's own taxonomy.
+model LabMaterial {
+  id             String  @id @default(cuid())
+  tenantId       String
+  sku            String?
+  name           String
+  category       String?
+  unitOfMeasure  String  @default("g")   // g, ml, pcs, cc, …
+  description    String?
+  defaultSupplier String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  lots LabMaterialLot[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, name])
+  @@map("lab_materials")
+}
+
+enum LabMaterialLotStatus {
+  ACTIVE     // currently usable
+  WAREHOUSE  // received, not yet opened
+  FINISHED   // depleted
+  DEFECTIVE  // recalled / rejected
+  EXPIRED    // past expiration
+}
+
+// LOT-level traceability. Each receipt of material from a supplier is a row;
+// the lab tracks remaining quantity, supplier, manufacturer, and lifecycle
+// status. Consumed quantity is computed from LabMaterialUsage rows.
+model LabMaterialLot {
+  id             String               @id @default(cuid())
+  materialId     String
+  lotNumber      String
+  manufacturer   String?
+  supplier       String?
+  // Initial quantity received, in the material's UOM.
+  initialQty     Float
+  // Cached "remaining" — kept up to date by service code on usage write.
+  // Floats are fine for centigrams; switch to Decimal if precision matters.
+  remainingQty   Float
+  unitPriceCents Int?
+  receivedAt     DateTime  @default(now())
+  expiresAt      DateTime?
+  status         LabMaterialLotStatus @default(ACTIVE)
+  notes          String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  material LabMaterial          @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  usages   LabMaterialUsage[]
+
+  @@unique([materialId, lotNumber])
+  @@index([materialId, status])
+  @@index([expiresAt])
+  @@map("lab_material_lots")
+}
+
+// Material used on a case. Decrements the LOT's remainingQty in the same
+// transaction. caseId is denormalized (also reachable via the case) for
+// fast per-case rollups.
+model LabMaterialUsage {
+  id             String   @id @default(cuid())
+  caseId         String
+  lotId          String
+  qty            Float
+  usedAt         DateTime @default(now())
+  usedByUserId   String
+
+  case LabCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  lot  LabMaterialLot @relation(fields: [lotId],  references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([lotId])
+  @@map("lab_material_usages")
+}
+
+// ──────────────────────────────────────────────
+// LAB COMPLIANCE — CONFORMITY + CONSENT (Phase 3)
+// ──────────────────────────────────────────────
+
+// Customizable conformity declaration template — typically generated as
+// a PDF when the case ships, attesting the manufacturing complies with
+// applicable regs (PH FDA / ISO 13485 / etc.). Body is markdown with
+// placeholders like {{caseRef}}, {{patient}}, {{lotNumbers}}.
+model LabConformityDocTemplate {
+  id        String   @id @default(cuid())
+  tenantId  String
+  // Optional: attach the template to a specific product. Null = generic.
+  productId String?
+  name      String
+  body      String   // markdown with {{placeholders}}
+  isDefault Boolean  @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  product LabProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, productId])
+  @@map("lab_conformity_doc_templates")
+}
+
+// Consent template — typically signed by the patient or the clinic on the
+// patient's behalf. Same placeholder convention as the conformity template.
+model LabConsentTemplate {
+  id        String   @id @default(cuid())
+  tenantId  String
+  productId String?
+  name      String
+  body      String
+  isDefault Boolean  @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  product   LabProduct?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  signatures LabConsentSignature[]
+
+  @@index([tenantId, productId])
+  @@map("lab_consent_templates")
+}
+
+// A captured signature on a specific case + template. The image lives in
+// S3 (signatureFileKey is the object key); IP + timestamp anchor it to a
+// session. The clinic captures this on the patient's behalf and signs.
+model LabConsentSignature {
+  id              String   @id @default(cuid())
+  caseId          String
+  templateId      String
+  signedByName    String
+  signedByRole    String?  // e.g. "patient", "guardian", "doctor"
+  // S3 object key for the signature image (PNG, transparent bg).
+  signatureFileKey String
+  ipAddress       String?
+  userAgent       String?
+  signedAt        DateTime @default(now())
+  // Snapshot the template body at sign time so future template edits
+  // don't retroactively change what was agreed to.
+  bodySnapshot    String
+
+  case     LabCase            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  template LabConsentTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([templateId])
+  @@map("lab_consent_signatures")
+}
+
+// Lab-only note attached to a case. Not visible to the clinic — RLS
+// restricts both reads and writes to the case's labTenantId. Soft-deleted
+// for an audit trail.
+model LabCaseNote {
+  id           String    @id @default(cuid())
+  caseId       String
+  authorUserId String
+  body         String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, createdAt])
+  @@map("lab_case_notes")
+}
+
+// Per-case chat between the lab and the clinic. Both sides can read and
+// post. `senderTenantId` records which side wrote the message — the UI
+// uses it to align bubbles left/right.
+model LabCaseMessage {
+  id             String    @id @default(cuid())
+  caseId         String
+  senderUserId   String
+  senderTenantId String
+  body           String
+  createdAt      DateTime  @default(now())
+  // Soft-delete: senders can retract their own messages. Hard-delete reserved
+  // for compliance/DSR pipelines.
+  deletedAt      DateTime?
+
+  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, createdAt])
+  @@map("lab_case_messages")
+}
+
+// Lab-owned tag definition. Reusable across cases. Color is a hex string
+// without the leading `#` (e.g. "f59e0b") for compact storage.
+model LabCaseTag {
+  id        String    @id @default(cuid())
+  tenantId  String    // owning lab
+  name      String
+  color     String    @default("64748b") // slate-500
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  assignments LabCaseTagAssignment[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("lab_case_tags")
+}
+
+// One shipment per case (1:1). Lab creates when marking SHIPPED; clinic
+// (or lab) marks delivered. Carrier + tracking number are free-form so we
+// can capture LBC, J&T, JRS, in-house couriers, etc. without a vocabulary.
+model LabShipment {
+  id             String    @id @default(cuid())
+  caseId         String    @unique
+  carrier        String?
+  trackingNumber String?
+  shippedAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+  notes          String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("lab_shipments")
+}
+
+// M:N between LabCase and LabCaseTag.
+model LabCaseTagAssignment {
+  caseId         String
+  tagId          String
+  taggedByUserId String
+  taggedAt       DateTime @default(now())
+
+  case LabCase    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  tag  LabCaseTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([caseId, tagId])
+  @@index([tagId])
+  @@map("lab_case_tag_assignments")
+}
+
+// Audit trail of phase transitions per case. The product carries a
+// `phases: string[]` (e.g. ["design","milling","glaze","qc"]); a case
+// progresses through those phases while in IN_PROGRESS. The current phase
+// is the row with `exitedAt = null`. Past phases are kept for the
+// manufacturing log and stats.
+model LabCasePhaseEvent {
+  id              String    @id @default(cuid())
+  caseId          String
+  phase           String    // matches one entry from LabProduct.phases
+  enteredAt       DateTime  @default(now())
+  enteredByUserId String
+  exitedAt        DateTime?
+  notes           String?
+
+  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, enteredAt])
+  // Only one open phase at a time per case is enforced via a partial
+  // unique index in the migration (Prisma can't model partial uniques).
+  @@map("lab_case_phase_events")
+}
+
+enum TenantKind {
+  CLINIC
+  LAB
 }
 
 enum ClinicType {
@@ -57,6 +587,18 @@ enum ClinicType {
   OTHER
 }
 
+// Lab specialties — used when Tenant.kind = LAB. Loosely modeled on the
+// dental-lab market segments (single-craft labs vs. full-service).
+enum LabSpecialty {
+  CROWN_BRIDGE
+  ORTHODONTICS
+  IMPLANTOLOGY
+  REMOVABLE_PROSTHESIS
+  CLEAR_ALIGNERS
+  FULL_SERVICE
+  OTHER
+}
+
 enum TenantStatus {
   TRIAL
   ACTIVE
@@ -65,12 +607,21 @@ enum TenantStatus {
   CANCELLED
 }
 
-// Subscription tiers. Feature gating + multi-location caps live in
-// libs/shared-types/src/lib/features.ts (PLAN_FEATURES, MAX_LOCATIONS_PER_PLAN).
+// Clinic-side subscription tiers. Feature gating + multi-location caps live
+// in libs/shared-types/src/lib/features.ts (PLAN_FEATURES, MAX_LOCATIONS_PER_PLAN).
 enum Plan {
   STARTER
   PRO
   PREMIUM
+}
+
+// Lab-side subscription tiers. Distinct ladder so we can price labs
+// independently of clinics. Feature mapping in
+// libs/shared-types/src/lib/features.ts (LAB_PLAN_FEATURES, LAB_PLAN_META).
+enum LabPlan {
+  LAB_BASIC
+  LAB_STANDARD
+  LAB_PREMIUM
 }
 
 // ──────────────────────────────────────────────

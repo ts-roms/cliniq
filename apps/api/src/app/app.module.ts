@@ -43,6 +43,7 @@ import { CalendarsModule } from '../calendars/calendars.module.js';
 import { WebhooksModule } from '../webhooks/webhooks.module.js';
 import { MeModule } from '../me/me.module.js';
 import { PlatformModule } from '../platform/platform.module.js';
+import { LabModule } from '../lab/lab.module.js';
 import { TenantContextMiddleware } from '../common/tenant-context.middleware.js';
 
 @Module({
@@ -85,6 +86,7 @@ import { TenantContextMiddleware } from '../common/tenant-context.middleware.js'
     MeModule,
     HealthModule,
     PlatformModule,
+    LabModule,
   ],
   controllers: [AppController],
   providers: [AppService],

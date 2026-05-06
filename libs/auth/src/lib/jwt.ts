@@ -21,6 +21,11 @@ export interface ClinIqJwtPayload extends JosePayload {
   // Self-scoped controllers (/api/me/*) trust this and ignore client-supplied
   // patientId, so a portal user cannot access another patient's data.
   pid?: string;
+  // Tenant kind discriminator — copied from Tenant.kind at token issue time.
+  // Used by the web client to decide which UI shell (clinic vs. lab) to render.
+  // Tenants don't change kind in practice, so JWT staleness on this field
+  // isn't an operational concern.
+  tk?: 'CLINIC' | 'LAB';
 }
 
 export interface PlatformJwtPayload extends JosePayload {
