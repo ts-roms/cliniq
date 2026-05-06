@@ -38,7 +38,10 @@ RUN pnpm exec nx sync \
 # standalone bundle. We can shrink this later by switching the bundler to
 # include node_modules.
 FROM node:22-alpine AS runner
-RUN apk add --no-cache wget tini openssl \
+# corepack is enabled so Railway's preDeployCommand can run
+# `pnpm exec prisma migrate deploy` against the bundled libs/db schema.
+RUN corepack enable \
+ && apk add --no-cache wget tini openssl \
  && addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001 -G nodejs
 WORKDIR /workspace
 ENV NODE_ENV=production
