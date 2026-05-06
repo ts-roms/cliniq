@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:mobile", "type:app"]
+    "tags": [
+      "scope:mobile",
+      "type:app"
+    ]
   },
   "scripts": {
     "eas-build-post-install": "cd ../../ && node tools/scripts/eas-build-post-install.mjs . apps/mobile"
@@ -15,16 +18,20 @@
     "@tanstack/react-query": "*",
     "@testing-library/react-native": "*",
     "expo": "*",
+    "expo-device": "^55.0.16",
+    "expo-notifications": "^55.0.22",
+    "expo-secure-store": "^55.0.13",
     "expo-splash-screen": "*",
     "expo-status-bar": "*",
     "expo-system-ui": "*",
+    "expo-web-browser": "^55.0.15",
     "jest-expo": "*",
     "metro-config": "*",
     "metro-resolver": "*",
     "nativewind": "*",
-    "react-native-css-interop": "*",
     "react": "*",
     "react-native": "*",
+    "react-native-css-interop": "*",
     "react-native-reanimated": "*",
     "react-native-safe-area-context": "*",
     "react-native-svg": "*",

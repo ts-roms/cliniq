@@ -1,18 +1,30 @@
 /**
  * Idempotent dev seed. Wipes and recreates the `demo` tenant with one user
  * per role (all sharing password `Password123!`) and a few patients, one of
- * which has a linked portal login (`patient1@demo.local`).
+ * which has a linked portal login (`patient1@demo.local`). Also seeds a
+ * platform-console admin (`platform@cliniq.local`) — separate identity table,
+ * not tenant-scoped.
  *
  * Run with:  pnpm db:seed
  *
  * Re-runs are safe — anything tied to the `demo` slug is deleted first via
- * onDelete: Cascade on Tenant.id, so all child rows go with it.
+ * onDelete: Cascade on Tenant.id, so all child rows go with it. Platform
+ * admins are upserted by email.
  */
 import { prisma, Role, MemberStatus, TenantStatus, Plan, Sex } from '@org/db';
 import { hashPassword } from '@org/auth';
 
 const TENANT_SLUG = 'demo';
 const PASSWORD = 'Password123!';
+
+interface PlatformAdminSpec {
+  email: string;
+  name: string;
+}
+
+const PLATFORM_ADMINS: PlatformAdminSpec[] = [
+  { email: 'platform@cliniq.local', name: 'Platform Operator' },
+];
 
 interface StaffSpec {
   email: string;
@@ -22,6 +34,7 @@ interface StaffSpec {
 
 const STAFF: StaffSpec[] = [
   { email: 'owner@demo.local', name: 'Demo Owner', role: Role.OWNER },
+  { email: 'admin@demo.local', name: 'Demo Admin', role: Role.ADMIN },
   { email: 'doctor@demo.local', name: 'Dr. Juana Cruz', role: Role.DOCTOR },
   { email: 'nurse@demo.local', name: 'Nurse Pedro Reyes', role: Role.NURSE },
   { email: 'reception@demo.local', name: 'Reception Mae Santos', role: Role.RECEPTIONIST },
@@ -70,6 +83,18 @@ const PATIENTS: PatientSpec[] = [
 async function main() {
   // bcrypt is the bottleneck — hash once, reuse for every user.
   const passwordHash = await hashPassword(PASSWORD);
+
+  // Platform-console admins. Lives in its own table — no tenant link, no
+  // TenantUser membership. Upsert by email so re-runs don't duplicate.
+  console.log(`→ Seeding ${PLATFORM_ADMINS.length} platform admin(s)`);
+  for (const spec of PLATFORM_ADMINS) {
+    await prisma.platformAdmin.upsert({
+      where: { email: spec.email },
+      update: { name: spec.name, passwordHash },
+      create: { email: spec.email, name: spec.name, passwordHash },
+    });
+    console.log(`  PLATFORM     ${spec.email}`);
+  }
 
   // Wipe the demo tenant first. Cascade clears every child row (TenantUser,
   // Patient, etc.). Users that were ONLY in the demo tenant are also wiped
@@ -177,6 +202,7 @@ async function main() {
   console.log(`  Tenant slug: ${TENANT_SLUG}`);
   console.log(`  Password   : ${PASSWORD}`);
   console.log('  Logins     :');
+  for (const a of PLATFORM_ADMINS) console.log(`    PLATFORM     ${a.email}`);
   for (const s of STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
   for (const p of PATIENTS) {
     if (p.portalLogin) console.log(`    PATIENT      ${p.portalLogin.email}`);

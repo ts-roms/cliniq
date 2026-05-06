@@ -7,6 +7,7 @@ import {
   teleControllerEnd,
   teleControllerIce,
   teleControllerJoin,
+  teleControllerNotifyPatientBySms,
 } from '@org/api-client';
 import type { IceConfig, PatientJoinResponse, ProviderSession } from '../schemas/tele';
 
@@ -68,6 +69,29 @@ export function useEndTeleSession() {
       return { id };
     },
     onSuccess: ({ id }) => qc.invalidateQueries({ queryKey: teleKeys.session(id) }),
+  });
+}
+
+export interface SmsNotifyResult {
+  sent: boolean;
+  provider: 'noop' | 'semaphore' | 'twilio';
+  reason?: string;
+}
+
+/**
+ * Re-send the join link by SMS to the patient on file. Returns a structured
+ * result so the UI can show "sent via twilio" vs "no phone on file" vs
+ * "provider not configured" without baking copy into the API.
+ */
+export function useNotifyPatientBySms() {
+  return useMutation({
+    mutationFn: async (sessionId: string): Promise<SmsNotifyResult> => {
+      const { data, error } = await teleControllerNotifyPatientBySms({
+        path: { id: sessionId },
+      });
+      if (error || !data) throw new Error('notify failed');
+      return data as unknown as SmsNotifyResult;
+    },
   });
 }
 

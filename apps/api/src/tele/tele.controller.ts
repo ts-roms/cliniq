@@ -56,6 +56,17 @@ export class TeleController {
     return this.tele.end(id, user);
   }
 
+  @Post('sessions/:id/notify-sms')
+  @HttpCode(HttpStatus.OK)
+  @Requires(Actions.TELE_HOST)
+  @Audit({ action: 'tele.notifySms', entity: 'TeleSession', entityIdFrom: 'param:id' })
+  notifyPatientBySms(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.tele.notifyPatientBySms(id, user);
+  }
+
   // ── Patient: join (Public — bearer is the joinToken in the link) ──
 
   @Public()

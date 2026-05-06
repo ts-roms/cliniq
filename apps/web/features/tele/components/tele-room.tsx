@@ -98,22 +98,35 @@ export function TeleRoom({
           </div>
         )}
 
-        <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2">
           <p className="text-sm">
             <span className="font-medium">{PHASE_LABEL[room.phase] ?? room.phase}</span>
             {room.error && <span className="ml-2 text-destructive">{room.error}</span>}
+            {room.screenSharing && (
+              <span className="ml-2 text-xs text-primary">· sharing screen</span>
+            )}
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              await room.hangUp();
-              onLeave();
-            }}
-            className="text-destructive hover:text-destructive"
-          >
-            Leave call
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void room.toggleScreenShare()}
+              disabled={room.phase !== 'connected' && room.phase !== 'reconnecting'}
+            >
+              {room.screenSharing ? 'Stop sharing' : 'Share screen'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await room.hangUp();
+                onLeave();
+              }}
+              className="text-destructive hover:text-destructive"
+            >
+              Leave call
+            </Button>
+          </div>
         </div>
       </div>
       <ChatPane chat={room.chat} myRole={role} onSend={room.sendChat} />

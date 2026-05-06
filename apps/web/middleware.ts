@@ -23,8 +23,25 @@ export function middleware(req: NextRequest) {
   const slug = resolveTenantSlug(req.headers.get('host'), ROOT_DOMAIN);
 
   // No tenant subdomain → carry on. Anonymous landings on the root domain
-  // still hit /login and /patients without rewrites.
+  // hit the marketing page at /, /login, etc. without rewrites.
   if (!slug) return NextResponse.next();
+
+  // Tenant subdomain root → marketing landing is wrong UX; send to /login.
+  // Logged-in users get bounced onward by the app shell. Edge can't read
+  // localStorage, so we always redirect — the brief flash through /login is
+  // acceptable.
+  if (req.nextUrl.pathname === '/') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    const redirect = NextResponse.redirect(url);
+    redirect.cookies.set(TENANT_COOKIE, slug, {
+      httpOnly: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return redirect;
+  }
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set(TENANT_HEADER, slug);

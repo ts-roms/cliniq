@@ -62,12 +62,18 @@ export function useWebRtcRoom({
   //   doctor sees `consentResponse: boolean | null` after patient replies
   const [pendingConsent, setPendingConsent] = useState(false);
   const [consentResponse, setConsentResponse] = useState<boolean | null>(null);
+  const [screenSharing, setScreenSharing] = useState(false);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const lastSeqRef = useRef(0);
   const pollHandle = useRef<number | null>(null);
   const remoteSetRef = useRef(false);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  // Screen-share state: when active, the video sender's track is the screen
+  // capture; we hold the original camera track here so we can swap back when
+  // the user (or the browser's "Stop sharing" UI) ends the share.
+  const cameraTrackRef = useRef<MediaStreamTrack | null>(null);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);
 
   const send = useCallback(
     async (kind: TeleSignalKind, payload: Record<string, unknown>) => {
@@ -275,6 +281,75 @@ export function useWebRtcRoom({
     [role, send, sessionId, auth],
   );
 
+  // ── Screen share ─────────────────────────────────
+  // Use replaceTrack on the existing video sender so we don't need to
+  // renegotiate SDP — the remote peer keeps receiving on the same m-line.
+  const stopScreenShare = useCallback(async () => {
+    const pc = pcRef.current;
+    const camera = cameraTrackRef.current;
+    if (!pc) return;
+    const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+    if (sender && camera) {
+      try {
+        await sender.replaceTrack(camera);
+      } catch (err) {
+        console.warn('[tele] replaceTrack(camera) failed', err);
+      }
+    }
+    screenTrackRef.current?.stop();
+    screenTrackRef.current = null;
+    setLocalStream((prev) => {
+      if (!prev || !camera) return prev;
+      const audio = prev.getAudioTracks();
+      return new MediaStream([camera, ...audio]);
+    });
+    setScreenSharing(false);
+  }, []);
+
+  const startScreenShare = useCallback(async () => {
+    const pc = pcRef.current;
+    if (!pc) return;
+    let display: MediaStream;
+    try {
+      display = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+    } catch {
+      // user cancelled the OS picker — no-op, no error
+      return;
+    }
+    const screenTrack = display.getVideoTracks()[0];
+    if (!screenTrack) return;
+    screenTrackRef.current = screenTrack;
+
+    const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+    if (sender) {
+      cameraTrackRef.current = sender.track;
+      try {
+        await sender.replaceTrack(screenTrack);
+      } catch (err) {
+        console.warn('[tele] replaceTrack(screen) failed', err);
+        screenTrack.stop();
+        return;
+      }
+    }
+    setLocalStream((prev) => {
+      if (!prev) return new MediaStream([screenTrack]);
+      const audio = prev.getAudioTracks();
+      return new MediaStream([screenTrack, ...audio]);
+    });
+    // Browser's native "Stop sharing" pill ends the track — restore camera.
+    screenTrack.onended = () => {
+      void stopScreenShare();
+    };
+    setScreenSharing(true);
+  }, [stopScreenShare]);
+
+  const toggleScreenShare = useCallback(() => {
+    return screenSharing ? stopScreenShare() : startScreenShare();
+  }, [screenSharing, startScreenShare, stopScreenShare]);
+
   const sendChat = useCallback(
     (text: string) => {
       if (!text.trim()) return;
@@ -289,7 +364,11 @@ export function useWebRtcRoom({
     pcRef.current?.close();
     pcRef.current = null;
     localStream?.getTracks().forEach((t) => t.stop());
+    screenTrackRef.current?.stop();
+    screenTrackRef.current = null;
+    cameraTrackRef.current = null;
     setRemoteStream(null);
+    setScreenSharing(false);
     setPhase('ended');
   }, [send, localStream]);
 
@@ -305,6 +384,8 @@ export function useWebRtcRoom({
     consentResponse,
     requestRecordingConsent,
     respondRecordingConsent,
+    screenSharing,
+    toggleScreenShare,
   };
 }
 

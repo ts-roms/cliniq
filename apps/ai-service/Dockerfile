@@ -50,7 +50,7 @@ USER nestjs
 
 EXPOSE 4100
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:4100/health || exit 1
+  CMD wget -qO- http://localhost:4100/ai/health || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/main.js"]

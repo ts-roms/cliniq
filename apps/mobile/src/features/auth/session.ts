@@ -1,9 +1,21 @@
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Session store with AsyncStorage persistence + sync in-memory cache.
-// The cache is what useSyncExternalStore reads on every render — AsyncStorage
-// is async-only, so we keep a synchronous mirror seeded by hydrateSession()
-// at app boot. Writes are fire-and-forget to keep UI snappy.
+// Session store with SecureStore persistence + sync in-memory cache.
+//
+// SecureStore wraps the device keychain (iOS) or Keystore-backed shared prefs
+// (Android), so refresh tokens are encrypted at rest and survive only as long
+// as the install — uninstalling the app removes them. This is meaningfully
+// stronger than AsyncStorage (which is plain SQLite/files readable by any
+// process with the app's data dir, e.g. on rooted devices or after a backup).
+//
+// We keep the same getSession()/saveSession()/clearSession()/subscribeSession()
+// surface as before so callers don't change. hydrateSession() is async-only;
+// the cache is what useSyncExternalStore reads each render.
+//
+// First-run migration: a session previously written via AsyncStorage is read
+// once at hydrate time, copied to SecureStore, and removed from AsyncStorage
+// so existing logged-in users don't get bounced back to /login on upgrade.
 
 const KEY = 'cliniq.session';
 
@@ -36,14 +48,30 @@ export function isHydrated(): boolean {
 }
 
 /**
- * Read AsyncStorage once at app boot. Resolves regardless of success — a
- * corrupt or missing entry just leaves the cache null.
+ * Read SecureStore once at app boot. Falls back to AsyncStorage and migrates
+ * forward on first hit so existing installs aren't logged out on upgrade.
+ * Resolves regardless of success — a corrupt or missing entry just leaves the
+ * cache null.
  */
 export async function hydrateSession(): Promise<void> {
   if (hydrated) return;
   try {
-    const raw = await AsyncStorage.getItem(KEY);
-    if (raw) cached = JSON.parse(raw) as Session;
+    const raw = await SecureStore.getItemAsync(KEY);
+    if (raw) {
+      cached = JSON.parse(raw) as Session;
+    } else {
+      // First-run migration from AsyncStorage. Best-effort.
+      try {
+        const legacy = await AsyncStorage.getItem(KEY);
+        if (legacy) {
+          cached = JSON.parse(legacy) as Session;
+          await SecureStore.setItemAsync(KEY, legacy);
+          await AsyncStorage.removeItem(KEY);
+        }
+      } catch {
+        // ignore — fresh install
+      }
+    }
   } catch {
     cached = null;
   } finally {
@@ -57,13 +85,13 @@ export function saveSession(session: Session): void {
   notify();
   // Fire-and-forget. If the write fails the user re-logs in next launch;
   // not catastrophic.
-  void AsyncStorage.setItem(KEY, JSON.stringify(session)).catch(() => undefined);
+  void SecureStore.setItemAsync(KEY, JSON.stringify(session)).catch(() => undefined);
 }
 
 export function clearSession(): void {
   cached = null;
   notify();
-  void AsyncStorage.removeItem(KEY).catch(() => undefined);
+  void SecureStore.deleteItemAsync(KEY).catch(() => undefined);
 }
 
 export function subscribeSession(cb: () => void): () => void {

@@ -47,6 +47,12 @@ export class MeController {
     return this.me.records(user);
   }
 
+  @Get('tele/active')
+  @Requires(Actions.PATIENT_READ)
+  teleActive(@CurrentUser() user: AuthenticatedUser) {
+    return this.me.teleActive(user);
+  }
+
   @Get('invoices/:id/pdf')
   @Requires(Actions.PATIENT_READ)
   async invoicePdf(

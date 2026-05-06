@@ -13,7 +13,10 @@ import {
   consultationsControllerFindOne,
   consultationsControllerGenerateSoap,
   consultationsControllerListSuggestions,
+  teleControllerCreate,
+  teleControllerNotifyPatientBySms,
 } from '@org/api-client';
+import { openTeleSession } from '../tele/open-tele';
 
 interface Consultation {
   id: string;
@@ -94,6 +97,32 @@ export function ConsultDetailScreen({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['consult', consultId] });
+    },
+  });
+
+  /**
+   * Tele session create from mobile. The tele room itself runs in the
+   * system browser (Chrome Custom Tabs / SFSafariViewController) — RN's
+   * WebView WebRTC story is too rough for production use. The api also
+   * fires an SMS to the patient on create (best-effort; controlled by
+   * SMS_PROVIDER env). The provider preview opens the patient join URL
+   * so the doctor can verify the link / network without leaving the app.
+   */
+  const startTele = useMutation({
+    mutationFn: async (patientId: string) => {
+      const { data, error } = await teleControllerCreate({
+        body: { patientId, consultationId: consultId },
+      });
+      if (error || !data) throw new Error('Tele create failed');
+      const session = data as unknown as { id: string; joinUrl: string };
+      // Best-effort SMS resend (the auto-send already fired on create).
+      void teleControllerNotifyPatientBySms({ path: { id: session.id } }).catch(
+        () => undefined,
+      );
+      return session;
+    },
+    onSuccess: (session) => {
+      void openTeleSession(session.joinUrl);
     },
   });
 
@@ -219,7 +248,23 @@ export function ConsultDetailScreen({
       )}
 
       {!locked && (
-        <View className="px-6 py-4">
+        <View className="space-y-2 px-6 py-4">
+          <TouchableOpacity
+            onPress={() => startTele.mutate(c.patientId)}
+            disabled={startTele.isPending}
+            className={`rounded-md px-3 py-2 ${
+              startTele.isPending ? 'bg-primary/40' : 'bg-primary'
+            }`}
+          >
+            <Text className="text-center text-sm text-primary-foreground">
+              {startTele.isPending ? 'Starting…' : 'Start tele call'}
+            </Text>
+          </TouchableOpacity>
+          {startTele.error && (
+            <Text className="text-xs text-destructive">
+              {(startTele.error as Error).message}
+            </Text>
+          )}
           <TouchableOpacity
             onPress={() => complete.mutate()}
             disabled={complete.isPending}

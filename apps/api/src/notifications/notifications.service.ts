@@ -5,6 +5,7 @@ import {
   type NotificationSeverity,
 } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
+import { PushService } from './push.service.js';
 
 export interface NotifyInput {
   tenantId: string;
@@ -30,7 +31,10 @@ export interface NotifyManyInput extends Omit<NotifyInput, 'userId'> {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly push: PushService,
+  ) {}
 
   async notify(input: NotifyInput): Promise<void> {
     try {
@@ -48,7 +52,15 @@ export class NotificationsService {
       });
     } catch (err) {
       this.logger.error(`notify failed (${input.kind}): ${(err as Error).message}`);
+      return; // don't push if the in-app row didn't even land
     }
+    // Fire-and-forget push fan-out. PushService swallows its own errors and
+    // no-ops when the user has no registered devices.
+    void this.push.sendToUser(input.userId, {
+      title: input.title,
+      body: input.body,
+      data: pushData(input),
+    });
   }
 
   async notifyMany(input: NotifyManyInput): Promise<void> {
@@ -68,7 +80,13 @@ export class NotificationsService {
       });
     } catch (err) {
       this.logger.error(`notifyMany failed (${input.kind}): ${(err as Error).message}`);
+      return;
     }
+    void this.push.sendToUsers(input.userIds, {
+      title: input.title,
+      body: input.body,
+      data: pushData(input),
+    });
   }
 
   /** Convenience: fan-out to all ACTIVE users in a tenant matching any of the given roles. */
@@ -131,4 +149,13 @@ export class NotificationsService {
       return { updated: updated.count };
     });
   }
+}
+
+/** Shape passed to the mobile client via Expo's data field. Stays small. */
+function pushData(input: { kind: NotificationKind; link?: string; entityId?: string }) {
+  return {
+    kind: input.kind,
+    ...(input.link ? { link: input.link } : {}),
+    ...(input.entityId ? { entityId: input.entityId } : {}),
+  };
 }

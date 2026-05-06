@@ -19,7 +19,12 @@ import {
   type AuthenticatedUser,
 } from '../auth/decorators/current-user.decorator.js';
 import { NotificationsService } from './notifications.service.js';
+import { PushService } from './push.service.js';
 import { BroadcastDto } from './dto/broadcast.dto.js';
+import {
+  RegisterPushTokenDto,
+  UnregisterPushTokenDto,
+} from './dto/push-token.dto.js';
 
 const STAFF_ROLES = ['OWNER', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] as const;
 
@@ -27,7 +32,37 @@ const STAFF_ROLES = ['OWNER', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] as con
 @ApiBearerAuth('jwt')
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private readonly notif: NotificationsService) {}
+  constructor(
+    private readonly notif: NotificationsService,
+    private readonly push: PushService,
+  ) {}
+
+  /** Register the calling user's mobile push token (Expo). Idempotent. */
+  @Post('push-tokens')
+  @HttpCode(HttpStatus.OK)
+  registerPushToken(
+    @Body() dto: RegisterPushTokenDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.push.register({
+      tenantId: user.tenantId,
+      userId: user.userId,
+      deviceId: dto.deviceId,
+      token: dto.token,
+      platform: dto.platform,
+    });
+  }
+
+  /** Forget the calling user's token for a given device (called on logout). */
+  @Post('push-tokens/unregister')
+  @HttpCode(HttpStatus.OK)
+  async unregisterPushToken(
+    @Body() dto: UnregisterPushTokenDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.push.unregister(user.userId, dto.deviceId);
+    return { ok: true };
+  }
 
   @Get()
   @ApiQuery({ name: 'unread', required: false, type: String })

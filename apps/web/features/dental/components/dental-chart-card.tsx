@@ -7,6 +7,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   Select,
 } from '@org/ui';
 import { Odontogram } from './odontogram';
@@ -107,7 +111,7 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
 
   const selectedTooth = editing
     ? draft.find((t) => t.toothCode === selected)
-    : data?.teeth.find((t) => t.toothCode === selected);
+    : data?.teeth?.find((t) => t.toothCode === selected);
 
   function startEdit() {
     setDraft(chartToDraft(data ?? null, dentition));
@@ -223,89 +227,89 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
           />
         </div>
 
-        {selected && selectedTooth && (
-          <div className="rounded border bg-muted/30 p-3 text-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="font-medium">Tooth {selected}</div>
-              {editing && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setSelected(undefined)}
-                >
-                  Close
-                </Button>
-              )}
-            </div>
+        <Dialog
+          open={!!selected && !!selectedTooth}
+          onOpenChange={(open) => {
+            if (!open) setSelected(undefined);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            {selectedTooth && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Tooth {selected}</DialogTitle>
+                </DialogHeader>
 
-            {/* Status */}
-            <div className="mb-3 flex items-center gap-2">
-              <label className="text-xs text-muted-foreground">Status</label>
-              {editing ? (
-                <Select
-                  value={selectedTooth.status}
-                  onChange={(e) =>
-                    updateTooth(selected, { status: e.target.value as ToothStatus })
-                  }
-                  className="h-7 text-xs"
-                >
-                  {toothStatusEnum.options.map((s) => (
-                    <option key={s} value={s}>
-                      {STATUS_LABEL[s]}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <span className="text-xs">{STATUS_LABEL[selectedTooth.status]}</span>
-              )}
-            </div>
+                {/* Status */}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">Status</label>
+                  {editing ? (
+                    <Select
+                      value={selectedTooth.status}
+                      onChange={(e) =>
+                        updateTooth(selected!, { status: e.target.value as ToothStatus })
+                      }
+                      className="text-xs"
+                    >
+                      {toothStatusEnum.options.map((s) => (
+                        <option key={s} value={s}>
+                          {STATUS_LABEL[s]}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <span className="text-xs">{STATUS_LABEL[selectedTooth.status]}</span>
+                  )}
+                </div>
 
-            {/* Surface findings */}
-            <div>
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Surface findings
-              </div>
-              <ul className="space-y-1">
-                {selectedTooth.surfaces.length === 0 && (
-                  <li className="text-xs text-muted-foreground">— none —</li>
-                )}
-                {selectedTooth.surfaces.map((s) => (
-                  <li
-                    key={s.surface}
-                    className="flex items-center justify-between gap-2 rounded bg-card px-2 py-1"
-                  >
-                    <span className="flex items-center gap-2 text-xs">
-                      <span
-                        className="inline-block h-3 w-3 rounded-sm border"
-                        style={{ backgroundColor: FINDING_FILL[s.finding] }}
-                      />
-                      <span className="font-mono">{s.surface}</span>
-                      <span>{SURFACE_LABEL[s.surface]}</span>
-                      <span className="text-muted-foreground">·</span>
-                      <span>{FINDING_LABEL[s.finding]}</span>
-                    </span>
-                    {editing && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeSurfaceFinding(selected, s.surface)}
-                      >
-                        Remove
-                      </Button>
+                {/* Surface findings */}
+                <div>
+                  <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Surface findings
+                  </div>
+                  <ul className="space-y-1">
+                    {selectedTooth.surfaces.length === 0 && (
+                      <li className="text-xs text-muted-foreground">— none —</li>
                     )}
-                  </li>
-                ))}
-              </ul>
-              {editing && (
-                <AddFindingForm
-                  onAdd={(surface, finding) =>
-                    addSurfaceFinding(selected, surface, finding)
-                  }
-                />
-              )}
-            </div>
-          </div>
-        )}
+                    {selectedTooth.surfaces.map((s) => (
+                      <li
+                        key={s.surface}
+                        className="flex items-center justify-between gap-2 rounded bg-card px-2 py-1"
+                      >
+                        <span className="flex items-center gap-2 text-xs">
+                          <span
+                            className="inline-block h-3 w-3 rounded-sm border"
+                            style={{ backgroundColor: FINDING_FILL[s.finding] }}
+                          />
+                          <span className="font-mono">{s.surface}</span>
+                          <span>{SURFACE_LABEL[s.surface]}</span>
+                          <span className="text-muted-foreground">·</span>
+                          <span>{FINDING_LABEL[s.finding]}</span>
+                        </span>
+                        {editing && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeSurfaceFinding(selected!, s.surface)}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {editing && (
+                    <AddFindingForm
+                      onAdd={(surface, finding) =>
+                        addSurfaceFinding(selected!, surface, finding)
+                      }
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Legend */}
         <div className="grid gap-3 text-xs sm:grid-cols-2">

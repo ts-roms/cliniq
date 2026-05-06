@@ -35,6 +35,13 @@ export const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      // Block outside-click + focus-outside dismissal by default — most
+      // dialogs in this app contain unsaved form state (new patient, file
+      // claim, dispense inventory, etc.) and an accidental backdrop click
+      // shouldn't drop the user's input. ESC and the explicit close button
+      // remain available for intentional dismissal. Callers can override
+      // by passing their own `onInteractOutside` after this default.
+      onInteractOutside={(e) => e.preventDefault()}
       className={cn(
         'fixed left-1/2 top-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100vh-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto',
         'border bg-background p-4 shadow-lg sm:p-6 sm:rounded-lg',

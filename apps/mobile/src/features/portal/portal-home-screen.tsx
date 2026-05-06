@@ -4,10 +4,19 @@ import {
   meControllerAppointments,
   meControllerInvoices,
   meControllerProfile,
+  meControllerTeleActive,
 } from '@org/api-client';
 import { formatCentavos } from '../billing/money';
 import { clearSession } from '../auth/session';
+import { openTeleSession } from '../tele/open-tele';
 import { useT } from '../../shared/i18n';
+
+interface ActiveTele {
+  id: string;
+  status: string;
+  providerName: string | null;
+  joinUrl: string;
+}
 
 interface Profile {
   id: string;
@@ -67,6 +76,14 @@ export function PortalHomeScreen() {
       return data as unknown as Invoice[];
     },
   });
+  const tele = useQuery({
+    queryKey: ['me', 'tele', 'active'],
+    refetchInterval: 30_000, // session may go ACTIVE while the user is on this screen
+    queryFn: async (): Promise<ActiveTele | null> => {
+      const { data } = await meControllerTeleActive();
+      return (data as unknown as ActiveTele) ?? null;
+    },
+  });
 
   const upcoming = appts.data
     ?.filter((a) => new Date(a.startsAt) >= new Date())
@@ -105,6 +122,30 @@ export function PortalHomeScreen() {
           <Text className="text-xs text-foreground">{t('common.signout')}</Text>
         </TouchableOpacity>
       </View>
+
+      {tele.data && (
+        <View className="border-b border-border bg-primary/10 px-6 py-3">
+          <Text className="text-xs uppercase tracking-wide text-primary">
+            Video visit ready
+          </Text>
+          <Text className="mt-1 text-sm text-foreground">
+            {tele.data.providerName
+              ? `Dr. ${tele.data.providerName.replace(/^Dr\.?\s*/i, '')}`
+              : 'Your provider'}{' '}
+            is waiting for you.
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              void openTeleSession(tele.data!.joinUrl);
+            }}
+            className="mt-2 self-start rounded-md bg-primary px-4 py-2"
+          >
+            <Text className="text-xs font-medium text-primary-foreground">
+              Join video visit
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View className="border-b border-border bg-card px-6 py-3">
         <Text className="text-xs uppercase tracking-wide text-muted-foreground">

@@ -6,6 +6,7 @@ import { BedrockModule } from '../bedrock/bedrock.module.js';
 import { DraftsModule } from '../drafts/drafts.module.js';
 import { TranscribeModule } from '../transcribe/transcribe.module.js';
 import { DermatologyModule } from '../dermatology/dermatology.module.js';
+import { HealthModule } from '../health/health.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DermatologyModule } from '../dermatology/dermatology.module.js';
     DraftsModule,
     TranscribeModule,
     DermatologyModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

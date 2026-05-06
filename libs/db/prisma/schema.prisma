@@ -140,6 +140,28 @@ model TenantUser {
   @@map("tenant_users")
 }
 
+// Platform operators — SaaS-side admins managing tenants, billing, support.
+// Deliberately NOT a User row: separate identity table = blast-radius
+// isolation, distinct auth surface (separate login URL, stricter MFA), no
+// tenant coupling, cleaner audit stream. See seed-dev.ts for bootstrap.
+model PlatformAdmin {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  passwordHash   String
+  mfaEnabled     Boolean   @default(false)
+  mfaSecret      String?
+  mfaBackupCodes String[]  @default([])
+  lastLogin      DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([email])
+  @@map("platform_admins")
+}
+
 enum Role {
   OWNER
   ADMIN
@@ -1185,6 +1207,26 @@ model Notification {
   @@index([tenantId, userId, readAt, createdAt])
   @@index([tenantId, userId, kind])
   @@map("notifications")
+}
+
+// Expo push tokens registered by mobile clients. One row per (user, deviceId)
+// — the device id is generated on the client (or derived from Expo's
+// installation id) and lets a single user have multiple devices. Tokens are
+// dedup'd by (token) globally so a re-install with the same token (Expo can
+// re-issue) doesn't accumulate stale rows. Replaced wholesale on each login.
+model PushToken {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  deviceId  String
+  token     String   @unique
+  platform  String   // 'ios' | 'android' | 'web' | 'unknown'
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @default(now())
+
+  @@unique([userId, deviceId])
+  @@index([tenantId, userId])
+  @@map("push_tokens")
 }
 
 // ── Dental / Odontogram ───────────────────────────────────────

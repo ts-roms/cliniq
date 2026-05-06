@@ -15,6 +15,7 @@ import {
   NotificationsScreen,
   useUnreadCount,
 } from '../features/notifications/notifications-screen';
+import { usePushNotifications } from '../features/notifications/use-push-notifications';
 import { PortalHomeScreen } from '../features/portal/portal-home-screen';
 import { PortalAppointmentsScreen } from '../features/portal/portal-appointments-screen';
 import { PortalRecordsScreen } from '../features/portal/portal-records-screen';
@@ -77,6 +78,9 @@ export const App = () => {
 function Router() {
   const hydrated = useHydrated();
   const session = useSession();
+  // Register/unregister the device's Expo push token whenever the session
+  // changes. Self-gating: hook handles unauthenticated state internally.
+  usePushNotifications();
 
   if (!hydrated) {
     return (

@@ -16,6 +16,7 @@ import {
   type PrismaClient,
 } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
+import { SmsService, type SmsResult } from '../sms/sms.service.js';
 import type { CreateSessionDto } from './dto/tele.dto.js';
 
 export interface SessionView {
@@ -49,12 +50,13 @@ export class TeleService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly sms: SmsService,
   ) {}
 
   // ── Session lifecycle ────────────────────────────
 
   async create(dto: CreateSessionDto, user: AuthenticatedUser): Promise<ProviderSessionResponse> {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+    const result = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const patient = await tx.patient.findFirst({
         where: { id: dto.patientId, deletedAt: null },
       });
@@ -82,9 +84,106 @@ export class TeleService {
         },
       });
 
+      const provider = await tx.user.findFirst({
+        where: { id: user.userId },
+        select: { name: true },
+      });
+
       this.logger.log(`tele session ${session.id} created by ${user.userId}`);
-      return this.toProviderResponse(session);
+      return {
+        view: this.toProviderResponse(session),
+        patient: {
+          firstName: patient.firstName,
+          phone: patient.phone,
+        },
+        providerName: provider?.name ?? null,
+      };
     });
+
+    // Auto-SMS on create — best-effort, never throws. Skipped silently when
+    // the patient has no phone or the SMS provider is in noop mode.
+    if (result.patient.phone) {
+      void this.sendJoinSms(
+        result.patient.phone,
+        result.patient.firstName,
+        result.providerName,
+        result.view.joinUrl,
+        result.view.id,
+      );
+    }
+
+    return result.view;
+  }
+
+  /**
+   * Re-send the tele join link by SMS to the patient on file. Used when the
+   * provider clicks "Send via SMS" again (delivery failures, patient lost
+   * the link, switched phones). Same authorization as session detail —
+   * provider must own the session.
+   */
+  async notifyPatientBySms(
+    sessionId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ sent: boolean; provider: SmsResult['provider']; reason?: string }> {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const session = await tx.teleSession.findFirst({
+        where: { id: sessionId },
+        include: {
+          patient: { select: { firstName: true, phone: true } },
+        },
+      });
+      if (!session) throw new NotFoundException(`Session ${sessionId} not found`);
+      if (session.providerId !== user.userId) {
+        throw new ForbiddenException('not your session');
+      }
+      if (session.status === TeleSessionStatus.ENDED) {
+        return { sent: false, provider: 'noop', reason: 'session ended' };
+      }
+      const phone = session.patient.phone;
+      if (!phone) {
+        return { sent: false, provider: 'noop', reason: 'patient has no phone on file' };
+      }
+      if (!this.sms.isEnabled()) {
+        return { sent: false, provider: 'noop', reason: 'sms provider not configured' };
+      }
+      const provider = await tx.user.findFirst({
+        where: { id: session.providerId },
+        select: { name: true },
+      });
+      const view = this.toProviderResponse(session);
+      const result = await this.sendJoinSms(
+        phone,
+        session.patient.firstName,
+        provider?.name ?? null,
+        view.joinUrl,
+        sessionId,
+      );
+      return { sent: result.sent, provider: result.provider };
+    });
+  }
+
+  private async sendJoinSms(
+    phone: string,
+    patientFirstName: string,
+    providerName: string | null,
+    joinUrl: string,
+    sessionId: string,
+  ): Promise<SmsResult> {
+    const provider = providerName ? `Dr. ${providerName.replace(/^Dr\.?\s*/i, '')}` : 'your provider';
+    const body = `Hi ${patientFirstName}, your video visit with ${provider} is ready. Join: ${joinUrl}`;
+    try {
+      const result = await this.sms.send({ to: phone, body });
+      this.logger.log(
+        `[tele:${sessionId}] sms ${result.sent ? 'sent' : 'skipped'} via ${result.provider}`,
+      );
+      return result;
+    } catch (err) {
+      // SmsService.send already swallows; this catch is defense in depth.
+      this.logger.warn(
+        `[tele:${sessionId}] sms unexpected error ${(err as Error).message}`,
+      );
+      return { id: null, sent: false, provider: 'noop' };
+    }
   }
 
   async getByIdForProvider(id: string, user: AuthenticatedUser): Promise<ProviderSessionResponse> {

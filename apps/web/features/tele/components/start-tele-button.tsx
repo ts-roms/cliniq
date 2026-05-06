@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import type { ProviderSession } from '../schemas/tele';
-import { useCreateTeleSession, useEndTeleSession } from '../hooks/use-tele-session';
+import {
+  useCreateTeleSession,
+  useEndTeleSession,
+  useNotifyPatientBySms,
+} from '../hooks/use-tele-session';
 import { TeleRoom } from './tele-room';
 
 export function StartTelePanel({
@@ -17,6 +21,7 @@ export function StartTelePanel({
 }) {
   const create = useCreateTeleSession();
   const end = useEndTeleSession();
+  const notify = useNotifyPatientBySms();
   const [session, setSession] = useState<ProviderSession | null>(null);
   const [inRoom, setInRoom] = useState(false);
 
@@ -29,6 +34,12 @@ export function StartTelePanel({
     if (session) await end.mutateAsync(session.id);
     setInRoom(false);
     setSession(null);
+    notify.reset();
+  };
+
+  const sendSms = async () => {
+    if (!session) return;
+    await notify.mutateAsync(session.id);
   };
 
   if (inRoom && session) {
@@ -69,14 +80,46 @@ export function StartTelePanel({
               <code className="mt-1 block break-all rounded bg-card px-2 py-1 text-xs">
                 {session.joinUrl || `/portal/tele/${session.joinToken}`}
               </code>
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(session.joinUrl || `${window.location.origin}/portal/tele/${session.joinToken}`);
-                }}
-                className="mt-2 text-xs text-primary hover:underline"
-              >
-                Copy link
-              </button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                A join link was auto-sent by SMS to the patient on file. Use the
+                buttons below if you need to copy or re-send it.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(
+                      session.joinUrl ||
+                        `${window.location.origin}/portal/tele/${session.joinToken}`,
+                    );
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Copy link
+                </button>
+                <button
+                  onClick={sendSms}
+                  disabled={notify.isPending}
+                  className="text-xs text-primary hover:underline disabled:opacity-50"
+                >
+                  {notify.isPending ? 'Sending…' : 'Send via SMS'}
+                </button>
+                {notify.data && (
+                  <span
+                    className={`text-[11px] ${
+                      notify.data.sent ? 'text-emerald-600' : 'text-amber-700'
+                    }`}
+                  >
+                    {notify.data.sent
+                      ? `Sent via ${notify.data.provider}`
+                      : `Not sent — ${notify.data.reason ?? 'unknown reason'}`}
+                  </span>
+                )}
+                {notify.error && (
+                  <span className="text-[11px] text-destructive">
+                    {(notify.error as Error).message}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <Button onClick={() => setInRoom(true)}>Join now</Button>

@@ -36,6 +36,82 @@
         "${workspaceFolder}/apps/ai-service/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug @org/web (Next.js server)",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "nx", "dev", "@org/web"],
+      "env": {
+        "NODE_OPTIONS": "--inspect=9231"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug @org/web (Chrome browser)",
+      "url": "http://localhost:4200",
+      "webRoot": "${workspaceFolder}/apps/web",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/.chrome-debug-profile",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach: api (port 9229)",
+      "port": 9229,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "restart": true
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach: ai-service (port 9230)",
+      "port": 9230,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "restart": true
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach: web Next.js server (port 9231)",
+      "port": 9231,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "restart": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug full stack",
+      "configurations": [
+        "Debug @org/api with Nx",
+        "Debug @org/ai-service with Nx",
+        "Debug @org/web (Next.js server)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Attach to running services",
+      "configurations": [
+        "Attach: api (port 9229)",
+        "Attach: ai-service (port 9230)",
+        "Attach: web Next.js server (port 9231)"
+      ],
+      "stopAll": true
     }
   ]
 }

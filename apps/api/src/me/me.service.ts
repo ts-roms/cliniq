@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@org/db';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService, TeleSessionStatus } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import { BillingService } from '../billing/billing.service.js';
 
@@ -17,6 +18,7 @@ export class MeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly billing: BillingService,
+    private readonly config: ConfigService,
   ) {}
 
   private requirePatientId(user: AuthenticatedUser): string {
@@ -110,5 +112,38 @@ export class MeService {
     );
     if (!owns) throw new NotFoundException(`Invoice ${invoiceId} not found`);
     return this.billing.renderInvoicePdf(invoiceId, user);
+  }
+
+  /**
+   * Returns the patient's most recent live tele session (PENDING or ACTIVE)
+   * with its join URL, or `null` if none. Mobile uses this to surface a
+   * "Join your video visit" card on the portal home and to open the session
+   * in an in-app browser.
+   */
+  async teleActive(user: AuthenticatedUser) {
+    const patientId = this.requirePatientId(user);
+    const session = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
+      tx.teleSession.findFirst({
+        where: {
+          patientId,
+          status: { in: [TeleSessionStatus.PENDING, TeleSessionStatus.ACTIVE] },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
+    if (!session) return null;
+    // No relation defined on TeleSession.providerId — fetch the user separately.
+    const provider = await this.prisma.user.findFirst({
+      where: { id: session.providerId },
+      select: { name: true },
+    });
+    const base = this.config.get<string>('PORTAL_BASE_URL') ?? '';
+    return {
+      id: session.id,
+      status: session.status,
+      startedAt: session.startedAt,
+      providerName: provider?.name ?? null,
+      joinUrl: `${base}/portal/tele/${session.joinToken}`,
+    };
   }
 }
