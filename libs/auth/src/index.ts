@@ -10,7 +10,11 @@ export {
 export {
   signJwt,
   verifyJwt,
+  signPlatformJwt,
+  verifyPlatformJwt,
+  JWT_AUDIENCES,
   type ClinIqJwtPayload,
+  type PlatformJwtPayload,
   type SignOptions,
 } from './lib/jwt.js';
 

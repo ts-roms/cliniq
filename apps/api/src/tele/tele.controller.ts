@@ -12,9 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
+import { Features } from '@org/shared-types';
 import { Audit } from '../audit/audit.decorator.js';
 import { Public } from '../auth/decorators/public.decorator.js';
 import { Requires } from '../auth/decorators/requires.decorator.js';
+import { RequiresFeature } from '../auth/decorators/requires-feature.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -28,6 +30,7 @@ import {
 
 @ApiTags('tele')
 @ApiBearerAuth('jwt')
+@RequiresFeature(Features.TELEMEDICINE)
 @Controller('tele')
 export class TeleController {
   constructor(private readonly tele: TeleService) {}

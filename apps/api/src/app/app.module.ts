@@ -42,6 +42,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
 import { CalendarsModule } from '../calendars/calendars.module.js';
 import { WebhooksModule } from '../webhooks/webhooks.module.js';
 import { MeModule } from '../me/me.module.js';
+import { PlatformModule } from '../platform/platform.module.js';
 import { TenantContextMiddleware } from '../common/tenant-context.middleware.js';
 
 @Module({
@@ -83,6 +84,7 @@ import { TenantContextMiddleware } from '../common/tenant-context.middleware.js'
     CalendarsModule,
     MeModule,
     HealthModule,
+    PlatformModule,
   ],
   controllers: [AppController],
   providers: [AppService],

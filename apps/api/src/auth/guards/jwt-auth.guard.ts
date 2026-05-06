@@ -11,6 +11,7 @@ import { Reflector } from '@nestjs/core';
 import { MemberStatus, PrismaService } from '@org/db';
 import { verifyJwt } from '@org/auth';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
+import { IS_PLATFORM_KEY } from '../../platform/decorators/platform-auth.decorator.js';
 import type { AuthenticatedUser } from '../decorators/current-user.decorator.js';
 import { DelegationsService } from '../../delegations/delegations.service.js';
 
@@ -28,6 +29,13 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    // Platform routes go through PlatformAuthGuard, not this one.
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
+      ctx.getHandler(),
+      ctx.getClass(),
+    ]);
+    if (isPlatform) return true;
+
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       ctx.getHandler(),
       ctx.getClass(),

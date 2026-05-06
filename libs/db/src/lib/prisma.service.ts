@@ -127,6 +127,19 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       return fn(tx as unknown as PrismaClient);
     });
   }
+
+  /**
+   * Run a callback inside a transaction with `app.platform_admin = '1'` set,
+   * which trips the bypass policies in 20260506110000_platform_rls_bypass.
+   * Use ONLY from the platform admin module, where cross-tenant reads/writes
+   * are intentional. SET LOCAL ensures the flag dies with the transaction.
+   */
+  async withPlatformContext<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
+    return this.client.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`SET LOCAL app.platform_admin = '1'`);
+      return fn(tx as unknown as PrismaClient);
+    });
+  }
 }
 
 // Accept CUIDs ([a-z0-9]{20-40}) and UUIDs (8-4-4-4-12 hex). The goal here is

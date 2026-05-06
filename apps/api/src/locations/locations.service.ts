@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@org/db';
+import { maxLocationsForPlan, type Plan } from '@org/shared-types';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type { CreateLocationDto, UpdateLocationDto } from './dto/location.dto.js';
 
@@ -26,7 +29,33 @@ export class LocationsService {
    * within a tenant — DB unique index plus a friendly conflict message here.
    */
   async create(dto: CreateLocationDto, user: AuthenticatedUser) {
+    // Plan cap. Looked up once per create — the tenant.plan is cheap to read
+    // and we don't expect this path to be hot. Throws 402 (Payment Required)
+    // so the client can render an upgrade CTA distinct from validation errors.
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: user.tenantId },
+      select: { plan: true },
+    });
+    if (!tenant) throw new NotFoundException('tenant not found');
+    const cap = maxLocationsForPlan(tenant.plan as Plan);
+
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      if (Number.isFinite(cap)) {
+        const active = await tx.location.count({ where: { deletedAt: null } });
+        if (active >= cap) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.PAYMENT_REQUIRED,
+              message: `Plan ${tenant.plan} allows up to ${cap} location(s). Upgrade to add more.`,
+              currentPlan: tenant.plan,
+              maxLocations: cap,
+              currentLocations: active,
+            },
+            HttpStatus.PAYMENT_REQUIRED,
+          );
+        }
+      }
+
       const dupe = await tx.location.findFirst({
         where: { name: dto.name, deletedAt: null },
         select: { id: true },

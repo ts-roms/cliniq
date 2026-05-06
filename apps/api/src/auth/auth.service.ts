@@ -11,7 +11,7 @@ import {
   MemberStatus,
   TenantStatus,
 } from '@org/db';
-import { hashPassword, verifyPassword, signJwt, verifyJwt, type Role } from '@org/auth';
+import { hashPassword, verifyPassword, signJwt, verifyJwt, JWT_AUDIENCES, type Role } from '@org/auth';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { RegisterPatientDto } from './dto/register-patient.dto.js';
@@ -171,7 +171,7 @@ export class AuthService {
     const secret = this.config.getOrThrow<string>('JWT_SECRET');
     let payload;
     try {
-      payload = await verifyJwt(dto.refreshToken, { secret, audience: 'cliniq-refresh' });
+      payload = await verifyJwt(dto.refreshToken, { secret, audience: JWT_AUDIENCES.TENANT_REFRESH });
     } catch {
       throw new UnauthorizedException('invalid refresh token');
     }
@@ -214,7 +214,7 @@ export class AuthService {
     );
     const refresh = await signJwt(
       { sub: userId, tid: tenantId, role, ...(patientId ? { pid: patientId } : {}) },
-      { secret, expiresIn: refreshTtl, audience: 'cliniq-refresh' },
+      { secret, expiresIn: refreshTtl, audience: JWT_AUDIENCES.TENANT_REFRESH },
     );
 
     this.logger.log(`Issued tokens for user ${userId} in tenant ${tenantId}`);

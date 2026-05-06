@@ -24,7 +24,7 @@ model Tenant {
   name        String
   type        ClinicType   @default(GENERAL)
   status      TenantStatus @default(TRIAL)
-  plan        Plan         @default(GOLD)
+  plan        Plan         @default(STARTER)
   country     String       @default("PH")
   timezone    String       @default("Asia/Manila")
   currency    String       @default("PHP")
@@ -65,11 +65,12 @@ enum TenantStatus {
   CANCELLED
 }
 
+// Subscription tiers. Feature gating + multi-location caps live in
+// libs/shared-types/src/lib/features.ts (PLAN_FEATURES, MAX_LOCATIONS_PER_PLAN).
 enum Plan {
-  GOLD
+  STARTER
+  PRO
   PREMIUM
-  DIAMOND
-  ENTERPRISE
 }
 
 // ──────────────────────────────────────────────
