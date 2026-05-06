@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -20,7 +21,12 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SignupForm />
+          {/* SignupForm reads ?plan=… via useSearchParams, which forces a
+              client-side render. Suspense boundary lets the page still
+              statically prerender the surrounding shell. */}
+          <Suspense fallback={<SignupFormSkeleton />}>
+            <SignupForm />
+          </Suspense>
           <p className="text-center text-xs text-muted-foreground">
             Already have a clinic?{' '}
             <Link href="/login" className="text-primary hover:underline">
@@ -30,5 +36,16 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+function SignupFormSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden>
+      <div className="h-16 rounded-lg border border-border/60 bg-muted/30" />
+      <div className="h-9 rounded-md bg-muted/40" />
+      <div className="h-9 rounded-md bg-muted/40" />
+      <div className="h-9 rounded-md bg-muted/40" />
+    </div>
   );
 }
