@@ -23,8 +23,13 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY . .
+# Regenerate the typed api-client SDK from apps/api/openapi.json (committed in
+# git as the contract snapshot). Done inline rather than via the nx target so we
+# don't transitively trigger an api build, which would require a live DB.
 RUN pnpm exec nx sync \
  && pnpm --dir libs/db exec prisma generate \
+ && pnpm --dir libs/api-client exec openapi-ts \
+ && (cd libs/api-client && node scripts/strip-js-extensions.mjs) \
  && pnpm exec nx run @org/web:build
 
 FROM node:22-alpine AS runner

@@ -65,9 +65,12 @@ vitest.config.*.timestamp*
 # Prisma generated client
 libs/db/src/generated/
 
-# OpenAPI generated client
+# OpenAPI generated client (regenerated from apps/api/openapi.json at build time)
 libs/api-client/src/generated/
-apps/api/openapi.json
+
+# Note: apps/api/openapi.json IS committed — it's the API contract snapshot,
+# consumed by libs/api-client's openapi-ts codegen during the web Docker build.
+# Refresh after API changes via `pnpm nx run @org/api-client:emit-openapi`.
 
 # Terraform
 **/.terraform/*
