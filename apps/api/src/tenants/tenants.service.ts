@@ -18,7 +18,18 @@ export class TenantsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateTenantDto) {
-    const existing = await this.prisma.tenant.findUnique({ where: { slug: dto.slug } });
+    // Public signup runs without a tenant context. Under the cliniq_app
+    // role, raw inserts on `tenants` / `users` / `tenant_users` are
+    // blocked by RLS (no INSERT policy exists for the app role on
+    // those tables — they're only writable by platform admins). Wrap
+    // the whole create in `withPlatformContext` to set
+    // `app.platform_admin = '1'` for this transaction so the bypass
+    // policies trip. The route is otherwise unauthenticated, but the
+    // service-layer slug uniqueness check + the unique constraint on
+    // `tenants.slug` prevent abuse here.
+    const existing = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({ where: { slug: dto.slug } }),
+    );
     if (existing) {
       throw new ConflictException(`Slug "${dto.slug}" is already taken`);
     }
@@ -30,7 +41,7 @@ export class TenantsService {
       : null;
 
     const kind = dto.kind ?? TenantKind.CLINIC;
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.withPlatformContext(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           slug: dto.slug,
@@ -77,17 +88,25 @@ export class TenantsService {
   }
 
   async findBySlug(slug: string) {
-    const tenant = await this.prisma.tenant.findUnique({ where: { slug } });
+    // Public lookup: clinic web app needs to resolve a slug → tenant id
+    // before login. Wrap in platform context to bypass the
+    // tenants_self_read RLS policy (which only lets a tenant read its
+    // own row).
+    const tenant = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({ where: { slug } }),
+    );
     if (!tenant) throw new NotFoundException(`Tenant "${slug}" not found`);
     return tenant;
   }
 
   async list() {
-    return this.prisma.tenant.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+    return this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findMany({
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
+    );
   }
 
   private addDays(date: Date, days: number): Date {

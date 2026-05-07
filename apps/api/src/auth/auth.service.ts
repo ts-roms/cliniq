@@ -33,22 +33,28 @@ export class AuthService {
    * For the bootstrap "create the first owner" path, use TenantsService.create instead.
    */
   async register(dto: RegisterDto) {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { slug: dto.tenantSlug },
-    });
+    // Public route — runs without a tenant context. Wrap reads + writes
+    // in `withPlatformContext` so the cliniq_app role can satisfy RLS
+    // (the regular policies require `current_tenant_id()` to match,
+    // which is null at signup time).
+    const tenant = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({ where: { slug: dto.tenantSlug } }),
+    );
     if (!tenant) throw new UnauthorizedException('invalid tenant');
     if (tenant.status === TenantStatus.SUSPENDED || tenant.status === TenantStatus.CANCELLED) {
       throw new UnauthorizedException('tenant inactive');
     }
 
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({ where: { email: dto.email } }),
+    );
     if (existing) {
       throw new ConflictException('email already registered');
     }
 
     const passwordHash = await hashPassword(dto.password);
 
-    const { user, tenantUser } = await this.prisma.$transaction(async (tx) => {
+    const { user, tenantUser } = await this.prisma.withPlatformContext(async (tx) => {
       const user = await tx.user.create({
         data: { email: dto.email, name: dto.name, passwordHash },
       });
@@ -63,8 +69,6 @@ export class AuthService {
           userId: user.id,
           role,
           status: MemberStatus.ACTIVE,
-          // joinedAt is non-null in the DB (older migration); always populate
-          // even though the Prisma schema marks it optional.
           joinedAt: new Date(),
         },
       });
@@ -75,10 +79,15 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      include: { tenants: { where: { status: MemberStatus.ACTIVE }, take: 1 } },
-    });
+    // Login runs before any tenant context exists. Reads on `users` and
+    // `tenant_users` need RLS bypass since the regular policies hide
+    // rows that don't match `current_tenant_id()`.
+    const user = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
+        where: { email: dto.email },
+        include: { tenants: { where: { status: MemberStatus.ACTIVE }, take: 1 } },
+      }),
+    );
     if (!user || !(await verifyPassword(dto.password, user.passwordHash))) {
       throw new UnauthorizedException('invalid credentials');
     }
@@ -125,20 +134,22 @@ export class AuthService {
    * must add one before the patient can self-register.
    */
   async registerPatient(dto: RegisterPatientDto) {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { slug: dto.tenantSlug },
-    });
+    const tenant = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({ where: { slug: dto.tenantSlug } }),
+    );
     if (!tenant) throw new UnauthorizedException('invalid tenant');
     if (tenant.status === TenantStatus.SUSPENDED || tenant.status === TenantStatus.CANCELLED) {
       throw new UnauthorizedException('tenant inactive');
     }
 
-    const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existingUser = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({ where: { email: dto.email } }),
+    );
     if (existingUser) throw new ConflictException('email already registered');
 
     const passwordHash = await hashPassword(dto.password);
 
-    const { user, tenantUser, patientId } = await this.prisma.$transaction(async (tx) => {
+    const { user, tenantUser, patientId } = await this.prisma.withPlatformContext(async (tx) => {
       const patient = await tx.patient.findFirst({
         where: { tenantId: tenant.id, mrn: dto.mrn, deletedAt: null },
       });
@@ -185,16 +196,20 @@ export class AuthService {
       throw new UnauthorizedException('invalid refresh token');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, email: true, deletedAt: true },
-    });
+    const user = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true, deletedAt: true },
+      }),
+    );
     if (!user || user.deletedAt) throw new UnauthorizedException('invalid refresh token');
 
-    const membership = await this.prisma.tenantUser.findFirst({
-      where: { userId: user.id, tenantId: payload.tid, status: MemberStatus.ACTIVE },
-      select: { role: true, patientId: true, tenantId: true },
-    });
+    const membership = await this.prisma.withPlatformContext((tx) =>
+      tx.tenantUser.findFirst({
+        where: { userId: user.id, tenantId: payload.tid, status: MemberStatus.ACTIVE },
+        select: { role: true, patientId: true, tenantId: true },
+      }),
+    );
     if (!membership) throw new UnauthorizedException('invalid refresh token');
 
     return this.issueTokens(
@@ -219,10 +234,12 @@ export class AuthService {
 
     // Snapshot tenant kind into the token so the web client knows which UI
     // shell to render without an extra round-trip.
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: { kind: true },
-    });
+    const tenant = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: { kind: true },
+      }),
+    );
     const tk = tenant?.kind === 'LAB' ? 'LAB' : 'CLINIC';
 
     const access = await signJwt(
