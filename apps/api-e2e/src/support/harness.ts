@@ -69,28 +69,51 @@ export async function bootEnv(): Promise<E2EEnv> {
       const ownerName = 'E2E Owner';
       const ownerPassword = 'TestPassword123!';
 
-      // 1. Create the tenant (public route on TenantsController).
-      const tenantRes = await axios.post(`${API_URL}/api/tenants`, {
-        slug,
-        name: `E2E Tenant ${rand}`,
-        ownerEmail,
-        ownerName,
-        ownerPassword,
-        kind,
-        plan: kind === 'CLINIC' ? plan : undefined,
-        labPlan: kind === 'LAB' ? (labPlan ?? 'LAB_PREMIUM') : undefined,
-      });
+      // 1. Create the tenant (public route on TenantsController). Force
+      // validateStatus + a generous timeout so we get a clear branded
+      // error rather than axios's generic "request failed" or jest's
+      // "exceeded test timeout" — both hide the real cause.
+      const tenantRes = await axios.post(
+        `${API_URL}/api/tenants`,
+        {
+          slug,
+          name: `E2E Tenant ${rand}`,
+          ownerEmail,
+          ownerName,
+          ownerPassword,
+          kind,
+          plan: kind === 'CLINIC' ? plan : undefined,
+          labPlan: kind === 'LAB' ? (labPlan ?? 'LAB_PREMIUM') : undefined,
+        },
+        { validateStatus: () => true, timeout: 20_000 },
+      );
+      if (tenantRes.status !== 201) {
+        throw new Error(
+          `tenant create failed: ${tenantRes.status} ${JSON.stringify(tenantRes.data).slice(0, 300)}`,
+        );
+      }
       const tenantId = tenantRes.data.id as string;
       trackedTenantIds.push(tenantId);
 
       // 2. Login → JWT pair.
-      const loginRes = await axios.post(`${API_URL}/api/auth/login`, {
-        email: ownerEmail,
-        password: ownerPassword,
-      });
+      const loginRes = await axios.post(
+        `${API_URL}/api/auth/login`,
+        { email: ownerEmail, password: ownerPassword },
+        { validateStatus: () => true, timeout: 20_000 },
+      );
+      if (loginRes.status !== 200 && loginRes.status !== 201) {
+        throw new Error(
+          `login failed: ${loginRes.status} ${JSON.stringify(loginRes.data).slice(0, 300)}`,
+        );
+      }
       const accessToken = loginRes.data.accessToken as string;
       const refreshToken = loginRes.data.refreshToken as string;
       const ownerUserId = loginRes.data.user?.id as string;
+      if (!accessToken) {
+        throw new Error(
+          `login returned 2xx but no accessToken in body: ${JSON.stringify(loginRes.data).slice(0, 300)}`,
+        );
+      }
 
       const client: E2EClient = {
         accessToken,

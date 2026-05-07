@@ -21,4 +21,9 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  // Bcrypt at cost=12 is ~250ms per hash. Each makeTenant() does ~2 of
+  // those + 2 network round-trips, so a single test that provisions 2
+  // tenants easily blows the 5s default. 60s is generous; if a real
+  // assertion is going to fail, it still surfaces fast within this.
+  testTimeout: 60_000,
 };
