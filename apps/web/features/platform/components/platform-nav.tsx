@@ -17,7 +17,7 @@ export function PlatformNav() {
   }
 
   return (
-    <header className="border-b bg-background">
+    <header className="sticky top-0 z-30 border-b bg-background">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
         <Link href="/platform/dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
