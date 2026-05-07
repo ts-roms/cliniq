@@ -1,11 +1,17 @@
--- Aligns the schema declaration with the existing DB state. The column
--- has been NOT NULL since the original tenants migration; the Prisma
--- schema previously declared it as `DateTime?` which caused
--- AuthService/TenantsService to occasionally pass NULL and fail at insert.
--- The DDL below is effectively a no-op when the column is already NOT NULL,
--- but we issue it for symmetry on any environment that may have drifted.
+-- Adds the `joinedAt` column to tenant_users. The Prisma schema declared
+-- this field for a while but no migration ever issued the DDL — it was
+-- created in dev environments via `prisma db push` and never tracked.
+-- Production never had the column, so AuthService.register failed with a
+-- "column does not exist" error when trying to set it.
+--
+-- ADD COLUMN IF NOT EXISTS makes this idempotent: safe to run on dev DBs
+-- that already have the column AND on production DBs that don't.
 
--- Backfill any rows that somehow ended up NULL (defensive — should be 0).
+ALTER TABLE "tenant_users"
+  ADD COLUMN IF NOT EXISTS "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- For environments that DID have the column but allowed NULL, normalize:
+-- backfill any nulls with createdAt and lock to NOT NULL.
 UPDATE "tenant_users"
 SET "joinedAt" = COALESCE("joinedAt", "createdAt", CURRENT_TIMESTAMP)
 WHERE "joinedAt" IS NULL;
