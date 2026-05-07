@@ -18,8 +18,10 @@ import {
   NotesPanel,
   PhaseStrip,
   ShipmentWidget,
+  TreatmentPlansPanel,
   labApi,
   useLabCase,
+  useRenderConformityPdf,
   useTransitionLabCase,
   type LabCaseStatus,
 } from '@/features/lab';
@@ -116,6 +118,7 @@ export default function LabCaseDetailPage() {
               {labelForTransition(t)}
             </Button>
           ))}
+          <ConformityPdfButton caseId={lc.id} />
         </div>
       </div>
 
@@ -273,6 +276,8 @@ export default function LabCaseDetailPage() {
           <ChatPanel caseId={lc.id} side="lab" />
         </CardContent>
       </Card>
+
+      <TreatmentPlansPanel caseId={lc.id} side="lab" />
     </div>
   );
 }
@@ -312,4 +317,23 @@ function humanSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function ConformityPdfButton({ caseId }: { caseId: string }) {
+  const render = useRenderConformityPdf(caseId);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() =>
+        render.mutate(undefined, {
+          onSuccess: (res) => window.open(res.url, '_blank', 'noopener'),
+        })
+      }
+      disabled={render.isPending}
+      title="Render the conformity declaration with the default template"
+    >
+      {render.isPending ? 'Rendering…' : 'Conformity PDF'}
+    </Button>
+  );
 }

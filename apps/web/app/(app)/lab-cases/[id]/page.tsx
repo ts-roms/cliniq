@@ -16,6 +16,7 @@ import {
   ChatPanel,
   PhaseStrip,
   ShipmentWidget,
+  TreatmentPlansPanel,
   labApi,
   useClinicCase,
   useTransitionClinicCase,
@@ -238,6 +239,8 @@ export default function ClinicLabCaseDetailPage() {
           <ChatPanel caseId={lc.id} side="clinic" />
         </CardContent>
       </Card>
+
+      <TreatmentPlansPanel caseId={lc.id} side="clinic" />
     </div>
   );
 }

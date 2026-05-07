@@ -10,6 +10,8 @@ import { useTenantKind } from '@/features/lab';
 
 const NAV = [
   { href: '/lab/cases', label: 'Cases' },
+  { href: '/lab/billing', label: 'Billing' },
+  { href: '/lab/stats', label: 'Stats' },
   { href: '/lab/catalog', label: 'Catalog' },
   { href: '/lab/materials', label: 'Materials' },
   { href: '/lab/compliance', label: 'Compliance' },

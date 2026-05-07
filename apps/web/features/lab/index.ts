@@ -17,13 +17,32 @@ export type {
   LabMaterialLot,
   LabMaterialLotStatus,
   LabMaterialUsage,
+  LabInvoiceStatus,
+  LabInvoiceSummary,
+  LabInvoiceDetail,
+  LabInvoiceItem,
+  LabPaymentLink,
+  LabPaymentLinkProvider,
+  LabPaymentLinkStatus,
+  CreateInvoiceInput,
+  GenerateFromCasesInput,
+  InvoiceFilter,
+  InvoiceItemInput,
+  LabStatsOverview,
+  LabTreatmentPlan,
+  LabTreatmentPlanFile,
+  LabTreatmentPlanFileKind,
+  LabTreatmentPlanStatus,
+  LabTreatmentPlanDecision,
+  LabTreatmentPlanApproval,
 } from './lib/api';
 export { LabApiError } from './lib/api';
 export * from './hooks/use-lab';
 export { useTenantKind } from './hooks/use-tenant-kind';
-export { CaseStatusPill, LinkStatusPill } from './components/status-pill';
+export { CaseStatusPill, InvoiceStatusPill, LinkStatusPill } from './components/status-pill';
 export { PhaseStrip } from './components/phase-strip';
 export { NotesPanel } from './components/notes-panel';
 export { ChatPanel } from './components/chat-panel';
 export { ShipmentWidget } from './components/shipment-widget';
 export { MaterialsUsagePanel } from './components/materials-usage-panel';
+export { TreatmentPlansPanel } from './components/treatment-plans-panel';

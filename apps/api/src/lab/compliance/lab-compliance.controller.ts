@@ -10,6 +10,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
@@ -195,5 +196,24 @@ export class LabComplianceController {
     @Headers('user-agent') userAgent: string | undefined,
   ) {
     return this.compliance.captureSignature(caseId, dto, user, { ip, userAgent });
+  }
+
+  // ── Conformity PDF render (lab-only) ────────────────────
+
+  @Post('lab/cases/:caseId/conformity-pdf')
+  @HttpCode(HttpStatus.OK)
+  @Requires(Actions.TENANT_MANAGE)
+  @RequiresFeature(Features.LAB_CONFORMITY_DOCS)
+  @Audit({
+    action: 'lab.case.conformity.render',
+    entity: 'LabCase',
+    entityIdFrom: 'param:caseId',
+  })
+  renderConformityPdf(
+    @Param('caseId') caseId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('templateId') templateId?: string,
+  ) {
+    return this.compliance.renderConformityPdf(caseId, templateId ?? null, user);
   }
 }

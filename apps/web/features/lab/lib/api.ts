@@ -764,3 +764,399 @@ export async function putToS3(
     throw new Error(`S3 upload failed: ${res.status} ${res.statusText}`);
   }
 }
+
+// ── Invoices ────────────────────────────────────────────────
+
+export type LabInvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'VOID';
+
+export type LabPaymentLinkProvider =
+  | 'PAYMONGO'
+  | 'GCASH'
+  | 'MAYA'
+  | 'STRIPE'
+  | 'MANUAL';
+
+export type LabPaymentLinkStatus = 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED';
+
+export interface LabInvoiceItem {
+  id: string;
+  invoiceId: string;
+  caseId: string | null;
+  description: string;
+  qty: number;
+  unitPriceCents: number;
+  amountCents: number;
+  sortOrder: number;
+}
+
+export interface LabPaymentLink {
+  id: string;
+  invoiceId: string;
+  provider: LabPaymentLinkProvider;
+  externalId: string | null;
+  url: string | null;
+  amountCents: number;
+  status: LabPaymentLinkStatus;
+  expiresAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export interface LabInvoiceSummary {
+  id: string;
+  refNumber: number | null;
+  labTenantId: string;
+  clinicTenantId: string;
+  status: LabInvoiceStatus;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
+  paidCents: number;
+  issuedAt: string | null;
+  dueAt: string | null;
+  paidAt: string | null;
+  voidedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lab?: { id: string; slug: string; name: string };
+  clinic?: { id: string; slug: string; name: string };
+  _count?: { items: number; paymentLinks?: number };
+}
+
+export interface LabInvoiceDetail extends LabInvoiceSummary {
+  items: LabInvoiceItem[];
+  paymentLinks: LabPaymentLink[];
+}
+
+export interface InvoiceItemInput {
+  caseId?: string;
+  description: string;
+  qty?: number;
+  unitPriceCents: number;
+  sortOrder?: number;
+}
+
+export interface CreateInvoiceInput {
+  clinicTenantId: string;
+  currency?: string;
+  dueAt?: string;
+  notes?: string;
+  taxCents?: number;
+  items?: InvoiceItemInput[];
+}
+
+export interface GenerateFromCasesInput {
+  clinicTenantId: string;
+  caseIds: string[];
+  currency?: string;
+  dueAt?: string;
+  notes?: string;
+  taxCents?: number;
+}
+
+export interface InvoiceFilter {
+  status?: LabInvoiceStatus;
+  clinicTenantId?: string;
+}
+
+function invoiceQuery(filter: InvoiceFilter): string {
+  const params = new URLSearchParams();
+  if (filter.status) params.set('status', filter.status);
+  if (filter.clinicTenantId) params.set('clinicTenantId', filter.clinicTenantId);
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+}
+
+export function listLabInvoices(filter: InvoiceFilter = {}) {
+  return call<LabInvoiceSummary[]>(`/lab/invoices${invoiceQuery(filter)}`);
+}
+
+export function getLabInvoice(id: string) {
+  return call<LabInvoiceDetail>(`/lab/invoices/${id}`);
+}
+
+export function createLabInvoice(input: CreateInvoiceInput) {
+  return call<LabInvoiceDetail>('/lab/invoices', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function generateInvoiceFromCases(input: GenerateFromCasesInput) {
+  return call<LabInvoiceDetail>('/lab/invoices/generate-from-cases', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateLabInvoice(
+  id: string,
+  input: { dueAt?: string | null; notes?: string | null; taxCents?: number },
+) {
+  return call<LabInvoiceDetail>(`/lab/invoices/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function addLabInvoiceItem(id: string, input: InvoiceItemInput) {
+  return call<LabInvoiceItem>(`/lab/invoices/${id}/items`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateLabInvoiceItem(
+  id: string,
+  itemId: string,
+  input: Partial<InvoiceItemInput>,
+) {
+  return call<LabInvoiceItem>(`/lab/invoices/${id}/items/${itemId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteLabInvoiceItem(id: string, itemId: string) {
+  return call<void>(`/lab/invoices/${id}/items/${itemId}`, { method: 'DELETE' });
+}
+
+export function issueLabInvoice(id: string) {
+  return call<LabInvoiceDetail>(`/lab/invoices/${id}/issue`, { method: 'POST' });
+}
+
+export function recordLabInvoicePayment(
+  id: string,
+  input: { amountCents: number; paidAt?: string; reference?: string },
+) {
+  return call<LabInvoiceDetail>(`/lab/invoices/${id}/payments`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function voidLabInvoice(id: string) {
+  return call<LabInvoiceDetail>(`/lab/invoices/${id}/void`, { method: 'POST' });
+}
+
+export function createLabPaymentLink(
+  id: string,
+  input: {
+    provider?: LabPaymentLinkProvider;
+    amountCents?: number;
+    externalId?: string;
+    url?: string;
+    expiresAt?: string;
+  },
+) {
+  return call<LabPaymentLink>(`/lab/invoices/${id}/payment-links`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function cancelLabPaymentLink(id: string, linkId: string) {
+  return call<LabPaymentLink>(`/lab/invoices/${id}/payment-links/${linkId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function listClinicInvoices(filter: InvoiceFilter = {}) {
+  return call<LabInvoiceSummary[]>(`/clinic/lab-invoices${invoiceQuery(filter)}`);
+}
+
+export function getClinicInvoice(id: string) {
+  return call<LabInvoiceDetail>(`/clinic/lab-invoices/${id}`);
+}
+
+export interface PdfDownload {
+  url: string;
+  expiresInSec: number;
+  filename: string;
+}
+
+export function generateLabInvoicePdf(id: string) {
+  return call<PdfDownload>(`/lab/invoices/${id}/pdf`, { method: 'POST' });
+}
+
+export function getClinicInvoicePdf(id: string) {
+  return call<PdfDownload>(`/clinic/lab-invoices/${id}/pdf`);
+}
+
+export function renderConformityPdf(caseId: string, templateId?: string) {
+  const qs = templateId ? `?templateId=${encodeURIComponent(templateId)}` : '';
+  return call<PdfDownload>(`/lab/cases/${caseId}/conformity-pdf${qs}`, {
+    method: 'POST',
+  });
+}
+
+export interface MonthlySweepResult {
+  period: string;
+  invoicesCreated: number;
+  invoices: Array<{ id: string; clinicTenantId: string; totalCents: number }>;
+}
+
+export function runMonthlyInvoiceSweep(period?: string) {
+  const qs = period ? `?period=${encodeURIComponent(period)}` : '';
+  return call<MonthlySweepResult>(`/lab/invoices/sweep${qs}`, { method: 'POST' });
+}
+
+// ── Stats ───────────────────────────────────────────────────
+
+export interface LabStatsOverview {
+  casesByStatus: Record<LabCaseStatus, number>;
+  openCases: number;
+  outstandingCents: number;
+  casesByMonth: Array<{ month: string; count: number }>;
+  revenueByMonth: Array<{ month: string; cents: number }>;
+  topClinics: Array<{
+    clinicId: string;
+    name: string;
+    revenueCents: number;
+    cases: number;
+  }>;
+}
+
+export function getLabStats() {
+  return call<LabStatsOverview>('/lab/stats');
+}
+
+// ── Treatment plans ────────────────────────────────────────
+
+export type LabTreatmentPlanStatus =
+  | 'DRAFT'
+  | 'PROPOSED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'REVISION_REQUESTED';
+
+export type LabTreatmentPlanFileKind =
+  | 'STL'
+  | 'IMAGE'
+  | 'REPORT'
+  | 'IPR_TABLE'
+  | 'OTHER';
+
+export type LabTreatmentPlanDecision =
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'REVISION_REQUESTED';
+
+export interface LabTreatmentPlanFile {
+  id: string;
+  planId: string;
+  s3Key: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  kind: LabTreatmentPlanFileKind;
+  createdAt: string;
+}
+
+export interface LabTreatmentPlanApproval {
+  id: string;
+  planId: string;
+  decision: LabTreatmentPlanDecision;
+  decidedByUserId: string;
+  notes: string | null;
+  summarySnapshot: string;
+  decidedAt: string;
+}
+
+export interface LabTreatmentPlan {
+  id: string;
+  caseId: string;
+  labTenantId: string;
+  clinicTenantId: string;
+  revision: number | null;
+  title: string;
+  summary: string;
+  status: LabTreatmentPlanStatus;
+  proposedAt: string | null;
+  decidedAt: string | null;
+  decidedByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  files: LabTreatmentPlanFile[];
+  approvals: LabTreatmentPlanApproval[];
+}
+
+export function listLabTreatmentPlans(caseId: string) {
+  return call<LabTreatmentPlan[]>(
+    `/lab/treatment-plans?caseId=${encodeURIComponent(caseId)}`,
+  );
+}
+
+export function listClinicTreatmentPlans(caseId: string) {
+  return call<LabTreatmentPlan[]>(
+    `/clinic/lab-treatment-plans?caseId=${encodeURIComponent(caseId)}`,
+  );
+}
+
+export function getLabTreatmentPlan(id: string) {
+  return call<LabTreatmentPlan>(`/lab/treatment-plans/${id}`);
+}
+
+export function getClinicTreatmentPlan(id: string) {
+  return call<LabTreatmentPlan>(`/clinic/lab-treatment-plans/${id}`);
+}
+
+export function createLabTreatmentPlan(input: {
+  caseId: string;
+  title: string;
+  summary: string;
+}) {
+  return call<LabTreatmentPlan>('/lab/treatment-plans', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateLabTreatmentPlan(
+  id: string,
+  input: { title?: string; summary?: string },
+) {
+  return call<LabTreatmentPlan>(`/lab/treatment-plans/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function proposeLabTreatmentPlan(id: string) {
+  return call<LabTreatmentPlan>(`/lab/treatment-plans/${id}/propose`, {
+    method: 'POST',
+  });
+}
+
+export function presignLabTreatmentPlanFile(
+  id: string,
+  input: {
+    filename: string;
+    mimeType: string;
+    sizeBytes: number;
+    kind?: LabTreatmentPlanFileKind;
+  },
+) {
+  return call<PresignResponse>(`/lab/treatment-plans/${id}/files/presign`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteLabTreatmentPlanFile(id: string, fileId: string) {
+  return call<void>(`/lab/treatment-plans/${id}/files/${fileId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function decideTreatmentPlan(
+  id: string,
+  input: { decision: LabTreatmentPlanDecision; notes?: string },
+) {
+  return call<LabTreatmentPlan>(
+    `/clinic/lab-treatment-plans/${id}/decisions`,
+    { method: 'POST', body: JSON.stringify(input) },
+  );
+}

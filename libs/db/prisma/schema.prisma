@@ -57,6 +57,9 @@ model Tenant {
   // Inverse relations to LabCase (dental lab manufacturing cases).
   labCases     LabCase[] @relation("LabCases")
   clinicCases  LabCase[] @relation("ClinicCases")
+  // Invoices issued by this lab vs received by this clinic.
+  labInvoices    LabInvoice[] @relation("LabInvoicesLab")
+  clinicInvoices LabInvoice[] @relation("LabInvoicesClinic")
 
   @@index([slug])
   @@index([kind])
@@ -265,6 +268,8 @@ model LabCase {
   shipment          LabShipment?
   materialUsages    LabMaterialUsage[]
   consentSignatures LabConsentSignature[]
+  invoiceItems      LabInvoiceItem[]
+  treatmentPlans    LabTreatmentPlan[]
 
   @@unique([labTenantId, refNumber])
   @@index([labTenantId, status])
@@ -458,6 +463,112 @@ model LabConsentSignature {
   @@map("lab_consent_signatures")
 }
 
+// ── Treatment plans ────────────────────────────────────────────────
+// Lab-proposed treatment plan tied to a LabCase. The lab drafts a plan
+// (summary + attached files like STL exports / IPR tables / images), then
+// PROPOSES it to the clinic. The clinic approves, rejects, or asks for a
+// revision; each decision lands in `LabTreatmentPlanApproval` for an
+// audit trail. A case may carry multiple revisions over time — the latest
+// non-VOID plan is "active."
+//
+// RLS: two-sided (same pattern as LabCase / LabInvoice). Lab can write
+// plans; clinic can write approvals. Both can read.
+
+enum LabTreatmentPlanStatus {
+  DRAFT       // lab is composing
+  PROPOSED    // visible to clinic, awaiting decision
+  APPROVED
+  REJECTED
+  REVISION_REQUESTED  // clinic asked for changes; lab can iterate
+}
+
+enum LabTreatmentPlanFileKind {
+  STL
+  IMAGE
+  REPORT
+  IPR_TABLE
+  OTHER
+}
+
+enum LabTreatmentPlanDecision {
+  APPROVED
+  REJECTED
+  REVISION_REQUESTED
+}
+
+model LabTreatmentPlan {
+  id              String                @id @default(cuid())
+  caseId          String
+  // Snapshot of the case's lab/clinic at create time so RLS predicates can
+  // evaluate without joining (mirrors LabInvoice's pattern).
+  labTenantId     String
+  clinicTenantId  String
+  // Sequential revision number per case (1, 2, 3, …). Allocated when the
+  // plan is first PROPOSED.
+  revision        Int?
+  title           String
+  // Markdown summary — the human-readable plan body the clinic decides on.
+  summary         String
+  status          LabTreatmentPlanStatus @default(DRAFT)
+  proposedAt      DateTime?
+  decidedAt       DateTime?
+  decidedByUserId String?
+
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  case        LabCase                     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  files       LabTreatmentPlanFile[]
+  approvals   LabTreatmentPlanApproval[]
+
+  @@unique([caseId, revision])
+  @@index([labTenantId, status])
+  @@index([clinicTenantId, status])
+  @@index([caseId])
+  @@map("lab_treatment_plans")
+}
+
+model LabTreatmentPlanFile {
+  id          String                  @id @default(cuid())
+  planId      String
+  s3Key       String
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  kind        LabTreatmentPlanFileKind @default(OTHER)
+  uploadedByUserId   String
+  uploadedByTenantId String
+  createdAt   DateTime                @default(now())
+  deletedAt   DateTime?
+
+  plan LabTreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@map("lab_treatment_plan_files")
+}
+
+model LabTreatmentPlanApproval {
+  id              String                   @id @default(cuid())
+  planId          String
+  decision        LabTreatmentPlanDecision
+  // The clinic-side user who decided. We track tenant alongside so we can
+  // verify (in the service layer) that the actor was on the clinic side.
+  decidedByUserId String
+  decidedByTenantId String
+  notes           String?
+  // Snapshot of the plan summary at decision time — keeps the audit
+  // immutable even if the lab edits the plan afterwards.
+  summarySnapshot String
+  decidedAt       DateTime @default(now())
+
+  plan LabTreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@map("lab_treatment_plan_approvals")
+}
+
 // Lab-only note attached to a case. Not visible to the clinic — RLS
 // restricts both reads and writes to the case's labTenantId. Soft-deleted
 // for an audit trail.
@@ -532,6 +643,125 @@ model LabShipment {
 
   @@index([caseId])
   @@map("lab_shipments")
+}
+
+// ──────────────────────────────────────────────
+// LAB BILLING (Phase 4)
+// ──────────────────────────────────────────────
+
+enum LabInvoiceStatus {
+  DRAFT      // editable, not yet sent to clinic
+  ISSUED     // delivered; awaiting payment
+  PAID       // settled in full
+  OVERDUE    // past dueAt without full payment
+  VOID       // cancelled — kept for audit
+}
+
+// One invoice from a lab to a clinic. Aggregates one-or-more LabCases via
+// LabInvoiceItem rows. Money lives in centavos for tax-safe arithmetic.
+model LabInvoice {
+  id              String           @id @default(cuid())
+  labTenantId     String
+  clinicTenantId  String
+  // Sequential per-lab number. Allocated when status flips DRAFT → ISSUED.
+  refNumber       Int?
+  status          LabInvoiceStatus @default(DRAFT)
+  currency        String           @default("PHP")
+  // Computed columns kept denormalized so list endpoints don't aggregate
+  // line items per row. Service layer keeps them in sync on mutation.
+  subtotalCents   Int              @default(0)
+  taxCents        Int              @default(0)
+  totalCents      Int              @default(0)
+  paidCents       Int              @default(0)
+
+  issuedAt    DateTime?
+  dueAt       DateTime?
+  paidAt      DateTime?
+  voidedAt    DateTime?
+  notes       String?
+
+  // PDF storage — Phase 5 will populate these. For now nullable so the
+  // schema matches the future write path without needing another migration.
+  pdfFileKey  String?
+  pdfFilename String?
+
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  lab    Tenant @relation("LabInvoicesLab",    fields: [labTenantId],    references: [id], onDelete: Cascade)
+  clinic Tenant @relation("LabInvoicesClinic", fields: [clinicTenantId], references: [id], onDelete: Cascade)
+
+  items        LabInvoiceItem[]
+  paymentLinks LabPaymentLink[]
+
+  @@unique([labTenantId, refNumber])
+  @@index([labTenantId, status])
+  @@index([clinicTenantId, status])
+  @@index([dueAt])
+  @@map("lab_invoices")
+}
+
+// One line on an invoice. May reference a specific LabCase (typical) or be
+// freeform (e.g. urgent surcharge, materials passthrough). Once a case is
+// referenced from a non-VOID invoice, it should not appear on another to
+// avoid double-billing — enforced in service code.
+model LabInvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  caseId      String?
+  description String
+  qty         Int     @default(1)
+  unitPriceCents Int
+  // qty * unitPriceCents at write time. Stored to avoid floating math.
+  amountCents Int
+  sortOrder   Int     @default(0)
+
+  invoice LabInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  case    LabCase?   @relation(fields: [caseId],    references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([caseId])
+  @@map("lab_invoice_items")
+}
+
+enum LabPaymentLinkProvider {
+  PAYMONGO
+  GCASH
+  MAYA
+  STRIPE
+  MANUAL  // ad-hoc (bank transfer ref, etc.)
+}
+
+enum LabPaymentLinkStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+// One payment URL per attempt to settle an invoice. We just store the
+// provider's URL + external id today — no Phase-4 webhook handling yet.
+// When a webhook integration ships, status transitions are wired here.
+model LabPaymentLink {
+  id          String                  @id @default(cuid())
+  invoiceId   String
+  provider    LabPaymentLinkProvider  @default(MANUAL)
+  externalId  String?
+  url         String?
+  amountCents Int
+  status      LabPaymentLinkStatus    @default(PENDING)
+  expiresAt   DateTime?
+  paidAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoice LabInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, status])
+  @@map("lab_payment_links")
 }
 
 // M:N between LabCase and LabCaseTag.

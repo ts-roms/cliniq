@@ -9,7 +9,11 @@ import { resolve } from 'node:path';
 import { AppModule } from './app/app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  // `rawBody: true` preserves the unparsed buffer on the request object so
+  // webhook handlers (e.g. PayMongo HMAC) can verify the signature against
+  // the exact bytes the provider signed. JSON-parsed body is still populated
+  // alongside it, so existing controllers are unaffected.
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
 
   app.use(helmet());
   app.enableCors({

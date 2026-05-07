@@ -23,11 +23,16 @@ export default function ClinicLabCasesPage() {
             Cases your clinic has placed with associated labs.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/lab-cases/new">
-            <Plus className="mr-2 h-4 w-4" aria-hidden /> New case
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/lab-invoices">View invoices</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/lab-cases/new">
+              <Plus className="mr-2 h-4 w-4" aria-hidden /> New case
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
