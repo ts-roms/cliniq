@@ -27,19 +27,32 @@ export class LabClinicLinksService {
 
   /** Lab → invites a clinic by slug. */
   async invite(dto: InviteClinicDto, user: AuthenticatedUser) {
-    const lab = await this.prisma.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { id: true, kind: true, name: true },
-    });
-    if (!lab || lab.kind !== 'LAB') {
+    const labCtx = await this.prisma.getTenantContext(user.tenantId);
+    if (!labCtx || labCtx.kind !== 'LAB') {
       throw new ForbiddenException('only LAB tenants can invite clinics');
     }
+    // We need the lab id + name for the rest of the flow. The
+    // getTenantContext helper only returns kind/plan/labPlan; pull the
+    // rest in another tenant-scoped read.
+    const lab = await this.prisma.withTenant(user.tenantId, null, (tx) =>
+      tx.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: { id: true, name: true },
+      }),
+    );
+    if (!lab) {
+      throw new ForbiddenException('lab tenant not found');
+    }
 
+    // Looking up another tenant by slug crosses tenant boundaries — use
+    // platform context so the cliniq_app role can see beyond its own row.
     const slug = dto.clinicSlug.toLowerCase().trim();
-    const clinic = await this.prisma.tenant.findUnique({
-      where: { slug },
-      select: { id: true, kind: true, name: true, deletedAt: true },
-    });
+    const clinic = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({
+        where: { slug },
+        select: { id: true, kind: true, name: true, deletedAt: true },
+      }),
+    );
     if (!clinic || clinic.deletedAt) {
       throw new NotFoundException(`No tenant with slug "${slug}"`);
     }

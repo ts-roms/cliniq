@@ -214,6 +214,29 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       return fn(tx as unknown as PrismaClient);
     });
   }
+
+  /**
+   * Read a tenant's kind / plan / labPlan in a way that survives RLS.
+   *
+   * Service-layer "is this a LAB tenant?" checks (the `requireLab` /
+   * `assertLabTenant` helpers scattered across the lab module) used to
+   * call `prisma.tenant.findUnique` directly. Under the cliniq_app role
+   * that returns null, because `tenants_self_read` requires
+   * `current_tenant_id()` to match — and these helpers run BEFORE the
+   * route's own `withTenant` wrap. Centralise the lookup here so every
+   * caller sets the right context.
+   */
+  async getTenantContext(
+    tenantId: string,
+  ): Promise<{ kind: string; plan: string | null; labPlan: string | null } | null> {
+    if (!isCuidLike(tenantId)) return null;
+    return this.withTenant(tenantId, null, (tx) =>
+      tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: { kind: true, plan: true, labPlan: true },
+      }),
+    );
+  }
 }
 
 // Accept CUIDs ([a-z0-9]{20-40}) and UUIDs (8-4-4-4-12 hex). The goal here is

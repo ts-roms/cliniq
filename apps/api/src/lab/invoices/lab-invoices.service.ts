@@ -970,10 +970,7 @@ export class LabInvoicesService {
   // ── Internals ────────────────────────────────────────────
 
   private async assertLabTenant(user: AuthenticatedUser): Promise<void> {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { kind: true },
-    });
+    const tenant = await this.prisma.getTenantContext(user.tenantId);
     if (!tenant || tenant.kind !== 'LAB') {
       throw new ForbiddenException('only LAB tenants can manage invoices');
     }

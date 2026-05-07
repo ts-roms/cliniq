@@ -224,10 +224,7 @@ export class LabProductsService {
   // ── Helpers ─────────────────────────────────────────────────────
 
   private async requireLab(user: AuthenticatedUser) {
-    const t = await this.prisma.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { kind: true },
-    });
+    const t = await this.prisma.getTenantContext(user.tenantId);
     if (!t || t.kind !== 'LAB') {
       throw new ForbiddenException('only LAB tenants can manage product catalog');
     }

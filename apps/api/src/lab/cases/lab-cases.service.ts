@@ -69,10 +69,7 @@ export class LabCasesService {
   // ── Clinic-side: create + submit ─────────────────────────
 
   async createDraft(dto: CreateLabCaseDto, user: AuthenticatedUser) {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { kind: true },
-    });
+    const tenant = await this.prisma.getTenantContext(user.tenantId);
     if (!tenant || tenant.kind !== 'CLINIC') {
       throw new ForbiddenException('only CLINIC tenants can create cases');
     }
