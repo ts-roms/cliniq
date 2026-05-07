@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { BedrockModule } from '../bedrock/bedrock.module.js';
 import { DraftsModule } from '../drafts/drafts.module.js';
+import { LabDraftsModule } from '../lab-drafts/lab-drafts.module.js';
 import { TranscribeModule } from '../transcribe/transcribe.module.js';
 import { DermatologyModule } from '../dermatology/dermatology.module.js';
 import { HealthModule } from '../health/health.module.js';
@@ -13,6 +14,7 @@ import { HealthModule } from '../health/health.module.js';
     ConfigModule.forRoot({ isGlobal: true }),
     BedrockModule,
     DraftsModule,
+    LabDraftsModule,
     TranscribeModule,
     DermatologyModule,
     HealthModule,

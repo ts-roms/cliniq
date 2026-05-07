@@ -107,6 +107,8 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get labTreatmentPlan() { return this.client.labTreatmentPlan; }
   get labTreatmentPlanFile() { return this.client.labTreatmentPlanFile; }
   get labTreatmentPlanApproval() { return this.client.labTreatmentPlanApproval; }
+  get labCaseDispute() { return this.client.labCaseDispute; }
+  get labCaseDisputeMessage() { return this.client.labCaseDisputeMessage; }
 
   $transaction<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T>;
   $transaction<T>(promises: Array<Promise<T>>): Promise<T[]>;

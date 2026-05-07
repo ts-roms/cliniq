@@ -126,4 +126,24 @@ export class LabTreatmentPlansController {
   ) {
     return this.plans.deleteFile(id, fileId, user);
   }
+
+  /**
+   * AI assist: draft a treatment plan summary for a case. Returns markdown
+   * the lab pastes into the plan editor (LabTreatmentPlan.summary). Gated
+   * by LAB_AI_ASSIST (Premium-only).
+   */
+  @Post('draft-summary')
+  @HttpCode(HttpStatus.OK)
+  @Requires(Actions.TENANT_MANAGE)
+  @RequiresFeature(Features.LAB_AI_ASSIST)
+  @Audit({
+    action: 'lab.treatment_plan.ai_draft',
+    entity: 'LabCase',
+  })
+  draftSummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('caseId') caseId: string,
+  ) {
+    return this.plans.draftSummary(caseId, user);
+  }
 }

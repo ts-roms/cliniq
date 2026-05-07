@@ -6,9 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 import {
   LabCaseFileStatus,
   LabCaseStatus,
@@ -18,6 +19,7 @@ import {
 } from '@org/db';
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
 import { LabClinicLinksService } from '../clinic-links/lab-clinic-links.service.js';
+import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
 import type {
   CreateLabCaseDto,
   PresignLabCaseFileDto,
@@ -54,6 +56,7 @@ export class LabCasesService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly links: LabClinicLinksService,
+    private readonly notify: LabNotificationsService,
   ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
@@ -213,7 +216,7 @@ export class LabCasesService {
     dto: TransitionLabCaseDto,
     user: AuthenticatedUser,
   ) {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+    const updated = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const labCase = await tx.labCase.findFirst({
         where: { id, deletedAt: null },
       });
@@ -267,6 +270,66 @@ export class LabCasesService {
 
       return tx.labCase.update({ where: { id }, data: updates });
     });
+    // Fire-and-forget notifications. We notify the *other* side of the
+    // transition — the actor doesn't need an email about their own action.
+    void this.notifyTransition(updated.id, dto.status, dto.reason).catch((err) =>
+      this.logger.warn(`case-transition notify failed: ${(err as Error).message}`),
+    );
+    return updated;
+  }
+
+  /**
+   * Dispatch an email when a case transitions. Targets the OTHER side of
+   * the lab/clinic relationship (the actor obviously knows). Best-effort.
+   */
+  private async notifyTransition(
+    caseId: string,
+    status: LabCaseStatus,
+    reason: string | undefined,
+  ): Promise<void> {
+    const lc = await this.prisma.withPlatformContext((tx) =>
+      tx.labCase.findFirst({
+        where: { id: caseId, deletedAt: null },
+        include: {
+          lab: { select: { id: true, name: true } },
+          clinic: { select: { id: true, name: true } },
+          product: { select: { name: true } },
+        },
+      }),
+    );
+    if (!lc) return;
+    const ref = lc.refNumber !== null ? `#${lc.refNumber}` : lc.id.slice(-6);
+    const url = (path: string) => this.notify.webUrl(path);
+
+    // SUBMITTED → notify lab. Other lab-driven transitions notify clinic.
+    if (status === LabCaseStatus.SUBMITTED) {
+      await this.notify.notifyOwner(lc.labTenantId, (r) => ({
+        subject: `New lab case ${ref} from ${lc.clinic.name}`,
+        text:
+          `Hi ${r.name ?? 'there'},\n\n` +
+          `${lc.clinic.name} just submitted case ${ref} (${lc.product.name}).\n\n` +
+          `Open it: ${url(`/lab/cases/${lc.id}`)}\n\n— ClinIQ Lab`,
+      }));
+      return;
+    }
+    const clinicEvents: Partial<Record<LabCaseStatus, string>> = {
+      [LabCaseStatus.IN_PROGRESS]: 'accepted and started',
+      [LabCaseStatus.REJECTED]: 'rejected',
+      [LabCaseStatus.AWAITING_PICKUP]: 'completed and is awaiting pickup',
+      [LabCaseStatus.SHIPPED]: 'shipped',
+      [LabCaseStatus.DELIVERED]: 'marked delivered',
+      [LabCaseStatus.CANCELLED]: 'cancelled',
+    };
+    const verb = clinicEvents[status];
+    if (!verb) return;
+    await this.notify.notifyOwner(lc.clinicTenantId, (r) => ({
+      subject: `Case ${ref} ${status === LabCaseStatus.REJECTED ? 'rejected' : 'updated'} by ${lc.lab.name}`,
+      text:
+        `Hi ${r.name ?? 'there'},\n\n` +
+        `${lc.lab.name} ${verb} your case ${ref} (${lc.product.name}).\n` +
+        (reason ? `\nReason: ${reason}\n` : '') +
+        `\nOpen it: ${url(`/lab-cases/${lc.id}`)}\n\n— ClinIQ Lab`,
+    }));
   }
 
   // ── Files ────────────────────────────────────────────────
@@ -334,7 +397,7 @@ export class LabCasesService {
   }
 
   async confirmUpload(caseId: string, fileId: string, user: AuthenticatedUser) {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+    const confirmed = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const file = await tx.labCaseFile.findFirst({
         where: { id: fileId, caseId, deletedAt: null },
       });
@@ -345,6 +408,70 @@ export class LabCasesService {
         data: { status: LabCaseFileStatus.READY, confirmedAt: new Date() },
       });
     });
+    // Best-effort image optimization. Runs after the row is READY so that
+    // browsers fetching via presigned URL get the optimized version. We
+    // re-encode JPEG/PNG/WebP at quality 85 and cap at 2000px on the long
+    // edge — this routinely halves the payload for phone photos.
+    void this.optimizeIfImage(confirmed.id, confirmed.s3Key, confirmed.mimeType).catch(
+      (err) => this.logger.warn(`image optimize failed: ${(err as Error).message}`),
+    );
+    return confirmed;
+  }
+
+  private async optimizeIfImage(
+    fileId: string,
+    s3Key: string,
+    mimeType: string,
+  ): Promise<void> {
+    if (!OPTIMIZABLE_IMAGE_TYPES.has(mimeType.toLowerCase())) return;
+    const original = await this.s3.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: s3Key }),
+    );
+    const body = original.Body;
+    if (!body) return;
+    // S3 SDK returns a Web ReadableStream-ish; collect it.
+    const chunks: Buffer[] = [];
+    for await (const chunk of body as AsyncIterable<Uint8Array | Buffer>) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const input = Buffer.concat(chunks);
+    const optimized = await sharp(input, { failOn: 'none' })
+      .rotate() // honor EXIF orientation before resize
+      .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85, mozjpeg: true })
+      .toBuffer();
+    if (optimized.byteLength >= input.byteLength) {
+      // Re-encoded file isn't smaller — leave the original alone (e.g.
+      // already-tight JPEG, or a small PNG that grew when re-encoded).
+      return;
+    }
+    // Overwrite the same key. Bump the row's sizeBytes + mimeType so the
+    // listing UI shows the new size. Server-side encryption stays the same
+    // (KMS) — `PutObjectCommand` requires us to re-state it.
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: s3Key,
+        Body: optimized,
+        ContentType: 'image/jpeg',
+        ServerSideEncryption: 'aws:kms',
+      }),
+    );
+    // Update the file row outside the original request context. Use
+    // platform context — RLS would otherwise reject this update because
+    // we no longer have an `app.current_tenant` set.
+    await this.prisma.withPlatformContext((tx) =>
+      tx.labCaseFile.update({
+        where: { id: fileId },
+        data: {
+          sizeBytes: optimized.byteLength,
+          mimeType: 'image/jpeg',
+        },
+      }),
+    );
+    this.logger.log(
+      `image optimized ${s3Key}: ${input.byteLength} → ${optimized.byteLength} bytes (${Math.round((1 - optimized.byteLength / input.byteLength) * 100)}% saved)`,
+    );
   }
 
   async deleteFile(caseId: string, fileId: string, user: AuthenticatedUser) {
@@ -701,6 +828,15 @@ export class LabCasesService {
     };
   }
 }
+
+const OPTIMIZABLE_IMAGE_TYPES: ReadonlySet<string> = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
 
 function sanitizeExt(name: string): string {
   const dot = name.lastIndexOf('.');

@@ -1160,3 +1160,93 @@ export function decideTreatmentPlan(
     { method: 'POST', body: JSON.stringify(input) },
   );
 }
+
+export function draftLabTreatmentPlanSummary(caseId: string) {
+  return call<{ summary: string }>(
+    `/lab/treatment-plans/draft-summary?caseId=${encodeURIComponent(caseId)}`,
+    { method: 'POST' },
+  );
+}
+
+// ── Disputes ───────────────────────────────────────────────
+
+export type LabCaseDisputeStatus =
+  | 'OPEN'
+  | 'RESOLVED'
+  | 'REJECTED'
+  | 'WITHDRAWN';
+
+export type LabCaseDisputeKind = 'QUALITY' | 'BILLING' | 'DELIVERY' | 'OTHER';
+
+export interface LabCaseDisputeMessage {
+  id: string;
+  disputeId: string;
+  senderUserId: string;
+  senderTenantId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface LabCaseDispute {
+  id: string;
+  caseId: string;
+  labTenantId: string;
+  clinicTenantId: string;
+  openedByUserId: string;
+  openedByTenantId: string;
+  kind: LabCaseDisputeKind;
+  reason: string;
+  status: LabCaseDisputeStatus;
+  resolvedByUserId: string | null;
+  resolvedAt: string | null;
+  resolutionNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messages: LabCaseDisputeMessage[];
+}
+
+function disputePath(side: 'lab' | 'clinic', tail = ''): string {
+  const root = side === 'lab' ? '/lab/disputes' : '/clinic/lab-disputes';
+  return tail ? `${root}${tail}` : root;
+}
+
+export function listLabDisputes(side: 'lab' | 'clinic', caseId: string) {
+  return call<LabCaseDispute[]>(
+    `${disputePath(side)}?caseId=${encodeURIComponent(caseId)}`,
+  );
+}
+
+export function openLabDispute(
+  side: 'lab' | 'clinic',
+  input: { caseId: string; kind: LabCaseDisputeKind; reason: string },
+) {
+  return call<LabCaseDispute>(disputePath(side), {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function postLabDisputeMessage(
+  side: 'lab' | 'clinic',
+  id: string,
+  body: string,
+) {
+  return call<LabCaseDisputeMessage>(disputePath(side, `/${id}/messages`), {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  });
+}
+
+export function closeLabDispute(
+  side: 'lab' | 'clinic',
+  id: string,
+  input: {
+    status: 'RESOLVED' | 'REJECTED' | 'WITHDRAWN';
+    notes?: string;
+  },
+) {
+  return call<LabCaseDispute>(disputePath(side, `/${id}/close`), {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}

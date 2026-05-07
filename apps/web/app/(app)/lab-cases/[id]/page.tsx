@@ -14,6 +14,7 @@ import {
 import {
   CaseStatusPill,
   ChatPanel,
+  DisputesPanel,
   PhaseStrip,
   ShipmentWidget,
   TreatmentPlansPanel,
@@ -22,6 +23,7 @@ import {
   useTransitionClinicCase,
   type LabCaseStatus,
 } from '@/features/lab';
+import { useSession } from '@/features/auth';
 
 export default function ClinicLabCaseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -241,8 +243,15 @@ export default function ClinicLabCaseDetailPage() {
       </Card>
 
       <TreatmentPlansPanel caseId={lc.id} side="clinic" />
+
+      <ClinicDisputesPanel caseId={lc.id} />
     </div>
   );
+}
+
+function ClinicDisputesPanel({ caseId }: { caseId: string }) {
+  const session = useSession();
+  return <DisputesPanel caseId={caseId} side="clinic" myUserId={session?.user.id} />;
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {

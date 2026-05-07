@@ -14,6 +14,7 @@ import {
 import {
   CaseStatusPill,
   ChatPanel,
+  DisputesPanel,
   MaterialsUsagePanel,
   NotesPanel,
   PhaseStrip,
@@ -25,6 +26,7 @@ import {
   useTransitionLabCase,
   type LabCaseStatus,
 } from '@/features/lab';
+import { useSession } from '@/features/auth';
 
 export default function LabCaseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -278,8 +280,21 @@ export default function LabCaseDetailPage() {
       </Card>
 
       <TreatmentPlansPanel caseId={lc.id} side="lab" />
+
+      <DisputesPanelWithSession caseId={lc.id} side="lab" />
     </div>
   );
+}
+
+function DisputesPanelWithSession({
+  caseId,
+  side,
+}: {
+  caseId: string;
+  side: 'lab' | 'clinic';
+}) {
+  const session = useSession();
+  return <DisputesPanel caseId={caseId} side={side} myUserId={session?.user.id} />;
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {

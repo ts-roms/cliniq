@@ -9,6 +9,7 @@ import type {
   GenerateFromCasesInput,
   InvoiceFilter,
   InvoiceItemInput,
+  LabCaseDisputeKind,
   LabCaseStatus,
   LabPaymentLinkProvider,
   LabTreatmentPlanDecision,
@@ -777,5 +778,59 @@ export function useDecideTreatmentPlan(id: string) {
       qc.invalidateQueries({ queryKey: [...KEY, 'treatment-plan', 'clinic', id] });
       qc.invalidateQueries({ queryKey: [...KEY, 'treatment-plans'] });
     },
+  });
+}
+
+export function useDraftLabTreatmentPlanSummary() {
+  return useMutation({
+    mutationFn: (caseId: string) => api.draftLabTreatmentPlanSummary(caseId),
+  });
+}
+
+// ── Disputes ────────────────────────────────────────────────
+
+export function useLabDisputes(side: 'lab' | 'clinic', caseId: string | null) {
+  return useQuery({
+    queryKey: [...KEY, 'disputes', side, caseId],
+    queryFn: () => api.listLabDisputes(side, caseId!),
+    enabled: !!caseId,
+  });
+}
+
+export function useOpenLabDispute(side: 'lab' | 'clinic') {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      caseId: string;
+      kind: LabCaseDisputeKind;
+      reason: string;
+    }) => api.openLabDispute(side, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'disputes'] }),
+  });
+}
+
+export function usePostLabDisputeMessage(
+  side: 'lab' | 'clinic',
+  disputeId: string,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) =>
+      api.postLabDisputeMessage(side, disputeId, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'disputes'] }),
+  });
+}
+
+export function useCloseLabDispute(
+  side: 'lab' | 'clinic',
+  disputeId: string,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      status: 'RESOLVED' | 'REJECTED' | 'WITHDRAWN';
+      notes?: string;
+    }) => api.closeLabDispute(side, disputeId, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'disputes'] }),
   });
 }

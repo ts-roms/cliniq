@@ -270,6 +270,7 @@ model LabCase {
   consentSignatures LabConsentSignature[]
   invoiceItems      LabInvoiceItem[]
   treatmentPlans    LabTreatmentPlan[]
+  disputes          LabCaseDispute[]
 
   @@unique([labTenantId, refNumber])
   @@index([labTenantId, status])
@@ -461,6 +462,69 @@ model LabConsentSignature {
   @@index([caseId])
   @@index([templateId])
   @@map("lab_consent_signatures")
+}
+
+// ── Disputes ──────────────────────────────────────────────────────
+// Either side can open a dispute on a delivered case (e.g. a remake
+// request, a quality complaint, a billing disagreement). Disputes carry
+// a free-form thread of messages from both sides until one side resolves
+// or rejects them.
+
+enum LabCaseDisputeStatus {
+  OPEN
+  RESOLVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum LabCaseDisputeKind {
+  QUALITY     // remake / fit / shade complaint
+  BILLING     // amount / line-item disagreement
+  DELIVERY    // missing items, wrong patient, lost in shipping
+  OTHER
+}
+
+model LabCaseDispute {
+  id              String                 @id @default(cuid())
+  caseId          String
+  // Snapshot to avoid joins for RLS predicates.
+  labTenantId     String
+  clinicTenantId  String
+  openedByUserId  String
+  openedByTenantId String
+  kind            LabCaseDisputeKind     @default(OTHER)
+  reason          String
+  status          LabCaseDisputeStatus   @default(OPEN)
+  resolvedByUserId String?
+  resolvedAt       DateTime?
+  resolutionNotes  String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  case     LabCase                 @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  messages LabCaseDisputeMessage[]
+
+  @@index([labTenantId, status])
+  @@index([clinicTenantId, status])
+  @@index([caseId])
+  @@map("lab_case_disputes")
+}
+
+model LabCaseDisputeMessage {
+  id           String    @id @default(cuid())
+  disputeId    String
+  senderUserId String
+  senderTenantId String
+  body         String
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  dispute LabCaseDispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId])
+  @@map("lab_case_dispute_messages")
 }
 
 // ── Treatment plans ────────────────────────────────────────────────

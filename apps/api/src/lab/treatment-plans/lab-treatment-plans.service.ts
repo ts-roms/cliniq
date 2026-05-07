@@ -16,6 +16,8 @@ import {
   PrismaService,
 } from '@org/db';
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
+import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
+import { AiClientService } from '../../ai-client/ai-client.service.js';
 import type {
   CreateTreatmentPlanDto,
   PresignTreatmentPlanFileDto,
@@ -32,6 +34,8 @@ export class LabTreatmentPlansService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly notify: LabNotificationsService,
+    private readonly ai: AiClientService,
   ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
@@ -87,24 +91,24 @@ export class LabTreatmentPlansService {
    * the revision counter ticks up.
    */
   async propose(id: string, user: AuthenticatedUser) {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const plan = await tx.labTreatmentPlan.findFirst({
+    const plan = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const existing = await tx.labTreatmentPlan.findFirst({
         where: { id, labTenantId: user.tenantId, deletedAt: null },
       });
-      if (!plan) throw new NotFoundException('plan not found');
+      if (!existing) throw new NotFoundException('plan not found');
       const proposable: LabTreatmentPlanStatus[] = [
         LabTreatmentPlanStatus.DRAFT,
         LabTreatmentPlanStatus.REVISION_REQUESTED,
       ];
-      if (!proposable.includes(plan.status)) {
+      if (!proposable.includes(existing.status)) {
         throw new BadRequestException(
-          `cannot propose a ${plan.status} plan`,
+          `cannot propose a ${existing.status} plan`,
         );
       }
-      let revision = plan.revision;
+      let revision = existing.revision;
       if (revision === null) {
         const max = await tx.labTreatmentPlan.aggregate({
-          where: { caseId: plan.caseId },
+          where: { caseId: existing.caseId },
           _max: { revision: true },
         });
         revision = (max._max.revision ?? 0) + 1;
@@ -127,6 +131,10 @@ export class LabTreatmentPlansService {
       );
       return updated;
     });
+    void this.notifyPlanProposed(plan.id).catch((err) =>
+      this.logger.warn(`plan-proposed notify failed: ${(err as Error).message}`),
+    );
+    return plan;
   }
 
   // ── Reads ─────────────────────────────────────────────────
@@ -243,7 +251,7 @@ export class LabTreatmentPlansService {
     notes: string | null,
     user: AuthenticatedUser,
   ) {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+    const result = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const plan = await tx.labTreatmentPlan.findFirst({
         where: { id, clinicTenantId: user.tenantId, deletedAt: null },
       });
@@ -294,6 +302,131 @@ export class LabTreatmentPlansService {
       );
       return updated;
     });
+    void this.notifyPlanDecided(result.id, decision, notes).catch((err) =>
+      this.logger.warn(`plan-decided notify failed: ${(err as Error).message}`),
+    );
+    return result;
+  }
+
+  // ── Notifications ────────────────────────────────────────
+
+  private async notifyPlanProposed(planId: string): Promise<void> {
+    const plan = await this.prisma.withPlatformContext((tx) =>
+      tx.labTreatmentPlan.findFirst({
+        where: { id: planId, deletedAt: null },
+        include: {
+          case: {
+            select: {
+              refNumber: true,
+              id: true,
+              clinicTenantId: true,
+              labTenantId: true,
+              product: { select: { name: true } },
+              lab: { select: { name: true } },
+            },
+          },
+        },
+      }),
+    );
+    if (!plan) return;
+    const ref =
+      plan.case.refNumber !== null ? `#${plan.case.refNumber}` : plan.case.id.slice(-6);
+    const url = this.notify.webUrl(`/lab-cases/${plan.case.id}`);
+    await this.notify.notifyOwner(plan.case.clinicTenantId, (r) => ({
+      subject: `${plan.case.lab.name} proposed treatment plan for case ${ref}`,
+      text:
+        `Hi ${r.name ?? 'there'},\n\n` +
+        `${plan.case.lab.name} has proposed a treatment plan for case ${ref} ` +
+        `(${plan.case.product.name}, rev ${plan.revision ?? '—'}).\n\n` +
+        `Title: ${plan.title}\n\n` +
+        `Review and decide here: ${url}\n\n— ClinIQ Lab`,
+    }));
+  }
+
+  private async notifyPlanDecided(
+    planId: string,
+    decision: LabTreatmentPlanDecision,
+    notes: string | null,
+  ): Promise<void> {
+    const plan = await this.prisma.withPlatformContext((tx) =>
+      tx.labTreatmentPlan.findFirst({
+        where: { id: planId, deletedAt: null },
+        include: {
+          case: {
+            select: {
+              refNumber: true,
+              id: true,
+              labTenantId: true,
+              product: { select: { name: true } },
+              clinic: { select: { name: true } },
+            },
+          },
+        },
+      }),
+    );
+    if (!plan) return;
+    const ref =
+      plan.case.refNumber !== null ? `#${plan.case.refNumber}` : plan.case.id.slice(-6);
+    const verb =
+      decision === LabTreatmentPlanDecision.APPROVED
+        ? 'approved'
+        : decision === LabTreatmentPlanDecision.REJECTED
+          ? 'rejected'
+          : 'requested a revision on';
+    const url = this.notify.webUrl(`/lab/cases/${plan.case.id}`);
+    await this.notify.notifyOwner(plan.case.labTenantId, (r) => ({
+      subject: `${plan.case.clinic.name} ${verb} the treatment plan for case ${ref}`,
+      text:
+        `Hi ${r.name ?? 'there'},\n\n` +
+        `${plan.case.clinic.name} ${verb} the treatment plan for case ${ref} ` +
+        `(${plan.case.product.name}).\n` +
+        (notes ? `\nNotes: ${notes}\n` : '') +
+        `\nOpen it: ${url}\n\n— ClinIQ Lab`,
+    }));
+  }
+
+  // ── AI assist ────────────────────────────────────────────
+
+  /**
+   * Hand a case to the ai-service and get back a draft markdown summary
+   * the lab can use as a starting point. We pull form data, urgency,
+   * notes, and any logged material lots — that's the context the prompt
+   * was tuned on. Lab-only.
+   */
+  async draftSummary(caseId: string, user: AuthenticatedUser): Promise<{ summary: string }> {
+    const ctx = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const labCase = await tx.labCase.findFirst({
+        where: { id: caseId, labTenantId: user.tenantId, deletedAt: null },
+        include: {
+          product: { select: { name: true } },
+          materialUsages: { include: { lot: { include: { material: true } } } },
+        },
+      });
+      if (!labCase) {
+        throw new NotFoundException('case not found (or not owned by this lab)');
+      }
+      return labCase;
+    });
+    const formData = (ctx.formData ?? null) as Record<string, unknown> | null;
+    const result = await this.ai.draftLabTreatmentPlan({
+      case: {
+        refNumber: ctx.refNumber,
+        productName: ctx.product.name,
+        urgency: ctx.urgency,
+        patientLabel: ctx.patientLabel,
+        doctorLabel: ctx.doctorLabel,
+        notes: ctx.notes,
+        formData,
+      },
+      materialsUsed: ctx.materialUsages.map((u) => ({
+        material: u.lot.material.name,
+        lot: u.lot.lotNumber,
+      })),
+    });
+    this.logger.log(
+      `ai draft for case ${caseId}: model=${result.model} tokens=${result.inputTokens}/${result.outputTokens} latency=${result.latencyMs}ms`,
+    );
+    return { summary: result.summary };
   }
 
   // ── Helpers ──────────────────────────────────────────────

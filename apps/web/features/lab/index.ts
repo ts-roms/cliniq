@@ -35,6 +35,10 @@ export type {
   LabTreatmentPlanStatus,
   LabTreatmentPlanDecision,
   LabTreatmentPlanApproval,
+  LabCaseDispute,
+  LabCaseDisputeMessage,
+  LabCaseDisputeKind,
+  LabCaseDisputeStatus,
 } from './lib/api';
 export { LabApiError } from './lib/api';
 export * from './hooks/use-lab';
@@ -46,3 +50,4 @@ export { ChatPanel } from './components/chat-panel';
 export { ShipmentWidget } from './components/shipment-widget';
 export { MaterialsUsagePanel } from './components/materials-usage-panel';
 export { TreatmentPlansPanel } from './components/treatment-plans-panel';
+export { DisputesPanel } from './components/disputes-panel';

@@ -12,11 +12,10 @@ import {
   LabPaymentLinkStatus,
   PrismaService,
 } from '@org/db';
-import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
-import { MailerService } from '../../mailer/mailer.service.js';
 import { LabClinicLinksService } from '../clinic-links/lab-clinic-links.service.js';
 import { LabPdfRenderingService } from '../_shared/pdf-rendering.service.js';
+import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
 import { PaymongoService } from './paymongo.service.js';
 import type {
   AddInvoiceItemDto,
@@ -43,8 +42,7 @@ export class LabInvoicesService {
     private readonly prisma: PrismaService,
     private readonly links: LabClinicLinksService,
     private readonly pdf: LabPdfRenderingService,
-    private readonly mailer: MailerService,
-    private readonly config: ConfigService,
+    private readonly notify: LabNotificationsService,
     private readonly paymongo: PaymongoService,
   ) {}
 
@@ -649,12 +647,7 @@ export class LabInvoicesService {
 
   // ── Notifications ────────────────────────────────────────
 
-  /**
-   * Notify the clinic OWNER that a new invoice is ready. Uses platform
-   * context to read the clinic's user list (RLS would otherwise hide it
-   * from the lab tenant). Mailer is no-op in dev when RESEND_API_KEY is
-   * unset, so this is safe to call from anywhere.
-   */
+  /** Notify the clinic OWNER that a new invoice is ready. */
   private async notifyInvoiceIssued(invoiceId: string): Promise<void> {
     const inv = await this.prisma.withPlatformContext((tx) =>
       tx.labInvoice.findFirst({
@@ -666,21 +659,18 @@ export class LabInvoicesService {
       }),
     );
     if (!inv) return;
-    const recipient = await this.lookupOwnerEmail(inv.clinicTenantId);
-    if (!recipient) return;
     const ref = inv.refNumber !== null ? `INV-${inv.refNumber}` : inv.id.slice(-8);
     const total = `${inv.currency} ${(inv.totalCents / 100).toFixed(2)}`;
-    const url = this.invoiceUrlForClinic(inv.id);
-    await this.mailer.send({
-      to: recipient.email,
+    const url = this.notify.webUrl(`/lab-invoices/${inv.id}`);
+    await this.notify.notifyOwner(inv.clinicTenantId, (r) => ({
       subject: `Invoice ${ref} from ${inv.lab.name}`,
       text:
-        `Hi ${recipient.name ?? 'there'},\n\n` +
+        `Hi ${r.name ?? 'there'},\n\n` +
         `${inv.lab.name} has issued invoice ${ref} to ${inv.clinic.name} for ${total}.\n` +
         (inv.dueAt ? `Due: ${inv.dueAt.toISOString().slice(0, 10)}\n\n` : '\n') +
         `View it here: ${url}\n\n` +
         `— ClinIQ Lab`,
-    });
+    }));
   }
 
   /** Notify the lab OWNER that an invoice has been fully paid. */
@@ -695,43 +685,17 @@ export class LabInvoicesService {
       }),
     );
     if (!inv) return;
-    const recipient = await this.lookupOwnerEmail(inv.labTenantId);
-    if (!recipient) return;
     const ref = inv.refNumber !== null ? `INV-${inv.refNumber}` : inv.id.slice(-8);
     const total = `${inv.currency} ${(inv.totalCents / 100).toFixed(2)}`;
-    const url = this.invoiceUrlForLab(inv.id);
-    await this.mailer.send({
-      to: recipient.email,
+    const url = this.notify.webUrl(`/lab/billing/${inv.id}`);
+    await this.notify.notifyOwner(inv.labTenantId, (r) => ({
       subject: `Invoice ${ref} marked PAID — ${inv.clinic.name}`,
       text:
-        `Hi ${recipient.name ?? 'there'},\n\n` +
+        `Hi ${r.name ?? 'there'},\n\n` +
         `Invoice ${ref} (${total}) from ${inv.clinic.name} is now fully paid.\n\n` +
         `View it here: ${url}\n\n` +
         `— ClinIQ Lab`,
-    });
-  }
-
-  private async lookupOwnerEmail(
-    tenantId: string,
-  ): Promise<{ email: string; name: string | null } | null> {
-    const owner = await this.prisma.withPlatformContext((tx) =>
-      tx.tenantUser.findFirst({
-        where: { tenantId, role: 'OWNER', status: 'ACTIVE' },
-        include: { user: { select: { email: true, name: true } } },
-        orderBy: { joinedAt: 'asc' },
-      }),
-    );
-    if (!owner?.user?.email) return null;
-    return { email: owner.user.email, name: owner.user.name };
-  }
-
-  private invoiceUrlForClinic(id: string): string {
-    const base = this.config.get<string>('WEB_URL') ?? 'http://localhost:3000';
-    return `${base.replace(/\/+$/u, '')}/lab-invoices/${id}`;
-  }
-  private invoiceUrlForLab(id: string): string {
-    const base = this.config.get<string>('WEB_URL') ?? 'http://localhost:3000';
-    return `${base.replace(/\/+$/u, '')}/lab/billing/${id}`;
+    }));
   }
 
   // ── Monthly sweep ────────────────────────────────────────

@@ -50,6 +50,29 @@ export class AiClientService {
     return this.requestJson('/ai/transcribe', req);
   }
 
+  async draftLabTreatmentPlan(req: {
+    case: {
+      refNumber: number | null;
+      productName: string;
+      urgency: 'STANDARD' | 'URGENT';
+      patientLabel: string | null;
+      doctorLabel: string | null;
+      notes: string | null;
+      formData: Record<string, unknown> | null;
+    };
+    materialsUsed?: Array<{ material: string; lot: string }>;
+  }): Promise<{
+    summary: string;
+    promptVersion: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadTokens: number;
+    latencyMs: number;
+  }> {
+    return this.requestJson('/lab-drafts/treatment-plan', req);
+  }
+
   async dermatologyDraft(req: {
     consultationId: string;
     imageS3Keys: string[];

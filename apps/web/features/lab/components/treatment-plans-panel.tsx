@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Sparkles, Trash2, Upload } from 'lucide-react';
 import {
   Button,
   Card,
@@ -14,6 +14,7 @@ import {
   useClinicTreatmentPlans,
   useCreateLabTreatmentPlan,
   useDecideTreatmentPlan,
+  useDraftLabTreatmentPlanSummary,
   useLabTreatmentPlans,
   useProposeLabTreatmentPlan,
   useUpdateLabTreatmentPlan,
@@ -100,8 +101,10 @@ function NewPlanForm({
   onDone: () => void;
 }) {
   const create = useCreateLabTreatmentPlan();
+  const draft = useDraftLabTreatmentPlanSummary();
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !summary.trim()) return;
@@ -116,6 +119,18 @@ function NewPlanForm({
       },
     );
   }
+
+  function aiDraft() {
+    draft.mutate(caseId, {
+      onSuccess: (res) => {
+        // Replace the textarea contents wholesale — user edits before
+        // proposing. We deliberately don't append to existing text to
+        // avoid mixed authorship that's hard to attribute later.
+        setSummary(res.summary);
+      },
+    });
+  }
+
   return (
     <form
       onSubmit={submit}
@@ -127,14 +142,35 @@ function NewPlanForm({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          Summary (markdown)
+        </span>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={aiDraft}
+          disabled={draft.isPending}
+          title="AI: draft summary from this case (Premium feature)"
+        >
+          <Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden />
+          {draft.isPending ? 'Drafting…' : 'AI draft'}
+        </Button>
+      </div>
       <textarea
         required
-        rows={6}
+        rows={10}
         value={summary}
         onChange={(e) => setSummary(e.target.value)}
         placeholder="Markdown summary the clinic will decide on…"
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
       />
+      {draft.error && (
+        <p className="text-xs text-destructive">
+          AI draft failed: {(draft.error as Error).message}
+        </p>
+      )}
       {create.error && (
         <p className="text-sm text-destructive">
           {(create.error as Error).message}

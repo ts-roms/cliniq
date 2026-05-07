@@ -16,14 +16,18 @@ import { LabInvoicesService } from './invoices/lab-invoices.service.js';
 import { PaymongoService } from './invoices/paymongo.service.js';
 import { PaymongoWebhookController } from './invoices/paymongo-webhook.controller.js';
 import { LabPdfRenderingService } from './_shared/pdf-rendering.service.js';
+import { LabNotificationsService } from './_shared/lab-notifications.service.js';
 import { LabStatsController } from './stats/lab-stats.controller.js';
 import { LabStatsService } from './stats/lab-stats.service.js';
 import { LabTreatmentPlansController } from './treatment-plans/lab-treatment-plans.controller.js';
 import { LabTreatmentPlansService } from './treatment-plans/lab-treatment-plans.service.js';
+import { LabDisputesController } from './disputes/lab-disputes.controller.js';
+import { LabDisputesService } from './disputes/lab-disputes.service.js';
 import { ClinicLabInvitationsController } from '../clinic/lab-invitations/clinic-lab-invitations.controller.js';
 import { ClinicLabCasesController } from '../clinic/lab-cases/clinic-lab-cases.controller.js';
 import { ClinicLabInvoicesController } from '../clinic/lab-invoices/clinic-lab-invoices.controller.js';
 import { ClinicLabTreatmentPlansController } from '../clinic/lab-treatment-plans/clinic-lab-treatment-plans.controller.js';
+import { ClinicLabDisputesController } from '../clinic/lab-disputes/clinic-lab-disputes.controller.js';
 
 /**
  * Lab module — surfaces:
@@ -55,10 +59,12 @@ import { ClinicLabTreatmentPlansController } from '../clinic/lab-treatment-plans
     PaymongoWebhookController,
     LabStatsController,
     LabTreatmentPlansController,
+    LabDisputesController,
     ClinicLabInvitationsController,
     ClinicLabCasesController,
     ClinicLabInvoicesController,
     ClinicLabTreatmentPlansController,
+    ClinicLabDisputesController,
   ],
   providers: [
     LabClinicLinksService,
@@ -69,9 +75,11 @@ import { ClinicLabTreatmentPlansController } from '../clinic/lab-treatment-plans
     LabComplianceService,
     LabInvoicesService,
     LabPdfRenderingService,
+    LabNotificationsService,
     PaymongoService,
     LabStatsService,
     LabTreatmentPlansService,
+    LabDisputesService,
   ],
   exports: [
     LabClinicLinksService,
