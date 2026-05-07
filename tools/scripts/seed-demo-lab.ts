@@ -123,6 +123,7 @@ async function main() {
       labTenantId: lab.id,
       clinicTenantId: clinic.id,
       status: LabClinicLinkStatus.ACTIVE,
+      invitedByUserId: labOwner.id,
       invitedAt: daysAgo(45),
       respondedAt: daysAgo(44),
     },
