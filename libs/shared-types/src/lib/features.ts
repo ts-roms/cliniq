@@ -43,6 +43,18 @@ export const Features = {
   CALENDAR_SYNC: 'calendar_sync',
   CUSTOM_RETENTION: 'custom_retention',
 
+  // Queueing pack — Pro: numbered queue + display screen + "call next".
+  // Premium adds drive-thru curbside flow and self-service kiosk.
+  QUEUEING: 'queueing',
+  QUEUEING_DRIVE_THRU: 'queueing_drive_thru',
+  QUEUEING_KIOSK: 'queueing_kiosk',
+
+  // OB/GYN + Ultrasound pack — Pro covers OB visit forms (LMP/EDD/gravida-para)
+  // and 2D ultrasound reports. Premium adds 3D/4D imaging since equipment is rarer.
+  OBSTETRICS: 'obstetrics',
+  ULTRASOUND_2D: 'ultrasound_2d',
+  ULTRASOUND_3D_4D: 'ultrasound_3d_4d',
+
   // ── Lab features ────────────────────────────────────────────────
   // Basic+ (every paid lab tier)
   LAB_CATALOG: 'lab_catalog',           // custom product catalog
@@ -101,6 +113,9 @@ const PRO_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.HMO,
   Features.TELEMEDICINE,
   Features.AI_SOAP,
+  Features.QUEUEING,
+  Features.OBSTETRICS,
+  Features.ULTRASOUND_2D,
 ]);
 
 const PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
@@ -109,6 +124,9 @@ const PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.WEBHOOKS,
   Features.CALENDAR_SYNC,
   Features.CUSTOM_RETENTION,
+  Features.QUEUEING_DRIVE_THRU,
+  Features.QUEUEING_KIOSK,
+  Features.ULTRASOUND_3D_4D,
 ]);
 
 export const PLAN_FEATURES: Record<Plan, ReadonlySet<Feature>> = {

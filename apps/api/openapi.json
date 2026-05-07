@@ -8203,6 +8203,483 @@
           "clinic-lab-disputes"
         ]
       }
+    },
+    "/api/queue/queues": {
+      "get": {
+        "operationId": "QueueController_listQueues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      },
+      "post": {
+        "operationId": "QueueController_createQueue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/queue/queues/{id}": {
+      "patch": {
+        "operationId": "QueueController_updateQueue",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/queue/display": {
+      "get": {
+        "operationId": "QueueController_display",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/queue/tickets": {
+      "post": {
+        "operationId": "QueueController_issue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/queue/queues/{id}/call-next": {
+      "post": {
+        "operationId": "QueueController_callNext",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/queue/tickets/{id}/close": {
+      "post": {
+        "operationId": "QueueController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/ob/pregnancies": {
+      "get": {
+        "operationId": "ObController_list",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      },
+      "post": {
+        "operationId": "ObController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePregnancyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
+    },
+    "/api/ob/pregnancies/{id}": {
+      "patch": {
+        "operationId": "ObController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePregnancyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
+    },
+    "/api/ob/visits": {
+      "post": {
+        "operationId": "ObController_createVisit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateObVisitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
+    },
+    "/api/ob/ultrasound": {
+      "get": {
+        "operationId": "ObController_listUltrasounds",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      },
+      "post": {
+        "operationId": "ObController_createUltrasound",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUltrasoundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
+    },
+    "/api/ob/ultrasound/{id}": {
+      "get": {
+        "operationId": "ObController_findUltrasound",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
+    },
+    "/api/ob/ultrasound/{id}/files/presign": {
+      "post": {
+        "operationId": "ObController_presignFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignUltrasoundFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
+    },
+    "/api/ob/ultrasound/{id}/files/{fileId}": {
+      "delete": {
+        "operationId": "ObController_deleteFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "ob"
+        ]
+      }
     }
   },
   "info": {
@@ -10875,6 +11352,310 @@
         },
         "required": [
           "decision"
+        ]
+      },
+      "QueueKind": {
+        "type": "string",
+        "enum": [
+          "WALK_IN",
+          "APPOINTMENT",
+          "DRIVE_THRU",
+          "PRIORITY"
+        ]
+      },
+      "CreateQueueDto": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "description": "Optional location id this queue is bound to."
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueKind"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name shown on the public TV."
+          },
+          "numberPrefix": {
+            "type": "string",
+            "description": "Number prefix, e.g. \"A\" → \"A-001\".",
+            "default": "A"
+          }
+        }
+      },
+      "UpdateQueueDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "numberPrefix": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IssueTicketDto": {
+        "type": "object",
+        "properties": {
+          "queueId": {
+            "type": "string",
+            "description": "Queue id this ticket belongs to."
+          },
+          "patientId": {
+            "type": "string",
+            "description": "Patient id if the patient is registered."
+          },
+          "label": {
+            "type": "string",
+            "description": "Free-text label for unidentified walk-ins."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone for SMS notifications."
+          },
+          "priority": {
+            "type": "number",
+            "description": "Soft priority: PRIORITY queues default to 100; pass to override."
+          }
+        },
+        "required": [
+          "queueId"
+        ]
+      },
+      "QueueTicketStatus": {
+        "type": "string",
+        "enum": [
+          "WAITING",
+          "CALLED",
+          "SERVED",
+          "NO_SHOW",
+          "CANCELLED"
+        ]
+      },
+      "TicketActionDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueTicketStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CreatePregnancyDto": {
+        "type": "object",
+        "properties": {
+          "patientId": {
+            "type": "string"
+          },
+          "lmp": {
+            "type": "string",
+            "description": "Last menstrual period (ISO date)."
+          },
+          "edd": {
+            "type": "string",
+            "description": "Override EDD if known from US dating."
+          },
+          "eddSource": {
+            "type": "string"
+          },
+          "gravida": {
+            "type": "number"
+          },
+          "para": {
+            "type": "number"
+          },
+          "bloodType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "patientId"
+        ]
+      },
+      "ObPregnancyStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "DELIVERED",
+          "MISCARRIED",
+          "TERMINATED",
+          "ECTOPIC"
+        ]
+      },
+      "UpdatePregnancyDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ObPregnancyStatus"
+              }
+            ]
+          },
+          "lmp": {
+            "type": "object"
+          },
+          "edd": {
+            "type": "object"
+          },
+          "eddSource": {
+            "type": "string"
+          },
+          "gravida": {
+            "type": "number"
+          },
+          "para": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateObVisitDto": {
+        "type": "object",
+        "properties": {
+          "pregnancyId": {
+            "type": "string"
+          },
+          "visitDate": {
+            "type": "string",
+            "description": "Defaults to now."
+          },
+          "gaWeeks": {
+            "type": "number"
+          },
+          "gaDays": {
+            "type": "number"
+          },
+          "fundalHeightCm": {
+            "type": "number",
+            "description": "Fundal height in cm."
+          },
+          "fetalHeartRate": {
+            "type": "number",
+            "description": "Fetal heart rate (bpm)."
+          },
+          "presentation": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pregnancyId"
+        ]
+      },
+      "UltrasoundKind": {
+        "type": "string",
+        "enum": [
+          "OB_2D",
+          "OB_3D_4D",
+          "GENERAL_ABDOMINAL",
+          "GENERAL_PELVIC",
+          "GENERAL_OTHER"
+        ]
+      },
+      "CreateUltrasoundDto": {
+        "type": "object",
+        "properties": {
+          "patientId": {
+            "type": "string"
+          },
+          "pregnancyId": {
+            "type": "string",
+            "description": "Pregnancy id for OB ultrasounds."
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UltrasoundKind"
+              }
+            ]
+          },
+          "performedAt": {
+            "type": "string"
+          },
+          "indication": {
+            "type": "string"
+          },
+          "bpdMm": {
+            "type": "number"
+          },
+          "hcMm": {
+            "type": "number"
+          },
+          "acMm": {
+            "type": "number"
+          },
+          "flMm": {
+            "type": "number"
+          },
+          "estimatedFetalWeightG": {
+            "type": "number"
+          },
+          "amnioticFluidIndexCm": {
+            "type": "number"
+          },
+          "fetalHeartRate": {
+            "type": "number"
+          },
+          "presentation": {
+            "type": "string"
+          },
+          "placentaLocation": {
+            "type": "string"
+          },
+          "fetalSex": {
+            "type": "string"
+          },
+          "findings": {
+            "type": "string"
+          },
+          "impression": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "patientId",
+          "kind"
+        ]
+      },
+      "PresignUltrasoundFileDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "number"
+          },
+          "caption": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "mimeType",
+          "sizeBytes"
         ]
       }
     }

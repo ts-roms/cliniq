@@ -1052,6 +1052,9 @@ model Patient {
   conditions     Condition[]
   invoices       Invoice[]
   dsrRequests    DataSubjectRequest[]
+  queueTickets   QueueTicket[]      @relation("PatientQueueTickets")
+  pregnancies    ObPregnancy[]      @relation("PatientPregnancies")
+  ultrasounds    UltrasoundReport[] @relation("PatientUltrasounds")
   portalAccounts TenantUser[]
   hmoMemberships HmoMembership[]
   hmoClaims      HmoClaim[]
@@ -1381,6 +1384,95 @@ model Appointment {
   @@map("appointments")
 }
 
+// ── Patient queue ─────────────────────────────────────────────────
+// Numbered queue per (tenant, location, kind, day). The kind drives the
+// physical workflow:
+//   WALK_IN   — generic clinic walk-in line
+//   APPOINTMENT — pre-booked patient checked-in
+//   DRIVE_THRU — curbside / car-park flow (requires QUEUEING_DRIVE_THRU)
+//   PRIORITY  — senior citizens / PWD / urgent (jumps the line)
+// Numbering restarts daily — `numberPrefix + N` where N is per-(queue, day).
+
+enum QueueKind {
+  WALK_IN
+  APPOINTMENT
+  DRIVE_THRU
+  PRIORITY
+}
+
+enum QueueTicketStatus {
+  WAITING
+  CALLED
+  SERVED
+  NO_SHOW
+  CANCELLED
+}
+
+model Queue {
+  id            String    @id @default(cuid())
+  tenantId      String
+  locationId    String?
+  kind          QueueKind @default(WALK_IN)
+  // Display name (shown on the public TV screen) — e.g. "General",
+  // "OB Drive-Thru", "Senior Citizen". Defaults to the kind label if blank.
+  name          String?
+  // Each ticket number is `{numberPrefix}-{N:03d}` — e.g. "A-001".
+  // Different prefixes per kind keep the public display unambiguous.
+  numberPrefix  String    @default("A")
+  isActive      Boolean   @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tickets QueueTicket[]
+
+  @@unique([tenantId, locationId, kind])
+  @@index([tenantId, isActive])
+  @@map("queues")
+}
+
+model QueueTicket {
+  id           String            @id @default(cuid())
+  queueId      String
+  tenantId     String
+  // Optional — walk-ins may issue tickets before the patient is registered.
+  patientId    String?
+  // Date this ticket counts against (UTC midnight at issue time). Lets us
+  // restart numbering daily without tying it to a specific timezone — the
+  // service layer normalises by tenant.timezone before computing.
+  serviceDate  DateTime          @db.Date
+  number       Int               // 1, 2, 3, ... per (queue, serviceDate)
+  // Snapshot of the prefix at issue time — surviving renames cleanly.
+  numberLabel  String            // "A-001"
+  status       QueueTicketStatus @default(WAITING)
+  // Free-text patient label for unidentified walk-ins ("Maria, BP check").
+  label        String?
+  // Soft priority booster — PRIORITY tickets get this set; we order by
+  // (priority desc, number asc) when picking next.
+  priority     Int               @default(0)
+  // Optional phone number for SMS "you're up next" notifications.
+  phone        String?
+  // Stage timestamps for analytics + audit.
+  issuedAt     DateTime          @default(now())
+  calledAt     DateTime?
+  servedAt     DateTime?
+  closedAt     DateTime?
+  // Who issued the ticket (kiosk = null userId, staff issuance = userId).
+  issuedByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  queue   Queue    @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  patient Patient? @relation("PatientQueueTickets", fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@unique([queueId, serviceDate, number])
+  @@index([tenantId, serviceDate, status])
+  @@index([queueId, status, priority, number])
+  @@map("queue_tickets")
+}
+
 enum AppointmentType {
   CONSULT
   FOLLOWUP
@@ -1419,6 +1511,165 @@ model Vital {
 
   @@index([tenantId, patientId, measuredAt])
   @@map("vitals")
+}
+
+// ──────────────────────────────────────────────
+// OB/GYN
+// ──────────────────────────────────────────────
+// Pregnancy episode for an OB patient. One row per pregnancy. The current
+// pregnancy is `status = ACTIVE`; past ones stay for history. Most OB
+// queries are "the active pregnancy for this patient", so we index that.
+
+enum ObPregnancyStatus {
+  ACTIVE
+  DELIVERED
+  MISCARRIED
+  TERMINATED
+  ECTOPIC
+}
+
+model ObPregnancy {
+  id             String            @id @default(cuid())
+  tenantId       String
+  patientId      String
+  status         ObPregnancyStatus @default(ACTIVE)
+  // Last menstrual period — drives EDD via Naegele's rule (LMP + 280 days).
+  // Service layer recomputes EDD any time LMP changes.
+  lmp            DateTime?         @db.Date
+  // Estimated date of delivery — overrideable by ultrasound dating.
+  edd            DateTime?         @db.Date
+  // Source of the EDD: 'lmp' | 'first_trimester_us' | 'second_trimester_us' | 'manual'
+  eddSource      String?
+  // Gravida = total pregnancies (including this one), Para = births past 20 weeks.
+  gravida        Int?
+  para           Int?
+  // Para details — TPAL: term, preterm, abortion, living.
+  termCount      Int?
+  pretermCount   Int?
+  abortionCount  Int?
+  livingCount    Int?
+  bloodType      String?  // "O+", "A-", etc.
+  rhFactor       String?
+  notes          String?
+  outcomeAt      DateTime?
+  outcomeNotes   String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient   Patient        @relation("PatientPregnancies", fields: [patientId], references: [id], onDelete: Cascade)
+  obVisits  ObVisit[]
+  ultrasounds UltrasoundReport[]
+
+  @@index([tenantId, patientId, status])
+  @@map("ob_pregnancies")
+}
+
+// Per-prenatal-visit measurements that don't belong on the generic Vitals
+// table (those still apply for BP/HR/temp). Optional consultation link
+// lets the visit anchor to a SOAP note for the day.
+model ObVisit {
+  id             String   @id @default(cuid())
+  tenantId       String
+  pregnancyId    String
+  consultationId String?
+  visitDate      DateTime @default(now())
+
+  // Gestational age at visit time, in weeks + days. Computed from EDD
+  // when not manually entered.
+  gaWeeks        Int?
+  gaDays         Int?
+  fundalHeightCm Decimal? @db.Decimal(4, 1)
+  // Fetal heart rate, beats per minute. 110-160 normal range.
+  fetalHeartRate Int?
+  presentation   String?  // 'cephalic' | 'breech' | 'transverse' | etc
+  // Edema +/++/+++, dipstick urine results, etc — kept free-form for now.
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pregnancy ObPregnancy @relation(fields: [pregnancyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, pregnancyId, visitDate])
+  @@map("ob_visits")
+}
+
+// Ultrasound report — covers OB and general (abdominal/pelvic/etc).
+// `kind` distinguishes which feature flag gates it.
+enum UltrasoundKind {
+  OB_2D
+  OB_3D_4D
+  GENERAL_ABDOMINAL
+  GENERAL_PELVIC
+  GENERAL_OTHER
+}
+
+model UltrasoundReport {
+  id             String         @id @default(cuid())
+  tenantId       String
+  patientId      String
+  // Optional pregnancy link — only set for OB ultrasounds.
+  pregnancyId    String?
+  consultationId String?
+  performedAt    DateTime       @default(now())
+  performedByUserId String?
+  kind           UltrasoundKind @default(GENERAL_OTHER)
+
+  // Free-text indication ("dating scan", "anomaly scan", "abdominal pain").
+  indication     String?
+
+  // Fetal biometry (OB only). Stored on the report to keep one row per
+  // study. Centimeters / mm depending on the field — units in column name.
+  bpdMm          Decimal? @db.Decimal(5, 1)  // biparietal diameter
+  hcMm           Decimal? @db.Decimal(5, 1)  // head circumference
+  acMm           Decimal? @db.Decimal(5, 1)  // abdominal circumference
+  flMm           Decimal? @db.Decimal(5, 1)  // femur length
+  estimatedFetalWeightG Int?
+  amnioticFluidIndexCm  Decimal? @db.Decimal(4, 1)
+  fetalHeartRate Int?
+  presentation   String?
+  placentaLocation String?  // 'anterior' | 'posterior' | 'fundal' | 'low-lying' | 'previa'
+  fetalSex       String?
+
+  // Findings + impression — free-form markdown.
+  findings       String?
+  impression     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient   Patient        @relation("PatientUltrasounds", fields: [patientId], references: [id], onDelete: Cascade)
+  pregnancy ObPregnancy?   @relation(fields: [pregnancyId], references: [id], onDelete: SetNull)
+  files     UltrasoundFile[]
+
+  @@index([tenantId, patientId, performedAt])
+  @@index([tenantId, pregnancyId])
+  @@map("ultrasound_reports")
+}
+
+// Image attached to an ultrasound report. Stored in S3 like other PHI files.
+model UltrasoundFile {
+  id        String    @id @default(cuid())
+  reportId  String
+  s3Key     String
+  filename  String
+  mimeType  String
+  sizeBytes Int
+  caption   String?
+  // Display order in the gallery — set by the staff who uploads.
+  sortOrder Int       @default(0)
+  uploadedByUserId String
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  report UltrasoundReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("ultrasound_files")
 }
 
 // ──────────────────────────────────────────────

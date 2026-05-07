@@ -34,10 +34,16 @@ const CLINIC_FEATURES: FeatureRow[] = [
   { id: Features.HMO, label: 'HMO claims tracking' },
   { id: Features.TELEMEDICINE, label: 'Telemedicine' },
   { id: Features.AI_SOAP, label: 'AI SOAP draft generation' },
+  { id: Features.QUEUEING, label: 'Patient queueing & display screen' },
+  { id: Features.OBSTETRICS, label: 'OB/GYN visit forms (LMP, EDD, gravida/para)' },
+  { id: Features.ULTRASOUND_2D, label: '2D ultrasound reports + image gallery' },
   { id: Features.AI_DERMATOLOGY, label: 'AI dermatology assist' },
   { id: Features.WEBHOOKS, label: 'Webhooks for integrations' },
   { id: Features.CALENDAR_SYNC, label: 'External calendar sync' },
   { id: Features.CUSTOM_RETENTION, label: 'Custom data retention policy' },
+  { id: Features.QUEUEING_DRIVE_THRU, label: 'Drive-thru / curbside queue' },
+  { id: Features.QUEUEING_KIOSK, label: 'Self-service ticket kiosk' },
+  { id: Features.ULTRASOUND_3D_4D, label: '3D / 4D ultrasound reports' },
 ];
 
 const LAB_FEATURES: FeatureRow[] = [
