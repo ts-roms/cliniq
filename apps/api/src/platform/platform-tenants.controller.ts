@@ -18,8 +18,8 @@ import {
 } from './decorators/current-platform-admin.decorator.js';
 import { PlatformTenantsService } from './platform-tenants.service.js';
 import {
-  CreateTenantDto,
-  UpdateTenantDto,
+  PlatformCreateTenantDto,
+  PlatformUpdateTenantDto,
 } from './dto/update-tenant.dto.js';
 
 @ApiTags('platform-tenants')
@@ -64,7 +64,7 @@ export class PlatformTenantsController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateTenantDto,
+    @Body() dto: PlatformUpdateTenantDto,
     @CurrentPlatformAdmin() admin: AuthenticatedPlatformAdmin,
   ) {
     return this.tenants.update(id, dto, admin.adminId, admin.email);
@@ -73,7 +73,7 @@ export class PlatformTenantsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
-    @Body() dto: CreateTenantDto,
+    @Body() dto: PlatformCreateTenantDto,
     @CurrentPlatformAdmin() admin: AuthenticatedPlatformAdmin,
   ) {
     return this.tenants.create(dto, admin.adminId, admin.email);

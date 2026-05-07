@@ -22,7 +22,7 @@ import { LabInvoiceStatus, LabPaymentLinkProvider } from '@org/db';
  * from a delivered LabCase) or free-form (custom service / discount /
  * adjustment). Money is in centavos.
  */
-export class InvoiceItemInputDto {
+export class LabInvoiceItemInputDto {
   @ApiPropertyOptional({ description: 'Optional LabCase id this line bills for.' })
   @IsOptional()
   @IsString()
@@ -52,7 +52,7 @@ export class InvoiceItemInputDto {
   sortOrder?: number;
 }
 
-export class CreateInvoiceDto {
+export class CreateLabInvoiceDto {
   @ApiProperty({ description: 'Clinic tenant id this invoice is billed to.' })
   @IsString()
   clinicTenantId!: string;
@@ -80,13 +80,13 @@ export class CreateInvoiceDto {
   @Min(0)
   taxCents?: number;
 
-  @ApiPropertyOptional({ type: [InvoiceItemInputDto] })
+  @ApiPropertyOptional({ type: [LabInvoiceItemInputDto] })
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(200)
   @ValidateNested({ each: true })
-  @Type(() => InvoiceItemInputDto)
-  items?: InvoiceItemInputDto[];
+  @Type(() => LabInvoiceItemInputDto)
+  items?: LabInvoiceItemInputDto[];
 }
 
 export class UpdateInvoiceDto {
@@ -144,7 +144,7 @@ export class GenerateFromCasesDto {
   taxCents?: number;
 }
 
-export class AddInvoiceItemDto extends InvoiceItemInputDto {}
+export class AddLabInvoiceItemDto extends LabInvoiceItemInputDto {}
 
 export class UpdateInvoiceItemDto {
   @ApiPropertyOptional()
@@ -173,7 +173,7 @@ export class UpdateInvoiceItemDto {
   sortOrder?: number;
 }
 
-export class RecordPaymentDto {
+export class RecordLabInvoicePaymentDto {
   @ApiProperty({ description: 'Amount paid in centavos. Adds to paidCents.' })
   @IsInt()
   @Min(1)

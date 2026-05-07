@@ -8,7 +8,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Plan, TenantStatus, ClinicType } from '@org/db';
 
-export class UpdateTenantDto {
+export class PlatformUpdateTenantDto {
   // `enumName` is required when the enum comes from @org/db (Prisma 7).
   // Without it, Swagger treats the enum object as a class and recurses into
   // its values, throwing "circular dependency on property TRIAL/etc."
@@ -34,7 +34,7 @@ export class UpdateTenantDto {
   name?: string;
 }
 
-export class CreateTenantDto {
+export class PlatformCreateTenantDto {
   @ApiProperty({ example: 'sunrise-clinic' })
   @IsString()
   @Length(2, 64)

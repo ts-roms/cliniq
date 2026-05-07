@@ -21,7 +21,7 @@ import {
   type LabPlan as LabPlanT,
   type Plan as PlanT,
 } from '@org/shared-types';
-import type { CreateTenantDto, UpdateTenantDto } from './dto/update-tenant.dto.js';
+import type { PlatformCreateTenantDto, PlatformUpdateTenantDto } from './dto/update-tenant.dto.js';
 
 export interface ListTenantsQuery {
   search?: string;
@@ -131,7 +131,7 @@ export class PlatformTenantsService {
     };
   }
 
-  async update(id: string, dto: UpdateTenantDto, adminId: string, adminEmail: string) {
+  async update(id: string, dto: PlatformUpdateTenantDto, adminId: string, adminEmail: string) {
     const { updated, before } = await this.prisma.withPlatformContext(async (tx) => {
       const existing = await tx.tenant.findUnique({ where: { id } });
       if (!existing || existing.deletedAt) throw new NotFoundException('tenant not found');
@@ -184,7 +184,7 @@ export class PlatformTenantsService {
     return updated;
   }
 
-  async create(dto: CreateTenantDto, adminId: string, adminEmail: string) {
+  async create(dto: PlatformCreateTenantDto, adminId: string, adminEmail: string) {
     const slug = dto.slug.toLowerCase();
     const plan = dto.plan ?? Plan.STARTER;
 

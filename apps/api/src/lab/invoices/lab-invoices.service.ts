@@ -18,13 +18,13 @@ import { LabPdfRenderingService } from '../_shared/pdf-rendering.service.js';
 import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
 import { PaymongoService } from './paymongo.service.js';
 import type {
-  AddInvoiceItemDto,
-  CreateInvoiceDto,
+  AddLabInvoiceItemDto,
+  CreateLabInvoiceDto,
   CreatePaymentLinkDto,
   GenerateFromCasesDto,
   InvoiceFilterDto,
-  InvoiceItemInputDto,
-  RecordPaymentDto,
+  LabInvoiceItemInputDto,
+  RecordLabInvoicePaymentDto,
   UpdateInvoiceDto,
   UpdateInvoiceItemDto,
 } from './dto/invoice.dto.js';
@@ -120,7 +120,7 @@ export class LabInvoicesService {
 
   // ── Create / update ──────────────────────────────────────
 
-  async createDraft(dto: CreateInvoiceDto, user: AuthenticatedUser) {
+  async createDraft(dto: CreateLabInvoiceDto, user: AuthenticatedUser) {
     await this.assertLabTenant(user);
     const linked = await this.links.isLinkActive(user.tenantId, dto.clinicTenantId);
     if (!linked) {
@@ -276,7 +276,7 @@ export class LabInvoicesService {
 
   // ── Items ────────────────────────────────────────────────
 
-  async addItem(invoiceId: string, dto: AddInvoiceItemDto, user: AuthenticatedUser) {
+  async addItem(invoiceId: string, dto: AddLabInvoiceItemDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const invoice = await this.loadDraftAsLab(tx, invoiceId, user.tenantId);
       await this.assertCaseOwnership(
@@ -384,7 +384,7 @@ export class LabInvoicesService {
    * cumulative paid amount reaches the total, the invoice flips to PAID.
    * Lab-side only — clinic webhook flow lands in Phase 5.
    */
-  async recordPayment(id: string, dto: RecordPaymentDto, user: AuthenticatedUser) {
+  async recordPayment(id: string, dto: RecordLabInvoicePaymentDto, user: AuthenticatedUser) {
     const { invoice, fullyPaid } = await this.prisma.withTenant(
       user.tenantId,
       user.userId,
@@ -979,7 +979,7 @@ export class LabInvoicesService {
     }
   }
 
-  private normalizeItem(it: InvoiceItemInputDto): {
+  private normalizeItem(it: LabInvoiceItemInputDto): {
     caseId: string | null;
     description: string;
     qty: number;

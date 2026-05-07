@@ -22,12 +22,12 @@ import {
 } from '../../auth/decorators/current-user.decorator.js';
 import { LabInvoicesService } from './lab-invoices.service.js';
 import {
-  AddInvoiceItemDto,
-  CreateInvoiceDto,
+  AddLabInvoiceItemDto,
+  CreateLabInvoiceDto,
   CreatePaymentLinkDto,
   GenerateFromCasesDto,
   InvoiceFilterDto,
-  RecordPaymentDto,
+  RecordLabInvoicePaymentDto,
   UpdateInvoiceDto,
   UpdateInvoiceItemDto,
 } from './dto/invoice.dto.js';
@@ -65,7 +65,7 @@ export class LabInvoicesController {
     entity: 'LabInvoice',
     entityIdFrom: 'result:id',
   })
-  create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
+  create(@Body() dto: CreateLabInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
     return this.invoices.createDraft(dto, user);
   }
 
@@ -132,7 +132,7 @@ export class LabInvoicesController {
   })
   addItem(
     @Param('id') id: string,
-    @Body() dto: AddInvoiceItemDto,
+    @Body() dto: AddLabInvoiceItemDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.invoices.addItem(id, dto, user);
@@ -194,7 +194,7 @@ export class LabInvoicesController {
   })
   recordPayment(
     @Param('id') id: string,
-    @Body() dto: RecordPaymentDto,
+    @Body() dto: RecordLabInvoicePaymentDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.invoices.recordPayment(id, dto, user);
