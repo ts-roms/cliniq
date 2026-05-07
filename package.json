@@ -5,7 +5,8 @@
   "scripts": {
     "db:seed": "pnpm --dir libs/db exec prisma db seed && tsx --env-file=.env tools/scripts/seed-dev.ts",
     "db:reset": "pnpm --dir libs/db exec prisma migrate reset --force",
-    "seed:platform-admin": "tsx tools/scripts/seed-platform-admin.ts"
+    "seed:platform-admin": "tsx tools/scripts/seed-platform-admin.ts",
+    "seed:demo-lab": "tsx --env-file=.env tools/scripts/seed-demo-lab.ts"
   },
   "private": true,
   "devDependencies": {
