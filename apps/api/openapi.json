@@ -4051,6 +4051,4158 @@
           "Health"
         ]
       }
+    },
+    "/api/health/lab-readiness": {
+      "get": {
+        "operationId": "HealthController_labReadiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/platform/auth/login": {
+      "post": {
+        "operationId": "PlatformAuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-auth"
+        ]
+      }
+    },
+    "/api/platform/auth/refresh": {
+      "post": {
+        "operationId": "PlatformAuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformRefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-auth"
+        ]
+      }
+    },
+    "/api/platform/auth/me": {
+      "get": {
+        "operationId": "PlatformAuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "platform-auth"
+        ]
+      }
+    },
+    "/api/platform/tenants/catalog": {
+      "get": {
+        "operationId": "PlatformTenantsController_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "platform-tenants"
+        ]
+      }
+    },
+    "/api/platform/tenants": {
+      "get": {
+        "operationId": "PlatformTenantsController_list",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TenantStatus"
+            }
+          },
+          {
+            "name": "plan",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Plan"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "platform-tenants"
+        ]
+      },
+      "post": {
+        "operationId": "PlatformTenantsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "platform-tenants"
+        ]
+      }
+    },
+    "/api/platform/tenants/{id}": {
+      "get": {
+        "operationId": "PlatformTenantsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "platform-tenants"
+        ]
+      },
+      "patch": {
+        "operationId": "PlatformTenantsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "platform-tenants"
+        ]
+      }
+    },
+    "/api/lab/clinic-links/invite": {
+      "post": {
+        "operationId": "LabClinicLinksController_invite",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteClinicDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-clinic-links"
+        ]
+      }
+    },
+    "/api/lab/clinic-links": {
+      "get": {
+        "operationId": "LabClinicLinksController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-clinic-links"
+        ]
+      }
+    },
+    "/api/lab/clinic-links/{id}": {
+      "delete": {
+        "operationId": "LabClinicLinksController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-clinic-links"
+        ]
+      }
+    },
+    "/api/lab/clinic-links/{id}/suspend": {
+      "patch": {
+        "operationId": "LabClinicLinksController_suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-clinic-links"
+        ]
+      }
+    },
+    "/api/lab/clinic-links/{id}/reactivate": {
+      "patch": {
+        "operationId": "LabClinicLinksController_reactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-clinic-links"
+        ]
+      }
+    },
+    "/api/lab/categories": {
+      "get": {
+        "operationId": "LabProductsController_listCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      },
+      "post": {
+        "operationId": "LabProductsController_createCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLabCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      }
+    },
+    "/api/lab/categories/{id}": {
+      "patch": {
+        "operationId": "LabProductsController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLabCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      },
+      "delete": {
+        "operationId": "LabProductsController_removeCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      }
+    },
+    "/api/lab/products": {
+      "get": {
+        "operationId": "LabProductsController_listProducts",
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      },
+      "post": {
+        "operationId": "LabProductsController_createProduct",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLabProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      }
+    },
+    "/api/lab/products/{id}": {
+      "get": {
+        "operationId": "LabProductsController_findProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      },
+      "patch": {
+        "operationId": "LabProductsController_updateProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLabProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      },
+      "delete": {
+        "operationId": "LabProductsController_removeProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      }
+    },
+    "/api/lab/products/{id}/clone": {
+      "post": {
+        "operationId": "LabProductsController_cloneProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-products"
+        ]
+      }
+    },
+    "/api/lab/cases": {
+      "get": {
+        "operationId": "LabCasesController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LabCaseStatus"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}": {
+      "get": {
+        "operationId": "LabCasesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      },
+      "patch": {
+        "operationId": "LabCasesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLabCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/transitions": {
+      "post": {
+        "operationId": "LabCasesController_transition",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionLabCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/files/presign": {
+      "post": {
+        "operationId": "LabCasesController_presignFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignLabCaseFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/files/{fileId}/confirm": {
+      "post": {
+        "operationId": "LabCasesController_confirmFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/files/{fileId}": {
+      "delete": {
+        "operationId": "LabCasesController_deleteFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/phases": {
+      "get": {
+        "operationId": "LabCasesController_listPhases",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/phases/advance": {
+      "post": {
+        "operationId": "LabCasesController_advancePhase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvancePhaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/notes": {
+      "get": {
+        "operationId": "LabCasesController_listNotes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      },
+      "post": {
+        "operationId": "LabCasesController_createNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/notes/{noteId}": {
+      "patch": {
+        "operationId": "LabCasesController_updateNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      },
+      "delete": {
+        "operationId": "LabCasesController_deleteNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/messages": {
+      "get": {
+        "operationId": "LabCasesController_listMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      },
+      "post": {
+        "operationId": "LabCasesController_createMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/messages/{messageId}": {
+      "delete": {
+        "operationId": "LabCasesController_deleteMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/shipment": {
+      "get": {
+        "operationId": "LabCasesController_getShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      },
+      "post": {
+        "operationId": "LabCasesController_upsertShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertShipmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/cases/{id}/shipment/delivered": {
+      "post": {
+        "operationId": "LabCasesController_markDelivered",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-cases"
+        ]
+      }
+    },
+    "/api/lab/tags": {
+      "get": {
+        "operationId": "LabTagsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      },
+      "post": {
+        "operationId": "LabTagsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      }
+    },
+    "/api/lab/tags/{id}": {
+      "patch": {
+        "operationId": "LabTagsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      },
+      "delete": {
+        "operationId": "LabTagsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      }
+    },
+    "/api/lab/cases/{caseId}/tags": {
+      "get": {
+        "operationId": "LabTagsController_listForCase",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      },
+      "post": {
+        "operationId": "LabTagsController_assign",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      }
+    },
+    "/api/lab/cases/{caseId}/tags/{tagId}": {
+      "delete": {
+        "operationId": "LabTagsController_unassign",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-tags"
+        ]
+      }
+    },
+    "/api/lab/materials": {
+      "get": {
+        "operationId": "LabMaterialsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      },
+      "post": {
+        "operationId": "LabMaterialsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMaterialDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      }
+    },
+    "/api/lab/materials/{id}": {
+      "patch": {
+        "operationId": "LabMaterialsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMaterialDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      },
+      "delete": {
+        "operationId": "LabMaterialsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      }
+    },
+    "/api/lab/materials/{id}/lots": {
+      "get": {
+        "operationId": "LabMaterialsController_listLots",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      },
+      "post": {
+        "operationId": "LabMaterialsController_createLot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      }
+    },
+    "/api/lab/lots/{lotId}": {
+      "patch": {
+        "operationId": "LabMaterialsController_updateLot",
+        "parameters": [
+          {
+            "name": "lotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      },
+      "delete": {
+        "operationId": "LabMaterialsController_removeLot",
+        "parameters": [
+          {
+            "name": "lotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      }
+    },
+    "/api/lab/cases/{caseId}/material-usages": {
+      "get": {
+        "operationId": "LabMaterialsController_listUsages",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      },
+      "post": {
+        "operationId": "LabMaterialsController_recordUsage",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUsageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      }
+    },
+    "/api/lab/cases/{caseId}/material-usages/{usageId}": {
+      "delete": {
+        "operationId": "LabMaterialsController_deleteUsage",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "usageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-materials"
+        ]
+      }
+    },
+    "/api/lab/conformity-templates": {
+      "get": {
+        "operationId": "LabComplianceController_listConformity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      },
+      "post": {
+        "operationId": "LabComplianceController_createConformity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/lab/conformity-templates/{id}": {
+      "patch": {
+        "operationId": "LabComplianceController_updateConformity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      },
+      "delete": {
+        "operationId": "LabComplianceController_removeConformity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/lab/consent-templates": {
+      "get": {
+        "operationId": "LabComplianceController_listConsentLab",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      },
+      "post": {
+        "operationId": "LabComplianceController_createConsent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/lab/consent-templates/{id}": {
+      "patch": {
+        "operationId": "LabComplianceController_updateConsent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      },
+      "delete": {
+        "operationId": "LabComplianceController_removeConsent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/clinic/consent-templates": {
+      "get": {
+        "operationId": "LabComplianceController_listConsentClinic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/lab/cases/{caseId}/signatures": {
+      "get": {
+        "operationId": "LabComplianceController_listSignaturesLab",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      },
+      "post": {
+        "operationId": "LabComplianceController_captureFromLab",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureSignatureDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{caseId}/signatures": {
+      "get": {
+        "operationId": "LabComplianceController_listSignaturesClinic",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      },
+      "post": {
+        "operationId": "LabComplianceController_captureFromClinic",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureSignatureDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/lab/cases/{caseId}/conformity-pdf": {
+      "post": {
+        "operationId": "LabComplianceController_renderConformityPdf",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "templateId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-compliance"
+        ]
+      }
+    },
+    "/api/lab/invoices": {
+      "get": {
+        "operationId": "LabInvoicesController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LabInvoiceStatus"
+            }
+          },
+          {
+            "name": "clinicTenantId",
+            "required": false,
+            "in": "query",
+            "description": "Filter to a specific clinic (lab-side only).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      },
+      "post": {
+        "operationId": "LabInvoicesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}": {
+      "get": {
+        "operationId": "LabInvoicesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      },
+      "patch": {
+        "operationId": "LabInvoicesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInvoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/generate-from-cases": {
+      "post": {
+        "operationId": "LabInvoicesController_generate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateFromCasesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/sweep": {
+      "post": {
+        "operationId": "LabInvoicesController_sweep",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/items": {
+      "post": {
+        "operationId": "LabInvoicesController_addItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddInvoiceItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/items/{itemId}": {
+      "patch": {
+        "operationId": "LabInvoicesController_updateItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInvoiceItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      },
+      "delete": {
+        "operationId": "LabInvoicesController_deleteItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/issue": {
+      "post": {
+        "operationId": "LabInvoicesController_issue",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/payments": {
+      "post": {
+        "operationId": "LabInvoicesController_recordPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/void": {
+      "post": {
+        "operationId": "LabInvoicesController_voidInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/pdf": {
+      "post": {
+        "operationId": "LabInvoicesController_generatePdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/payment-links": {
+      "post": {
+        "operationId": "LabInvoicesController_createPaymentLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentLinkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/lab/invoices/{id}/payment-links/{linkId}": {
+      "delete": {
+        "operationId": "LabInvoicesController_cancelPaymentLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "linkId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-invoices"
+        ]
+      }
+    },
+    "/api/webhooks/paymongo": {
+      "post": {
+        "operationId": "PaymongoWebhookController_handle",
+        "parameters": [
+          {
+            "name": "paymongo-signature",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/lab/stats": {
+      "get": {
+        "operationId": "LabStatsController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-stats"
+        ]
+      }
+    },
+    "/api/lab/treatment-plans": {
+      "get": {
+        "operationId": "LabTreatmentPlansController_list",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      },
+      "post": {
+        "operationId": "LabTreatmentPlansController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTreatmentPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/lab/treatment-plans/{id}": {
+      "get": {
+        "operationId": "LabTreatmentPlansController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      },
+      "patch": {
+        "operationId": "LabTreatmentPlansController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTreatmentPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/lab/treatment-plans/{id}/propose": {
+      "post": {
+        "operationId": "LabTreatmentPlansController_propose",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/lab/treatment-plans/{id}/files/presign": {
+      "post": {
+        "operationId": "LabTreatmentPlansController_presignFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignTreatmentPlanFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/lab/treatment-plans/{id}/files/{fileId}": {
+      "delete": {
+        "operationId": "LabTreatmentPlansController_deleteFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/lab/treatment-plans/draft-summary": {
+      "post": {
+        "operationId": "LabTreatmentPlansController_draftSummary",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/lab/disputes": {
+      "get": {
+        "operationId": "LabDisputesController_list",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-disputes"
+        ]
+      },
+      "post": {
+        "operationId": "LabDisputesController_open",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-disputes"
+        ]
+      }
+    },
+    "/api/lab/disputes/{id}": {
+      "get": {
+        "operationId": "LabDisputesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-disputes"
+        ]
+      }
+    },
+    "/api/lab/disputes/{id}/messages": {
+      "post": {
+        "operationId": "LabDisputesController_postMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-disputes"
+        ]
+      }
+    },
+    "/api/lab/disputes/{id}/close": {
+      "post": {
+        "operationId": "LabDisputesController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "lab-disputes"
+        ]
+      }
+    },
+    "/api/clinic/lab-invitations": {
+      "get": {
+        "operationId": "ClinicLabInvitationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invitations"
+        ]
+      }
+    },
+    "/api/clinic/lab-invitations/{id}/accept": {
+      "post": {
+        "operationId": "ClinicLabInvitationsController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invitations"
+        ]
+      }
+    },
+    "/api/clinic/lab-invitations/{id}/reject": {
+      "post": {
+        "operationId": "ClinicLabInvitationsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invitations"
+        ]
+      }
+    },
+    "/api/clinic/lab-invitations/{id}/suspend": {
+      "patch": {
+        "operationId": "ClinicLabInvitationsController_suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invitations"
+        ]
+      }
+    },
+    "/api/clinic/lab-invitations/{id}/reactivate": {
+      "patch": {
+        "operationId": "ClinicLabInvitationsController_reactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invitations"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases": {
+      "post": {
+        "operationId": "ClinicLabCasesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLabCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      },
+      "get": {
+        "operationId": "ClinicLabCasesController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LabCaseStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}": {
+      "get": {
+        "operationId": "ClinicLabCasesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      },
+      "patch": {
+        "operationId": "ClinicLabCasesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLabCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/transitions": {
+      "post": {
+        "operationId": "ClinicLabCasesController_transition",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionLabCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/files/presign": {
+      "post": {
+        "operationId": "ClinicLabCasesController_presignFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignLabCaseFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/files/{fileId}/confirm": {
+      "post": {
+        "operationId": "ClinicLabCasesController_confirmFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/files/{fileId}": {
+      "delete": {
+        "operationId": "ClinicLabCasesController_deleteFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/phases": {
+      "get": {
+        "operationId": "ClinicLabCasesController_listPhases",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/messages": {
+      "get": {
+        "operationId": "ClinicLabCasesController_listMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      },
+      "post": {
+        "operationId": "ClinicLabCasesController_createMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/messages/{messageId}": {
+      "delete": {
+        "operationId": "ClinicLabCasesController_deleteMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/shipment": {
+      "get": {
+        "operationId": "ClinicLabCasesController_getShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-cases/{id}/shipment/delivered": {
+      "post": {
+        "operationId": "ClinicLabCasesController_markDelivered",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-cases"
+        ]
+      }
+    },
+    "/api/clinic/lab-invoices": {
+      "get": {
+        "operationId": "ClinicLabInvoicesController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LabInvoiceStatus"
+            }
+          },
+          {
+            "name": "clinicTenantId",
+            "required": false,
+            "in": "query",
+            "description": "Filter to a specific clinic (lab-side only).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invoices"
+        ]
+      }
+    },
+    "/api/clinic/lab-invoices/{id}": {
+      "get": {
+        "operationId": "ClinicLabInvoicesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invoices"
+        ]
+      }
+    },
+    "/api/clinic/lab-invoices/{id}/pdf": {
+      "get": {
+        "operationId": "ClinicLabInvoicesController_getPdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-invoices"
+        ]
+      }
+    },
+    "/api/clinic/lab-treatment-plans": {
+      "get": {
+        "operationId": "ClinicLabTreatmentPlansController_list",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/clinic/lab-treatment-plans/{id}": {
+      "get": {
+        "operationId": "ClinicLabTreatmentPlansController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/clinic/lab-treatment-plans/{id}/decisions": {
+      "post": {
+        "operationId": "ClinicLabTreatmentPlansController_decide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideTreatmentPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-treatment-plans"
+        ]
+      }
+    },
+    "/api/clinic/lab-disputes": {
+      "get": {
+        "operationId": "ClinicLabDisputesController_list",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-disputes"
+        ]
+      },
+      "post": {
+        "operationId": "ClinicLabDisputesController_open",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-disputes"
+        ]
+      }
+    },
+    "/api/clinic/lab-disputes/{id}": {
+      "get": {
+        "operationId": "ClinicLabDisputesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-disputes"
+        ]
+      }
+    },
+    "/api/clinic/lab-disputes/{id}/messages": {
+      "post": {
+        "operationId": "ClinicLabDisputesController_postMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-disputes"
+        ]
+      }
+    },
+    "/api/clinic/lab-disputes/{id}/close": {
+      "post": {
+        "operationId": "ClinicLabDisputesController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "clinic-lab-disputes"
+        ]
+      }
     }
   },
   "info": {
@@ -4282,7 +8434,46 @@
       },
       "CreateTenantDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "sunrise-clinic"
+          },
+          "name": {
+            "type": "string",
+            "example": "Sunrise Family Clinic"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ClinicType"
+              }
+            ]
+          },
+          "plan": {
+            "default": "STARTER",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "ownerEmail": {
+            "type": "string",
+            "description": "Initial owner user. If omitted, the tenant is created without users — invite owner separately via the regular /api/auth/register flow once the slug is known."
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "ownerPassword": {
+            "type": "string",
+            "description": "Initial password for the owner; omit to require a password-reset flow"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ]
       },
       "CreatePatientDto": {
         "type": "object",
@@ -4965,19 +9156,25 @@
       "CreateInvoiceDto": {
         "type": "object",
         "properties": {
-          "patientId": {
-            "type": "string"
+          "clinicTenantId": {
+            "type": "string",
+            "description": "Clinic tenant id this invoice is billed to."
           },
-          "discountCentavos": {
-            "type": "number",
-            "description": "Discount in centavos"
+          "currency": {
+            "type": "string",
+            "default": "PHP"
           },
-          "taxCentavos": {
-            "type": "number",
-            "description": "Tax in centavos"
+          "dueAt": {
+            "type": "string",
+            "description": "ISO 8601 due date."
           },
           "notes": {
             "type": "string"
+          },
+          "taxCents": {
+            "type": "number",
+            "description": "Tax in centavos (line-total agnostic).",
+            "default": 0
           },
           "items": {
             "type": "array",
@@ -4987,38 +9184,27 @@
           }
         },
         "required": [
-          "patientId",
-          "items"
+          "clinicTenantId"
         ]
       },
       "RecordPaymentDto": {
         "type": "object",
         "properties": {
-          "amountCentavos": {
+          "amountCents": {
             "type": "number",
-            "description": "Amount in centavos"
+            "description": "Amount paid in centavos. Adds to paidCents."
           },
-          "method": {
+          "paidAt": {
             "type": "string",
-            "enum": [
-              "CASH",
-              "GCASH",
-              "MAYA",
-              "BANK_TRANSFER",
-              "CARD",
-              "HMO",
-              "INSURANCE",
-              "OTHER"
-            ]
+            "description": "ISO 8601 timestamp of the payment."
           },
           "reference": {
             "type": "string",
-            "description": "Gateway / OR reference"
+            "description": "Free-text reference (bank ref, link id, etc.)."
           }
         },
         "required": [
-          "amountCentavos",
-          "method"
+          "amountCents"
         ]
       },
       "FileDsrDto": {
@@ -5277,19 +9463,26 @@
           "claimedCentavos"
         ]
       },
+      "HmoClaimStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "SUBMITTED",
+          "APPROVED",
+          "PARTIAL",
+          "DENIED",
+          "PAID",
+          "CANCELLED"
+        ]
+      },
       "UpdateClaimDto": {
         "type": "object",
         "properties": {
           "status": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "SUBMITTED",
-              "APPROVED",
-              "PARTIAL",
-              "DENIED",
-              "PAID",
-              "CANCELLED"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HmoClaimStatus"
+              }
             ]
           },
           "authNumber": {
@@ -5575,6 +9768,1020 @@
             "description": "Free-form key/value extension; merged shallowly"
           }
         }
+      },
+      "PlatformLoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "platform@cliniq.local"
+          },
+          "password": {
+            "type": "string",
+            "example": "Password123!"
+          },
+          "mfaCode": {
+            "type": "string",
+            "description": "TOTP code if MFA is enrolled"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "PlatformRefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "TenantStatus": {
+        "type": "string",
+        "enum": [
+          "TRIAL",
+          "ACTIVE",
+          "PAST_DUE",
+          "SUSPENDED",
+          "CANCELLED"
+        ]
+      },
+      "Plan": {
+        "type": "string",
+        "enum": [
+          "STARTER",
+          "PRO",
+          "PREMIUM"
+        ]
+      },
+      "UpdateTenantDto": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TenantStatus"
+              }
+            ]
+          },
+          "trialEndsAt": {
+            "type": "object",
+            "description": "ISO 8601; null clears the trial"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ClinicType": {
+        "type": "string",
+        "enum": [
+          "GENERAL",
+          "DENTAL",
+          "PEDIATRIC",
+          "DERMATOLOGY",
+          "OBGYN",
+          "CARDIOLOGY",
+          "PSYCH",
+          "OTHER"
+        ]
+      },
+      "InviteClinicDto": {
+        "type": "object",
+        "properties": {
+          "clinicSlug": {
+            "type": "string",
+            "example": "demo",
+            "description": "Slug of the clinic tenant to invite. The clinic must already be a CLINIC tenant on the platform; non-tenant email invites land in Phase 2."
+          },
+          "inviteNote": {
+            "type": "string",
+            "description": "Optional message shown to the clinic on the invitation card.",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "clinicSlug"
+        ]
+      },
+      "CreateLabCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Crowns"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent category id for nested folders."
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateLabCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "object"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        }
+      },
+      "LabProductPricingMode": {
+        "type": "string",
+        "enum": [
+          "FIXED",
+          "PER_RATE_PROFILE",
+          "ADJUST_ON_ORDER",
+          "VARIABLE_PER_TIER"
+        ]
+      },
+      "CreateLabProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Zirconia crown — anatomical"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Internal SKU (unique per lab)."
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "defaultPrice": {
+            "type": "number",
+            "description": "Default price in centavos. Required for FIXED pricing mode."
+          },
+          "currency": {
+            "type": "string",
+            "default": "PHP"
+          },
+          "pricingMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabProductPricingMode"
+              }
+            ]
+          },
+          "formSchema": {
+            "type": "object",
+            "description": "Dynamic form schema rendered to the clinic at order time."
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateLabProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "object"
+          },
+          "categoryId": {
+            "type": "object"
+          },
+          "defaultPrice": {
+            "type": "object"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "pricingMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabProductPricingMode"
+              }
+            ]
+          },
+          "formSchema": {
+            "type": "object"
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LabCaseStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "SUBMITTED",
+          "IN_PROGRESS",
+          "AWAITING_PICKUP",
+          "SHIPPED",
+          "DELIVERED",
+          "CANCELLED",
+          "REJECTED"
+        ]
+      },
+      "LabCaseUrgency": {
+        "type": "string",
+        "enum": [
+          "STANDARD",
+          "URGENT"
+        ]
+      },
+      "UpdateLabCaseDto": {
+        "type": "object",
+        "properties": {
+          "urgency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabCaseUrgency"
+              }
+            ]
+          },
+          "dueAt": {
+            "type": "object"
+          },
+          "formData": {
+            "type": "object"
+          },
+          "patientLabel": {
+            "type": "object"
+          },
+          "doctorLabel": {
+            "type": "object"
+          },
+          "deliveryCenter": {
+            "type": "object"
+          },
+          "notes": {
+            "type": "object"
+          },
+          "unitPrice": {
+            "type": "object",
+            "description": "Lab-only override of unit price (centavos). Used with ADJUST_ON_ORDER products."
+          }
+        }
+      },
+      "TransitionLabCaseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabCaseStatus"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "PresignLabCaseFileDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Original filename — passed through to S3 metadata."
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "application/octet-stream"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "File size in bytes."
+          }
+        },
+        "required": [
+          "filename",
+          "mimeType",
+          "sizeBytes"
+        ]
+      },
+      "AdvancePhaseDto": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "description": "Target phase (must match one entry from the product's phases array). Omit to advance to the next phase in declared order."
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateNoteDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "Internal note body (lab-only)."
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "UpdateNoteDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "CreateMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "Chat message body."
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "UpsertShipmentDto": {
+        "type": "object",
+        "properties": {
+          "carrier": {
+            "type": "object",
+            "example": "LBC"
+          },
+          "trackingNumber": {
+            "type": "object",
+            "example": "AB1234567PH"
+          },
+          "notes": {
+            "type": "object"
+          }
+        }
+      },
+      "CreateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "example": "f59e0b"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        }
+      },
+      "AssignTagDto": {
+        "type": "object",
+        "properties": {
+          "tagId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tagId"
+        ]
+      },
+      "CreateMaterialDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Zirconia disc (Translucent)"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "example": "CAD/CAM blocks"
+          },
+          "unitOfMeasure": {
+            "type": "string",
+            "example": "g",
+            "description": "Unit of measure (g, ml, pcs, cc)."
+          },
+          "description": {
+            "type": "string"
+          },
+          "defaultSupplier": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateMaterialDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "object"
+          },
+          "category": {
+            "type": "object"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "description": {
+            "type": "object"
+          },
+          "defaultSupplier": {
+            "type": "object"
+          }
+        }
+      },
+      "LabMaterialLotStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "WAREHOUSE",
+          "FINISHED",
+          "DEFECTIVE",
+          "EXPIRED"
+        ]
+      },
+      "CreateLotDto": {
+        "type": "object",
+        "properties": {
+          "lotNumber": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "supplier": {
+            "type": "string"
+          },
+          "initialQty": {
+            "type": "number",
+            "description": "Initial quantity in the material UOM."
+          },
+          "unitPriceCents": {
+            "type": "number",
+            "description": "Per-unit price in centavos."
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "receivedAt": {
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabMaterialLotStatus"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotNumber",
+          "initialQty"
+        ]
+      },
+      "UpdateLotDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabMaterialLotStatus"
+              }
+            ]
+          },
+          "expiresAt": {
+            "type": "object"
+          },
+          "notes": {
+            "type": "object"
+          }
+        }
+      },
+      "RecordUsageDto": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number",
+            "description": "Quantity used in the material UOM."
+          }
+        },
+        "required": [
+          "lotId",
+          "qty"
+        ]
+      },
+      "CreateTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Markdown body with {{placeholder}} support."
+          },
+          "productId": {
+            "type": "string",
+            "description": "Attach to a specific product. Null = generic."
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "body"
+        ]
+      },
+      "UpdateTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "object"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CaptureSignatureDto": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "string"
+          },
+          "signedByName": {
+            "type": "string"
+          },
+          "signedByRole": {
+            "type": "string",
+            "example": "patient"
+          },
+          "signatureFileKey": {
+            "type": "string",
+            "description": "S3 key of the uploaded signature image."
+          }
+        },
+        "required": [
+          "templateId",
+          "signedByName",
+          "signatureFileKey"
+        ]
+      },
+      "LabInvoiceStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "ISSUED",
+          "PAID",
+          "OVERDUE",
+          "VOID"
+        ]
+      },
+      "GenerateFromCasesDto": {
+        "type": "object",
+        "properties": {
+          "clinicTenantId": {
+            "type": "string",
+            "description": "Clinic tenant id. All cases must belong to this clinic."
+          },
+          "caseIds": {
+            "description": "LabCase ids to bill.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "currency": {
+            "type": "string",
+            "default": "PHP"
+          },
+          "dueAt": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "taxCents": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "clinicTenantId",
+          "caseIds"
+        ]
+      },
+      "UpdateInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "dueAt": {
+            "type": "object"
+          },
+          "notes": {
+            "type": "object"
+          },
+          "taxCents": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      },
+      "AddInvoiceItemDto": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "Optional LabCase id this line bills for."
+          },
+          "description": {
+            "type": "string",
+            "example": "Crown — case #142"
+          },
+          "qty": {
+            "type": "number",
+            "example": 1,
+            "default": 1
+          },
+          "unitPriceCents": {
+            "type": "number",
+            "description": "Unit price in centavos.",
+            "example": 250000
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "description",
+          "unitPriceCents"
+        ]
+      },
+      "UpdateInvoiceItemDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number"
+          },
+          "unitPriceCents": {
+            "type": "number"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        }
+      },
+      "LabPaymentLinkProvider": {
+        "type": "string",
+        "enum": [
+          "PAYMONGO",
+          "GCASH",
+          "MAYA",
+          "STRIPE",
+          "MANUAL"
+        ]
+      },
+      "CreatePaymentLinkDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "default": "MANUAL",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabPaymentLinkProvider"
+              }
+            ]
+          },
+          "amountCents": {
+            "type": "number",
+            "description": "Amount in centavos. Defaults to invoice outstanding balance."
+          },
+          "externalId": {
+            "type": "string",
+            "description": "External provider id (PayMongo link id, etc.)."
+          },
+          "url": {
+            "type": "string",
+            "description": "Public-facing URL the payer follows."
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO 8601 expiry."
+          }
+        }
+      },
+      "CreateTreatmentPlanDto": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "Lab case id this plan attaches to."
+          },
+          "title": {
+            "type": "string",
+            "example": "Aligner plan — patient X (rev 1)"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Markdown body the clinic decides on."
+          }
+        },
+        "required": [
+          "caseId",
+          "title",
+          "summary"
+        ]
+      },
+      "UpdateTreatmentPlanDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "LabTreatmentPlanFileKind": {
+        "type": "string",
+        "enum": [
+          "STL",
+          "IMAGE",
+          "REPORT",
+          "IPR_TABLE",
+          "OTHER"
+        ]
+      },
+      "PresignTreatmentPlanFileDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Original filename — stored on the row."
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "application/octet-stream"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "Size in bytes."
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabTreatmentPlanFileKind"
+              }
+            ]
+          }
+        },
+        "required": [
+          "filename",
+          "mimeType",
+          "sizeBytes"
+        ]
+      },
+      "LabCaseDisputeKind": {
+        "type": "string",
+        "enum": [
+          "QUALITY",
+          "BILLING",
+          "DELIVERY",
+          "OTHER"
+        ]
+      },
+      "OpenDisputeDto": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "Case the dispute attaches to."
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabCaseDisputeKind"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the dispute is being opened."
+          }
+        },
+        "required": [
+          "caseId",
+          "kind",
+          "reason"
+        ]
+      },
+      "DisputeMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "LabCaseDisputeStatus": {
+        "type": "string",
+        "enum": [
+          "RESOLVED",
+          "REJECTED",
+          "WITHDRAWN"
+        ]
+      },
+      "ResolveDisputeDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabCaseDisputeStatus"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CreateLabCaseDto": {
+        "type": "object",
+        "properties": {
+          "labTenantId": {
+            "type": "string",
+            "description": "Lab tenant id (the lab the case is going to)."
+          },
+          "productId": {
+            "type": "string",
+            "description": "Lab product id."
+          },
+          "urgency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabCaseUrgency"
+              }
+            ]
+          },
+          "dueAt": {
+            "type": "string",
+            "description": "ISO 8601 due date for the case."
+          },
+          "formData": {
+            "type": "object",
+            "description": "Form data matching the product's schema."
+          },
+          "patientLabel": {
+            "type": "string",
+            "description": "Free-text patient identifier (clinic-internal)."
+          },
+          "doctorLabel": {
+            "type": "string"
+          },
+          "deliveryCenter": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "labTenantId",
+          "productId"
+        ]
+      },
+      "LabTreatmentPlanDecision": {
+        "type": "string",
+        "enum": [
+          "APPROVED",
+          "REJECTED",
+          "REVISION_REQUESTED"
+        ]
+      },
+      "DecideTreatmentPlanDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabTreatmentPlanDecision"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ]
       }
     }
   }

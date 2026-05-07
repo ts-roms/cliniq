@@ -20,6 +20,10 @@ import { PortalHomeScreen } from '../features/portal/portal-home-screen';
 import { PortalAppointmentsScreen } from '../features/portal/portal-appointments-screen';
 import { PortalRecordsScreen } from '../features/portal/portal-records-screen';
 import { PortalInvoicesScreen } from '../features/portal/portal-invoices-screen';
+import { LabInboxScreen } from '../features/lab/lab-inbox-screen';
+import { LabCaseDetailScreen } from '../features/lab/lab-case-detail-screen';
+import { LabInvoiceDetailScreen } from '../features/lab/lab-invoice-detail-screen';
+import { LabTreatmentPlansScreen } from '../features/lab/lab-treatment-plans-screen';
 import { TabBar, type Tab } from '../shared/components/tab-bar';
 import { NavRail } from '../shared/components/nav-rail';
 import { LangSwitch } from '../shared/components/lang-switch';
@@ -44,7 +48,7 @@ configureAutoRefresh({
   },
 });
 
-type StaffTabKey = 'patients' | 'schedule' | 'inbox';
+type StaffTabKey = 'patients' | 'schedule' | 'lab' | 'inbox';
 type PortalTabKey = 'home' | 'appointments' | 'records' | 'invoices';
 
 export const App = () => {
@@ -155,12 +159,19 @@ function StaffShell() {
   const [tab, setTab] = useState<StaffTabKey>('patients');
   const [patientDetailId, setPatientDetailId] = useState<string | null>(null);
   const [consultDetailId, setConsultDetailId] = useState<string | null>(null);
+  // Lab navigation state — three nullable ids stand in for the screen stack.
+  // Mutually exclusive: at most one is set at a time. Keeps the navigation
+  // simple without pulling in react-navigation just for four screens.
+  const [labCaseId, setLabCaseId] = useState<string | null>(null);
+  const [labInvoiceId, setLabInvoiceId] = useState<string | null>(null);
+  const [labPlansForCaseId, setLabPlansForCaseId] = useState<string | null>(null);
   const unread = useUnreadCount();
   const t = useT();
 
   const tabs: Tab<StaffTabKey>[] = [
     { key: 'patients', label: t('tabs.patients'), icon: 'users' },
     { key: 'schedule', label: t('tabs.schedule'), icon: 'calendar' },
+    { key: 'lab', label: t('tabs.lab'), icon: 'package' },
     { key: 'inbox', label: t('tabs.inbox'), badge: unread.data ?? 0, icon: 'bell' },
   ];
 
@@ -182,6 +193,33 @@ function StaffShell() {
           <PatientsScreen onSelect={setPatientDetailId} />
         ))}
       {tab === 'schedule' && <ScheduleScreen />}
+      {tab === 'lab' &&
+        (labPlansForCaseId ? (
+          <LabTreatmentPlansScreen
+            caseId={labPlansForCaseId}
+            onBack={() => setLabPlansForCaseId(null)}
+          />
+        ) : labCaseId ? (
+          <LabCaseDetailScreen
+            caseId={labCaseId}
+            onBack={() => setLabCaseId(null)}
+            onViewPlans={() => {
+              setLabPlansForCaseId(labCaseId);
+              setLabCaseId(null);
+            }}
+          />
+        ) : labInvoiceId ? (
+          <LabInvoiceDetailScreen
+            invoiceId={labInvoiceId}
+            onBack={() => setLabInvoiceId(null)}
+          />
+        ) : (
+          <LabInboxScreen
+            onSelectCase={setLabCaseId}
+            onSelectInvoice={setLabInvoiceId}
+            onSelectPlansForCase={setLabPlansForCaseId}
+          />
+        ))}
       {tab === 'inbox' && <NotificationsScreen />}
     </ResponsiveShell>
   );

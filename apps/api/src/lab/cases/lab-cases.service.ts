@@ -309,6 +309,8 @@ export class LabCasesService {
           `Hi ${r.name ?? 'there'},\n\n` +
           `${lc.clinic.name} just submitted case ${ref} (${lc.product.name}).\n\n` +
           `Open it: ${url(`/lab/cases/${lc.id}`)}\n\n— ClinIQ Lab`,
+        link: `/lab/cases/${lc.id}`,
+        entityId: lc.id,
       }));
       return;
     }
@@ -329,6 +331,8 @@ export class LabCasesService {
         `${lc.lab.name} ${verb} your case ${ref} (${lc.product.name}).\n` +
         (reason ? `\nReason: ${reason}\n` : '') +
         `\nOpen it: ${url(`/lab-cases/${lc.id}`)}\n\n— ClinIQ Lab`,
+      link: `/lab-cases/${lc.id}`,
+      entityId: lc.id,
     }));
   }
 

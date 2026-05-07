@@ -670,6 +670,8 @@ export class LabInvoicesService {
         (inv.dueAt ? `Due: ${inv.dueAt.toISOString().slice(0, 10)}\n\n` : '\n') +
         `View it here: ${url}\n\n` +
         `— ClinIQ Lab`,
+      link: `/lab-invoices/${inv.id}`,
+      entityId: inv.id,
     }));
   }
 
@@ -695,6 +697,8 @@ export class LabInvoicesService {
         `Invoice ${ref} (${total}) from ${inv.clinic.name} is now fully paid.\n\n` +
         `View it here: ${url}\n\n` +
         `— ClinIQ Lab`,
+      link: `/lab/billing/${inv.id}`,
+      entityId: inv.id,
     }));
   }
 

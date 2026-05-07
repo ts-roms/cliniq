@@ -2,8 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@org/db';
 import { MailerService } from '../../mailer/mailer.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 interface OwnerContact {
+  userId: string;
+  tenantId: string;
   email: string;
   name: string | null;
 }
@@ -26,6 +29,7 @@ export class LabNotificationsService {
     private readonly prisma: PrismaService,
     private readonly mailer: MailerService,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -37,12 +41,17 @@ export class LabNotificationsService {
     const owner = await this.prisma.withPlatformContext((tx) =>
       tx.tenantUser.findFirst({
         where: { tenantId, role: 'OWNER', status: 'ACTIVE' },
-        include: { user: { select: { email: true, name: true } } },
+        include: { user: { select: { id: true, email: true, name: true } } },
         orderBy: { joinedAt: 'asc' },
       }),
     );
     if (!owner?.user?.email) return null;
-    return { email: owner.user.email, name: owner.user.name };
+    return {
+      userId: owner.user.id,
+      tenantId,
+      email: owner.user.email,
+      name: owner.user.name,
+    };
   }
 
   /** Send an email and swallow errors (notification == best-effort). */
@@ -61,19 +70,39 @@ export class LabNotificationsService {
   }
 
   /**
-   * Fire-and-forget helper that wraps both the lookup and send. Pass the
-   * tenant whose owner we want to notify and a callback that builds the
-   * message given the owner's name. Returns nothing — caller awaits at
-   * its own discretion.
+   * Fire-and-forget helper. Looks up the tenant owner and:
+   *  1. emails them (Resend, no-op without RESEND_API_KEY)
+   *  2. creates an in-app Notification row (drives both /inbox and the
+   *     mobile push fan-out via Expo).
+   *
+   * The optional `link` lets the mobile/web inbox tap-through to the
+   * relevant detail screen.
    */
   async notifyOwner(
     tenantId: string,
-    builder: (recipient: OwnerContact) => { subject: string; text: string },
+    builder: (recipient: OwnerContact) => {
+      subject: string;
+      text: string;
+      link?: string;
+      entityId?: string;
+    },
   ): Promise<void> {
     const recipient = await this.lookupOwnerEmail(tenantId);
     if (!recipient) return;
     const msg = builder(recipient);
-    await this.send({ to: recipient.email, ...msg });
+    await this.send({ to: recipient.email, subject: msg.subject, text: msg.text });
+    // Also create a Notification row + push. Lab events use kind=GENERAL
+    // for now — adding LAB_* kinds would mean another migration; the
+    // mobile inbox renders all kinds the same way today anyway.
+    await this.notifications.notify({
+      tenantId: recipient.tenantId,
+      userId: recipient.userId,
+      kind: 'GENERAL',
+      title: msg.subject,
+      body: msg.text.slice(0, 500),
+      link: msg.link,
+      entityId: msg.entityId,
+    });
   }
 
   webUrl(path: string): string {

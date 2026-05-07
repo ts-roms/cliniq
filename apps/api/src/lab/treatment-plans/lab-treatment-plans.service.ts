@@ -340,6 +340,8 @@ export class LabTreatmentPlansService {
         `(${plan.case.product.name}, rev ${plan.revision ?? '—'}).\n\n` +
         `Title: ${plan.title}\n\n` +
         `Review and decide here: ${url}\n\n— ClinIQ Lab`,
+      link: `/lab-treatment-plans/${plan.id}`,
+      entityId: plan.id,
     }));
   }
 
@@ -382,6 +384,8 @@ export class LabTreatmentPlansService {
         `(${plan.case.product.name}).\n` +
         (notes ? `\nNotes: ${notes}\n` : '') +
         `\nOpen it: ${url}\n\n— ClinIQ Lab`,
+      link: `/lab/cases/${plan.case.id}`,
+      entityId: plan.id,
     }));
   }
 
