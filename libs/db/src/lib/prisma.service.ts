@@ -34,7 +34,49 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     await this.client.$connect();
+    await this.assertNotSuperuser();
     this.logger.log('Prisma connected');
+  }
+
+  /**
+   * Refuse to boot when the api is connected as a Postgres superuser or any
+   * other role with `BYPASSRLS=t`. RLS is the single mechanism that keeps
+   * tenant data from leaking; if RLS is bypassed every patient/consult/
+   * invoice query silently goes cross-tenant.
+   *
+   * Set `ALLOW_SUPERUSER_DB_CONN=1` to skip this check (e.g. when running
+   * one-off scripts as superuser intentionally). Don't set it in prod.
+   */
+  private async assertNotSuperuser(): Promise<void> {
+    if (process.env['ALLOW_SUPERUSER_DB_CONN'] === '1') {
+      this.logger.warn(
+        'ALLOW_SUPERUSER_DB_CONN=1 — RLS may be bypassed. This must NEVER be set in prod.',
+      );
+      return;
+    }
+    const rows = await this.client.$queryRawUnsafe<
+      Array<{ user: string; super: boolean; bypassrls: boolean }>
+    >(
+      `SELECT current_user::text AS "user",
+              current_setting('is_superuser')::boolean AS "super",
+              (SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user) AS "bypassrls"`,
+    );
+    const role = rows[0];
+    if (!role) {
+      this.logger.error('could not read current_user / role privileges');
+      throw new Error('PrismaService: unable to verify connection role');
+    }
+    if (role.super || role.bypassrls) {
+      this.logger.error(
+        `connected as ${role.user} (superuser=${role.super}, bypassrls=${role.bypassrls}). ` +
+          `This bypasses RLS and exposes cross-tenant data. ` +
+          `Use the cliniq_app role (see tools/scripts/fix-cliniq-app-role.sql).`,
+      );
+      throw new Error(
+        `unsafe DB role "${role.user}" — RLS would be bypassed. Refusing to start.`,
+      );
+    }
+    this.logger.log(`Prisma role check OK (connected as ${role.user})`);
   }
 
   async onModuleDestroy(): Promise<void> {
