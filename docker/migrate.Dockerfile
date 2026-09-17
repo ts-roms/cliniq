@@ -5,7 +5,7 @@
 # Lean by design — no SWC/webpack, no nest build. Just enough to run prisma.
 
 FROM node:22-alpine
-RUN corepack enable && apk add --no-cache openssl
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate && apk add --no-cache openssl
 WORKDIR /workspace
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./

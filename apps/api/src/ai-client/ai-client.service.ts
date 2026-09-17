@@ -32,10 +32,23 @@ export class AiClientService {
   private readonly logger = new Logger(AiClientService.name);
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly serviceToken: string | undefined;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
-    this.timeoutMs = Number(this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000);
+    this.baseUrl =
+      this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
+    this.timeoutMs = Number(
+      this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000,
+    );
+    // Shared secret the ai-service's ServiceTokenGuard checks. Same env var
+    // on both sides; blank = ai-service runs open (dev only).
+    const token = this.config.get<string>('AI_SERVICE_TOKEN');
+    this.serviceToken = token && token.length > 0 ? token : undefined;
+    if (!this.serviceToken) {
+      this.logger.warn(
+        'AI_SERVICE_TOKEN not set — calling ai-service without a service token',
+      );
+    }
   }
 
   async draftSoap(req: SoapDraftRequest): Promise<SoapDraftResponse> {
@@ -107,7 +120,12 @@ export class AiClientService {
       try {
         const res = await fetch(url, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            ...(this.serviceToken
+              ? { 'x-ai-service-token': this.serviceToken }
+              : {}),
+          },
           body: JSON.stringify(body),
           signal: controller.signal,
         });
@@ -121,7 +139,9 @@ export class AiClientService {
       } catch (err) {
         lastErr = err;
         if (err instanceof BadGatewayException) throw err; // don't retry HTTP errors
-        this.logger.warn(`ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`);
+        this.logger.warn(
+          `ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`,
+        );
       } finally {
         clearTimeout(timer);
       }

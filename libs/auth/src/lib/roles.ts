@@ -16,6 +16,9 @@ export type Role = (typeof Roles)[keyof typeof Roles];
 export const Actions = {
   TENANT_MANAGE: 'tenant:manage',
   USER_INVITE: 'user:invite',
+  // Change roles / suspend / remove staff. OWNER + ADMIN; the members
+  // service additionally stops ADMIN from granting or revoking OWNER.
+  USER_MANAGE: 'user:manage',
   PATIENT_READ: 'patient:read',
   PATIENT_WRITE: 'patient:write',
   CONSULT_READ: 'consult:read',
@@ -37,6 +40,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
   OWNER: new Set([
     Actions.TENANT_MANAGE,
     Actions.USER_INVITE,
+    Actions.USER_MANAGE,
     Actions.PATIENT_READ,
     Actions.PATIENT_WRITE,
     Actions.CONSULT_READ,
@@ -53,6 +57,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
   ]),
   ADMIN: new Set([
     Actions.USER_INVITE,
+    Actions.USER_MANAGE,
     Actions.PATIENT_READ,
     Actions.PATIENT_WRITE,
     Actions.CONSULT_READ,

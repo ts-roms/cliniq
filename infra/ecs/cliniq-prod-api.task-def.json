@@ -15,11 +15,22 @@
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "4000" },
-        { "name": "AWS_REGION", "value": "ap-southeast-1" }
+        { "name": "AWS_REGION", "value": "ap-southeast-1" },
+        { "name": "TRUST_PROXY", "value": "1" }
       ],
       "secrets": [
-        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-prod/database-url:DATABASE_URL::" },
-        { "name": "JWT_SECRET",   "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-prod/jwt-secret:JWT_SECRET::" }
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-prod/database-url:DATABASE_URL::"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-prod/jwt-secret:JWT_SECRET::"
+        },
+        {
+          "name": "AI_SERVICE_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:ACCOUNT:secret:cliniq-prod/ai-service-token:AI_SERVICE_TOKEN::"
+        }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -30,7 +41,10 @@
         }
       },
       "healthCheck": {
-        "command": ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"],
+        "command": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:4000/api/health || exit 1"
+        ],
         "interval": 30,
         "timeout": 5,
         "retries": 3,

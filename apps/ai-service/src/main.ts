@@ -7,6 +7,17 @@ import helmet from 'helmet';
 import { AppModule } from './app/app.module.js';
 
 async function bootstrap() {
+  // Same posture as the api's superuser refusal: a production ai-service
+  // with no shared secret is an open Bedrock proxy. Fail loudly at boot
+  // rather than quietly serving anyone who finds the port.
+  if (process.env.NODE_ENV === 'production' && !process.env.AI_SERVICE_TOKEN) {
+    Logger.error(
+      'AI_SERVICE_TOKEN is required when NODE_ENV=production (the api sends it as X-AI-Service-Token).',
+      'Bootstrap',
+    );
+    process.exit(1);
+  }
+
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
   app.use(helmet());
@@ -29,7 +40,10 @@ async function bootstrap() {
     .setTitle('ClinIQ AI Service')
     .setDescription('Bedrock-backed drafts (SOAP, dermatology, triage)')
     .setVersion(process.env.npm_package_version ?? '0.0.1')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'jwt',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('ai/docs', app, document);

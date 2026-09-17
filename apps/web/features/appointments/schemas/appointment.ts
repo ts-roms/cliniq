@@ -46,5 +46,24 @@ export interface Appointment {
   status: AppointmentStatus;
   reason: string | null;
   notes: string | null;
+  checkedInAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+  noShowAt?: string | null;
+  cancelReason?: string | null;
   patient?: { id: string; firstName: string; lastName: string; mrn: string };
+  /** Present once the slot has been started (PATCH :id/start or a consult opened with appointmentId). */
+  consultation?: { id: string; status: string } | null;
 }
+
+export const rescheduleSchema = z
+  .object({
+    startsAt: z.string().min(1, 'required'),
+    endsAt: z.string().min(1, 'required'),
+  })
+  .refine((v) => new Date(v.endsAt) > new Date(v.startsAt), {
+    path: ['endsAt'],
+    message: 'must be after start',
+  });
+export type RescheduleInput = z.infer<typeof rescheduleSchema>;

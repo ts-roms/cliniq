@@ -65,7 +65,11 @@ export class LabClinicLinksService {
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.labClinicLink.findFirst({
-        where: { labTenantId: lab.id, clinicTenantId: clinic.id, deletedAt: null },
+        where: {
+          labTenantId: lab.id,
+          clinicTenantId: clinic.id,
+          deletedAt: null,
+        },
       });
       if (existing) {
         // Idempotent re-invite: revive a REJECTED/REVOKED link as PENDING.
@@ -239,16 +243,27 @@ export class LabClinicLinksService {
    * order with a particular lab. Bypasses the per-row RLS by using a
    * dedicated $queryRaw — no tenant context needed.
    */
-  async isLinkActive(labTenantId: string, clinicTenantId: string): Promise<boolean> {
-    const rows = await this.prisma.$queryRaw<{ exists: boolean }[]>`
-      SELECT EXISTS (
-        SELECT 1 FROM "lab_clinic_links"
-        WHERE "labTenantId"    = ${labTenantId}
-          AND "clinicTenantId" = ${clinicTenantId}
-          AND "status"         = 'ACTIVE'
-          AND "deletedAt"      IS NULL
-      ) AS "exists"
-    `;
+  async isLinkActive(
+    labTenantId: string,
+    clinicTenantId: string,
+  ): Promise<boolean> {
+    // Runs BEFORE the caller's withTenant wrap, so set the GUC here: under
+    // cliniq_app the `lab_clinic_links_either_side` policy hides every row
+    // when current_tenant_id() is empty and this silently returned false.
+    const rows = await this.prisma.withTenant(
+      clinicTenantId,
+      null,
+      (tx) =>
+        tx.$queryRaw<{ exists: boolean }[]>`
+        SELECT EXISTS (
+          SELECT 1 FROM "lab_clinic_links"
+          WHERE "labTenantId"    = ${labTenantId}
+            AND "clinicTenantId" = ${clinicTenantId}
+            AND "status"         = 'ACTIVE'
+            AND "deletedAt"      IS NULL
+        ) AS "exists"
+      `,
+    );
     return Boolean(rows[0]?.exists);
   }
 }

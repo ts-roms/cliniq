@@ -17,5 +17,9 @@ module.exports = {
     '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
+  // `jose` ships ESM only; let swc turn it into CJS for the test runtime.
+  // The lookahead skips every node_modules path except ones under jose
+  // (pnpm layout: node_modules/.pnpm/jose@x/node_modules/jose/...).
+  transformIgnorePatterns: ['/node_modules/(?!.*jose)'],
   coverageDirectory: 'test-output/jest/coverage',
 };

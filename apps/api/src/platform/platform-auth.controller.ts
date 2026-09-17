@@ -7,6 +7,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { AUTH_THROTTLE } from '../common/throttle.config.js';
 import { Public } from '../auth/decorators/public.decorator.js';
 import { PlatformAuth } from './decorators/platform-auth.decorator.js';
 import {
@@ -26,6 +28,7 @@ export class PlatformAuthController {
   constructor(private readonly auth: PlatformAuthService) {}
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: PlatformLoginDto) {
@@ -33,6 +36,7 @@ export class PlatformAuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: PlatformRefreshDto) {

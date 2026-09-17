@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@org/ui';
-import { SignupForm } from '@/features/onboarding';
+import { SignupEntry } from '@/features/onboarding';
 
 export default function SignupPage() {
   return (
@@ -16,16 +16,17 @@ export default function SignupPage() {
         <CardHeader>
           <CardTitle className="font-extralight">Start your clinic</CardTitle>
           <CardDescription>
-            Free 30-day trial. Add patients, scribe consultations, prescribe — all in
-            one place.
+            Free 30-day trial. Add patients, scribe consultations, prescribe —
+            all in one place.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* SignupForm reads ?plan=… via useSearchParams, which forces a
-              client-side render. Suspense boundary lets the page still
-              statically prerender the surrounding shell. */}
+          {/* SignupEntry reads ?plan= / ?invite= via useSearchParams, which
+              forces a client-side render. Suspense boundary lets the page
+              still statically prerender the surrounding shell. With ?invite=
+              it renders the accept-invite form instead of the clinic wizard. */}
           <Suspense fallback={<SignupFormSkeleton />}>
-            <SignupForm />
+            <SignupEntry />
           </Suspense>
           <p className="text-center text-xs text-muted-foreground">
             Already have a clinic?{' '}

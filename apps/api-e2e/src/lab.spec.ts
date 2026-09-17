@@ -80,20 +80,21 @@ describe('Lab module e2e', () => {
     expect(accept2.status).toBe(200);
 
     // 6. Lab marks completed → AWAITING_PICKUP → DELIVERED.
-    await lab.client.axios.post(
-      `/api/lab/cases/${draft.data.id}/transitions`,
-      { status: 'AWAITING_PICKUP' },
-    );
-    await lab.client.axios.post(
-      `/api/lab/cases/${draft.data.id}/transitions`,
-      { status: 'DELIVERED' },
-    );
+    await lab.client.axios.post(`/api/lab/cases/${draft.data.id}/transitions`, {
+      status: 'AWAITING_PICKUP',
+    });
+    await lab.client.axios.post(`/api/lab/cases/${draft.data.id}/transitions`, {
+      status: 'DELIVERED',
+    });
 
     // 7. Lab generates an invoice from the delivered case.
-    const inv = await lab.client.axios.post('/api/lab/invoices/generate-from-cases', {
-      clinicTenantId: clinic.tenant.id,
-      caseIds: [draft.data.id],
-    });
+    const inv = await lab.client.axios.post(
+      '/api/lab/invoices/generate-from-cases',
+      {
+        clinicTenantId: clinic.tenant.id,
+        caseIds: [draft.data.id],
+      },
+    );
     expect(inv.status).toBe(201);
     expect(inv.data.status).toBe('DRAFT');
     expect(inv.data.totalCents).toBe(350000);
@@ -111,7 +112,9 @@ describe('Lab module e2e', () => {
 
     // 9. Clinic side now sees the invoice (drafts are hidden from clinic
     //    but ISSUED ones are not).
-    const clinicList = await clinic.client.axios.get('/api/clinic/lab-invoices');
+    const clinicList = await clinic.client.axios.get(
+      '/api/clinic/lab-invoices',
+    );
     expect(clinicList.status).toBe(200);
     expect(clinicList.data.length).toBeGreaterThanOrEqual(1);
 
@@ -129,13 +132,13 @@ describe('Lab module e2e', () => {
     const lab = await env.makeTenant({ kind: 'LAB', labPlan: 'LAB_PREMIUM' });
     const clinic = await env.makeTenant({ kind: 'CLINIC', plan: 'PRO' });
 
-    // The /api/lab/invoices route requires the CLINIC tenant to even
-    // hit it — but they should fail the LAB-only assertion in
-    // createDraft. Forbidden / NotFound is acceptable; what matters is
-    // they don't successfully create an invoice.
+    // A CLINIC tenant never gets past the controller's LAB_ORDERS feature
+    // gate (402 — clinic plans don't carry lab features), and even if it
+    // did, createDraft's LAB-only assertion would 403. Any of these is
+    // fine; what matters is they don't successfully create an invoice.
     const res = await clinic.client.axios.post('/api/lab/invoices', {
       clinicTenantId: clinic.tenant.id,
     });
-    expect([400, 401, 403, 404]).toContain(res.status);
+    expect([400, 401, 402, 403, 404]).toContain(res.status);
   });
 });

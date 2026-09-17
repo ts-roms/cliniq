@@ -1,7 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AppointmentType } from '@org/db';
+import { AppointmentStatus, AppointmentType } from '@org/db';
 
 export class CreateAppointmentDto {
   @ApiProperty()
@@ -22,7 +29,10 @@ export class CreateAppointmentDto {
   @IsDate()
   endsAt!: Date;
 
-  @ApiPropertyOptional({ enum: AppointmentType, default: AppointmentType.CONSULT })
+  @ApiPropertyOptional({
+    enum: AppointmentType,
+    default: AppointmentType.CONSULT,
+  })
   @IsOptional()
   @IsEnum(AppointmentType)
   type?: AppointmentType;
@@ -38,6 +48,15 @@ export class CreateAppointmentDto {
   @IsString()
   @MaxLength(500)
   notes?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Book outside the provider's hours / during time off anyway (front-desk override; audited). Double-booking is never overridable.",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
 }
 
 export class AppointmentRangeDto {
@@ -62,4 +81,9 @@ export class AppointmentRangeDto {
   @IsOptional()
   @IsString()
   patientId?: string;
+
+  @ApiPropertyOptional({ enum: AppointmentStatus })
+  @IsOptional()
+  @IsEnum(AppointmentStatus)
+  status?: AppointmentStatus;
 }

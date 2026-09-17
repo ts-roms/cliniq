@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@org/ui';
-import { clearSession, useSession } from '@/features/auth';
+import { useLogout, useSession } from '@/features/auth';
 import { useTenantKind } from '@/features/lab';
 
 const NAV = [
@@ -19,11 +19,16 @@ const NAV = [
   { href: '/lab/clinics', label: 'Clinics' },
 ];
 
-export default function LabAuthedLayout({ children }: { children: React.ReactNode }) {
+export default function LabAuthedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const session = useSession();
   const tenantKind = useTenantKind();
   const router = useRouter();
   const pathname = usePathname();
+  const signOut = useLogout(() => router.push('/login'));
 
   // Gate: must be signed in AND a LAB tenant.
   useEffect(() => {
@@ -48,7 +53,9 @@ export default function LabAuthedLayout({ children }: { children: React.ReactNod
               <span className="text-sm font-semibold">L</span>
             </span>
             <div>
-              <div className="text-sm font-semibold leading-none">ClinIQ Lab</div>
+              <div className="text-sm font-semibold leading-none">
+                ClinIQ Lab
+              </div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                 Laboratory console
               </div>
@@ -57,7 +64,8 @@ export default function LabAuthedLayout({ children }: { children: React.ReactNod
 
           <nav className="flex flex-1 items-center gap-1">
             {NAV.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
@@ -79,14 +87,7 @@ export default function LabAuthedLayout({ children }: { children: React.ReactNod
             <span className="hidden text-xs text-muted-foreground sm:inline">
               {session.user.email}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                clearSession();
-                router.push('/login');
-              }}
-            >
+            <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="mr-2 h-4 w-4" aria-hidden /> Sign out
             </Button>
           </div>

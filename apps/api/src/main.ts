@@ -13,9 +13,25 @@ async function bootstrap() {
   // webhook handlers (e.g. PayMongo HMAC) can verify the signature against
   // the exact bytes the provider signed. JSON-parsed body is still populated
   // alongside it, so existing controllers are unaffected.
-  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    rawBody: true,
+  });
 
   app.use(helmet());
+  // Behind ALB / Railway the socket peer is the proxy; honour X-Forwarded-For
+  // so rate limits + audit ip fields see the real client. Off by default so a
+  // bare deployment can't be spoofed by a client-supplied header.
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy && trustProxy !== 'false' && trustProxy !== '0') {
+    app
+      .getHttpAdapter()
+      .getInstance()
+      .set(
+        'trust proxy',
+        /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy,
+      );
+  }
   app.enableCors({
     origin: (
       process.env.CORS_ORIGINS ??
@@ -45,7 +61,10 @@ async function bootstrap() {
     .setTitle('ClinIQ API')
     .setDescription('Multi-tenant clinic management API')
     .setVersion(process.env.npm_package_version ?? '0.0.1')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'jwt',
+    )
     .addServer(process.env.PUBLIC_API_URL ?? 'http://localhost:4000')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -53,7 +72,10 @@ async function bootstrap() {
 
   // Emit the spec for codegen consumers (libs/api-client).
   // Honors --emit-openapi to write and exit (used by the generate:api-client script).
-  if (process.argv.includes('--emit-openapi') || process.env.EMIT_OPENAPI === '1') {
+  if (
+    process.argv.includes('--emit-openapi') ||
+    process.env.EMIT_OPENAPI === '1'
+  ) {
     const out = resolve(process.cwd(), 'apps/api/openapi.json');
     writeFileSync(out, JSON.stringify(document, null, 2));
     Logger.log(`OpenAPI spec written to ${out}`, 'Bootstrap');

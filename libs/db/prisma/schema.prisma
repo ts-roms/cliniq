@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  extensions = [pgcrypto, pg_trgm]
+  extensions = [pgcrypto, pg_trgm, btree_gist]
 }
 
 // ──────────────────────────────────────────────
@@ -49,6 +49,8 @@ model Tenant {
   users     TenantUser[]
   patients  Patient[]
   locations Location[]
+  invites   TenantInvite[]
+  refreshSessions RefreshSession[]
 
   // Lab-side (kind=LAB) connections to clinics that send orders here.
   labLinks    LabClinicLink[] @relation("LabLinks")
@@ -946,14 +948,25 @@ model User {
 
   lastLogin     DateTime?
 
+  // Brute-force lockout. Incremented on every failed password check, reset
+  // to 0 on success. Once it hits AUTH_LOCKOUT_THRESHOLD the login path
+  // sets `lockedUntil` and refuses attempts until it passes.
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenants       TenantUser[]
+  sentInvites   TenantInvite[]        @relation("InviteSender")
+  refreshSessions RefreshSession[]
+  passwordResets  PasswordResetToken[]
   consultations Consultation[] @relation("ConsultProvider")
   prescriptions Prescription[] @relation("RxProvider")
   appointments  Appointment[]  @relation("ApptProvider")
+  availability  ProviderAvailability[]
+  timeOff       ProviderTimeOff[]
   delegationsGranted  Delegation[] @relation("DelegationGranter")
   delegationsReceived Delegation[] @relation("DelegationGrantee")
 
@@ -1023,6 +1036,74 @@ enum MemberStatus {
   SUSPENDED
 }
 
+// Staff invitation. The ONLY way to join an existing tenant — /auth/register
+// requires a valid invite token (or the one-shot bootstrap token issued by
+// POST /tenants for the first owner). We store a sha256 of the opaque token,
+// never the token itself; the raw token only ever lives in the invite email
+// and the inviter's response body.
+model TenantInvite {
+  id              String    @id @default(cuid())
+  tenantId        String
+  email           String
+  role            Role
+  tokenHash       String    @unique
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  acceptedUserId  String?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy User   @relation("InviteSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, email])
+  @@map("tenant_invites")
+}
+
+// Server-side refresh-token state. Every refresh JWT carries `sid` = this
+// row's id. Refresh rotates the row (revokes the old, inserts a new one
+// linked via replacedById); presenting an already-rotated token is treated
+// as theft and revokes the whole user+tenant family. Logout / member
+// suspension / password reset revoke rows so the 7-day refresh window can
+// be cut short server-side.
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tenantId     String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId, tenantId])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+}
+
+// Forgot-password flow. Single-use, short-lived (AUTH_RESET_TTL_MIN).
+// Hash-only storage, same reasoning as TenantInvite.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
 // ──────────────────────────────────────────────
 // PATIENTS (stub — expand from docs/05)
 // ──────────────────────────────────────────────
@@ -1083,6 +1164,8 @@ model Consultation {
   tenantId   String
   patientId  String
   providerId String   // user.id of the doctor
+  // Optional back-link to the booked slot. Walk-ins / ad-hoc consults leave it null.
+  appointmentId String? @unique
   startedAt  DateTime @default(now())
   endedAt    DateTime?
 
@@ -1102,6 +1185,7 @@ model Consultation {
 
   patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   provider      User           @relation("ConsultProvider", fields: [providerId], references: [id])
+  appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   suggestions   AiSuggestion[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
@@ -1370,6 +1454,19 @@ model Appointment {
   notes          String?
   reminderSentAt DateTime?
 
+  // Lifecycle timestamps — one per transition so reports can measure wait
+  // time (checkedInAt → startedAt), consult length, and no-show lag without
+  // joining the audit log. Set by AppointmentsService.transition(); the
+  // status column stays the source of truth for "where is it now".
+  checkedInAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  noShowAt     DateTime?
+  cancelReason String?
+  // Previous slot when this appointment was rescheduled (audit convenience).
+  rescheduledFromStartsAt DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -1377,11 +1474,61 @@ model Appointment {
   patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
   provider     User          @relation("ApptProvider", fields: [providerId], references: [id])
   teleSessions TeleSession[]
+  // The consultation opened from this appointment (PATCH /appointments/:id/start
+  // or POST /consultations with appointmentId). Completing it completes the
+  // appointment. At most one per appointment.
+  consultation Consultation?
 
   @@index([tenantId, startsAt])
   @@index([tenantId, providerId, startsAt])
   @@index([tenantId, status, startsAt])
   @@map("appointments")
+}
+
+// ── Provider availability ────────────────────────────────────────
+// When a provider can be booked. Two layers:
+//   * ProviderAvailability — weekly recurring ranges in the TENANT's timezone
+//     (HH:mm). Several rows per weekday model breaks: 08:00–12:00 +
+//     13:00–17:00 leaves lunch unbookable without a separate "break" concept.
+//   * ProviderTimeOff — dated blocks (leave, conference, a half-day) that win
+//     over the weekly rules.
+// A provider with NO availability rows falls back to the tenant's
+// settings.operatingHours; with neither, booking is unrestricted (so tenants
+// that never touch this screen keep today's behaviour).
+model ProviderAvailability {
+  id          String @id @default(cuid())
+  tenantId    String
+  providerId  String
+  weekday     Int    // 0 = Sunday … 6 = Saturday
+  startTime   String // "HH:mm", tenant timezone
+  endTime     String // "HH:mm", exclusive
+  // Default appointment length used when listing free slots for this range.
+  slotMinutes Int    @default(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, providerId, weekday])
+  @@map("provider_availability")
+}
+
+model ProviderTimeOff {
+  id         String   @id @default(cuid())
+  tenantId   String
+  providerId String
+  startsAt   DateTime
+  endsAt     DateTime
+  reason     String?
+  createdByUserId String?
+
+  createdAt DateTime @default(now())
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, providerId, startsAt])
+  @@map("provider_time_off")
 }
 
 // ── Patient queue ─────────────────────────────────────────────────

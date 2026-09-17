@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ServiceTokenGuard } from '../common/service-token.guard.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { BedrockModule } from '../bedrock/bedrock.module.js';
@@ -20,6 +22,6 @@ import { HealthModule } from '../health/health.module.js';
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ServiceTokenGuard }],
 })
 export class AppModule {}

@@ -20,8 +20,7 @@ export {
 
 export { hashPassword, verifyPassword } from './lib/password.js';
 
-export {
-  generateTotpSecret,
-  buildOtpAuthUrl,
-  verifyTotp,
-} from './lib/totp.js';
+export { generateTotpSecret, buildOtpAuthUrl, verifyTotp } from './lib/totp.js';
+
+export { generateOpaqueToken, hashToken, secretsEqual } from './lib/tokens.js';
+export { parseDurationMs } from './lib/duration.js';

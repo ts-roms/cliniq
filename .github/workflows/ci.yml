@@ -128,6 +128,14 @@ jobs:
       NODE_ENV: production
       PORT: '4000'
       CORS_ORIGINS: http://localhost:3000
+      # The e2e suite hammers the credential endpoints from one ip; the
+      # default 10/min auth bucket would 429 it. Keep throttling ON (so the
+      # guard is exercised) but with a ceiling the suite can't reach.
+      THROTTLE_AUTH_LIMIT: '1000'
+      THROTTLE_LIMIT: '5000'
+      # Lets auth-hardening.spec.ts complete the reset flow without an inbox.
+      AUTH_EXPOSE_DEBUG_TOKENS: 'true'
+      AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
 
     steps:
       - uses: actions/checkout@v4
@@ -172,6 +180,11 @@ jobs:
         env:
           API_URL: http://localhost:4000
         run: node apps/api-e2e/src/integration/smoke.mjs
+
+      - name: Run api e2e suite (Jest, real HTTP + RLS)
+        env:
+          API_E2E_URL: http://localhost:4000
+        run: pnpm exec nx run @org/api-e2e:e2e
 
       - name: Stop services
         if: always()

@@ -4,3 +4,5 @@
 /.nx/cache
 /.nx/workspace-data
 .nx/self-healing
+# Lockfiles are machine-written; prettier would churn thousands of lines on every install
+pnpm-lock.yaml
