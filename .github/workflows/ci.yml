@@ -187,8 +187,12 @@ jobs:
           node apps/api-e2e/src/integration/stub-ai-service.mjs > ai.log 2>&1 &
           echo $! > ai.pid
 
+      # The api must run as the RLS role: PrismaService refuses to boot as a
+      # superuser / BYPASSRLS role (the owner `cliniq` URL stays job-wide for
+      # migrations and the e2e harness's direct fixture/cleanup connection).
       - name: Boot api in background
         env:
+          DATABASE_URL: ${{ env.DATABASE_URL_APP }}
           AI_SERVICE_URL: http://localhost:4100
         run: |
           node apps/api/dist/main.js > api.log 2>&1 &
@@ -334,8 +338,12 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:4000
         run: pnpm exec nx run @org/web:build
 
+      # The api must run as the RLS role: PrismaService refuses to boot as a
+      # superuser / BYPASSRLS role (the owner `cliniq` URL stays job-wide for
+      # migrations and the e2e harness's direct fixture/cleanup connection).
       - name: Boot api in background
         env:
+          DATABASE_URL: ${{ env.DATABASE_URL_APP }}
           PORT: '4000'
         run: |
           node apps/api/dist/main.js > api.log 2>&1 &
