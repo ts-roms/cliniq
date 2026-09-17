@@ -11,6 +11,7 @@ WORKDIR /workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/api-e2e/package.json apps/api-e2e/
+COPY apps/web-e2e/package.json apps/web-e2e/
 COPY apps/web/package.json apps/web/
 COPY apps/mobile/package.json apps/mobile/
 COPY apps/ai-service/package.json apps/ai-service/
@@ -21,7 +22,14 @@ COPY libs/shared-types/package.json libs/shared-types/
 COPY libs/ui/package.json libs/ui/
 COPY libs/ai-prompts/package.json libs/ai-prompts/
 COPY libs/api-client/package.json libs/api-client/
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Try strict (CI / prod) install first; if the lockfile is out of
+# sync with package.json (common in dev when a new dep was just
+# added), fall back to a non-frozen install rather than failing
+# the whole `docker compose up`. CI explicitly runs the strict
+# form via `pnpm install --frozen-lockfile` before docker build,
+# so we don't silently drift in production.
+RUN pnpm install --frozen-lockfile --ignore-scripts \
+ || pnpm install --no-frozen-lockfile --ignore-scripts
 
 # Schema + migrations are all this stage needs.
 COPY libs/db/prisma ./libs/db/prisma

@@ -3,8 +3,12 @@ import {
   type MiddlewareConsumer,
   type NestModule,
 } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { PrismaModule } from '@org/db';
+import { AllExceptionsFilter } from '../common/all-exceptions.filter.js';
+import { RequestLoggingInterceptor } from '../common/request-logging.interceptor.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { TenantsModule } from '../tenants/tenants.module.js';
@@ -51,6 +55,20 @@ import { TenantContextMiddleware } from '../common/tenant-context.middleware.js'
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Per-IP rate limit. Two tiers: a 1s burst window catches scripts that
+    // pound a single endpoint, the 1m window catches steadier abuse.
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: Number(process.env.THROTTLE_SHORT_LIMIT ?? 30),
+      },
+      {
+        name: 'medium',
+        ttl: 60_000,
+        limit: Number(process.env.THROTTLE_MEDIUM_LIMIT ?? 300),
+      },
+    ]),
     PrismaModule,
     AiClientModule,
     AiBudgetModule,
@@ -93,7 +111,34 @@ import { TenantContextMiddleware } from '../common/tenant-context.middleware.js'
     ObModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Pin Reflector locally so ThrottlerGuard (registered below as APP_GUARD)
+    // resolves it from the same module scope under the Webpack bundle. Without
+    // this, NestJS can fail with "Reflector at index [2] is unavailable" at
+    // boot. Cheap belt-and-braces — Reflector is a singleton so re-providing
+    // here doesn't fork the instance.
+    Reflector,
+    // useFactory form — Webpack bundle splits Reflector between modules
+    // sometimes, so we hand the throttler its three deps explicitly instead
+    // of trusting Nest's auto-resolution. Idiomatic per @nestjs/throttler
+    // GH issues when @nestjs/core ends up in two scopes.
+    {
+      provide: APP_GUARD,
+      useFactory: (
+        options: import('@nestjs/throttler').ThrottlerModuleOptions,
+        storage: import('@nestjs/throttler').ThrottlerStorage,
+        reflector: Reflector,
+      ) => new ThrottlerGuard(options, storage, reflector),
+      inject: [
+        'THROTTLER:MODULE_OPTIONS',
+        ThrottlerStorage,
+        Reflector,
+      ],
+    },
+    { provide: APP_INTERCEPTOR, useClass: RequestLoggingInterceptor },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

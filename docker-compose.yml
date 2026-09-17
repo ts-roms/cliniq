@@ -112,6 +112,12 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      # NEXT_PUBLIC_* is inlined by `next build` at build time. The Dockerfile
+      # declares `ARG NEXT_PUBLIC_API_URL` — we MUST forward it here, otherwise
+      # the client bundle ships with an empty baseUrl and login fetches resolve
+      # to the web's own origin (404 on /api/auth/login).
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     container_name: cliniq-web
     depends_on:
       api:
@@ -119,8 +125,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      # Public env: baked into the client bundle at build time. To change it,
-      # rebuild the web image.
+      # Kept for SSR / server components that may read process.env at runtime.
+      # The client bundle was already baked at build time via build.args above.
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     ports:
       - "${WEB_PORT:-3000}:3000"

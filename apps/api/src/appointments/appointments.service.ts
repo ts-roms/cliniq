@@ -69,18 +69,39 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const windowEnd = new Date(now + this.reminderLeadMinutes * 60_000);
     const windowStart = new Date(now);
 
-    const due = await this.prisma.appointment.findMany({
-      where: {
-        status: AppointmentStatus.SCHEDULED,
-        reminderSentAt: null,
-        startsAt: { gte: windowStart, lte: windowEnd },
-        deletedAt: null,
-      },
-      include: {
-        patient: { select: { firstName: true, lastName: true, email: true, phone: true } },
-      },
-      take: 200,
-    });
+    // Cross-tenant system job — fetch the active tenant list under
+    // platform context, then drop into each tenant's RLS for the actual
+    // reads/writes. This keeps audit + soft-delete triggers in the right
+    // context and means a buggy tenant can't poison the whole batch.
+    const tenants = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findMany({
+        where: { deletedAt: null },
+        select: { id: true },
+      }),
+    );
+    const due: Array<
+      Awaited<ReturnType<typeof this.prisma.appointment.findMany>>[number] & {
+        patient: { firstName: string; lastName: string; email: string | null; phone: string | null };
+      }
+    > = [];
+    for (const t of tenants) {
+      const rows = await this.prisma.withTenant(t.id, null, (tx) =>
+        tx.appointment.findMany({
+          where: {
+            status: AppointmentStatus.SCHEDULED,
+            reminderSentAt: null,
+            startsAt: { gte: windowStart, lte: windowEnd },
+            deletedAt: null,
+          },
+          include: {
+            patient: { select: { firstName: true, lastName: true, email: true, phone: true } },
+          },
+          take: 200,
+        }),
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      due.push(...(rows as any[]));
+    }
 
     let count = 0;
     for (const appt of due) {
@@ -118,10 +139,12 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
         link: `/schedule`,
         entityId: appt.id,
       });
-      await this.prisma.appointment.update({
-        where: { id: appt.id },
-        data: { reminderSentAt: new Date() },
-      });
+      await this.prisma.withTenant(appt.tenantId, null, (tx) =>
+        tx.appointment.update({
+          where: { id: appt.id },
+          data: { reminderSentAt: new Date() },
+        }),
+      );
       count++;
     }
     if (count > 0) this.logger.log(`sent ${count} appointment reminder(s)`);

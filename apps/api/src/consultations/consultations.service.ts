@@ -112,11 +112,33 @@ export class ConsultationsService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.consultation.findFirst({
         where: { id, deletedAt: null },
-        select: { id: true, status: true },
+        // Pull the four SOAP fields too so we can refuse to complete a
+        // totally blank consultation. We don't enforce clinical
+        // correctness here, just "the doctor actually documented
+        // something" — at least one of S/O/A/P must be non-empty.
+        select: {
+          id: true,
+          status: true,
+          subjective: true,
+          objective: true,
+          assessment: true,
+          plan: true,
+        },
       });
       if (!existing) throw new NotFoundException(`Consultation ${id} not found`);
       if (existing.status === ConsultStatus.COMPLETED) {
         throw new BadRequestException('Already completed');
+      }
+      const isBlank = (v: string | null) => !v || v.trim() === '';
+      if (
+        isBlank(existing.subjective) &&
+        isBlank(existing.objective) &&
+        isBlank(existing.assessment) &&
+        isBlank(existing.plan)
+      ) {
+        throw new BadRequestException(
+          'Cannot complete an empty consultation. Document at least one SOAP field first.',
+        );
       }
       return tx.consultation.update({
         where: { id },

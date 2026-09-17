@@ -1,16 +1,21 @@
-// Direct fetcher for the platform admin API. We don't go through the
-// generated @org/api-client because that pulls the tenant-scoped session;
-// the platform admin runs against a separate JWT audience.
+// Platform admin API surface — now backed by the generated `@org/api-client`
+// typed SDK, routed through a dedicated `platformClient` (see ./platform-client)
+// so 401 handling redirects to `/platform/login` and refreshes against the
+// platform auth endpoint, NOT the tenant ones.
 //
-// This file is a small, focused surface — when openapi.json is regenerated
-// after wiring the platform module, you can migrate to the typed client.
+// Public exports here are frozen: the rest of the platform feature
+// (hooks/components) imports these and the existing signatures must hold.
 
-import { loadPlatformSession, clearPlatformSession } from '../session';
-
-const API_BASE =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (typeof process !== 'undefined' && (process as any).env?.NEXT_PUBLIC_API_URL) ||
-  'http://localhost:4000';
+import {
+  platformAuthControllerLogin,
+  platformTenantsControllerCatalog,
+  platformTenantsControllerCreate,
+  platformTenantsControllerFindOne,
+  platformTenantsControllerList,
+  platformTenantsControllerUpdate,
+} from '@org/api-client';
+import { clearPlatformSession } from '../session';
+import { platformClient } from './platform-client';
 
 export class PlatformApiError extends Error {
   constructor(
@@ -22,41 +27,31 @@ export class PlatformApiError extends Error {
   }
 }
 
-async function call<T>(
-  path: string,
-  init: RequestInit & { auth?: boolean } = {},
+// Translates the SDK's `{ data, error, response }` shape into the historical
+// "return data, throw PlatformApiError on non-2xx" contract that this
+// module's consumers were built around.
+async function unwrap<T>(
+  promise: Promise<{ data?: unknown; error?: unknown; response?: Response }>,
 ): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (!headers.has('content-type') && init.body) {
-    headers.set('content-type', 'application/json');
+  const result = await promise;
+  // No response = network/transport failure (fetch threw, DNS, CORS preflight,
+  // etc.). Surface as a 0-status PlatformApiError so callers can branch on it
+  // like any other failure.
+  if (!result.response) {
+    throw new PlatformApiError(0, result.error ?? null, 'request failed: no response');
   }
-  if (init.auth !== false) {
-    const session = loadPlatformSession();
-    if (session?.accessToken) {
-      headers.set('authorization', `Bearer ${session.accessToken}`);
-    }
+  if (result.response.ok) {
+    return (result.data ?? null) as T;
   }
-  const res = await fetch(`${API_BASE}/api${path}`, { ...init, headers });
-  const text = await res.text();
-  const body = text ? safeJson(text) : null;
-  if (!res.ok) {
-    if (res.status === 401) clearPlatformSession();
-    const fromBody =
-      body && typeof body === 'object'
-        ? (body as { message?: string }).message
-        : undefined;
-    const message = fromBody ?? `request failed: ${res.status}`;
-    throw new PlatformApiError(res.status, body, message);
-  }
-  return body as T;
-}
-
-function safeJson(s: string): unknown {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return s;
-  }
+  const status = result.response.status;
+  if (status === 401) clearPlatformSession();
+  const body = (result.error ?? result.data) as unknown;
+  const fromBody =
+    body && typeof body === 'object'
+      ? (body as { message?: string }).message
+      : undefined;
+  const message = fromBody ?? `request failed: ${status}`;
+  throw new PlatformApiError(status, body, message);
 }
 
 // ── Auth ─────────────────────────────────────────────
@@ -76,11 +71,12 @@ export interface PlatformLoginResponse {
 }
 
 export function platformLogin(input: PlatformLoginInput) {
-  return call<PlatformLoginResponse>('/platform/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(input),
-    auth: false,
-  });
+  return unwrap<PlatformLoginResponse>(
+    platformAuthControllerLogin({
+      client: platformClient,
+      body: input as never,
+    }),
+  );
 }
 
 // ── Tenants ──────────────────────────────────────────
@@ -129,16 +125,26 @@ export interface ListTenantsQuery {
 }
 
 export function listTenants(query: ListTenantsQuery = {}) {
-  const params = new URLSearchParams();
+  // Drop undefined/empty entries so they don't serialize as `key=undefined`.
+  const cleaned: Record<string, string | number> = {};
   for (const [k, v] of Object.entries(query)) {
-    if (v !== undefined && v !== '') params.set(k, String(v));
+    if (v !== undefined && v !== '') cleaned[k] = v as string | number;
   }
-  const qs = params.toString();
-  return call<ListTenantsResponse>(`/platform/tenants${qs ? `?${qs}` : ''}`);
+  return unwrap<ListTenantsResponse>(
+    platformTenantsControllerList({
+      client: platformClient,
+      query: cleaned as never,
+    }),
+  );
 }
 
 export function getTenant(id: string) {
-  return call<TenantDetail>(`/platform/tenants/${id}`);
+  return unwrap<TenantDetail>(
+    platformTenantsControllerFindOne({
+      client: platformClient,
+      path: { id },
+    }),
+  );
 }
 
 export interface UpdateTenantInput {
@@ -149,10 +155,13 @@ export interface UpdateTenantInput {
 }
 
 export function updateTenant(id: string, input: UpdateTenantInput) {
-  return call<TenantSummary>(`/platform/tenants/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+  return unwrap<TenantSummary>(
+    platformTenantsControllerUpdate({
+      client: platformClient,
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export interface CreateTenantInput {
@@ -165,10 +174,12 @@ export interface CreateTenantInput {
 }
 
 export function createTenant(input: CreateTenantInput) {
-  return call<TenantSummary>('/platform/tenants', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<TenantSummary>(
+    platformTenantsControllerCreate({
+      client: platformClient,
+      body: input as never,
+    }),
+  );
 }
 
 export interface PlanCatalog {
@@ -182,5 +193,7 @@ export interface PlanCatalog {
 }
 
 export function getPlanCatalog() {
-  return call<PlanCatalog>('/platform/tenants/catalog');
+  return unwrap<PlanCatalog>(
+    platformTenantsControllerCatalog({ client: platformClient }),
+  );
 }

@@ -32,20 +32,41 @@ export class RetentionService {
     const now = Date.now();
     const days = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000);
 
-    // Bypass RLS — system job spans every tenant. Direct prisma access uses
-    // the cliniq_app role which has BYPASSRLS for the dev DB; in prod the
-    // retention worker should run under a dedicated role or bypass via
-    // setting `app.current_tenant` per loop. For MVP we trust the daemon.
-    const audit = await this.prisma.auditLog.deleteMany({
-      where: { occurredAt: { lt: days(2555) } },
-    });
-    const notifs = await this.prisma.notification.deleteMany({
-      where: { createdAt: { lt: days(90) } },
-    });
+    // audit_logs retention is INTENTIONALLY skipped — the cliniq_app DB role
+    // has `GRANT SELECT, INSERT` only, no DELETE/UPDATE (audit logs are
+    // designed as append-only). Implementing the 7-year window requires
+    // either a privileged retention role or a partition-detach strategy.
+    // Both are schema changes; tracking as a follow-up rather than half-
+    // deleting under the wrong role here. See docs/regulatory/retention.md.
+    let auditLogsDeleted = 0;
+    this.logger.warn(
+      'audit-log retention skipped — cliniq_app lacks DELETE grant on audit_logs',
+    );
+
+    // Notifications: 90-day window, iterate per tenant so RLS stays on and
+    // a flaky tenant doesn't block the others.
+    const tenants = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findMany({ where: { deletedAt: null }, select: { id: true } }),
+    );
+    let notificationsDeleted = 0;
+    for (const tenant of tenants) {
+      try {
+        const res = await this.prisma.withTenant(tenant.id, null, (tx) =>
+          tx.notification.deleteMany({
+            where: { createdAt: { lt: days(90) } },
+          }),
+        );
+        notificationsDeleted += res.count;
+      } catch (err) {
+        this.logger.warn(
+          `notification retention failed for tenant ${tenant.id}: ${(err as Error).message}`,
+        );
+      }
+    }
 
     return {
-      auditLogsDeleted: audit.count,
-      notificationsDeleted: notifs.count,
+      auditLogsDeleted,
+      notificationsDeleted,
       ranAt: new Date().toISOString(),
     };
   }

@@ -18,7 +18,10 @@ export class PlatformLoginDto {
 }
 
 export class PlatformRefreshDto {
-  @ApiProperty()
+  // Optional in the body — the web client passes it via the
+  // `cliniq.platform.refresh` httpOnly cookie. CLI / curl can still POST it.
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
   refreshToken!: string;
 }

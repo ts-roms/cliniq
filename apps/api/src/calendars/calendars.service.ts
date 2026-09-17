@@ -50,13 +50,16 @@ export class CalendarsService {
     ) {
       throw new UnauthorizedException('cannot issue feed for another provider');
     }
-    const provider = await this.prisma.user.findFirst({
-      where: {
-        id: targetProviderId,
-        tenants: { some: { tenantId: user.tenantId, status: 'ACTIVE' } },
-      },
-      select: { id: true, name: true, email: true },
-    });
+    // RLS: users_visible_in_tenant requires current_tenant; wrap explicitly.
+    const provider = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
+      tx.user.findFirst({
+        where: {
+          id: targetProviderId,
+          tenants: { some: { tenantId: user.tenantId, status: 'ACTIVE' } },
+        },
+        select: { id: true, name: true, email: true },
+      }),
+    );
     if (!provider) throw new NotFoundException('provider not in this tenant');
     return {
       providerId: provider.id,
@@ -77,19 +80,24 @@ export class CalendarsService {
     const horizonStart = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const horizonEnd = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
-    const appointments = await this.prisma.appointment.findMany({
-      where: {
-        tenantId,
-        providerId,
-        deletedAt: null,
-        startsAt: { gte: horizonStart, lte: horizonEnd },
-      },
-      include: {
-        patient: { select: { firstName: true, lastName: true, mrn: true } },
-      },
-      orderBy: { startsAt: 'asc' },
-      take: 500,
-    });
+    // Public route — no JWT, but the feed token authenticates the (tenant,
+    // provider) pair. We still need withTenant for RLS; userId=null because
+    // there's no authenticated subject (audit triggers will record system).
+    const appointments = await this.prisma.withTenant(tenantId, null, (tx) =>
+      tx.appointment.findMany({
+        where: {
+          tenantId,
+          providerId,
+          deletedAt: null,
+          startsAt: { gte: horizonStart, lte: horizonEnd },
+        },
+        include: {
+          patient: { select: { firstName: true, lastName: true, mrn: true } },
+        },
+        orderBy: { startsAt: 'asc' },
+        take: 500,
+      }),
+    );
 
     return buildIcs({
       tenantId,

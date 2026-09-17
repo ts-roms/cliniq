@@ -38,6 +38,9 @@
     },
     {
       "path": "./apps/ai-service"
+    },
+    {
+      "path": "./apps/web-e2e"
     }
   ]
 }

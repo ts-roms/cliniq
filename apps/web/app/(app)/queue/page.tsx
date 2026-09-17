@@ -71,14 +71,13 @@ export default function QueuePage() {
     queryFn: async (): Promise<Array<{ queue: Queue; tickets: Ticket[] }>> => {
       // Reuse the display feed for the staff page — same shape, refetched
       // every 5s so "next ticket" + "called" updates appear without action.
+      // Auth rides on the httpOnly `cliniq.access` cookie — `credentials:
+      // 'include'` makes the browser attach it. Token is no longer pulled
+      // from localStorage (was XSS-readable). TODO: migrate this to the
+      // generated api-client (queueControllerDisplay) for type safety.
       const res = await fetch(
         `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'}/api/queue/display`,
-        {
-          credentials: 'omit',
-          headers: {
-            authorization: `Bearer ${typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('cliniq.session') ?? '{}').accessToken ?? '') : ''}`,
-          },
-        },
+        { credentials: 'include' },
       );
       if (!res.ok) throw new Error(`feed ${res.status}`);
       return (await res.json()) as Array<{ queue: Queue; tickets: Ticket[] }>;

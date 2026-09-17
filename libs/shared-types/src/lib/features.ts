@@ -100,13 +100,21 @@ export const MAX_LOCATIONS_PER_PLAN: Record<Plan, number> = {
 
 // Plan → unlocked features. Higher tiers strictly include lower tiers'
 // features (enforced in this file's tests).
-const STARTER_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
+//
+// IMPORTANT: We keep the source-of-truth as arrays (`*_FEATURES_LIST`) and
+// derive the Sets from them. Spreading a Set into another Set literal
+// (`new Set([...STARTER_FEATURES, ...])`) compiles to
+// `new Set([].concat(STARTER_FEATURES, [...]))` under SWC, and `concat`
+// appends a Set as a single nested member instead of iterating it — so
+// higher tiers silently lose lower-tier features in production builds.
+// Spreading arrays is safe because `concat` does iterate arrays.
+const STARTER_FEATURES_LIST: readonly Feature[] = [
   Features.CORE_EMR,
   Features.REPORTS_BASIC,
-]);
+];
 
-const PRO_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...STARTER_FEATURES,
+const PRO_FEATURES_LIST: readonly Feature[] = [
+  ...STARTER_FEATURES_LIST,
   Features.REPORTS_ADVANCED,
   Features.INVENTORY,
   Features.LABS,
@@ -116,10 +124,10 @@ const PRO_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.QUEUEING,
   Features.OBSTETRICS,
   Features.ULTRASOUND_2D,
-]);
+];
 
-const PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...PRO_FEATURES,
+const PREMIUM_FEATURES_LIST: readonly Feature[] = [
+  ...PRO_FEATURES_LIST,
   Features.AI_DERMATOLOGY,
   Features.WEBHOOKS,
   Features.CALENDAR_SYNC,
@@ -127,7 +135,11 @@ const PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.QUEUEING_DRIVE_THRU,
   Features.QUEUEING_KIOSK,
   Features.ULTRASOUND_3D_4D,
-]);
+];
+
+const STARTER_FEATURES: ReadonlySet<Feature> = new Set<Feature>(STARTER_FEATURES_LIST);
+const PRO_FEATURES: ReadonlySet<Feature> = new Set<Feature>(PRO_FEATURES_LIST);
+const PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>(PREMIUM_FEATURES_LIST);
 
 export const PLAN_FEATURES: Record<Plan, ReadonlySet<Feature>> = {
   STARTER: STARTER_FEATURES,
@@ -165,7 +177,7 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     id: 'STARTER',
     label: 'Starter',
     tagline: 'Solo practitioners and single-location clinics.',
-    features: [...STARTER_FEATURES],
+    features: [...STARTER_FEATURES_LIST],
     maxLocations: 1,
     priceMonthly: 149900, // ₱1,499 / month — placeholder
     currency: 'PHP',
@@ -175,7 +187,7 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     id: 'PRO',
     label: 'Pro',
     tagline: 'Growing clinics with telemedicine, labs, and HMO billing.',
-    features: [...PRO_FEATURES],
+    features: [...PRO_FEATURES_LIST],
     maxLocations: 3,
     priceMonthly: 499900, // ₱4,999 / month — placeholder
     currency: 'PHP',
@@ -186,7 +198,7 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     id: 'PREMIUM',
     label: 'Premium',
     tagline: 'Multi-location groups with full AI suite, integrations, and custom retention.',
-    features: [...PREMIUM_FEATURES],
+    features: [...PREMIUM_FEATURES_LIST],
     maxLocations: Number.POSITIVE_INFINITY,
     priceMonthly: 1499900, // ₱14,999 / month — placeholder
     currency: 'PHP',
@@ -213,7 +225,9 @@ export const ALL_PLANS: Plan[] = ['STARTER', 'PRO', 'PREMIUM'];
 // Lab plan mapping
 // ─────────────────────────────────────────────────────────────────
 
-const LAB_BASIC_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
+// Same array-source-of-truth pattern as the clinic plans above — required
+// to dodge the SWC `[...Set]` → `concat(Set)` lowering bug.
+const LAB_BASIC_FEATURES_LIST: readonly Feature[] = [
   Features.LAB_CATALOG,
   Features.LAB_DYNAMIC_FORMS,
   Features.LAB_ORDERS,
@@ -221,10 +235,10 @@ const LAB_BASIC_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.LAB_CALENDAR,
   Features.LAB_PUBLIC_REQUEST,
   Features.LAB_LOYALTY,
-]);
+];
 
-const LAB_STANDARD_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...LAB_BASIC_FEATURES,
+const LAB_STANDARD_FEATURES_LIST: readonly Feature[] = [
+  ...LAB_BASIC_FEATURES_LIST,
   Features.LAB_PHASES,
   Features.LAB_CHAT,
   Features.LAB_INTERNAL_NOTES,
@@ -236,10 +250,10 @@ const LAB_STANDARD_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.LAB_SHIPMENTS,
   Features.LAB_PAYMENT_LINKS,
   Features.LAB_STATS_PANEL,
-]);
+];
 
-const LAB_PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...LAB_STANDARD_FEATURES,
+const LAB_PREMIUM_FEATURES_LIST: readonly Feature[] = [
+  ...LAB_STANDARD_FEATURES_LIST,
   Features.LAB_EINVOICE,
   Features.LAB_TREATMENT_PLAN,
   Features.LAB_3D_VIEWER,
@@ -248,7 +262,11 @@ const LAB_PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.LAB_DISPUTE_MANAGER,
   Features.LAB_CUSTOM_DOMAIN,
   Features.LAB_DEDICATED_SERVER,
-]);
+];
+
+const LAB_BASIC_FEATURES: ReadonlySet<Feature> = new Set<Feature>(LAB_BASIC_FEATURES_LIST);
+const LAB_STANDARD_FEATURES: ReadonlySet<Feature> = new Set<Feature>(LAB_STANDARD_FEATURES_LIST);
+const LAB_PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>(LAB_PREMIUM_FEATURES_LIST);
 
 export const LAB_PLAN_FEATURES: Record<LabPlan, ReadonlySet<Feature>> = {
   LAB_BASIC: LAB_BASIC_FEATURES,
@@ -296,7 +314,7 @@ export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
     id: 'LAB_BASIC',
     label: 'Basic',
     tagline: 'Solo labs and small teams getting started with digital ordering.',
-    features: [...LAB_BASIC_FEATURES],
+    features: [...LAB_BASIC_FEATURES_LIST],
     limits: LAB_PLAN_LIMITS.LAB_BASIC,
     priceMonthly: 107900, // ₱1,079 / month
     currency: 'PHP',
@@ -306,7 +324,7 @@ export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
     id: 'LAB_STANDARD',
     label: 'Standard',
     tagline: 'Growing labs that need workflow phases, chat, and materials traceability.',
-    features: [...LAB_STANDARD_FEATURES],
+    features: [...LAB_STANDARD_FEATURES_LIST],
     limits: LAB_PLAN_LIMITS.LAB_STANDARD,
     priceMonthly: 165500, // ₱1,655 / month
     currency: 'PHP',
@@ -317,7 +335,7 @@ export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
     id: 'LAB_PREMIUM',
     label: 'Premium',
     tagline: 'Multi-lab groups with treatment plans, 3D viewers, AI assist, and custom infra.',
-    features: [...LAB_PREMIUM_FEATURES],
+    features: [...LAB_PREMIUM_FEATURES_LIST],
     limits: LAB_PLAN_LIMITS.LAB_PREMIUM,
     priceMonthly: 359900, // ₱3,599 / month
     currency: 'PHP',

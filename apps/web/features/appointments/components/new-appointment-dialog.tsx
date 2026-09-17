@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -16,12 +16,16 @@ import {
   Select,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { SearchSelect, type SearchSelectItem } from '@/shared/components/forms/search-select';
+import { useDebouncedCallback } from '@/shared/hooks/use-debounced-callback';
+import { usePatientList } from '@/features/patients';
 import {
   createAppointmentSchema,
   type CreateAppointmentInput,
   type CreateAppointmentOutput,
 } from '../schemas/appointment';
 import { useCreateAppointment } from '../hooks/use-appointments';
+import { useProviders } from '../hooks/use-providers';
 
 export function NewAppointmentDialog({
   defaultDate,
@@ -41,7 +45,7 @@ export function NewAppointmentDialog({
         <DialogHeader>
           <DialogTitle>Schedule appointment</DialogTitle>
           <DialogDescription>
-            Pick patient and provider IDs from your existing records.
+            Search by patient name / MRN and pick the provider.
           </DialogDescription>
         </DialogHeader>
         <NewAppointmentForm
@@ -72,20 +76,53 @@ function NewAppointmentForm({
   onDone: () => void;
 }) {
   const create = useCreateAppointment();
+
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateAppointmentInput, unknown, CreateAppointmentOutput>({
     resolver: zodResolver(createAppointmentSchema),
     defaultValues: {
       type: 'CONSULT',
+      patientId: '',
       providerId: defaultProviderId ?? '',
       startsAt: defaultStartIso(defaultDate),
       endsAt: defaultEndIso(defaultDate),
     },
   });
+
+  // ── Patient picker — server-side search via usePatientList(q) ──
+  // We hold a separate "search query" string and debounce updating it to
+  // avoid hammering /api/patients on every keystroke. Initial fetch with
+  // empty q returns the first page of recent patients so the dropdown is
+  // useful before the user types anything.
+  const [patientQuery, setPatientQuery] = useState('');
+  const patients = usePatientList(patientQuery);
+  const [setPatientQueryDebounced] = useDebouncedCallback(
+    (q: string) => setPatientQuery(q),
+    200,
+  );
+  const patientItems: SearchSelectItem[] = useMemo(() => {
+    const rows = patients.data?.items ?? [];
+    return rows.map((p) => ({
+      id: p.id,
+      label: `${p.firstName} ${p.lastName}`,
+      sublabel: p.mrn,
+    }));
+  }, [patients.data]);
+
+  // ── Provider picker — eligible delegatees + current user (one fetch). ──
+  const providers = useProviders();
+  const providerItems: SearchSelectItem[] = useMemo(() => {
+    return (providers.data ?? []).map((p) => ({
+      id: p.id,
+      label: p.name,
+      sublabel: `${p.role}${p.email ? ` · ${p.email}` : ''}`,
+    }));
+  }, [providers.data]);
 
   const onSubmit = handleSubmit(async (values) => {
     await create.mutateAsync(values);
@@ -96,11 +133,38 @@ function NewAppointmentForm({
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="Patient ID" error={errors.patientId?.message}>
-          <Input placeholder="cl..." {...register('patientId')} />
+        <FormField label="Patient" error={errors.patientId?.message}>
+          <Controller
+            control={control}
+            name="patientId"
+            render={({ field }) => (
+              <SearchSelect
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                items={patientItems}
+                isLoading={patients.isFetching}
+                onQueryChange={setPatientQueryDebounced}
+                placeholder="Search by name or MRN…"
+                emptyMessage={patientQuery ? 'No matching patients' : 'Start typing to search'}
+              />
+            )}
+          />
         </FormField>
-        <FormField label="Provider ID" error={errors.providerId?.message}>
-          <Input placeholder="cl..." {...register('providerId')} />
+        <FormField label="Provider" error={errors.providerId?.message}>
+          <Controller
+            control={control}
+            name="providerId"
+            render={({ field }) => (
+              <SearchSelect
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                items={providerItems}
+                isLoading={providers.isFetching}
+                placeholder="Pick a provider…"
+                emptyMessage="No active providers"
+              />
+            )}
+          />
         </FormField>
       </div>
       <div className="grid grid-cols-2 gap-3">

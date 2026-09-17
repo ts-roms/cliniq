@@ -237,7 +237,9 @@ export class AuthService {
     const tenant = await this.prisma.withPlatformContext((tx) =>
       tx.tenant.findUnique({
         where: { id: tenantId },
-        select: { kind: true },
+        // `plan` / `labPlan` ride along so the web can render plan-gated UI
+        // (disabled nav items, upgrade badges) without an extra round-trip.
+        select: { kind: true, plan: true, labPlan: true },
       }),
     );
     const tk = tenant?.kind === 'LAB' ? 'LAB' : 'CLINIC';
@@ -257,7 +259,16 @@ export class AuthService {
       refreshToken: refresh,
       tokenType: 'Bearer',
       expiresIn: accessTtl,
-      user: { id: userId, email, tenantId, tenantKind: tk, role, patientId: patientId ?? null },
+      user: {
+        id: userId,
+        email,
+        tenantId,
+        tenantKind: tk,
+        role,
+        patientId: patientId ?? null,
+        plan: tenant?.plan ?? null,
+        labPlan: tenant?.labPlan ?? null,
+      },
     };
   }
 }

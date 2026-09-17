@@ -33,29 +33,31 @@ export class PrescriptionsService {
   }
 
   async create(dto: CreatePrescriptionDto, user: AuthenticatedUser) {
-    // Provider must have an active PRC license to issue an Rx in PH.
-    const provider = await this.prisma.user.findUnique({
-      where: { id: user.userId },
-      select: {
-        id: true,
-        name: true,
-        prcLicenseNumber: true,
-        prcLicenseExpiry: true,
-        prcSpecialty: true,
-      },
-    });
-    if (!provider?.prcLicenseNumber) {
-      throw new BadRequestException(
-        'Cannot issue prescription: PRC license number missing on your profile. Settings → My profile.',
-      );
-    }
-    if (provider.prcLicenseExpiry && provider.prcLicenseExpiry.getTime() < Date.now()) {
-      throw new BadRequestException(
-        'Cannot issue prescription: PRC license has expired. Update your profile.',
-      );
-    }
-
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      // Provider must have an active PRC license to issue an Rx in PH.
+      // Read inside the same RLS context as the rest of the writes — the
+      // `users_visible_in_tenant` policy needs current_tenant set.
+      const provider = await tx.user.findUnique({
+        where: { id: user.userId },
+        select: {
+          id: true,
+          name: true,
+          prcLicenseNumber: true,
+          prcLicenseExpiry: true,
+          prcSpecialty: true,
+        },
+      });
+      if (!provider?.prcLicenseNumber) {
+        throw new BadRequestException(
+          'Cannot issue prescription: PRC license number missing on your profile. Settings → My profile.',
+        );
+      }
+      if (provider.prcLicenseExpiry && provider.prcLicenseExpiry.getTime() < Date.now()) {
+        throw new BadRequestException(
+          'Cannot issue prescription: PRC license has expired. Update your profile.',
+        );
+      }
+
       const patient = await tx.patient.findFirst({
         where: { id: dto.patientId, deletedAt: null },
         select: { id: true },
