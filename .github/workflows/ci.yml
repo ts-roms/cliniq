@@ -69,9 +69,23 @@ jobs:
       # Set the SHAs Nx will use for `nx affected`
       - uses: nrwl/nx-set-shas@v4
 
-      - name: Apply Prisma migrations
+      # Both generated clients are gitignored, and `@org/db:build` /
+      # `@org/web:test` / `@org/mobile:test` import them — without this the
+      # test step dies with "Cannot find module './generated/...'".
+      # The api-client is regenerated from the committed openapi.json
+      # snapshot (same as apps/web/Dockerfile) rather than via the nx
+      # `generate` target, which would need an api build against a live DB.
+      - name: Generate Prisma client + apply migrations
         working-directory: libs/db
-        run: pnpm exec prisma migrate deploy
+        run: |
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+
+      - name: Generate OpenAPI api-client from the committed snapshot
+        working-directory: libs/api-client
+        run: |
+          pnpm exec openapi-ts
+          node scripts/strip-js-extensions.mjs
 
       - name: Provision cliniq_app role for RLS tests
         env:
@@ -308,6 +322,12 @@ jobs:
 
       - name: Build api
         run: pnpm exec nx run @org/api:build
+
+      - name: Generate OpenAPI api-client from the committed snapshot
+        working-directory: libs/api-client
+        run: |
+          pnpm exec openapi-ts
+          node scripts/strip-js-extensions.mjs
 
       - name: Build web (production)
         env:
