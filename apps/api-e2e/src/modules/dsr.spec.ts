@@ -47,7 +47,9 @@ describe('@org/api-e2e dsr module', () => {
 
       const list = await client.axios.get('/api/dsr');
       expect(list.status).toBe(200);
-      expect(Array.isArray(list.data) ? list.data : list.data.items).toBeTruthy();
+      expect(
+        Array.isArray(list.data) ? list.data : list.data.items,
+      ).toBeTruthy();
 
       const resolved = await client.axios.patch(`/api/dsr/${id}/resolve`, {
         status: 'COMPLETED',
@@ -105,7 +107,11 @@ describe('@org/api-e2e dsr module', () => {
       const listB = await b.client.axios.get('/api/dsr');
       expect(listB.status).toBe(200);
       const items = Array.isArray(listB.data) ? listB.data : listB.data.items;
-      expect((items as Array<{ patientId: string }>).every((r) => r.patientId !== patientId)).toBe(true);
+      expect(
+        (items as Array<{ patientId: string }>).every(
+          (r) => r.patientId !== patientId,
+        ),
+      ).toBe(true);
     });
   });
 

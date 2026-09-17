@@ -50,7 +50,10 @@ describe('@org/api-e2e settings module', () => {
       const settings = res.data.settings as Record<string, unknown>;
       expect(settings).toEqual(
         expect.objectContaining({
-          branding: expect.objectContaining({ primaryColor: '#1f6feb', tagline: 'Care closer.' }),
+          branding: expect.objectContaining({
+            primaryColor: '#1f6feb',
+            tagline: 'Care closer.',
+          }),
           acceptedPaymentMethods: ['CASH', 'CARD'],
           vatPercent: 12,
         }),
@@ -70,7 +73,9 @@ describe('@org/api-e2e settings module', () => {
         branding: { primaryColor: '#abcdef' },
       });
       expect(second.status).toBe(200);
-      const branding = (second.data.settings as { branding?: Record<string, unknown> })?.branding ?? {};
+      const branding =
+        (second.data.settings as { branding?: Record<string, unknown> })
+          ?.branding ?? {};
       expect(branding.tagline).toBe('first tagline');
       expect(branding.primaryColor).toBe('#abcdef');
     });
@@ -152,7 +157,9 @@ describe('@org/api-e2e settings module', () => {
       });
       const getB = await b.client.axios.get('/api/tenants/me/settings');
       expect(getB.status).toBe(200);
-      const taglineB = (getB.data.settings as { branding?: { tagline?: string } })?.branding?.tagline;
+      const taglineB = (
+        getB.data.settings as { branding?: { tagline?: string } }
+      )?.branding?.tagline;
       expect(taglineB).not.toBe('A-only');
     });
   });
@@ -172,7 +179,9 @@ describe('@org/api-e2e settings module', () => {
         baseURL: env.baseUrl,
         validateStatus: () => true,
       });
-      const res = await axiosBare.patch('/api/tenants/me/settings', { branding: { tagline: 'x' } });
+      const res = await axiosBare.patch('/api/tenants/me/settings', {
+        branding: { tagline: 'x' },
+      });
       expect(res.status).toBe(401);
     });
   });

@@ -30,7 +30,9 @@ async function seedPatient(client: E2EClient, mrn: string): Promise<string> {
     sex: 'FEMALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
 }
@@ -51,17 +53,24 @@ describe('@org/api-e2e consents module', () => {
       const { client } = await env.makeTenant();
       const patientId = await seedPatient(client, 'CONSENT-OWN-001');
 
-      const setRes = await client.axios.put(`/api/patients/${patientId}/consents`, {
-        type: 'AI_PROCESSING',
-        granted: true,
-      });
+      const setRes = await client.axios.put(
+        `/api/patients/${patientId}/consents`,
+        {
+          type: 'AI_PROCESSING',
+          granted: true,
+        },
+      );
       expect(setRes.status).toBe(200);
       expect(setRes.data.granted).toBe(true);
       expect(setRes.data.type).toBe('AI_PROCESSING');
 
-      const list = await client.axios.get(`/api/patients/${patientId}/consents`);
+      const list = await client.axios.get(
+        `/api/patients/${patientId}/consents`,
+      );
       expect(list.status).toBe(200);
-      const ai = list.data.find((c: { type: string }) => c.type === 'AI_PROCESSING');
+      const ai = list.data.find(
+        (c: { type: string }) => c.type === 'AI_PROCESSING',
+      );
       expect(ai).toBeTruthy();
       expect(ai.granted).toBe(true);
     });
@@ -99,10 +108,13 @@ describe('@org/api-e2e consents module', () => {
         granted: true,
       });
 
-      const bad = await client.axios.put(`/api/patients/${patientId}/consents`, {
-        type: 'AI_PROCESSING',
-        granted: false,
-      });
+      const bad = await client.axios.put(
+        `/api/patients/${patientId}/consents`,
+        {
+          type: 'AI_PROCESSING',
+          granted: false,
+        },
+      );
       expect(bad.status).toBe(400);
     });
 
@@ -114,11 +126,14 @@ describe('@org/api-e2e consents module', () => {
         granted: true,
       });
 
-      const bad = await client.axios.put(`/api/patients/${patientId}/consents`, {
-        type: 'TREATMENT',
-        granted: false,
-        withdrawalReason: 'changed mind',
-      });
+      const bad = await client.axios.put(
+        `/api/patients/${patientId}/consents`,
+        {
+          type: 'TREATMENT',
+          granted: false,
+          withdrawalReason: 'changed mind',
+        },
+      );
       expect(bad.status).toBe(400);
     });
   });
@@ -241,7 +256,9 @@ describe('@org/api-e2e consents module', () => {
         granted: true,
       });
 
-      const cross = await b.client.axios.get(`/api/patients/${aPatientId}/consents`);
+      const cross = await b.client.axios.get(
+        `/api/patients/${aPatientId}/consents`,
+      );
       expect([403, 404]).toContain(cross.status);
     });
   });

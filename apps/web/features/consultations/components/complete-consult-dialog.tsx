@@ -80,8 +80,8 @@ export function CompleteConsultDialog({
         <DialogHeader>
           <DialogTitle>Mark consultation complete?</DialogTitle>
           <DialogDescription>
-            This locks the SOAP note from further edits and stamps the end
-            time. You can&rsquo;t reopen the consultation from here once it&rsquo;s
+            This locks the SOAP note from further edits and stamps the end time.
+            You can&rsquo;t reopen the consultation from here once it&rsquo;s
             closed.
           </DialogDescription>
         </DialogHeader>

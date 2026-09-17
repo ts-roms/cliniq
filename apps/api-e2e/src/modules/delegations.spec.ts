@@ -45,11 +45,17 @@ describe('@org/api-e2e delegations module', () => {
 
       const granted = await doctor.client.axios.get('/api/delegations/granted');
       expect(granted.status).toBe(200);
-      expect(granted.data.some((d: { id: string }) => d.id === created.data.id)).toBe(true);
+      expect(
+        granted.data.some((d: { id: string }) => d.id === created.data.id),
+      ).toBe(true);
 
-      const received = await nurse.client.axios.get('/api/delegations/received-active');
+      const received = await nurse.client.axios.get(
+        '/api/delegations/received-active',
+      );
       expect(received.status).toBe(200);
-      expect(received.data.some((d: { id: string }) => d.id === created.data.id)).toBe(true);
+      expect(
+        received.data.some((d: { id: string }) => d.id === created.data.id),
+      ).toBe(true);
     });
 
     it('GET /api/delegations/eligible-delegatees lists staff in the same tenant', async () => {
@@ -58,7 +64,9 @@ describe('@org/api-e2e delegations module', () => {
       const nurse = await env.makeNurse(tenant);
       const receptionist = await env.makeReceptionist(tenant);
 
-      const res = await doctor.client.axios.get('/api/delegations/eligible-delegatees');
+      const res = await doctor.client.axios.get(
+        '/api/delegations/eligible-delegatees',
+      );
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
       const ids = res.data.map((u: { id: string }) => u.id);
@@ -146,7 +154,8 @@ describe('@org/api-e2e delegations module', () => {
         startsAt,
         endsAt,
         scope: ['rx:sign'],
-        reason: 'Doctor stepping out for an hour, nurse can sign already-prepped Rx',
+        reason:
+          'Doctor stepping out for an hour, nurse can sign already-prepped Rx',
       });
       expect(grant.status).toBe(201);
 

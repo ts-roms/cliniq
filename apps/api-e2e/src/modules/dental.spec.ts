@@ -19,7 +19,9 @@ async function seedPatient(client: E2EClient, mrn: string): Promise<string> {
     sex: 'MALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
 }
@@ -81,7 +83,9 @@ describe('@org/api-e2e dental module', () => {
       expect(Array.isArray(history.data)).toBe(true);
       expect(history.data.length).toBeGreaterThanOrEqual(1);
 
-      const one = await doctor.client.axios.get(`/api/dental-charts/${chartId}`);
+      const one = await doctor.client.axios.get(
+        `/api/dental-charts/${chartId}`,
+      );
       expect(one.status).toBe(200);
       expect(one.data.id).toBe(chartId);
     });
@@ -141,7 +145,9 @@ describe('@org/api-e2e dental module', () => {
       );
       expect(created.status).toBe(201);
 
-      const cross = await b.client.axios.get(`/api/dental-charts/${created.data.id}`);
+      const cross = await b.client.axios.get(
+        `/api/dental-charts/${created.data.id}`,
+      );
       expect([403, 404]).toContain(cross.status);
     });
 

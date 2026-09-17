@@ -7,7 +7,9 @@ test.describe('@web clinic dashboard', () => {
     // The dashboard is composed of OverviewGrid + RevenueChart + TopServices
     // + NoShow. We don't assert exact text (i18n-friendly) — just that
     // SOMETHING rendered above the empty-state.
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({
+      timeout: 15_000,
+    });
     // No console errors past the network idle.
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));

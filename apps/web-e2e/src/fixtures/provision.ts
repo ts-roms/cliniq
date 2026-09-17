@@ -49,7 +49,9 @@ const PASSWORD = 'WebE2EPassword123!';
  *   1. Promote a fresh user from RECEPTIONIST → DOCTOR.
  *   2. Insert a PlatformAdmin row (no signup endpoint).
  */
-export async function provisionTenants(api: APIRequestContext): Promise<ProvisionedSeed> {
+export async function provisionTenants(
+  api: APIRequestContext,
+): Promise<ProvisionedSeed> {
   const pg = new PgClient({ connectionString: DATABASE_URL });
   await pg.connect();
 
@@ -63,9 +65,13 @@ export async function provisionTenants(api: APIRequestContext): Promise<Provisio
   }
 }
 
-async function provisionClinic(api: APIRequestContext, pg: PgClient): Promise<SeedTenant> {
+async function provisionClinic(
+  api: APIRequestContext,
+  pg: PgClient,
+): Promise<SeedTenant> {
   const ts = Date.now();
-  const slug = `webe2e-clinic-${ts}-${Math.floor(Math.random() * 100_000)}`.toLowerCase();
+  const slug =
+    `webe2e-clinic-${ts}-${Math.floor(Math.random() * 100_000)}`.toLowerCase();
   const owner = await createTenantWithOwner(api, slug, 'CLINIC');
 
   const doctor = await registerAndPromote(api, pg, slug, 'DOCTOR');
@@ -86,7 +92,8 @@ async function provisionClinic(api: APIRequestContext, pg: PgClient): Promise<Se
 
 async function provisionLab(api: APIRequestContext): Promise<SeedLab> {
   const ts = Date.now();
-  const slug = `webe2e-lab-${ts}-${Math.floor(Math.random() * 100_000)}`.toLowerCase();
+  const slug =
+    `webe2e-lab-${ts}-${Math.floor(Math.random() * 100_000)}`.toLowerCase();
   const owner = await createTenantWithOwner(api, slug, 'LAB');
   return { id: owner.tenantId, slug, owner: owner.user };
 }
@@ -109,14 +116,18 @@ async function createTenantWithOwner(
     },
   });
   if (tenantRes.status() !== 201) {
-    throw new Error(`tenant create failed: ${tenantRes.status()} ${await tenantRes.text()}`);
+    throw new Error(
+      `tenant create failed: ${tenantRes.status()} ${await tenantRes.text()}`,
+    );
   }
   const tenant = await tenantRes.json();
   const loginRes = await api.post('/api/auth/login', {
     data: { email, password: PASSWORD },
   });
   if (!loginRes.ok()) {
-    throw new Error(`owner login failed: ${loginRes.status()} ${await loginRes.text()}`);
+    throw new Error(
+      `owner login failed: ${loginRes.status()} ${await loginRes.text()}`,
+    );
   }
   const login = await loginRes.json();
   return {
@@ -130,13 +141,17 @@ async function createTenantWithOwner(
   };
 }
 
-
-async function loginToken(api: APIRequestContext, email: string): Promise<string> {
+async function loginToken(
+  api: APIRequestContext,
+  email: string,
+): Promise<string> {
   const res = await api.post('/api/auth/login', {
     data: { email, password: PASSWORD },
   });
   if (!res.ok()) {
-    throw new Error(`loginToken(${email}) failed: ${res.status()} ${await res.text()}`);
+    throw new Error(
+      `loginToken(${email}) failed: ${res.status()} ${await res.text()}`,
+    );
   }
   const body = await res.json();
   return body.accessToken as string;
@@ -154,7 +169,9 @@ async function registerAndPromote(
     data: { email, name: `E2E ${role}`, password: PASSWORD, tenantSlug },
   });
   if (reg.status() !== 201 && reg.status() !== 200) {
-    throw new Error(`register ${role} failed: ${reg.status()} ${await reg.text()}`);
+    throw new Error(
+      `register ${role} failed: ${reg.status()} ${await reg.text()}`,
+    );
   }
   const body = await reg.json();
   const userId = body.user.id as string;
@@ -196,7 +213,9 @@ async function registerPatient(
     },
   });
   if (createRes.status() !== 201) {
-    throw new Error(`patient create failed: ${createRes.status()} ${await createRes.text()}`);
+    throw new Error(
+      `patient create failed: ${createRes.status()} ${await createRes.text()}`,
+    );
   }
   const patient = await createRes.json();
 
@@ -205,7 +224,9 @@ async function registerPatient(
     data: { tenantSlug, mrn, email, password: PASSWORD },
   });
   if (res.status() !== 201 && res.status() !== 200) {
-    throw new Error(`patient register failed: ${res.status()} ${await res.text()}`);
+    throw new Error(
+      `patient register failed: ${res.status()} ${await res.text()}`,
+    );
   }
   const body = await res.json();
   return {
@@ -235,7 +256,9 @@ async function provisionPlatformAdmin(
     data: { email, password: PASSWORD },
   });
   if (!loginRes.ok()) {
-    throw new Error(`platform login failed: ${loginRes.status()} ${await loginRes.text()}`);
+    throw new Error(
+      `platform login failed: ${loginRes.status()} ${await loginRes.text()}`,
+    );
   }
   return { adminId: id, email, password: PASSWORD };
 }

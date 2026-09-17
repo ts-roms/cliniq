@@ -4,7 +4,9 @@ test.describe('@web platform admin', () => {
   test('dashboard (tenants table) renders', async ({ page }) => {
     await page.goto('/platform/dashboard');
     await expect(page).toHaveURL(/\/platform\/dashboard/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('tenant detail page renders for the seeded clinic', async ({ page }) => {
@@ -18,6 +20,8 @@ test.describe('@web platform admin', () => {
     if ((await link.count()) === 0) test.skip();
     await link.click();
     await expect(page).toHaveURL(/\/platform\/tenants\/.+/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

@@ -46,14 +46,21 @@ describe('@org/api-e2e hmo module', () => {
 
       const providers = await client.axios.get('/api/hmo/providers');
       expect(providers.status).toBe(200);
-      expect(providers.data.some((p: { id: string }) => p.id === providerId)).toBe(true);
+      expect(
+        providers.data.some((p: { id: string }) => p.id === providerId),
+      ).toBe(true);
 
       // Patient + invoice prerequisites
-      const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE('HMO-001'));
+      const patient = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('HMO-001'),
+      );
       const patientId = patient.data.id as string;
       const invoice = await client.axios.post('/api/invoices', {
         patientId,
-        items: [{ description: 'Consult', quantity: 1, unitPriceCentavos: 100_000 }],
+        items: [
+          { description: 'Consult', quantity: 1, unitPriceCentavos: 100_000 },
+        ],
       });
       const invoiceId = invoice.data.id as string;
 
@@ -69,11 +76,14 @@ describe('@org/api-e2e hmo module', () => {
       const membershipId = membership.data.id as string;
 
       // File a claim
-      const claim = await client.axios.post(`/api/invoices/${invoiceId}/hmo-claims`, {
-        membershipId,
-        claimedCentavos: 100_000,
-        notes: 'Routine consult',
-      });
+      const claim = await client.axios.post(
+        `/api/invoices/${invoiceId}/hmo-claims`,
+        {
+          membershipId,
+          claimedCentavos: 100_000,
+          notes: 'Routine consult',
+        },
+      );
       expect(claim.status).toBe(201);
       expect(claim.data.id).toBeTruthy();
       const claimId = claim.data.id as string;
@@ -103,8 +113,13 @@ describe('@org/api-e2e hmo module', () => {
       const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
       const nurse = await env.makeNurse(tenant);
 
-      const provider = await client.axios.post('/api/hmo/providers', { name: 'P' });
-      const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE('N-HMO'));
+      const provider = await client.axios.post('/api/hmo/providers', {
+        name: 'P',
+      });
+      const patient = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('N-HMO'),
+      );
       const invoice = await client.axios.post('/api/invoices', {
         patientId: patient.data.id,
         items: [{ description: 'X', quantity: 1, unitPriceCentavos: 100 }],
@@ -127,7 +142,9 @@ describe('@org/api-e2e hmo module', () => {
       const a = await env.makeTenant({ plan: 'PREMIUM' });
       const b = await env.makeTenant({ plan: 'PREMIUM' });
 
-      await a.client.axios.post('/api/hmo/providers', { name: 'Tenant-A-only' });
+      await a.client.axios.post('/api/hmo/providers', {
+        name: 'Tenant-A-only',
+      });
       const list = await b.client.axios.get('/api/hmo/providers');
       expect(list.status).toBe(200);
       expect(
@@ -140,8 +157,13 @@ describe('@org/api-e2e hmo module', () => {
       const b = await env.makeTenant({ plan: 'PREMIUM' });
 
       // Set up A's invoice + membership
-      const provider = await a.client.axios.post('/api/hmo/providers', { name: 'P' });
-      const patient = await a.client.axios.post('/api/patients', PATIENT_FIXTURE('RLS-HMO'));
+      const provider = await a.client.axios.post('/api/hmo/providers', {
+        name: 'P',
+      });
+      const patient = await a.client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('RLS-HMO'),
+      );
       const invoice = await a.client.axios.post('/api/invoices', {
         patientId: patient.data.id,
         items: [{ description: 'X', quantity: 1, unitPriceCentavos: 100 }],

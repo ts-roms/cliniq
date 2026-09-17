@@ -15,7 +15,12 @@
  * original suite; this module-shaped spec adds the per-role / per-sub
  * coverage that fits the Phase 1 plan.
  */
-import { bootEnv, type E2EEnv, type E2ETenant, type E2EClient } from '../support/harness';
+import {
+  bootEnv,
+  type E2EEnv,
+  type E2ETenant,
+  type E2EClient,
+} from '../support/harness';
 
 describe('@org/api-e2e lab module', () => {
   let env: E2EEnv;
@@ -33,9 +38,12 @@ describe('@org/api-e2e lab module', () => {
   describe('happy path — clinic-links', () => {
     it('LAB OWNER can invite a clinic and list links', async () => {
       const clinic = await env.makeTenant({ kind: 'CLINIC' });
-      const invite = await lab.client.axios.post('/api/lab/clinic-links/invite', {
-        clinicSlug: clinic.tenant.slug,
-      });
+      const invite = await lab.client.axios.post(
+        '/api/lab/clinic-links/invite',
+        {
+          clinicSlug: clinic.tenant.slug,
+        },
+      );
       expect([200, 201]).toContain(invite.status);
 
       const list = await lab.client.axios.get('/api/lab/clinic-links');

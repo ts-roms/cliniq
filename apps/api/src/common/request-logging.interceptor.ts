@@ -40,7 +40,12 @@ export class RequestLoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private log(req: Request, res: Response, started: number, errored = false): void {
+  private log(
+    req: Request,
+    res: Response,
+    started: number,
+    errored = false,
+  ): void {
     const dur = Date.now() - started;
     const status = res.statusCode;
     const { tenantId, userId, requestId } = TenantContext.current();

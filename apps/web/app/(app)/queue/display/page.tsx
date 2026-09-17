@@ -59,9 +59,7 @@ export default function QueueDisplayPage() {
           </span>
         </div>
 
-        {display.isLoading && (
-          <p className="text-zinc-400">Loading queue…</p>
-        )}
+        {display.isLoading && <p className="text-zinc-400">Loading queue…</p>}
         {display.error && (
           <p className="text-rose-400">{(display.error as Error).message}</p>
         )}
@@ -86,7 +84,9 @@ function QueueColumn({ queue, tickets }: { queue: Queue; tickets: Ticket[] }) {
         <div className="text-xs uppercase tracking-widest text-zinc-400">
           {KIND_LABEL[queue.kind] ?? queue.kind}
         </div>
-        <div className="text-lg font-semibold">{queue.name ?? KIND_LABEL[queue.kind]}</div>
+        <div className="text-lg font-semibold">
+          {queue.name ?? KIND_LABEL[queue.kind]}
+        </div>
       </div>
       <div className="px-6 py-8 text-center">
         {called ? (

@@ -33,7 +33,10 @@ describe('@org/api-e2e patients module', () => {
     it('OWNER can create, read, list, update, soft-delete', async () => {
       const { tenant, client } = await env.makeTenant();
 
-      const created = await client.axios.post('/api/patients', PATIENT_FIXTURE('OWNER-001'));
+      const created = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('OWNER-001'),
+      );
       expect(created.status).toBe(201);
       expect(created.data.id).toBeTruthy();
       const id = created.data.id as string;
@@ -44,7 +47,9 @@ describe('@org/api-e2e patients module', () => {
 
       const list = await client.axios.get('/api/patients');
       expect(list.status).toBe(200);
-      expect(list.data.items.some((p: { id: string }) => p.id === id)).toBe(true);
+      expect(list.data.items.some((p: { id: string }) => p.id === id)).toBe(
+        true,
+      );
 
       const patched = await client.axios.patch(`/api/patients/${id}`, {
         firstName: 'Pedro',
@@ -86,7 +91,10 @@ describe('@org/api-e2e patients module', () => {
     it('PATIENT cannot create patients on /api/patients (403)', async () => {
       const { tenant } = await env.makeTenant();
       const patient = await env.makePatient(tenant);
-      const res = await patient.client.axios.post('/api/patients', PATIENT_FIXTURE('PAT-001'));
+      const res = await patient.client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('PAT-001'),
+      );
       expect(res.status).toBe(403);
     });
   });
@@ -96,7 +104,10 @@ describe('@org/api-e2e patients module', () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 
-      const created = await a.client.axios.post('/api/patients', PATIENT_FIXTURE('RLS-001'));
+      const created = await a.client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('RLS-001'),
+      );
       expect(created.status).toBe(201);
       const id = created.data.id as string;
 
@@ -114,8 +125,8 @@ describe('@org/api-e2e patients module', () => {
       const listB = await b.client.axios.get('/api/patients');
       expect(listB.status).toBe(200);
       expect(
-        listB.data.items.some((p: { mrn: string }) =>
-          p.mrn === 'RLS-A1' || p.mrn === 'RLS-A2',
+        listB.data.items.some(
+          (p: { mrn: string }) => p.mrn === 'RLS-A1' || p.mrn === 'RLS-A2',
         ),
       ).toBe(false);
     });

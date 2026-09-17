@@ -20,7 +20,10 @@ describe('@org/api-e2e health module', () => {
 
   describe('happy path', () => {
     it('GET /api/health is public and returns 200', async () => {
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get('/api/health');
       expect(res.status).toBe(200);
       // status is 'ok' when DB is up, 'degraded' otherwise — both are 200.
@@ -31,7 +34,10 @@ describe('@org/api-e2e health module', () => {
     });
 
     it('GET /api/health/lab-readiness is public and returns 200', async () => {
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get('/api/health/lab-readiness');
       expect(res.status).toBe(200);
       expect(['ready', 'not-ready']).toContain(res.data.status);

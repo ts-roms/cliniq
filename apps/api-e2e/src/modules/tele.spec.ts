@@ -14,9 +14,18 @@
  *    requires the X-Tele-Token header.
  */
 import axios from 'axios';
-import { bootEnv, type E2EEnv, type E2ETenant, type E2EClient } from '../support/harness';
+import {
+  bootEnv,
+  type E2EEnv,
+  type E2ETenant,
+  type E2EClient,
+} from '../support/harness';
 
-async function seedPatient(_t: E2ETenant, client: E2EClient, mrn: string): Promise<string> {
+async function seedPatient(
+  _t: E2ETenant,
+  client: E2EClient,
+  mrn: string,
+): Promise<string> {
   const res = await client.axios.post('/api/patients', {
     mrn,
     firstName: 'Tele',
@@ -50,20 +59,27 @@ describe('@org/api-e2e tele module', () => {
       const doctor = await env.makeDoctor(tenant);
       const patientId = await seedPatient(tenant, client, `TELE-${Date.now()}`);
 
-      const created = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const created = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(created.status).toBe(201);
       expect(created.data.id).toBeTruthy();
       expect(created.data.joinToken).toBeTruthy();
       expect(typeof created.data.joinUrl).toBe('string');
       expect(created.data.status).toBe('PENDING');
 
-      const detail = await doctor.client.axios.get(`/api/tele/sessions/${created.data.id}`);
+      const detail = await doctor.client.axios.get(
+        `/api/tele/sessions/${created.data.id}`,
+      );
       expect(detail.status).toBe(200);
       expect(detail.data.id).toBe(created.data.id);
     });
 
     it('GET /api/tele/ice is public and returns iceServers', async () => {
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get('/api/tele/ice');
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data.iceServers)).toBe(true);
@@ -75,10 +91,15 @@ describe('@org/api-e2e tele module', () => {
       const doctor = await env.makeDoctor(tenant);
       const patientId = await seedPatient(tenant, client, `JOIN-${Date.now()}`);
 
-      const session = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const session = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const joined = await bare.post('/api/tele/join', {
         joinToken: session.data.joinToken,
       });
@@ -94,7 +115,9 @@ describe('@org/api-e2e tele module', () => {
       const doctor = await env.makeDoctor(tenant);
       const patientId = await seedPatient(tenant, client, `SIG-${Date.now()}`);
 
-      const session = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const session = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
       const polled = await doctor.client.axios.get(
@@ -109,11 +132,16 @@ describe('@org/api-e2e tele module', () => {
       const doctor = await env.makeDoctor(tenant);
       const patientId = await seedPatient(tenant, client, `XSIG-${Date.now()}`);
 
-      const created = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const created = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(created.status).toBe(201);
 
       // Patient picks up patientToken via join (public).
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const joined = await bare.post('/api/tele/join', {
         joinToken: created.data.joinToken,
       });
@@ -152,7 +180,9 @@ describe('@org/api-e2e tele module', () => {
       const doctor = await env.makeDoctor(tenant);
       const patientId = await seedPatient(tenant, client, `END-${Date.now()}`);
 
-      const session = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const session = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
       const ended = await doctor.client.axios.post(
@@ -170,29 +200,43 @@ describe('@org/api-e2e tele module', () => {
       const patientId = await seedPatient(tenant, client, `RBAC-${Date.now()}`);
 
       const recept = await env.makeReceptionist(tenant);
-      const res = await recept.client.axios.post('/api/tele/sessions', { patientId });
+      const res = await recept.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(res.status).toBe(403);
     });
 
     it('PATIENT cannot create a tele session (403)', async () => {
       const { tenant, client } = await env.makeTenant();
-      const patientId = await seedPatient(tenant, client, `RBAC-P-${Date.now()}`);
+      const patientId = await seedPatient(
+        tenant,
+        client,
+        `RBAC-P-${Date.now()}`,
+      );
 
       const patient = await env.makePatient(tenant);
-      const res = await patient.client.axios.post('/api/tele/sessions', { patientId });
+      const res = await patient.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(res.status).toBe(403);
     });
   });
 
   describe('multi-tenant isolation', () => {
-    it('tenant B doctor cannot view tenant A\'s session (403 or 404)', async () => {
+    it("tenant B doctor cannot view tenant A's session (403 or 404)", async () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 
       const doctorA = await env.makeDoctor(a.tenant);
-      const patientId = await seedPatient(a.tenant, a.client, `ISO-${Date.now()}`);
+      const patientId = await seedPatient(
+        a.tenant,
+        a.client,
+        `ISO-${Date.now()}`,
+      );
 
-      const session = await doctorA.client.axios.post('/api/tele/sessions', { patientId });
+      const session = await doctorA.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
       const doctorB = await env.makeDoctor(b.tenant);
@@ -202,13 +246,19 @@ describe('@org/api-e2e tele module', () => {
       expect([403, 404]).toContain(cross.status);
     });
 
-    it('tenant B doctor cannot end tenant A\'s session', async () => {
+    it("tenant B doctor cannot end tenant A's session", async () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 
       const doctorA = await env.makeDoctor(a.tenant);
-      const patientId = await seedPatient(a.tenant, a.client, `ISO-END-${Date.now()}`);
-      const session = await doctorA.client.axios.post('/api/tele/sessions', { patientId });
+      const patientId = await seedPatient(
+        a.tenant,
+        a.client,
+        `ISO-END-${Date.now()}`,
+      );
+      const session = await doctorA.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
       const doctorB = await env.makeDoctor(b.tenant);
@@ -222,8 +272,13 @@ describe('@org/api-e2e tele module', () => {
 
   describe('authentication', () => {
     it('POST /api/tele/sessions requires a JWT (401)', async () => {
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
-      const res = await bare.post('/api/tele/sessions', { patientId: 'whatever' });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
+      const res = await bare.post('/api/tele/sessions', {
+        patientId: 'whatever',
+      });
       expect(res.status).toBe(401);
     });
 
@@ -231,22 +286,38 @@ describe('@org/api-e2e tele module', () => {
       const { tenant, client } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
       const patientId = await seedPatient(tenant, client, `AUTH-${Date.now()}`);
-      const session = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const session = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
-      const res = await bare.get(`/api/tele/sessions/${session.data.id}/signals?since=0`);
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
+      const res = await bare.get(
+        `/api/tele/sessions/${session.data.id}/signals?since=0`,
+      );
       expect(res.status).toBe(400);
     });
 
     it('GET /signals with bogus X-Tele-Token returns 401', async () => {
       const { tenant, client } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
-      const patientId = await seedPatient(tenant, client, `AUTH-BAD-${Date.now()}`);
-      const session = await doctor.client.axios.post('/api/tele/sessions', { patientId });
+      const patientId = await seedPatient(
+        tenant,
+        client,
+        `AUTH-BAD-${Date.now()}`,
+      );
+      const session = await doctor.client.axios.post('/api/tele/sessions', {
+        patientId,
+      });
       expect(session.status).toBe(201);
 
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get(
         `/api/tele/sessions/${session.data.id}/signals?since=0`,
         { headers: { 'X-Tele-Token': 'not-a-real-token' } },
@@ -255,7 +326,10 @@ describe('@org/api-e2e tele module', () => {
     });
 
     it('POST /api/tele/join with bogus joinToken returns 401', async () => {
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.post('/api/tele/join', { joinToken: 'fake' });
       expect(res.status).toBe(401);
     });

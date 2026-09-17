@@ -36,10 +36,7 @@ const PROTECTED_PREFIXES: ReadonlyArray<readonly [string, string, string]> = [
 // Portal pages that are authed (the /portal/login + /portal/signup pages
 // stay anonymous). We allowlist the public portal pages instead of
 // blocklisting the authed ones — easier to keep in sync.
-const PORTAL_PUBLIC = new Set([
-  '/portal/login',
-  '/portal/signup',
-]);
+const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/signup']);
 
 /**
  * Edge proxy: resolves a tenant slug from the request host (e.g.
@@ -54,7 +51,9 @@ export function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // ── Auth enforcement ──────────────────────────────────────
-  const matched = PROTECTED_PREFIXES.find(([prefix]) => pathname.startsWith(prefix));
+  const matched = PROTECTED_PREFIXES.find(([prefix]) =>
+    pathname.startsWith(prefix),
+  );
   if (matched) {
     const [, cookieName, redirectTo] = matched;
     if (!req.cookies.get(cookieName)) {

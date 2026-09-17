@@ -38,7 +38,11 @@ async function unwrap<T>(
   // etc.). Surface as a 0-status PlatformApiError so callers can branch on it
   // like any other failure.
   if (!result.response) {
-    throw new PlatformApiError(0, result.error ?? null, 'request failed: no response');
+    throw new PlatformApiError(
+      0,
+      result.error ?? null,
+      'request failed: no response',
+    );
   }
   if (result.response.ok) {
     return (result.data ?? null) as T;
@@ -81,7 +85,12 @@ export function platformLogin(input: PlatformLoginInput) {
 
 // ── Tenants ──────────────────────────────────────────
 
-export type TenantStatus = 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED' | 'CANCELLED';
+export type TenantStatus =
+  | 'TRIAL'
+  | 'ACTIVE'
+  | 'PAST_DUE'
+  | 'SUSPENDED'
+  | 'CANCELLED';
 export type TenantPlan = 'STARTER' | 'PRO' | 'PREMIUM';
 
 export interface TenantSummary {

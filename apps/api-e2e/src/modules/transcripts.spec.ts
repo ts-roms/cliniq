@@ -51,14 +51,20 @@ describe('@org/api-e2e transcripts module', () => {
     it('PATIENT cannot call /api/transcripts (lacks AI_USE)', async () => {
       const { tenant } = await env.makeTenant();
       const patient = await env.makePatient(tenant);
-      const res = await patient.client.axios.post('/api/transcripts', BOGUS_BODY);
+      const res = await patient.client.axios.post(
+        '/api/transcripts',
+        BOGUS_BODY,
+      );
       expect(res.status).toBe(403);
     });
 
     it('DOCTOR passes the RBAC gate (NOT 403 — fileId is bogus so 400/404 expected)', async () => {
       const { tenant } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
-      const res = await doctor.client.axios.post('/api/transcripts', BOGUS_BODY);
+      const res = await doctor.client.axios.post(
+        '/api/transcripts',
+        BOGUS_BODY,
+      );
       // Anything except 403 proves AI_USE got through. 4xx (NotFound on file,
       // 429 on budget, 5xx from missing ai-service) are all acceptable here —
       // we're asserting the auth/RBAC layer alone.
@@ -85,7 +91,9 @@ describe('@org/api-e2e transcripts module', () => {
       expect(presign.status).toBe(201);
       const aFileId = presign.data.fileId as string;
 
-      const cross = await b.client.axios.post('/api/transcripts', { fileId: aFileId });
+      const cross = await b.client.axios.post('/api/transcripts', {
+        fileId: aFileId,
+      });
       // ConfirmUploadDto resolution under B's tenant context can't see the
       // row → NotFound. Anything in [400, 403, 404] is acceptable; just not 200.
       expect(cross.status).not.toBe(200);

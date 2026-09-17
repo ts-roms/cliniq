@@ -22,7 +22,13 @@ import { useTenantSettings } from '@/features/settings';
 import { useT } from '@/shared/i18n';
 
 const AUDIT_ROLES = new Set(['OWNER', 'ADMIN']);
-const INVENTORY_ROLES = new Set(['OWNER', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']);
+const INVENTORY_ROLES = new Set([
+  'OWNER',
+  'ADMIN',
+  'DOCTOR',
+  'NURSE',
+  'RECEPTIONIST',
+]);
 const CLAIMS_ROLES = new Set(['OWNER', 'ADMIN', 'RECEPTIONIST']);
 
 interface NavItem {
@@ -91,7 +97,12 @@ export function SideNav({
   // disabled vs enabled rendering. Items hidden by role-based `show` are
   // filtered out below — those aren't sold as upgrades.
   const items: NavItem[] = [
-    { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard, show: canSeeAudit },
+    {
+      href: '/dashboard',
+      label: t('nav.dashboard'),
+      icon: LayoutDashboard,
+      show: canSeeAudit,
+    },
     { href: '/patients', label: t('nav.patients'), icon: Users, show: true },
     { href: '/schedule', label: t('nav.schedule'), icon: Calendar, show: true },
     {
@@ -108,9 +119,24 @@ export function SideNav({
       show: canSeeClaims,
       requires: Features.HMO,
     },
-    { href: '/audit', label: t('nav.audit'), icon: ShieldCheck, show: canSeeAudit },
-    { href: '/admin/dsr', label: t('nav.dsr'), icon: ClipboardList, show: canSeeAudit },
-    { href: '/admin/settings', label: t('nav.settings'), icon: Settings, show: session.user.role === 'OWNER' },
+    {
+      href: '/audit',
+      label: t('nav.audit'),
+      icon: ShieldCheck,
+      show: canSeeAudit,
+    },
+    {
+      href: '/admin/dsr',
+      label: t('nav.dsr'),
+      icon: ClipboardList,
+      show: canSeeAudit,
+    },
+    {
+      href: '/admin/settings',
+      label: t('nav.settings'),
+      icon: Settings,
+      show: session.user.role === 'OWNER',
+    },
   ].filter((i) => i.show);
 
   const branding = settings.data?.settings?.branding;
@@ -121,7 +147,9 @@ export function SideNav({
     <Link
       href={home}
       className="flex min-w-0 items-center gap-2 px-4 py-4"
-      style={branding?.primaryColor ? { color: branding.primaryColor } : undefined}
+      style={
+        branding?.primaryColor ? { color: branding.primaryColor } : undefined
+      }
     >
       {branding?.logoUrl ? (
         <img src={branding.logoUrl} alt={clinicName} className="h-7 w-auto" />
@@ -142,7 +170,9 @@ export function SideNav({
         const locked = !!i.requires && !entitlements.hasFeature(i.requires);
 
         if (locked) {
-          const requiredPlan = i.requires ? entitlements.requiredPlanFor(i.requires) : null;
+          const requiredPlan = i.requires
+            ? entitlements.requiredPlanFor(i.requires)
+            : null;
           const badge = planBadge(requiredPlan);
           const upgradeTitle = requiredPlan
             ? `Available on ${badge} — upgrade to unlock`

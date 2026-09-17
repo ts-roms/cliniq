@@ -37,8 +37,12 @@ describe('@org/api-e2e platform module', () => {
       expect(Array.isArray(res.data.items)).toBe(true);
       // Shape check on a list item.
       expect(res.data).toHaveProperty('nextCursor');
-      expect(res.data.items.some((t: { id: string }) => t.id === tenant.id)).toBe(true);
-      const row = res.data.items.find((t: { id: string }) => t.id === tenant.id);
+      expect(
+        res.data.items.some((t: { id: string }) => t.id === tenant.id),
+      ).toBe(true);
+      const row = res.data.items.find(
+        (t: { id: string }) => t.id === tenant.id,
+      );
       expect(row).toEqual(
         expect.objectContaining({
           slug: tenant.slug,
@@ -51,7 +55,9 @@ describe('@org/api-e2e platform module', () => {
     it('platform admin can GET /api/platform/tenants/:id with planMeta', async () => {
       const admin = await env.makePlatformAdmin();
       const { tenant } = await env.makeTenant();
-      const res = await admin.client.axios.get(`/api/platform/tenants/${tenant.id}`);
+      const res = await admin.client.axios.get(
+        `/api/platform/tenants/${tenant.id}`,
+      );
       expect(res.status).toBe(200);
       expect(res.data.id).toBe(tenant.id);
       expect(res.data.slug).toBe(tenant.slug);
@@ -62,10 +68,13 @@ describe('@org/api-e2e platform module', () => {
       const admin = await env.makePlatformAdmin();
       const { tenant } = await env.makeTenant({ plan: 'PREMIUM' });
 
-      const res = await admin.client.axios.patch(`/api/platform/tenants/${tenant.id}`, {
-        plan: 'STARTER',
-        status: 'ACTIVE',
-      });
+      const res = await admin.client.axios.patch(
+        `/api/platform/tenants/${tenant.id}`,
+        {
+          plan: 'STARTER',
+          status: 'ACTIVE',
+        },
+      );
       expect(res.status).toBe(200);
       expect(res.data.plan).toBe('STARTER');
       expect(res.data.status).toBe('ACTIVE');
@@ -104,7 +113,9 @@ describe('@org/api-e2e platform module', () => {
     it('a DOCTOR token → 401 on /api/platform/tenants/:id', async () => {
       const { tenant } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
-      const res = await doctor.client.axios.get(`/api/platform/tenants/${tenant.id}`);
+      const res = await doctor.client.axios.get(
+        `/api/platform/tenants/${tenant.id}`,
+      );
       expect(res.status).toBe(401);
     });
 
@@ -119,16 +130,21 @@ describe('@org/api-e2e platform module', () => {
   describe('failure modes', () => {
     it('GET /api/platform/tenants/:id for unknown id → 404', async () => {
       const admin = await env.makePlatformAdmin();
-      const res = await admin.client.axios.get('/api/platform/tenants/no-such-id-xyz');
+      const res = await admin.client.axios.get(
+        '/api/platform/tenants/no-such-id-xyz',
+      );
       expect(res.status).toBe(404);
     });
 
     it('PATCH with an invalid Plan value → 400', async () => {
       const admin = await env.makePlatformAdmin();
       const { tenant } = await env.makeTenant();
-      const res = await admin.client.axios.patch(`/api/platform/tenants/${tenant.id}`, {
-        plan: 'NOT_A_REAL_PLAN',
-      });
+      const res = await admin.client.axios.patch(
+        `/api/platform/tenants/${tenant.id}`,
+        {
+          plan: 'NOT_A_REAL_PLAN',
+        },
+      );
       expect(res.status).toBe(400);
     });
   });

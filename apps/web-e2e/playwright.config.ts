@@ -102,7 +102,10 @@ export default defineConfig({
     {
       name: 'chromium-platform',
       testDir: './src/platform',
-      use: { ...devices['Desktop Chrome'], storageState: STORAGE.platformAdmin },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: STORAGE.platformAdmin,
+      },
     },
 
     // Cross-browser repeat for clinic only — the highest-value surface.

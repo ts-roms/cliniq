@@ -1,4 +1,9 @@
-import { chromium, request, type FullConfig, type Page } from '@playwright/test';
+import {
+  chromium,
+  request,
+  type FullConfig,
+  type Page,
+} from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { provisionTenants, type ProvisionedSeed } from './provision';
@@ -23,7 +28,9 @@ import { provisionTenants, type ProvisionedSeed } from './provision';
  * shards would otherwise stomp each other.
  */
 export default async function globalSetup(config: FullConfig) {
-  const baseURL = (config.projects[0].use.baseURL as string | undefined) ?? 'http://localhost:3000';
+  const baseURL =
+    (config.projects[0].use.baseURL as string | undefined) ??
+    'http://localhost:3000';
   const apiURL = process.env.API_E2E_URL ?? 'http://localhost:4000';
 
   // 1. Provision test data via the api.
@@ -36,7 +43,12 @@ export default async function globalSetup(config: FullConfig) {
   await Promise.all([
     captureWebSession(browser, baseURL, seed.clinic.owner, 'clinic-owner'),
     captureWebSession(browser, baseURL, seed.clinic.doctor, 'clinic-doctor'),
-    captureWebSession(browser, baseURL, seed.clinic.receptionist, 'clinic-receptionist'),
+    captureWebSession(
+      browser,
+      baseURL,
+      seed.clinic.receptionist,
+      'clinic-receptionist',
+    ),
     captureWebSession(browser, baseURL, seed.lab.owner, 'lab-owner'),
     capturePortalSession(browser, baseURL, seed.clinic.patient, 'patient'),
     capturePlatformSession(browser, baseURL, seed.platform, 'platform-admin'),
@@ -127,7 +139,11 @@ function recordAuthTraffic(page: Page): () => Promise<AuthResponseLog[]> {
   const onFailed = (req: import('@playwright/test').Request) => {
     const url = req.url();
     if (!/\/(api\/)?(platform\/)?auth\/login/.test(url)) return;
-    log.push({ url, status: 0, body: `request failed: ${req.failure()?.errorText ?? 'unknown'}` });
+    log.push({
+      url,
+      status: 0,
+      body: `request failed: ${req.failure()?.errorText ?? 'unknown'}`,
+    });
   };
   page.on('response', onResponse);
   page.on('requestfailed', onFailed);
@@ -157,14 +173,18 @@ async function waitForPostLoginRedirect(
   collectAuthLog: () => Promise<AuthResponseLog[]>,
 ): Promise<void> {
   try {
-    await page.waitForURL((url) => !url.pathname.endsWith(loginPath), { timeout: 20_000 });
+    await page.waitForURL((url) => !url.pathname.endsWith(loginPath), {
+      timeout: 20_000,
+    });
   } catch (err) {
     const dir = `${process.cwd()}/test-results/global-setup`;
     await mkdir(dir, { recursive: true }).catch(() => undefined);
     const stamp = `${label}-${Date.now()}`;
     const pngPath = `${dir}/${stamp}.png`;
     const htmlPath = `${dir}/${stamp}.html`;
-    await page.screenshot({ path: pngPath, fullPage: true }).catch(() => undefined);
+    await page
+      .screenshot({ path: pngPath, fullPage: true })
+      .catch(() => undefined);
     await page
       .content()
       .then((html) => writeFile(htmlPath, html, 'utf-8'))
@@ -218,7 +238,6 @@ async function writeJson(path: string, data: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(data, null, 2), 'utf-8');
 }
-
 
 /**
  * Fill the email + password fields in the login form, falling back through

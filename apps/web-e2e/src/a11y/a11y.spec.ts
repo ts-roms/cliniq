@@ -9,18 +9,22 @@ import { loadSeed } from '../utils/seed';
  * rather ship a meaningful smoke than a flaky audit.
  */
 async function runAxe(page: import('@playwright/test').Page) {
-  return new AxeBuilder({ page })
-    // Skip rules that are known false-positives in our shadcn-based shell.
-    .disableRules([
-      // Our radix dialog uses a region landmark inside it; axe sometimes
-      // double-counts. Re-enable once we audit landmarks holistically.
-      'region',
-    ])
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
+  return (
+    new AxeBuilder({ page })
+      // Skip rules that are known false-positives in our shadcn-based shell.
+      .disableRules([
+        // Our radix dialog uses a region landmark inside it; axe sometimes
+        // double-counts. Re-enable once we audit landmarks holistically.
+        'region',
+      ])
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+  );
 }
 
-function summarize(violations: Awaited<ReturnType<typeof runAxe>>['violations']): string {
+function summarize(
+  violations: Awaited<ReturnType<typeof runAxe>>['violations'],
+): string {
   return violations
     .map(
       (v) =>
@@ -42,7 +46,9 @@ const TOP_PAGES = [
 ];
 
 for (const p of TOP_PAGES) {
-  test(`@a11y ${p.name} (${p.url}) has no critical/serious violations`, async ({ page }) => {
+  test(`@a11y ${p.name} (${p.url}) has no critical/serious violations`, async ({
+    page,
+  }) => {
     await page.goto(p.url);
     await page.waitForLoadState('networkidle');
     const result = await runAxe(page);
@@ -58,7 +64,9 @@ for (const p of TOP_PAGES) {
   });
 }
 
-test('@a11y patient detail (sample row) has no critical/serious violations', async ({ page }) => {
+test('@a11y patient detail (sample row) has no critical/serious violations', async ({
+  page,
+}) => {
   await page.goto('/patients');
   await page.waitForLoadState('networkidle');
   const link = page.locator('table a, [data-test="patient-row"] a').first();
@@ -72,6 +80,9 @@ test('@a11y patient detail (sample row) has no critical/serious violations', asy
   const blocking = result.violations.filter((v) =>
     FAIL_ON.includes(v.impact as 'critical' | 'serious'),
   );
-  expect(blocking, blocking.length > 0 ? `\n${summarize(blocking)}` : 'clean').toEqual([]);
+  expect(
+    blocking,
+    blocking.length > 0 ? `\n${summarize(blocking)}` : 'clean',
+  ).toEqual([]);
   void loadSeed; // ensure import isn't tree-shaken; future seed-aware specs can use it
 });

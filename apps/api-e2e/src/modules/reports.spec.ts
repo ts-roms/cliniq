@@ -27,16 +27,24 @@ describe('@org/api-e2e reports module', () => {
 
     it('OWNER can fetch revenue, top-services, no-shows', async () => {
       const { client } = await env.makeTenant();
-      const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const from = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000,
+      ).toISOString();
       const to = new Date().toISOString();
 
-      const revenue = await client.axios.get(`/api/reports/revenue?from=${from}&to=${to}`);
+      const revenue = await client.axios.get(
+        `/api/reports/revenue?from=${from}&to=${to}`,
+      );
       expect(revenue.status).toBe(200);
 
-      const top = await client.axios.get(`/api/reports/top-services?from=${from}&to=${to}&limit=5`);
+      const top = await client.axios.get(
+        `/api/reports/top-services?from=${from}&to=${to}&limit=5`,
+      );
       expect(top.status).toBe(200);
 
-      const ns = await client.axios.get(`/api/reports/no-shows?from=${from}&to=${to}`);
+      const ns = await client.axios.get(
+        `/api/reports/no-shows?from=${from}&to=${to}`,
+      );
       expect(ns.status).toBe(200);
     });
 

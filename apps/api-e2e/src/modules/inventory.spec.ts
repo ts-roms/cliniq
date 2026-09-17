@@ -37,25 +37,35 @@ describe('@org/api-e2e inventory module', () => {
       // List items
       const list = await client.axios.get('/api/inventory/items');
       expect(list.status).toBe(200);
-      expect(list.data.some((it: { id: string }) => it.id === itemId)).toBe(true);
+      expect(list.data.some((it: { id: string }) => it.id === itemId)).toBe(
+        true,
+      );
 
       // Receive a batch — `qty` field; the DTO uses `qty` or `quantity` —
       // tolerate both shapes by sending what the controller expects.
-      const recv = await client.axios.post(`/api/inventory/items/${itemId}/batches`, {
-        qty: 100,
-        lotNumber: 'LOT-001',
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        unitCostCentavos: 100,
-      });
+      const recv = await client.axios.post(
+        `/api/inventory/items/${itemId}/batches`,
+        {
+          qty: 100,
+          lotNumber: 'LOT-001',
+          expiresAt: new Date(
+            Date.now() + 365 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          unitCostCentavos: 100,
+        },
+      );
       // Some installs return the receive endpoint as 200 with the updated
       // stock-on-hand; either 200 or 201 is acceptable.
       expect([200, 201]).toContain(recv.status);
 
       // Dispense 5 units
-      const disp = await client.axios.post(`/api/inventory/items/${itemId}/dispense`, {
-        qty: 5,
-        reason: 'consult',
-      });
+      const disp = await client.axios.post(
+        `/api/inventory/items/${itemId}/dispense`,
+        {
+          qty: 5,
+          reason: 'consult',
+        },
+      );
       expect([200, 201]).toContain(disp.status);
     });
   });

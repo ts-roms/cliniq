@@ -55,50 +55,64 @@ export class TeleService {
 
   // ── Session lifecycle ────────────────────────────
 
-  async create(dto: CreateSessionDto, user: AuthenticatedUser): Promise<ProviderSessionResponse> {
-    const result = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const patient = await tx.patient.findFirst({
-        where: { id: dto.patientId, deletedAt: null },
-      });
-      if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
-      if (dto.appointmentId) {
-        const appt = await tx.appointment.findFirst({
-          where: { id: dto.appointmentId, patientId: dto.patientId, deletedAt: null },
+  async create(
+    dto: CreateSessionDto,
+    user: AuthenticatedUser,
+  ): Promise<ProviderSessionResponse> {
+    const result = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const patient = await tx.patient.findFirst({
+          where: { id: dto.patientId, deletedAt: null },
         });
-        if (!appt) {
-          throw new BadRequestException('appointment not found or not linked to this patient');
+        if (!patient)
+          throw new NotFoundException(`Patient ${dto.patientId} not found`);
+        if (dto.appointmentId) {
+          const appt = await tx.appointment.findFirst({
+            where: {
+              id: dto.appointmentId,
+              patientId: dto.patientId,
+              deletedAt: null,
+            },
+          });
+          if (!appt) {
+            throw new BadRequestException(
+              'appointment not found or not linked to this patient',
+            );
+          }
         }
-      }
 
-      const joinToken = randomBytes(TOKEN_BYTES).toString('base64url');
-      const patientToken = randomBytes(TOKEN_BYTES).toString('base64url');
-      const session = await tx.teleSession.create({
-        data: {
-          tenantId: user.tenantId,
-          patientId: dto.patientId,
-          providerId: user.userId,
-          appointmentId: dto.appointmentId ?? null,
-          consultationId: dto.consultationId ?? null,
-          joinToken,
-          patientToken,
-        },
-      });
+        const joinToken = randomBytes(TOKEN_BYTES).toString('base64url');
+        const patientToken = randomBytes(TOKEN_BYTES).toString('base64url');
+        const session = await tx.teleSession.create({
+          data: {
+            tenantId: user.tenantId,
+            patientId: dto.patientId,
+            providerId: user.userId,
+            appointmentId: dto.appointmentId ?? null,
+            consultationId: dto.consultationId ?? null,
+            joinToken,
+            patientToken,
+          },
+        });
 
-      const provider = await tx.user.findFirst({
-        where: { id: user.userId },
-        select: { name: true },
-      });
+        const provider = await tx.user.findFirst({
+          where: { id: user.userId },
+          select: { name: true },
+        });
 
-      this.logger.log(`tele session ${session.id} created by ${user.userId}`);
-      return {
-        view: this.toProviderResponse(session),
-        patient: {
-          firstName: patient.firstName,
-          phone: patient.phone,
-        },
-        providerName: provider?.name ?? null,
-      };
-    });
+        this.logger.log(`tele session ${session.id} created by ${user.userId}`);
+        return {
+          view: this.toProviderResponse(session),
+          patient: {
+            firstName: patient.firstName,
+            phone: patient.phone,
+          },
+          providerName: provider?.name ?? null,
+        };
+      },
+    );
 
     // Auto-SMS on create — best-effort, never throws. Skipped silently when
     // the patient has no phone or the SMS provider is in noop mode.
@@ -124,7 +138,11 @@ export class TeleService {
   async notifyPatientBySms(
     sessionId: string,
     user: AuthenticatedUser,
-  ): Promise<{ sent: boolean; provider: SmsResult['provider']; reason?: string }> {
+  ): Promise<{
+    sent: boolean;
+    provider: SmsResult['provider'];
+    reason?: string;
+  }> {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const session = await tx.teleSession.findFirst({
         where: { id: sessionId },
@@ -132,7 +150,8 @@ export class TeleService {
           patient: { select: { firstName: true, phone: true } },
         },
       });
-      if (!session) throw new NotFoundException(`Session ${sessionId} not found`);
+      if (!session)
+        throw new NotFoundException(`Session ${sessionId} not found`);
       if (session.providerId !== user.userId) {
         throw new ForbiddenException('not your session');
       }
@@ -141,10 +160,18 @@ export class TeleService {
       }
       const phone = session.patient.phone;
       if (!phone) {
-        return { sent: false, provider: 'noop', reason: 'patient has no phone on file' };
+        return {
+          sent: false,
+          provider: 'noop',
+          reason: 'patient has no phone on file',
+        };
       }
       if (!this.sms.isEnabled()) {
-        return { sent: false, provider: 'noop', reason: 'sms provider not configured' };
+        return {
+          sent: false,
+          provider: 'noop',
+          reason: 'sms provider not configured',
+        };
       }
       const provider = await tx.user.findFirst({
         where: { id: session.providerId },
@@ -169,7 +196,9 @@ export class TeleService {
     joinUrl: string,
     sessionId: string,
   ): Promise<SmsResult> {
-    const provider = providerName ? `Dr. ${providerName.replace(/^Dr\.?\s*/i, '')}` : 'your provider';
+    const provider = providerName
+      ? `Dr. ${providerName.replace(/^Dr\.?\s*/i, '')}`
+      : 'your provider';
     const body = `Hi ${patientFirstName}, your video visit with ${provider} is ready. Join: ${joinUrl}`;
     try {
       const result = await this.sms.send({ to: phone, body });
@@ -186,7 +215,10 @@ export class TeleService {
     }
   }
 
-  async getByIdForProvider(id: string, user: AuthenticatedUser): Promise<ProviderSessionResponse> {
+  async getByIdForProvider(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<ProviderSessionResponse> {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const session = await tx.teleSession.findFirst({ where: { id } });
       if (!session) throw new NotFoundException(`Session ${id} not found`);
@@ -260,14 +292,20 @@ export class TeleService {
       }),
     );
     if (!session) throw new UnauthorizedException('invalid join token');
-    if (session.status === TeleSessionStatus.ENDED || session.status === TeleSessionStatus.CANCELLED) {
+    if (
+      session.status === TeleSessionStatus.ENDED ||
+      session.status === TeleSessionStatus.CANCELLED
+    ) {
       throw new ForbiddenException('session is closed');
     }
-    const provider = await this.prisma.withTenant(session.tenantId, null, (tx) =>
-      tx.user.findFirst({
-        where: { id: session.providerId },
-        select: { name: true },
-      }),
+    const provider = await this.prisma.withTenant(
+      session.tenantId,
+      null,
+      (tx) =>
+        tx.user.findFirst({
+          where: { id: session.providerId },
+          select: { name: true },
+        }),
     );
     // First join transitions PENDING → ACTIVE.
     if (session.status === TeleSessionStatus.PENDING) {
@@ -288,7 +326,10 @@ export class TeleService {
       startedAt: session.startedAt ?? new Date(),
       endedAt: session.endedAt,
       patientToken: session.patientToken,
-      patient: { firstName: session.patient.firstName, lastName: session.patient.lastName },
+      patient: {
+        firstName: session.patient.firstName,
+        lastName: session.patient.lastName,
+      },
       provider: { name: provider?.name ?? null },
     };
   }
@@ -298,7 +339,9 @@ export class TeleService {
   async listSignals(
     sessionId: string,
     since: number,
-    auth: { kind: 'provider'; user: AuthenticatedUser } | { kind: 'patient'; token: string },
+    auth:
+      | { kind: 'provider'; user: AuthenticatedUser }
+      | { kind: 'patient'; token: string },
   ) {
     const session = await this.requireAuthorizedSession(sessionId, auth);
     return this.prisma.withTenant(session.tenantId, null, (tx) =>
@@ -314,20 +357,31 @@ export class TeleService {
     sessionId: string,
     kind: TeleSignalKind,
     payload: Record<string, unknown>,
-    auth: { kind: 'provider'; user: AuthenticatedUser } | { kind: 'patient'; token: string },
+    auth:
+      | { kind: 'provider'; user: AuthenticatedUser }
+      | { kind: 'patient'; token: string },
   ) {
     const session = await this.requireAuthorizedSession(sessionId, auth);
     if (session.status === TeleSessionStatus.ENDED) {
       throw new ForbiddenException('session ended');
     }
-    const fromRole = auth.kind === 'provider' ? TeleRole.DOCTOR : TeleRole.PATIENT;
+    const fromRole =
+      auth.kind === 'provider' ? TeleRole.DOCTOR : TeleRole.PATIENT;
     return this.prisma.withTenant(session.tenantId, null, async (tx) => {
       const last = await tx.teleSignal.findFirst({
         where: { sessionId: session.id },
         orderBy: { seq: 'desc' },
       });
       const seq = (last?.seq ?? 0) + 1;
-      return this.bareCreate(tx, session.tenantId, session.id, seq, fromRole, kind, payload);
+      return this.bareCreate(
+        tx,
+        session.tenantId,
+        session.id,
+        seq,
+        fromRole,
+        kind,
+        payload,
+      );
     });
   }
 
@@ -343,12 +397,17 @@ export class TeleService {
     const turnUrls = (this.config.get<string>('TURN_URLS') ?? '').trim();
     const username = this.config.get<string>('TURN_USERNAME');
     const credential = this.config.get<string>('TURN_CREDENTIAL');
-    const iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }> = [
-      { urls: 'stun:stun.l.google.com:19302' },
-    ];
+    const iceServers: Array<{
+      urls: string | string[];
+      username?: string;
+      credential?: string;
+    }> = [{ urls: 'stun:stun.l.google.com:19302' }];
     if (turnUrls) {
       iceServers.push({
-        urls: turnUrls.split(',').map((u) => u.trim()).filter(Boolean),
+        urls: turnUrls
+          .split(',')
+          .map((u) => u.trim())
+          .filter(Boolean),
         ...(username ? { username } : {}),
         ...(credential ? { credential } : {}),
       });
@@ -360,7 +419,9 @@ export class TeleService {
 
   private async requireAuthorizedSession(
     sessionId: string,
-    auth: { kind: 'provider'; user: AuthenticatedUser } | { kind: 'patient'; token: string },
+    auth:
+      | { kind: 'provider'; user: AuthenticatedUser }
+      | { kind: 'patient'; token: string },
   ) {
     // Provider flows have a JWT and known tenantId — read under their RLS
     // context so an attacker passing someone else's sessionId can't even
@@ -369,8 +430,10 @@ export class TeleService {
     // under platform context and the token check enforces authorization.
     const session =
       auth.kind === 'provider'
-        ? await this.prisma.withTenant(auth.user.tenantId, auth.user.userId, (tx) =>
-            tx.teleSession.findFirst({ where: { id: sessionId } }),
+        ? await this.prisma.withTenant(
+            auth.user.tenantId,
+            auth.user.userId,
+            (tx) => tx.teleSession.findFirst({ where: { id: sessionId } }),
           )
         : await this.prisma.withPlatformContext((tx) =>
             tx.teleSession.findFirst({ where: { id: sessionId } }),

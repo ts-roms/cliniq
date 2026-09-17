@@ -149,7 +149,9 @@ describe('@org/api-e2e tenants module', () => {
       const a = await env.makeTenant();
       const list = await a.client.axios.get('/api/tenants');
       expect(list.status).toBe(200);
-      expect(list.data.some((t: { id: string }) => t.id === a.tenant.id)).toBe(true);
+      expect(list.data.some((t: { id: string }) => t.id === a.tenant.id)).toBe(
+        true,
+      );
     });
 
     it('public GET /api/tenants/:slug should not leak data beyond the slug record itself', async () => {

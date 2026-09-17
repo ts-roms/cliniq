@@ -161,8 +161,7 @@ export function SearchSelect({
   //   - otherwise empty (placeholder shows through)
   const inputValue = open
     ? query
-    : selected?.label
-      ?? (value && isLoading ? 'Loading…' : '');
+    : (selected?.label ?? (value && isLoading ? 'Loading…' : ''));
 
   return (
     <div ref={wrapperRef} className="relative">

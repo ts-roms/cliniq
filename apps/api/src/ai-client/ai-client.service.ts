@@ -35,10 +35,14 @@ export class AiClientService {
   private readonly serviceToken: string | null;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
-    this.timeoutMs = Number(this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000);
+    this.baseUrl =
+      this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
+    this.timeoutMs = Number(
+      this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000,
+    );
     const token = this.config.get<string>('AI_SERVICE_TOKEN');
-    this.serviceToken = typeof token === 'string' && token.length > 0 ? token : null;
+    this.serviceToken =
+      typeof token === 'string' && token.length > 0 ? token : null;
     if (!this.serviceToken && process.env.NODE_ENV === 'production') {
       // Loud at boot so an ops misconfig is obvious in the logs even if no
       // AI call is ever made.
@@ -116,8 +120,11 @@ export class AiClientService {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
-        const headers: Record<string, string> = { 'content-type': 'application/json' };
-        if (this.serviceToken) headers['x-ai-service-token'] = this.serviceToken;
+        const headers: Record<string, string> = {
+          'content-type': 'application/json',
+        };
+        if (this.serviceToken)
+          headers['x-ai-service-token'] = this.serviceToken;
         const res = await fetch(url, {
           method: 'POST',
           headers,
@@ -134,7 +141,9 @@ export class AiClientService {
       } catch (err) {
         lastErr = err;
         if (err instanceof BadGatewayException) throw err; // don't retry HTTP errors
-        this.logger.warn(`ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`);
+        this.logger.warn(
+          `ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`,
+        );
       } finally {
         clearTimeout(timer);
       }

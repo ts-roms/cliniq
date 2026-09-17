@@ -18,11 +18,31 @@ interface Props {
   autosaveDelayMs?: number;
 }
 
-const SECTIONS: Array<{ key: keyof SoapNote; label: string; placeholder: string }> = [
-  { key: 'subjective', label: 'Subjective', placeholder: 'Chief complaint, HPI, ROS…' },
-  { key: 'objective', label: 'Objective', placeholder: 'Vitals, physical exam findings…' },
-  { key: 'assessment', label: 'Assessment', placeholder: 'Differential, diagnoses with reasoning…' },
-  { key: 'plan', label: 'Plan', placeholder: 'Diagnostics, meds, follow-up, education…' },
+const SECTIONS: Array<{
+  key: keyof SoapNote;
+  label: string;
+  placeholder: string;
+}> = [
+  {
+    key: 'subjective',
+    label: 'Subjective',
+    placeholder: 'Chief complaint, HPI, ROS…',
+  },
+  {
+    key: 'objective',
+    label: 'Objective',
+    placeholder: 'Vitals, physical exam findings…',
+  },
+  {
+    key: 'assessment',
+    label: 'Assessment',
+    placeholder: 'Differential, diagnoses with reasoning…',
+  },
+  {
+    key: 'plan',
+    label: 'Plan',
+    placeholder: 'Diagnostics, meds, follow-up, education…',
+  },
 ];
 
 export function SoapEditor({
@@ -54,7 +74,10 @@ export function SoapEditor({
     [onSave],
   );
 
-  const [scheduleAutosave, flush] = useDebouncedCallback(persist, autosaveDelayMs);
+  const [scheduleAutosave, flush] = useDebouncedCallback(
+    persist,
+    autosaveDelayMs,
+  );
 
   const update = (key: keyof SoapNote, value: string) => {
     if (locked) return;
@@ -83,7 +106,11 @@ export function SoapEditor({
             locked={locked}
           />
         </div>
-        <Button size="sm" onClick={saveNow} disabled={locked || isSaving || !isDirty}>
+        <Button
+          size="sm"
+          onClick={saveNow}
+          disabled={locked || isSaving || !isDirty}
+        >
           {isSaving ? 'Saving…' : locked ? 'Locked' : 'Save'}
         </Button>
       </CardHeader>
@@ -116,9 +143,14 @@ function SaveStatus({
 }) {
   const elapsed = useElapsedSeconds(lastSavedAt);
 
-  if (locked) return <span className="text-xs text-muted-foreground">Locked</span>;
-  if (isSaving) return <span className="text-xs text-muted-foreground">Saving…</span>;
-  if (isDirty) return <span className="text-xs text-muted-foreground">Unsaved changes</span>;
+  if (locked)
+    return <span className="text-xs text-muted-foreground">Locked</span>;
+  if (isSaving)
+    return <span className="text-xs text-muted-foreground">Saving…</span>;
+  if (isDirty)
+    return (
+      <span className="text-xs text-muted-foreground">Unsaved changes</span>
+    );
   if (lastSavedAt) {
     return (
       <span className="text-xs text-muted-foreground">

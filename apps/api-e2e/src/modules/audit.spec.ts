@@ -54,7 +54,9 @@ describe('@org/api-e2e audit module', () => {
       const res = await client.axios.get('/api/audit?action=patient');
       expect(res.status).toBe(200);
       expect(
-        res.data.items.every((it: { action: string }) => it.action.startsWith('patient')),
+        res.data.items.every((it: { action: string }) =>
+          it.action.startsWith('patient'),
+        ),
       ).toBe(true);
     });
   });

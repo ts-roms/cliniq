@@ -135,7 +135,12 @@ function ConsultHeader({
   // Live tick while in progress; freeze the duration once ended.
   const liveSec = useElapsedSeconds(endedAt ? null : startedAt);
   const totalSec = endedAt
-    ? Math.max(0, Math.floor((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000))
+    ? Math.max(
+        0,
+        Math.floor(
+          (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000,
+        ),
+      )
     : liveSec;
 
   return (
@@ -148,7 +153,9 @@ function ConsultHeader({
       </Link>
       <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl font-extralight tracking-tight sm:text-2xl">Consultation</h1>
+          <h1 className="text-xl font-extralight tracking-tight sm:text-2xl">
+            Consultation
+          </h1>
           <p className="text-sm text-muted-foreground">
             {status} · started {new Date(startedAt).toLocaleString()} ·{' '}
             <span className="tabular-nums">{formatDuration(totalSec)}</span>

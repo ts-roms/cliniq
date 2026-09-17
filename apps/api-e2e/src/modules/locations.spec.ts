@@ -148,7 +148,7 @@ describe('@org/api-e2e locations module', () => {
       expect(listB.data.some((l: { id: string }) => l.id === id)).toBe(false);
     });
 
-    it('tenant B cannot update tenant A\'s location (404)', async () => {
+    it("tenant B cannot update tenant A's location (404)", async () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 
@@ -164,7 +164,7 @@ describe('@org/api-e2e locations module', () => {
       expect(cross.status).toBe(404);
     });
 
-    it('tenant B cannot delete tenant A\'s location (404)', async () => {
+    it("tenant B cannot delete tenant A's location (404)", async () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 

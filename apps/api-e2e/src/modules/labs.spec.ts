@@ -37,7 +37,10 @@ describe('@org/api-e2e labs module', () => {
     it('OWNER can create order, list for patient, record a result, cancel', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
 
-      const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE('LAB-001'));
+      const patient = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('LAB-001'),
+      );
       const patientId = patient.data.id as string;
 
       const order = await client.axios.post('/api/lab-orders', {
@@ -59,9 +62,13 @@ describe('@org/api-e2e labs module', () => {
       const orderId = order.data.id as string;
       const itemId = order.data.items[0].id as string;
 
-      const list = await client.axios.get(`/api/patients/${patientId}/lab-orders`);
+      const list = await client.axios.get(
+        `/api/patients/${patientId}/lab-orders`,
+      );
       expect(list.status).toBe(200);
-      expect(list.data.some((o: { id: string }) => o.id === orderId)).toBe(true);
+      expect(list.data.some((o: { id: string }) => o.id === orderId)).toBe(
+        true,
+      );
 
       const detail = await client.axios.get(`/api/lab-orders/${orderId}`);
       expect(detail.status).toBe(200);
@@ -76,7 +83,9 @@ describe('@org/api-e2e labs module', () => {
       );
       expect(result.status).toBe(200);
 
-      const cancelled = await client.axios.patch(`/api/lab-orders/${orderId}/cancel`);
+      const cancelled = await client.axios.patch(
+        `/api/lab-orders/${orderId}/cancel`,
+      );
       expect(cancelled.status).toBe(200);
     });
 
@@ -85,9 +94,14 @@ describe('@org/api-e2e labs module', () => {
       async (role) => {
         const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
         const user =
-          role === 'DOCTOR' ? await env.makeDoctor(tenant) : await env.makeNurse(tenant);
+          role === 'DOCTOR'
+            ? await env.makeDoctor(tenant)
+            : await env.makeNurse(tenant);
 
-        const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE(`CW-${role}`));
+        const patient = await client.axios.post(
+          '/api/patients',
+          PATIENT_FIXTURE(`CW-${role}`),
+        );
         const order = await user.client.axios.post('/api/lab-orders', {
           patientId: patient.data.id,
           items: [{ testName: 'Urinalysis' }],
@@ -102,7 +116,10 @@ describe('@org/api-e2e labs module', () => {
       const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
       const recep = await env.makeReceptionist(tenant);
 
-      const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE('REC-LAB'));
+      const patient = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('REC-LAB'),
+      );
       const res = await recep.client.axios.post('/api/lab-orders', {
         patientId: patient.data.id,
         items: [{ testName: 'X' }],
@@ -116,14 +133,19 @@ describe('@org/api-e2e labs module', () => {
       const a = await env.makeTenant({ plan: 'PREMIUM' });
       const b = await env.makeTenant({ plan: 'PREMIUM' });
 
-      const patient = await a.client.axios.post('/api/patients', PATIENT_FIXTURE('RLS-LAB'));
+      const patient = await a.client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('RLS-LAB'),
+      );
       const order = await a.client.axios.post('/api/lab-orders', {
         patientId: patient.data.id,
         items: [{ testName: 'CBC' }],
       });
       expect(order.status).toBe(201);
 
-      const cross = await b.client.axios.get(`/api/lab-orders/${order.data.id}`);
+      const cross = await b.client.axios.get(
+        `/api/lab-orders/${order.data.id}`,
+      );
       expect(cross.status).toBe(404);
     });
   });

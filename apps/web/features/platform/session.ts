@@ -49,7 +49,9 @@ export function loadPlatformSession(): PlatformSession | null {
   return cached;
 }
 
-export function savePlatformSession(payload: PlatformLoginPayload | PlatformSession): void {
+export function savePlatformSession(
+  payload: PlatformLoginPayload | PlatformSession,
+): void {
   if (typeof window === 'undefined') return;
   const next: PlatformSession = { admin: payload.admin };
   cached = next;

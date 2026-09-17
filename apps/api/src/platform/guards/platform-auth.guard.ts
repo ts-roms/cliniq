@@ -24,10 +24,10 @@ export class PlatformAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(
+      IS_PLATFORM_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (!isPlatform) return true;
 
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [

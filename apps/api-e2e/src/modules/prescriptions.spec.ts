@@ -18,7 +18,9 @@ async function seedPatient(client: E2EClient, mrn: string): Promise<string> {
     sex: 'MALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
 }
@@ -88,10 +90,13 @@ describe('@org/api-e2e prescriptions module', () => {
       });
       expect(signRes.status).toBe(403);
 
-      const precheckRes = await recp.client.axios.post('/api/prescriptions/precheck', {
-        patientId,
-        items: RX_ITEMS,
-      });
+      const precheckRes = await recp.client.axios.post(
+        '/api/prescriptions/precheck',
+        {
+          patientId,
+          items: RX_ITEMS,
+        },
+      );
       expect(precheckRes.status).toBe(403);
     });
   });

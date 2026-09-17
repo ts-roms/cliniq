@@ -33,7 +33,9 @@ describe('@org/api-e2e ai-budget module', () => {
     it.each(['DOCTOR', 'NURSE'] as const)('%s can read usage', async (role) => {
       const { tenant } = await env.makeTenant();
       const user =
-        role === 'DOCTOR' ? await env.makeDoctor(tenant) : await env.makeNurse(tenant);
+        role === 'DOCTOR'
+          ? await env.makeDoctor(tenant)
+          : await env.makeNurse(tenant);
       const res = await user.client.axios.get('/api/ai-budget');
       expect(res.status).toBe(200);
     });

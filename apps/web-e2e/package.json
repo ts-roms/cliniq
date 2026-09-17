@@ -3,8 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "implicitDependencies": ["@org/api", "@org/web"],
-    "tags": ["scope:web", "type:app"],
+    "implicitDependencies": [
+      "@org/api",
+      "@org/web"
+    ],
+    "tags": [
+      "scope:web",
+      "type:app"
+    ],
     "targets": {
       "e2e": {
         "executor": "nx:run-commands",
@@ -16,7 +22,9 @@
       "lint": {
         "executor": "@nx/eslint:lint",
         "options": {
-          "lintFilePatterns": ["apps/web-e2e/**/*.{ts,tsx,js,jsx}"]
+          "lintFilePatterns": [
+            "apps/web-e2e/**/*.{ts,tsx,js,jsx}"
+          ]
         }
       }
     }

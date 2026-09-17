@@ -27,7 +27,8 @@ export class TenantContextMiddleware implements NestMiddleware {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.rootDomain = this.config.get<string>('APP_ROOT_DOMAIN') ?? 'cliniq.app';
+    this.rootDomain =
+      this.config.get<string>('APP_ROOT_DOMAIN') ?? 'cliniq.app';
   }
 
   async use(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -69,11 +70,15 @@ export class TenantContextMiddleware implements NestMiddleware {
     if (!hostname || hostname === 'localhost') return null;
     if (!hostname.endsWith(this.rootDomain)) return null;
     const left = hostname.slice(0, -(this.rootDomain.length + 1));
-    if (!left || left === 'www' || left === 'app' || left === 'marketing') return null;
+    if (!left || left === 'www' || left === 'app' || left === 'marketing')
+      return null;
     return left.toLowerCase();
   }
 
-  private async tryJwtClaim(req: Request, claim: 'tid' | 'sub'): Promise<string | null> {
+  private async tryJwtClaim(
+    req: Request,
+    claim: 'tid' | 'sub',
+  ): Promise<string | null> {
     const token = extractAccessTokenForContext(req);
     if (!token) return null;
     const secret = this.config.get<string>('JWT_SECRET');
@@ -92,7 +97,8 @@ export class TenantContextMiddleware implements NestMiddleware {
 function extractAccessTokenForContext(req: Request): string | null {
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) return header.slice(7);
-  const cookies = (req as Request & { cookies?: Record<string, string> }).cookies;
+  const cookies = (req as Request & { cookies?: Record<string, string> })
+    .cookies;
   const c = cookies?.['cliniq.access'];
   return typeof c === 'string' && c.length > 0 ? c : null;
 }
@@ -118,7 +124,9 @@ class TenantContextImpl {
   }
 
   current(): RequestContext {
-    return this.als.getStore() ?? { tenantId: null, userId: null, requestId: null };
+    return (
+      this.als.getStore() ?? { tenantId: null, userId: null, requestId: null }
+    );
   }
 
   requireTenant(): string {

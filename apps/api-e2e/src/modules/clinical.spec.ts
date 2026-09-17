@@ -22,7 +22,9 @@ async function seedPatient(client: E2EClient, mrn: string): Promise<string> {
     sex: 'FEMALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
 }
@@ -109,7 +111,9 @@ describe('@org/api-e2e clinical module', () => {
       );
       expect(vital.status).toBe(201);
 
-      const list = await nurse.client.axios.get(`/api/patients/${patientId}/vitals`);
+      const list = await nurse.client.axios.get(
+        `/api/patients/${patientId}/vitals`,
+      );
       expect(list.status).toBe(200);
       expect(list.data.length).toBeGreaterThanOrEqual(1);
     });
@@ -125,7 +129,9 @@ describe('@org/api-e2e clinical module', () => {
       expect(seed.status).toBe(201);
 
       const recp = await env.makeReceptionist(tenant);
-      const list = await recp.client.axios.get(`/api/patients/${patientId}/allergies`);
+      const list = await recp.client.axios.get(
+        `/api/patients/${patientId}/allergies`,
+      );
       expect(list.status).toBe(200);
       expect(list.data.length).toBeGreaterThanOrEqual(1);
     });
@@ -191,7 +197,9 @@ describe('@org/api-e2e clinical module', () => {
         ALLERGY_FIXTURE,
       );
 
-      const cross = await b.client.axios.get(`/api/patients/${aPatientId}/allergies`);
+      const cross = await b.client.axios.get(
+        `/api/patients/${aPatientId}/allergies`,
+      );
       expect([403, 404]).toContain(cross.status);
     });
 

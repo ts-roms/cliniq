@@ -20,12 +20,22 @@ if (typeof global.structuredClone === 'undefined') {
 // mount. The real implementations require a Native bridge that's absent in
 // jest. Returning safe no-ops keeps the mount happy.
 jest.mock('expo-notifications', () => ({
-  getPermissionsAsync: jest.fn(async () => ({ status: 'undetermined', granted: false })),
-  requestPermissionsAsync: jest.fn(async () => ({ status: 'denied', granted: false })),
-  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[test]' })),
+  getPermissionsAsync: jest.fn(async () => ({
+    status: 'undetermined',
+    granted: false,
+  })),
+  requestPermissionsAsync: jest.fn(async () => ({
+    status: 'denied',
+    granted: false,
+  })),
+  getExpoPushTokenAsync: jest.fn(async () => ({
+    data: 'ExponentPushToken[test]',
+  })),
   setNotificationHandler: jest.fn(),
   addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
-  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({
+    remove: jest.fn(),
+  })),
   removeNotificationSubscription: jest.fn(),
   AndroidImportance: { DEFAULT: 3, HIGH: 4, MAX: 5 },
   setNotificationChannelAsync: jest.fn(async () => undefined),

@@ -5,7 +5,11 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3';
 import { PrismaService } from '@org/db';
 
 /**
@@ -32,21 +36,35 @@ export class FilesJanitorService implements OnModuleInit, OnModuleDestroy {
   private readonly retainDeletedDays: number;
   private timer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
     });
-    this.bucketPhi = this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
-    this.bucketPublic = this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
-    this.enabled = (this.config.get<string>('JANITOR_ENABLED') ?? 'false') === 'true';
-    this.intervalMs = Number(this.config.get<string>('JANITOR_INTERVAL_MS') ?? 60 * 60 * 1000);
-    this.orphanMaxAgeMin = Number(this.config.get<string>('ORPHAN_MAX_AGE_MIN') ?? 60);
-    this.retainDeletedDays = Number(this.config.get<string>('RETAIN_DELETED_DAYS') ?? 90);
+    this.bucketPhi =
+      this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
+    this.bucketPublic =
+      this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+    this.enabled =
+      (this.config.get<string>('JANITOR_ENABLED') ?? 'false') === 'true';
+    this.intervalMs = Number(
+      this.config.get<string>('JANITOR_INTERVAL_MS') ?? 60 * 60 * 1000,
+    );
+    this.orphanMaxAgeMin = Number(
+      this.config.get<string>('ORPHAN_MAX_AGE_MIN') ?? 60,
+    );
+    this.retainDeletedDays = Number(
+      this.config.get<string>('RETAIN_DELETED_DAYS') ?? 90,
+    );
   }
 
   onModuleInit(): void {
     if (!this.enabled) {
-      this.logger.log('files janitor disabled (set JANITOR_ENABLED=true to enable)');
+      this.logger.log(
+        'files janitor disabled (set JANITOR_ENABLED=true to enable)',
+      );
       return;
     }
     this.timer = setInterval(() => {
@@ -103,7 +121,9 @@ export class FilesJanitorService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async reapDeleted(): Promise<number> {
-    const cutoff = new Date(Date.now() - this.retainDeletedDays * 24 * 60 * 60_000);
+    const cutoff = new Date(
+      Date.now() - this.retainDeletedDays * 24 * 60 * 60_000,
+    );
     const tenants = await this.prisma.withPlatformContext((tx) =>
       tx.tenant.findMany({ where: { deletedAt: null }, select: { id: true } }),
     );
@@ -133,9 +153,13 @@ export class FilesJanitorService implements OnModuleInit, OnModuleDestroy {
     try {
       // HEAD first so a 404 doesn't trip our metrics on already-orphaned keys.
       await this.s3.send(new HeadObjectCommand({ Bucket: bucket, Key: s3Key }));
-      await this.s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: s3Key }));
+      await this.s3.send(
+        new DeleteObjectCommand({ Bucket: bucket, Key: s3Key }),
+      );
     } catch (err) {
-      this.logger.debug(`s3 delete skipped for ${s3Key}: ${(err as Error).message}`);
+      this.logger.debug(
+        `s3 delete skipped for ${s3Key}: ${(err as Error).message}`,
+      );
     }
   }
 }

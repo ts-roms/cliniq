@@ -7,7 +7,9 @@ test.describe('@web /login', () => {
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/password/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign in|log in/i })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /sign in|log in/i }),
+    ).toBeVisible();
   });
 
   test('rejects bad credentials', async ({ page }) => {
@@ -36,7 +38,9 @@ test.describe('@web /login', () => {
 });
 
 test.describe('@web auth gating (cookie-based middleware)', () => {
-  test('anonymous → /dashboard redirects to /login with ?next', async ({ page }) => {
+  test('anonymous → /dashboard redirects to /login with ?next', async ({
+    page,
+  }) => {
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login\?.*next=/);
   });
@@ -46,12 +50,16 @@ test.describe('@web auth gating (cookie-based middleware)', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('anonymous → /portal/appointments redirects to /portal/login', async ({ page }) => {
+  test('anonymous → /portal/appointments redirects to /portal/login', async ({
+    page,
+  }) => {
     await page.goto('/portal/appointments');
     await expect(page).toHaveURL(/\/portal\/login/);
   });
 
-  test('anonymous → /platform/dashboard redirects to /platform/login', async ({ page }) => {
+  test('anonymous → /platform/dashboard redirects to /platform/login', async ({
+    page,
+  }) => {
     await page.goto('/platform/dashboard');
     await expect(page).toHaveURL(/\/platform\/login/);
   });

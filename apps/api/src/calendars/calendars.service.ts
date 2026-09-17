@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { PrismaService } from '@org/db';
@@ -22,11 +26,17 @@ export class CalendarsService {
   signFeedToken(tenantId: string, providerId: string): string {
     const secret = this.config.getOrThrow<string>('JWT_SECRET');
     const payload = `${TOKEN_VERSION}|${ISSUER}|${tenantId}|${providerId}`;
-    const sig = createHmac('sha256', secret).update(payload).digest('base64url');
+    const sig = createHmac('sha256', secret)
+      .update(payload)
+      .digest('base64url');
     return `${TOKEN_VERSION}.${sig}`;
   }
 
-  private verifyFeedToken(tenantId: string, providerId: string, token: string): boolean {
+  private verifyFeedToken(
+    tenantId: string,
+    providerId: string,
+    token: string,
+  ): boolean {
     const expected = this.signFeedToken(tenantId, providerId);
     if (expected.length !== token.length) return false;
     try {
@@ -51,14 +61,17 @@ export class CalendarsService {
       throw new UnauthorizedException('cannot issue feed for another provider');
     }
     // RLS: users_visible_in_tenant requires current_tenant; wrap explicitly.
-    const provider = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.user.findFirst({
-        where: {
-          id: targetProviderId,
-          tenants: { some: { tenantId: user.tenantId, status: 'ACTIVE' } },
-        },
-        select: { id: true, name: true, email: true },
-      }),
+    const provider = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.user.findFirst({
+          where: {
+            id: targetProviderId,
+            tenants: { some: { tenantId: user.tenantId, status: 'ACTIVE' } },
+          },
+          select: { id: true, name: true, email: true },
+        }),
     );
     if (!provider) throw new NotFoundException('provider not in this tenant');
     return {
@@ -73,7 +86,11 @@ export class CalendarsService {
    * over the next ±90 days. Lookup uses raw queries — RLS isn't enabled on
    * this path because there's no JWT. Token holds tenant scope.
    */
-  async renderIcs(tenantId: string, providerId: string, token: string): Promise<string> {
+  async renderIcs(
+    tenantId: string,
+    providerId: string,
+    token: string,
+  ): Promise<string> {
     if (!this.verifyFeedToken(tenantId, providerId, token)) {
       throw new UnauthorizedException('invalid calendar token');
     }
@@ -105,8 +122,7 @@ export class CalendarsService {
       events: appointments.map((a) => ({
         uid: `${a.id}@cliniq`,
         summary: `${a.patient.lastName}, ${a.patient.firstName} (${a.patient.mrn})`,
-        description:
-          `${a.type}${a.reason ? ` · ${a.reason}` : ''}${a.notes ? `\\n${a.notes}` : ''}`,
+        description: `${a.type}${a.reason ? ` · ${a.reason}` : ''}${a.notes ? `\\n${a.notes}` : ''}`,
         startsAt: a.startsAt,
         endsAt: a.endsAt,
         status: a.status === 'CANCELLED' ? 'CANCELLED' : 'CONFIRMED',
@@ -151,7 +167,11 @@ function esc(s: string): string {
     .replace(/\n/g, '\\n');
 }
 
-function buildIcs(input: { tenantId: string; providerId: string; events: IcsEvent[] }): string {
+function buildIcs(input: {
+  tenantId: string;
+  providerId: string;
+  events: IcsEvent[];
+}): string {
   const now = fmt(new Date());
   const lines = [
     'BEGIN:VCALENDAR',

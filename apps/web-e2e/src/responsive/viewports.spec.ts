@@ -52,7 +52,9 @@ async function assertHeadingVisible(page: Page): Promise<void> {
 }
 
 for (const { name, url } of PAGES) {
-  test(`@responsive ${name} (${url}) lays out without horizontal overflow`, async ({ page }) => {
+  test(`@responsive ${name} (${url}) lays out without horizontal overflow`, async ({
+    page,
+  }) => {
     await page.goto(url);
     await page.waitForLoadState('networkidle');
     await assertNoHorizontalOverflow(page);
@@ -61,7 +63,9 @@ for (const { name, url } of PAGES) {
 }
 
 test.describe('@responsive interactive controls', () => {
-  test('primary buttons are reachable (not clipped) on the patients page', async ({ page }) => {
+  test('primary buttons are reachable (not clipped) on the patients page', async ({
+    page,
+  }) => {
     await page.goto('/patients');
     await page.waitForLoadState('networkidle');
     const newBtn = page
@@ -76,10 +80,14 @@ test.describe('@responsive interactive controls', () => {
     // Must be inside the viewport horizontally.
     const viewport = page.viewportSize()!;
     expect(box!.x).toBeGreaterThanOrEqual(0);
-    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + SCROLL_FUDGE_PX);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(
+      viewport.width + SCROLL_FUDGE_PX,
+    );
   });
 
-  test('dialog opens and stays inside the viewport on small screens', async ({ page }) => {
+  test('dialog opens and stays inside the viewport on small screens', async ({
+    page,
+  }) => {
     await page.goto('/patients');
     const trigger = page
       .getByRole('button', { name: /new patient|add patient|create/i })
@@ -93,7 +101,9 @@ test.describe('@responsive interactive controls', () => {
     const viewport = page.viewportSize()!;
     // Dialog horizontally inside the viewport.
     expect(box!.x).toBeGreaterThanOrEqual(0);
-    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + SCROLL_FUDGE_PX);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(
+      viewport.width + SCROLL_FUDGE_PX,
+    );
     // Dialog not taller than viewport (would clip Cancel/Submit buttons).
     expect(box!.height).toBeLessThanOrEqual(viewport.height + SCROLL_FUDGE_PX);
   });

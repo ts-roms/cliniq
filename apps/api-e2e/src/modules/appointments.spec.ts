@@ -1,9 +1,18 @@
 /**
  * /api/appointments — schedule, check-in, cancel, RBAC, RLS.
  */
-import { bootEnv, type E2EEnv, type E2ETenant, type E2EClient } from '../support/harness';
+import {
+  bootEnv,
+  type E2EEnv,
+  type E2ETenant,
+  type E2EClient,
+} from '../support/harness';
 
-async function seedPatient(tenant: E2ETenant, client: E2EClient, mrn: string): Promise<string> {
+async function seedPatient(
+  tenant: E2ETenant,
+  client: E2EClient,
+  mrn: string,
+): Promise<string> {
   const res = await client.axios.post('/api/patients', {
     mrn,
     firstName: 'Test',
@@ -12,7 +21,9 @@ async function seedPatient(tenant: E2ETenant, client: E2EClient, mrn: string): P
     sex: 'FEMALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
   void tenant;
@@ -50,15 +61,23 @@ describe('@org/api-e2e appointments module', () => {
       // List within range — must include the row we just inserted.
       const from = new Date(startsAt.getTime() - 60 * 60 * 1000).toISOString();
       const to = new Date(endsAt.getTime() + 60 * 60 * 1000).toISOString();
-      const list = await client.axios.get(`/api/appointments?from=${from}&to=${to}`);
+      const list = await client.axios.get(
+        `/api/appointments?from=${from}&to=${to}`,
+      );
       expect(list.status).toBe(200);
-      expect(Array.isArray(list.data) ? list.data : list.data.items).toBeTruthy();
+      expect(
+        Array.isArray(list.data) ? list.data : list.data.items,
+      ).toBeTruthy();
 
-      const checkedIn = await client.axios.patch(`/api/appointments/${id}/check-in`);
+      const checkedIn = await client.axios.patch(
+        `/api/appointments/${id}/check-in`,
+      );
       expect(checkedIn.status).toBe(200);
       expect(checkedIn.data.status).toBe('CHECKED_IN');
 
-      const cancelled = await client.axios.patch(`/api/appointments/${id}/cancel`);
+      const cancelled = await client.axios.patch(
+        `/api/appointments/${id}/cancel`,
+      );
       expect(cancelled.status).toBe(200);
       expect(cancelled.data.status).toBe('CANCELLED');
     });
@@ -95,7 +114,9 @@ describe('@org/api-e2e appointments module', () => {
       expect(created.status).toBe(201);
       const id = created.data.id as string;
 
-      const cross = await b.client.axios.patch(`/api/appointments/${id}/check-in`);
+      const cross = await b.client.axios.patch(
+        `/api/appointments/${id}/check-in`,
+      );
       expect(cross.status).toBe(404);
     });
   });

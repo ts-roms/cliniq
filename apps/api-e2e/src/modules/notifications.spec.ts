@@ -33,33 +33,47 @@ describe('@org/api-e2e notifications module', () => {
       const admin = await env.makeAdmin(tenant);
 
       const title = `E2E Broadcast ${Date.now()}`;
-      const broadcast = await client.axios.post('/api/notifications/broadcast', {
-        title,
-        body: 'Hello team',
-        roles: ['ADMIN'],
-      });
+      const broadcast = await client.axios.post(
+        '/api/notifications/broadcast',
+        {
+          title,
+          body: 'Hello team',
+          roles: ['ADMIN'],
+        },
+      );
       expect(broadcast.status).toBe(200);
       expect(broadcast.data.ok).toBe(true);
 
       const list = await admin.client.axios.get('/api/notifications');
       expect(list.status).toBe(200);
-      const mine = (list.data as Array<{ id: string; title: string; readAt: string | null }>)
-        .find((n) => n.title === title);
+      const mine = (
+        list.data as Array<{ id: string; title: string; readAt: string | null }>
+      ).find((n) => n.title === title);
       expect(mine).toBeTruthy();
       expect(mine!.readAt).toBeNull();
 
-      const before = await admin.client.axios.get('/api/notifications/unread-count');
+      const before = await admin.client.axios.get(
+        '/api/notifications/unread-count',
+      );
       expect(before.status).toBe(200);
-      const beforeCount = typeof before.data === 'number' ? before.data : before.data.count ?? 0;
+      const beforeCount =
+        typeof before.data === 'number'
+          ? before.data
+          : (before.data.count ?? 0);
       expect(beforeCount).toBeGreaterThanOrEqual(1);
 
-      const read = await admin.client.axios.patch(`/api/notifications/${mine!.id}/read`);
+      const read = await admin.client.axios.patch(
+        `/api/notifications/${mine!.id}/read`,
+      );
       expect(read.status).toBe(200);
       expect(read.data.updated).toBe(1);
 
-      const after = await admin.client.axios.get('/api/notifications/unread-count');
+      const after = await admin.client.axios.get(
+        '/api/notifications/unread-count',
+      );
       expect(after.status).toBe(200);
-      const afterCount = typeof after.data === 'number' ? after.data : after.data.count ?? 0;
+      const afterCount =
+        typeof after.data === 'number' ? after.data : (after.data.count ?? 0);
       expect(afterCount).toBe(beforeCount - 1);
     });
 
@@ -76,12 +90,17 @@ describe('@org/api-e2e notifications module', () => {
         roles: ['ADMIN'],
       });
 
-      const cleared = await admin.client.axios.post('/api/notifications/read-all');
+      const cleared = await admin.client.axios.post(
+        '/api/notifications/read-all',
+      );
       expect(cleared.status).toBe(200);
 
-      const after = await admin.client.axios.get('/api/notifications/unread-count');
+      const after = await admin.client.axios.get(
+        '/api/notifications/unread-count',
+      );
       expect(after.status).toBe(200);
-      const afterCount = typeof after.data === 'number' ? after.data : after.data.count ?? 0;
+      const afterCount =
+        typeof after.data === 'number' ? after.data : (after.data.count ?? 0);
       expect(afterCount).toBe(0);
     });
 
@@ -89,47 +108,63 @@ describe('@org/api-e2e notifications module', () => {
       const { tenant } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
 
-      const res = await doctor.client.axios.post('/api/notifications/push-tokens', {
-        deviceId: `e2e-device-${Date.now()}`,
-        token: 'ExponentPushToken[FAKE-E2E-XXXX]',
-        platform: 'ios',
-      });
+      const res = await doctor.client.axios.post(
+        '/api/notifications/push-tokens',
+        {
+          deviceId: `e2e-device-${Date.now()}`,
+          token: 'ExponentPushToken[FAKE-E2E-XXXX]',
+          platform: 'ios',
+        },
+      );
       expect(res.status).toBe(200);
     });
   });
 
   describe('cross-user isolation', () => {
-    it('marking a notification read as user X does not affect user Y\'s row', async () => {
+    it("marking a notification read as user X does not affect user Y's row", async () => {
       const { tenant, client } = await env.makeTenant();
       const adminX = await env.makeAdmin(tenant);
       const adminY = await env.makeAdmin(tenant);
 
       const title = `xuser-${Date.now()}`;
-      const broadcast = await client.axios.post('/api/notifications/broadcast', {
-        title,
-        roles: ['ADMIN'],
-      });
+      const broadcast = await client.axios.post(
+        '/api/notifications/broadcast',
+        {
+          title,
+          roles: ['ADMIN'],
+        },
+      );
       expect(broadcast.status).toBe(200);
 
       const xList = await adminX.client.axios.get('/api/notifications');
-      const xRow = (xList.data as Array<{ id: string; title: string }>)
-        .find((n) => n.title === title);
+      const xRow = (xList.data as Array<{ id: string; title: string }>).find(
+        (n) => n.title === title,
+      );
       expect(xRow).toBeTruthy();
 
-      const read = await adminX.client.axios.patch(`/api/notifications/${xRow!.id}/read`);
+      const read = await adminX.client.axios.patch(
+        `/api/notifications/${xRow!.id}/read`,
+      );
       expect(read.status).toBe(200);
 
       // Admin Y still has it unread under their own row id.
-      const yList = await adminY.client.axios.get('/api/notifications?unread=true');
+      const yList = await adminY.client.axios.get(
+        '/api/notifications?unread=true',
+      );
       expect(yList.status).toBe(200);
-      const yRow = (yList.data as Array<{ id: string; title: string; readAt: string | null }>)
-        .find((n) => n.title === title);
+      const yRow = (
+        yList.data as Array<{
+          id: string;
+          title: string;
+          readAt: string | null;
+        }>
+      ).find((n) => n.title === title);
       expect(yRow).toBeTruthy();
       expect(yRow!.id).not.toBe(xRow!.id);
       expect(yRow!.readAt).toBeNull();
     });
 
-    it('user X cannot mark user Y\'s notification id as read (no-op, updated:0)', async () => {
+    it("user X cannot mark user Y's notification id as read (no-op, updated:0)", async () => {
       const { tenant, client } = await env.makeTenant();
       const adminX = await env.makeAdmin(tenant);
       const adminY = await env.makeAdmin(tenant);
@@ -141,8 +176,9 @@ describe('@org/api-e2e notifications module', () => {
       });
 
       const yList = await adminY.client.axios.get('/api/notifications');
-      const yRow = (yList.data as Array<{ id: string; title: string }>)
-        .find((n) => n.title === title);
+      const yRow = (yList.data as Array<{ id: string; title: string }>).find(
+        (n) => n.title === title,
+      );
       expect(yRow).toBeTruthy();
 
       const attempt = await adminX.client.axios.patch(
@@ -166,10 +202,13 @@ describe('@org/api-e2e notifications module', () => {
               ? await env.makeNurse(tenant)
               : await env.makeReceptionist(tenant);
 
-        const res = await user.client.axios.post('/api/notifications/broadcast', {
-          title: 'should-fail',
-          roles: ['ADMIN'],
-        });
+        const res = await user.client.axios.post(
+          '/api/notifications/broadcast',
+          {
+            title: 'should-fail',
+            roles: ['ADMIN'],
+          },
+        );
         expect(res.status).toBe(403);
       },
     );

@@ -56,7 +56,9 @@ export class NotificationsService {
         }),
       );
     } catch (err) {
-      this.logger.error(`notify failed (${input.kind}): ${(err as Error).message}`);
+      this.logger.error(
+        `notify failed (${input.kind}): ${(err as Error).message}`,
+      );
       return; // don't push if the in-app row didn't even land
     }
     // Fire-and-forget push fan-out. PushService swallows its own errors and
@@ -86,7 +88,9 @@ export class NotificationsService {
         }),
       );
     } catch (err) {
-      this.logger.error(`notifyMany failed (${input.kind}): ${(err as Error).message}`);
+      this.logger.error(
+        `notifyMany failed (${input.kind}): ${(err as Error).message}`,
+      );
       return;
     }
     void this.push.sendToUsers(input.userIds, {
@@ -99,7 +103,9 @@ export class NotificationsService {
   /** Convenience: fan-out to all ACTIVE users in a tenant matching any of the given roles. */
   async notifyRoles(
     tenantId: string,
-    roles: Array<'OWNER' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PATIENT'>,
+    roles: Array<
+      'OWNER' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PATIENT'
+    >,
     payload: Omit<NotifyInput, 'tenantId' | 'userId'>,
   ): Promise<void> {
     // tenant_users is RLS-scoped — read inside the tenant's context.
@@ -162,7 +168,11 @@ export class NotificationsService {
 }
 
 /** Shape passed to the mobile client via Expo's data field. Stays small. */
-function pushData(input: { kind: NotificationKind; link?: string; entityId?: string }) {
+function pushData(input: {
+  kind: NotificationKind;
+  link?: string;
+  entityId?: string;
+}) {
   return {
     kind: input.kind,
     ...(input.link ? { link: input.link } : {}),

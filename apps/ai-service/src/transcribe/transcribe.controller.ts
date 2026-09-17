@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { TranscribeService } from './transcribe.service.js';
@@ -29,7 +36,9 @@ export class TranscribeController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  async transcribe(@Body() dto: TranscribeRequestDto): Promise<TranscribeResponseDto> {
+  async transcribe(
+    @Body() dto: TranscribeRequestDto,
+  ): Promise<TranscribeResponseDto> {
     const result = await this.transcriber.transcribe(dto);
     this.logger.log(
       `transcribed s3://${dto.s3Bucket}/${dto.s3Key} via ${result.provider} (${result.durationSec ?? '?'}s)`,

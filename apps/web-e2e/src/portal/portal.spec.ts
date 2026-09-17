@@ -4,7 +4,9 @@ test.describe('@web patient portal', () => {
   test('home (/portal) renders cards for the patient', async ({ page }) => {
     await page.goto('/portal');
     await expect(page).not.toHaveURL(/\/portal\/login/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('appointments page renders', async ({ page }) => {

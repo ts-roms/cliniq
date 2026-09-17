@@ -76,7 +76,11 @@ export class LabTreatmentPlansService {
     });
   }
 
-  async update(id: string, dto: UpdateTreatmentPlanDto, user: AuthenticatedUser) {
+  async update(
+    id: string,
+    dto: UpdateTreatmentPlanDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const plan = await this.loadEditableAsLab(tx, id, user.tenantId);
       return tx.labTreatmentPlan.update({
@@ -96,48 +100,54 @@ export class LabTreatmentPlansService {
    * the revision counter ticks up.
    */
   async propose(id: string, user: AuthenticatedUser) {
-    const plan = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const existing = await tx.labTreatmentPlan.findFirst({
-        where: { id, labTenantId: user.tenantId, deletedAt: null },
-      });
-      if (!existing) throw new NotFoundException('plan not found');
-      const proposable: LabTreatmentPlanStatus[] = [
-        LabTreatmentPlanStatus.DRAFT,
-        LabTreatmentPlanStatus.REVISION_REQUESTED,
-      ];
-      if (!proposable.includes(existing.status)) {
-        throw new BadRequestException(
-          `cannot propose a ${existing.status} plan`,
-        );
-      }
-      let revision = existing.revision;
-      if (revision === null) {
-        const max = await tx.labTreatmentPlan.aggregate({
-          where: { caseId: existing.caseId },
-          _max: { revision: true },
+    const plan = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const existing = await tx.labTreatmentPlan.findFirst({
+          where: { id, labTenantId: user.tenantId, deletedAt: null },
         });
-        revision = (max._max.revision ?? 0) + 1;
-      }
-      const updated = await tx.labTreatmentPlan.update({
-        where: { id },
-        data: {
-          status: LabTreatmentPlanStatus.PROPOSED,
-          revision,
-          proposedAt: new Date(),
-          // Clear stale decision metadata when re-proposing after a revision
-          // request — the new decision will write fresh values.
-          decidedAt: null,
-          decidedByUserId: null,
-        },
-        include: { files: { where: { deletedAt: null } }, approvals: true },
-      });
-      this.logger.log(
-        `treatment plan ${id} proposed as rev ${revision} by ${user.userId}`,
-      );
-      return updated;
-    });
+        if (!existing) throw new NotFoundException('plan not found');
+        const proposable: LabTreatmentPlanStatus[] = [
+          LabTreatmentPlanStatus.DRAFT,
+          LabTreatmentPlanStatus.REVISION_REQUESTED,
+        ];
+        if (!proposable.includes(existing.status)) {
+          throw new BadRequestException(
+            `cannot propose a ${existing.status} plan`,
+          );
+        }
+        let revision = existing.revision;
+        if (revision === null) {
+          const max = await tx.labTreatmentPlan.aggregate({
+            where: { caseId: existing.caseId },
+            _max: { revision: true },
+          });
+          revision = (max._max.revision ?? 0) + 1;
+        }
+        const updated = await tx.labTreatmentPlan.update({
+          where: { id },
+          data: {
+            status: LabTreatmentPlanStatus.PROPOSED,
+            revision,
+            proposedAt: new Date(),
+            // Clear stale decision metadata when re-proposing after a revision
+            // request — the new decision will write fresh values.
+            decidedAt: null,
+            decidedByUserId: null,
+          },
+          include: { files: { where: { deletedAt: null } }, approvals: true },
+        });
+        this.logger.log(
+          `treatment plan ${id} proposed as rev ${revision} by ${user.userId}`,
+        );
+        return updated;
+      },
+    );
     void this.notifyPlanProposed(plan.id).catch((err) =>
-      this.logger.warn(`plan-proposed notify failed: ${(err as Error).message}`),
+      this.logger.warn(
+        `plan-proposed notify failed: ${(err as Error).message}`,
+      ),
     );
     return plan;
   }
@@ -256,57 +266,64 @@ export class LabTreatmentPlansService {
     notes: string | null,
     user: AuthenticatedUser,
   ) {
-    const result = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const plan = await tx.labTreatmentPlan.findFirst({
-        where: { id, clinicTenantId: user.tenantId, deletedAt: null },
-      });
-      if (!plan) {
-        throw new NotFoundException(
-          'plan not found (or not visible to this clinic)',
+    const result = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const plan = await tx.labTreatmentPlan.findFirst({
+          where: { id, clinicTenantId: user.tenantId, deletedAt: null },
+        });
+        if (!plan) {
+          throw new NotFoundException(
+            'plan not found (or not visible to this clinic)',
+          );
+        }
+        if (plan.status !== LabTreatmentPlanStatus.PROPOSED) {
+          throw new BadRequestException(
+            `decisions only apply to PROPOSED plans (current: ${plan.status})`,
+          );
+        }
+        const nextStatus =
+          decision === LabTreatmentPlanDecision.APPROVED
+            ? LabTreatmentPlanStatus.APPROVED
+            : decision === LabTreatmentPlanDecision.REJECTED
+              ? LabTreatmentPlanStatus.REJECTED
+              : LabTreatmentPlanStatus.REVISION_REQUESTED;
+        const now = new Date();
+        const [, updated] = await Promise.all([
+          tx.labTreatmentPlanApproval.create({
+            data: {
+              planId: plan.id,
+              decision,
+              decidedByUserId: user.userId,
+              decidedByTenantId: user.tenantId,
+              notes: notes ?? null,
+              summarySnapshot: plan.summary,
+              decidedAt: now,
+            },
+          }),
+          tx.labTreatmentPlan.update({
+            where: { id },
+            data: {
+              status: nextStatus,
+              decidedAt: now,
+              decidedByUserId: user.userId,
+            },
+            include: {
+              files: {
+                where: { deletedAt: null },
+                orderBy: { createdAt: 'asc' },
+              },
+              approvals: { orderBy: { decidedAt: 'desc' } },
+            },
+          }),
+        ]);
+        this.logger.log(
+          `treatment plan ${id} ${decision} by clinic user ${user.userId}`,
         );
-      }
-      if (plan.status !== LabTreatmentPlanStatus.PROPOSED) {
-        throw new BadRequestException(
-          `decisions only apply to PROPOSED plans (current: ${plan.status})`,
-        );
-      }
-      const nextStatus =
-        decision === LabTreatmentPlanDecision.APPROVED
-          ? LabTreatmentPlanStatus.APPROVED
-          : decision === LabTreatmentPlanDecision.REJECTED
-            ? LabTreatmentPlanStatus.REJECTED
-            : LabTreatmentPlanStatus.REVISION_REQUESTED;
-      const now = new Date();
-      const [, updated] = await Promise.all([
-        tx.labTreatmentPlanApproval.create({
-          data: {
-            planId: plan.id,
-            decision,
-            decidedByUserId: user.userId,
-            decidedByTenantId: user.tenantId,
-            notes: notes ?? null,
-            summarySnapshot: plan.summary,
-            decidedAt: now,
-          },
-        }),
-        tx.labTreatmentPlan.update({
-          where: { id },
-          data: {
-            status: nextStatus,
-            decidedAt: now,
-            decidedByUserId: user.userId,
-          },
-          include: {
-            files: { where: { deletedAt: null }, orderBy: { createdAt: 'asc' } },
-            approvals: { orderBy: { decidedAt: 'desc' } },
-          },
-        }),
-      ]);
-      this.logger.log(
-        `treatment plan ${id} ${decision} by clinic user ${user.userId}`,
-      );
-      return updated;
-    });
+        return updated;
+      },
+    );
     void this.notifyPlanDecided(result.id, decision, notes).catch((err) =>
       this.logger.warn(`plan-decided notify failed: ${(err as Error).message}`),
     );
@@ -335,7 +352,9 @@ export class LabTreatmentPlansService {
     );
     if (!plan) return;
     const ref =
-      plan.case.refNumber !== null ? `#${plan.case.refNumber}` : plan.case.id.slice(-6);
+      plan.case.refNumber !== null
+        ? `#${plan.case.refNumber}`
+        : plan.case.id.slice(-6);
     const url = this.notify.webUrl(`/lab-cases/${plan.case.id}`);
     await this.notify.notifyOwner(plan.case.clinicTenantId, (r) => ({
       subject: `${plan.case.lab.name} proposed treatment plan for case ${ref}`,
@@ -373,7 +392,9 @@ export class LabTreatmentPlansService {
     );
     if (!plan) return;
     const ref =
-      plan.case.refNumber !== null ? `#${plan.case.refNumber}` : plan.case.id.slice(-6);
+      plan.case.refNumber !== null
+        ? `#${plan.case.refNumber}`
+        : plan.case.id.slice(-6);
     const verb =
       decision === LabTreatmentPlanDecision.APPROVED
         ? 'approved'
@@ -402,24 +423,35 @@ export class LabTreatmentPlansService {
    * notes, and any logged material lots — that's the context the prompt
    * was tuned on. Lab-only.
    */
-  async draftSummary(caseId: string, user: AuthenticatedUser): Promise<{ summary: string }> {
+  async draftSummary(
+    caseId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ summary: string }> {
     // Hard cap — refuse the call before we touch ai-service / Bedrock if the
     // lab tenant is out of budget for the month.
     await this.budget.assertNotExceeded(user.tenantId);
 
-    const ctx = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const labCase = await tx.labCase.findFirst({
-        where: { id: caseId, labTenantId: user.tenantId, deletedAt: null },
-        include: {
-          product: { select: { name: true } },
-          materialUsages: { include: { lot: { include: { material: true } } } },
-        },
-      });
-      if (!labCase) {
-        throw new NotFoundException('case not found (or not owned by this lab)');
-      }
-      return labCase;
-    });
+    const ctx = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const labCase = await tx.labCase.findFirst({
+          where: { id: caseId, labTenantId: user.tenantId, deletedAt: null },
+          include: {
+            product: { select: { name: true } },
+            materialUsages: {
+              include: { lot: { include: { material: true } } },
+            },
+          },
+        });
+        if (!labCase) {
+          throw new NotFoundException(
+            'case not found (or not owned by this lab)',
+          );
+        }
+        return labCase;
+      },
+    );
     const formData = (ctx.formData ?? null) as Record<string, unknown> | null;
     const result = await this.ai.draftLabTreatmentPlan({
       case: {

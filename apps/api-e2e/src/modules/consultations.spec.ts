@@ -5,7 +5,12 @@
  * those need a stub ai-service running. They live in the ai-service contract
  * spec instead (Phase 3 of the e2e plan).
  */
-import { bootEnv, type E2EEnv, type E2ETenant, type E2EClient } from '../support/harness';
+import {
+  bootEnv,
+  type E2EEnv,
+  type E2ETenant,
+  type E2EClient,
+} from '../support/harness';
 
 async function seedPatient(client: E2EClient, mrn: string): Promise<string> {
   const res = await client.axios.post('/api/patients', {
@@ -16,7 +21,9 @@ async function seedPatient(client: E2EClient, mrn: string): Promise<string> {
     sex: 'FEMALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
 }
@@ -44,16 +51,23 @@ describe('@org/api-e2e consultations module', () => {
       expect(started.status).toBe(201);
       const id = started.data.id as string;
 
-      const updated = await doctor.client.axios.patch(`/api/consultations/${id}`, {
-        chiefComplaint: 'Headache',
-        subjective: { onset: 'this morning', severity: 6 },
-        objective: { vitals: { bp: '120/80' } },
-        assessment: [{ problem: 'Tension headache', icd10: 'G44.2' }],
-        plan: [{ problem: 'Tension headache', actions: ['paracetamol 500mg PO'] }],
-      });
+      const updated = await doctor.client.axios.patch(
+        `/api/consultations/${id}`,
+        {
+          chiefComplaint: 'Headache',
+          subjective: { onset: 'this morning', severity: 6 },
+          objective: { vitals: { bp: '120/80' } },
+          assessment: [{ problem: 'Tension headache', icd10: 'G44.2' }],
+          plan: [
+            { problem: 'Tension headache', actions: ['paracetamol 500mg PO'] },
+          ],
+        },
+      );
       expect(updated.status).toBe(200);
 
-      const completed = await doctor.client.axios.post(`/api/consultations/${id}/complete`);
+      const completed = await doctor.client.axios.post(
+        `/api/consultations/${id}/complete`,
+      );
       expect(completed.status).toBe(201);
     });
   });
@@ -77,7 +91,9 @@ describe('@org/api-e2e consultations module', () => {
       const b = await env.makeTenant();
       const patientId = await seedPatient(a.client, 'CON-RLS-001');
 
-      const started = await a.client.axios.post('/api/consultations', { patientId });
+      const started = await a.client.axios.post('/api/consultations', {
+        patientId,
+      });
       expect(started.status).toBe(201);
       const id = started.data.id as string;
 
@@ -92,7 +108,9 @@ describe('@org/api-e2e consultations module', () => {
         baseURL: env.baseUrl,
         validateStatus: () => true,
       });
-      const res = await axiosBare.post('/api/consultations', { patientId: 'x' });
+      const res = await axiosBare.post('/api/consultations', {
+        patientId: 'x',
+      });
       expect(res.status).toBe(401);
     });
   });

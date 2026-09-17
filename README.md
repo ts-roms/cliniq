@@ -76,23 +76,23 @@ pnpm docker:up      # docker compose up -d --build
 
 #### Docker scripts
 
-| Script | Runs | What it does |
-|---|---|---|
-| `pnpm docker:up` | `docker compose up -d --build` | Build + start the whole stack (postgres → migrate → api, ai-service, web) |
-| `pnpm docker:up:web` | `docker compose up -d --build web` | Build + start **web** and only the services it depends on (api → migrate → postgres) |
-| `pnpm docker:start` | `docker compose up -d` | Start without rebuilding (use after a plain `docker:stop`) |
-| `pnpm docker:stop` | `docker compose stop` | Stop containers, keep them around |
-| `pnpm docker:down` | `docker compose down` | Remove containers (keeps the postgres volume) |
-| `pnpm docker:reset` | `docker compose down -v` | Remove containers **and wipe the database volume** |
-| `pnpm docker:build` | `docker compose build` | Rebuild all images without starting |
-| `pnpm docker:build:web` | `docker compose build web` | Rebuild just the web image |
-| `pnpm docker:logs` | `docker compose logs -f` | Tail every service |
-| `pnpm docker:logs:web` | `docker compose logs -f web` | Tail web only |
-| `pnpm docker:logs:api` | `docker compose logs -f api` | Tail api only |
-| `pnpm docker:ps` | `docker compose ps` | Show container status/ports |
-| `pnpm docker:migrate` | `docker compose run --rm migrate` | Re-run Prisma migrations after a schema change |
-| `pnpm docker:sh:web` | `docker compose exec web sh` | Shell into the running web container |
-| `pnpm docker:sh:api` | `docker compose exec api sh` | Shell into the running api container |
+| Script                  | Runs                               | What it does                                                                         |
+| ----------------------- | ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `pnpm docker:up`        | `docker compose up -d --build`     | Build + start the whole stack (postgres → migrate → api, ai-service, web)            |
+| `pnpm docker:up:web`    | `docker compose up -d --build web` | Build + start **web** and only the services it depends on (api → migrate → postgres) |
+| `pnpm docker:start`     | `docker compose up -d`             | Start without rebuilding (use after a plain `docker:stop`)                           |
+| `pnpm docker:stop`      | `docker compose stop`              | Stop containers, keep them around                                                    |
+| `pnpm docker:down`      | `docker compose down`              | Remove containers (keeps the postgres volume)                                        |
+| `pnpm docker:reset`     | `docker compose down -v`           | Remove containers **and wipe the database volume**                                   |
+| `pnpm docker:build`     | `docker compose build`             | Rebuild all images without starting                                                  |
+| `pnpm docker:build:web` | `docker compose build web`         | Rebuild just the web image                                                           |
+| `pnpm docker:logs`      | `docker compose logs -f`           | Tail every service                                                                   |
+| `pnpm docker:logs:web`  | `docker compose logs -f web`       | Tail web only                                                                        |
+| `pnpm docker:logs:api`  | `docker compose logs -f api`       | Tail api only                                                                        |
+| `pnpm docker:ps`        | `docker compose ps`                | Show container status/ports                                                          |
+| `pnpm docker:migrate`   | `docker compose run --rm migrate`  | Re-run Prisma migrations after a schema change                                       |
+| `pnpm docker:sh:web`    | `docker compose exec web sh`       | Shell into the running web container                                                 |
+| `pnpm docker:sh:api`    | `docker compose exec api sh`       | Shell into the running api container                                                 |
 
 #### Running only the web app in Docker
 
@@ -118,12 +118,12 @@ pnpm docker:build:web && pnpm docker:start
 
 Each is overridable in `.env`:
 
-| Variable | Default | Service |
-|---|---|---|
-| `WEB_PORT` | `3000` | web |
-| `API_PORT` | `4000` | api |
-| `AI_PORT` | `4100` | ai-service |
-| `POSTGRES_PORT` | `5432` | postgres |
+| Variable        | Default | Service    |
+| --------------- | ------- | ---------- |
+| `WEB_PORT`      | `3000`  | web        |
+| `API_PORT`      | `4000`  | api        |
+| `AI_PORT`       | `4100`  | ai-service |
+| `POSTGRES_PORT` | `5432`  | postgres   |
 
 The `migrate` service is a one-shot — it blocks `api`/`web` boot via
 `service_completed_successfully` so the first request never races a
@@ -150,12 +150,12 @@ pnpm dev                   # api + ai-service + web, all in one terminal
 — Nx interleaves the three continuous tasks and prefixes each line with the
 project name. To run them individually (separate terminals, cleaner logs):
 
-| Script | Runs | URL |
-|---|---|---|
-| `pnpm dev:web` | `nx dev @org/web` | http://localhost:3000 |
-| `pnpm dev:api` | `nx serve @org/api` | http://localhost:4000/api |
-| `pnpm dev:ai` | `nx serve @org/ai-service` | http://localhost:4100 |
-| `pnpm dev:mobile` | `nx start @org/mobile` | Expo dev menu |
+| Script            | Runs                       | URL                       |
+| ----------------- | -------------------------- | ------------------------- |
+| `pnpm dev:web`    | `nx dev @org/web`          | http://localhost:3000     |
+| `pnpm dev:api`    | `nx serve @org/api`        | http://localhost:4000/api |
+| `pnpm dev:ai`     | `nx serve @org/ai-service` | http://localhost:4100     |
+| `pnpm dev:mobile` | `nx start @org/mobile`     | Expo dev menu             |
 
 #### Running only the web app natively
 
@@ -174,23 +174,23 @@ pnpm start:web      # nx start @org/web — serves the built output on :3000
 
 ### Database scripts
 
-| Script | Runs |
-|---|---|
-| `pnpm db:migrate` | `prisma migrate deploy` — apply pending migrations |
-| `pnpm db:generate` | `prisma generate` — regen the client after a schema edit |
-| `pnpm db:studio` | `prisma studio` — browse data |
-| `pnpm db:seed` | Prisma seed + `tools/scripts/seed-dev.ts` |
-| `pnpm db:reset` | `prisma migrate reset --force` — **drops and recreates** the DB |
-| `pnpm seed:platform-admin` | Seed the platform admin account |
-| `pnpm seed:demo-lab` | Seed the demo lab tenant |
+| Script                     | Runs                                                            |
+| -------------------------- | --------------------------------------------------------------- |
+| `pnpm db:migrate`          | `prisma migrate deploy` — apply pending migrations              |
+| `pnpm db:generate`         | `prisma generate` — regen the client after a schema edit        |
+| `pnpm db:studio`           | `prisma studio` — browse data                                   |
+| `pnpm db:seed`             | Prisma seed + `tools/scripts/seed-dev.ts`                       |
+| `pnpm db:reset`            | `prisma migrate reset --force` — **drops and recreates** the DB |
+| `pnpm seed:platform-admin` | Seed the platform admin account                                 |
+| `pnpm seed:demo-lab`       | Seed the demo lab tenant                                        |
 
 ### Quality scripts
 
-| Script | Runs |
-|---|---|
-| `pnpm lint` | `nx run-many -t lint` |
-| `pnpm test` | `nx run-many -t test` |
-| `pnpm e2e` | `nx run-many -t e2e` (see [E2E tests](#e2e-tests) for prereqs) |
+| Script      | Runs                                                           |
+| ----------- | -------------------------------------------------------------- |
+| `pnpm lint` | `nx run-many -t lint`                                          |
+| `pnpm test` | `nx run-many -t test`                                          |
+| `pnpm e2e`  | `nx run-many -t e2e` (see [E2E tests](#e2e-tests) for prereqs) |
 
 ## Useful Nx commands
 
@@ -207,11 +207,11 @@ pnpm nx sync                         # sync TS project references
 
 Three suites live in the workspace, each owned by a sibling `*-e2e` project:
 
-| Suite | Runner | Project | Targets |
-|---|---|---|---|
-| `@org/api-e2e` | Jest + supertest | api on :4000 | tenant isolation, RBAC, queue, OB, lab, feature gates |
-| `@org/ai-service-e2e` | Jest | ai-service on :4100 | Bedrock proxy contract |
-| `@org/web-e2e` | Playwright | web on :3000 (driving api on :4000) | clinic / portal / lab / platform shells + responsive + a11y |
+| Suite                 | Runner           | Project                             | Targets                                                     |
+| --------------------- | ---------------- | ----------------------------------- | ----------------------------------------------------------- |
+| `@org/api-e2e`        | Jest + supertest | api on :4000                        | tenant isolation, RBAC, queue, OB, lab, feature gates       |
+| `@org/ai-service-e2e` | Jest             | ai-service on :4100                 | Bedrock proxy contract                                      |
+| `@org/web-e2e`        | Playwright       | web on :3000 (driving api on :4000) | clinic / portal / lab / platform shells + responsive + a11y |
 
 ### Prereqs
 
@@ -263,12 +263,12 @@ HTML report lands at `apps/web-e2e/playwright-report/` — open `index.html` (or
 
 ### Env var overrides
 
-| Variable | Used by | Default |
-|---|---|---|
-| `API_E2E_URL` | api-e2e wait-for-port + web-e2e provisioner | `http://127.0.0.1:4000` |
-| `WEB_E2E_BASE_URL` | web-e2e Playwright base URL | `http://127.0.0.1:3000` |
-| `HOST` / `PORT` | api-e2e + ai-service-e2e port wait (alternative to `API_E2E_URL`) | `localhost` / `4000` |
-| `CI` | web-e2e (forces `forbidOnly`, 2 retries, 2 workers, html+github reporters) | unset |
+| Variable           | Used by                                                                    | Default                 |
+| ------------------ | -------------------------------------------------------------------------- | ----------------------- |
+| `API_E2E_URL`      | api-e2e wait-for-port + web-e2e provisioner                                | `http://127.0.0.1:4000` |
+| `WEB_E2E_BASE_URL` | web-e2e Playwright base URL                                                | `http://127.0.0.1:3000` |
+| `HOST` / `PORT`    | api-e2e + ai-service-e2e port wait (alternative to `API_E2E_URL`)          | `localhost` / `4000`    |
+| `CI`               | web-e2e (forces `forbidOnly`, 2 retries, 2 workers, html+github reporters) | unset                   |
 
 ### Tips
 

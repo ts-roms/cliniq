@@ -92,8 +92,8 @@ export default function QueuePage() {
         <div>
           <h1 className="text-2xl font-semibold">Patient queue</h1>
           <p className="text-sm text-muted-foreground">
-            Issue tickets, call the next patient, and close the line as
-            patients are served.
+            Issue tickets, call the next patient, and close the line as patients
+            are served.
           </p>
         </div>
         <div className="flex gap-2">
@@ -153,7 +153,10 @@ export default function QueuePage() {
     });
 
     const close = useMutation({
-      mutationFn: async (input: { id: string; status: 'SERVED' | 'NO_SHOW' | 'CANCELLED' }) => {
+      mutationFn: async (input: {
+        id: string;
+        status: 'SERVED' | 'NO_SHOW' | 'CANCELLED';
+      }) => {
         const { data, error } = await queueControllerClose({
           path: { id: input.id },
           body: { status: input.status } as never,
@@ -175,9 +178,15 @@ export default function QueuePage() {
               </span>
             </span>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>Waiting: <b className="text-foreground">{waiting.length}</b></span>
-              <span>Called: <b className="text-foreground">{called.length}</b></span>
-              <span>Served today: <b className="text-foreground">{servedToday}</b></span>
+              <span>
+                Waiting: <b className="text-foreground">{waiting.length}</b>
+              </span>
+              <span>
+                Called: <b className="text-foreground">{called.length}</b>
+              </span>
+              <span>
+                Served today: <b className="text-foreground">{servedToday}</b>
+              </span>
               <Button
                 size="sm"
                 onClick={() => callNext.mutate()}
@@ -257,10 +266,18 @@ function TicketColumn({
               </span>
               {showActions && (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => onAction(t.id, 'SERVED')}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onAction(t.id, 'SERVED')}
+                  >
                     Served
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => onAction(t.id, 'NO_SHOW')}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onAction(t.id, 'NO_SHOW')}
+                  >
                     No-show
                   </Button>
                 </>
@@ -280,7 +297,11 @@ function IssueTicketRow({ queueId }: { queueId: string }) {
   const issue = useMutation({
     mutationFn: async () => {
       const { data, error } = await queueControllerIssue({
-        body: { queueId, label: label || undefined, phone: phone || undefined } as never,
+        body: {
+          queueId,
+          label: label || undefined,
+          phone: phone || undefined,
+        } as never,
       });
       if (error) throw new Error('Failed');
       return data;
@@ -319,7 +340,9 @@ function IssueTicketRow({ queueId }: { queueId: string }) {
 
 function NewQueueForm({ onDone }: { onDone: () => void }) {
   const qc = useQueryClient();
-  const [kind, setKind] = useState<'WALK_IN' | 'APPOINTMENT' | 'DRIVE_THRU' | 'PRIORITY'>('WALK_IN');
+  const [kind, setKind] = useState<
+    'WALK_IN' | 'APPOINTMENT' | 'DRIVE_THRU' | 'PRIORITY'
+  >('WALK_IN');
   const [name, setName] = useState('');
   const [prefix, setPrefix] = useState('A');
 
@@ -350,7 +373,10 @@ function NewQueueForm({ onDone }: { onDone: () => void }) {
           }}
           className="grid gap-3 md:grid-cols-[200px,1fr,100px,auto]"
         >
-          <Select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+          <Select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as typeof kind)}
+          >
             <option value="WALK_IN">Walk-in</option>
             <option value="APPOINTMENT">Appointment</option>
             <option value="DRIVE_THRU">Drive-thru</option>
@@ -363,7 +389,9 @@ function NewQueueForm({ onDone }: { onDone: () => void }) {
           />
           <Input
             value={prefix}
-            onChange={(e) => setPrefix(e.target.value.toUpperCase().slice(0, 4))}
+            onChange={(e) =>
+              setPrefix(e.target.value.toUpperCase().slice(0, 4))
+            }
             placeholder="A"
           />
           <Button type="submit" disabled={create.isPending}>

@@ -62,7 +62,10 @@ describe('@org/api-e2e files module', () => {
     it('DOCTOR can presign a public (non-PHI) upload', async () => {
       const { tenant } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
-      const res = await doctor.client.axios.post('/api/files/presign', PRESIGN_PUBLIC);
+      const res = await doctor.client.axios.post(
+        '/api/files/presign',
+        PRESIGN_PUBLIC,
+      );
       expect(res.status).toBe(201);
       expect(res.data.fileId).toBeTruthy();
       // Non-PHI category should NOT carry the KMS header.
@@ -72,7 +75,10 @@ describe('@org/api-e2e files module', () => {
     it('RECEPTIONIST can presign a clinic logo upload (PATIENT_WRITE)', async () => {
       const { tenant } = await env.makeTenant();
       const recp = await env.makeReceptionist(tenant);
-      const res = await recp.client.axios.post('/api/files/presign', PRESIGN_PUBLIC);
+      const res = await recp.client.axios.post(
+        '/api/files/presign',
+        PRESIGN_PUBLIC,
+      );
       expect(res.status).toBe(201);
     });
 
@@ -90,7 +96,10 @@ describe('@org/api-e2e files module', () => {
     it('PATIENT cannot presign an upload (lacks PATIENT_WRITE)', async () => {
       const { tenant } = await env.makeTenant();
       const patient = await env.makePatient(tenant);
-      const res = await patient.client.axios.post('/api/files/presign', PRESIGN_AUDIO);
+      const res = await patient.client.axios.post(
+        '/api/files/presign',
+        PRESIGN_AUDIO,
+      );
       expect(res.status).toBe(403);
     });
 
@@ -109,7 +118,10 @@ describe('@org/api-e2e files module', () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 
-      const presign = await a.client.axios.post('/api/files/presign', PRESIGN_AUDIO);
+      const presign = await a.client.axios.post(
+        '/api/files/presign',
+        PRESIGN_AUDIO,
+      );
       expect(presign.status).toBe(201);
       const aFileId = presign.data.fileId as string;
 

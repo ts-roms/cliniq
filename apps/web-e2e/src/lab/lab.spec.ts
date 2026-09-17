@@ -4,7 +4,9 @@ test.describe('@web lab marketplace', () => {
   test('cases page renders for LAB tenant', async ({ page }) => {
     await page.goto('/lab/cases');
     await expect(page).toHaveURL(/\/lab\/cases/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('billing list renders', async ({ page }) => {
@@ -46,6 +48,8 @@ test.describe('@web lab marketplace', () => {
   test('stats page renders charts', async ({ page }) => {
     await page.goto('/lab/stats');
     await expect(page).toHaveURL(/\/lab\/stats/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

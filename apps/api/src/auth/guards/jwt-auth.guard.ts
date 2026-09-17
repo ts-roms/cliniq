@@ -48,10 +48,10 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     // Platform routes go through PlatformAuthGuard, not this one.
-    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(
+      IS_PLATFORM_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (isPlatform) return true;
 
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -90,7 +90,9 @@ export class JwtAuthGuard implements CanActivate {
     // X-Acting-For: <userId>. If present, validate an active delegation exists
     // and override the request's effective role with the delegator's role.
     const actingForRaw = req.headers[ACTING_FOR_HEADER];
-    const actingFor = Array.isArray(actingForRaw) ? actingForRaw[0] : actingForRaw;
+    const actingFor = Array.isArray(actingForRaw)
+      ? actingForRaw[0]
+      : actingForRaw;
     if (actingFor && actingFor.trim().length > 0) {
       if (actingFor === user.userId) {
         throw new ForbiddenException('cannot act on behalf of yourself');
@@ -105,15 +107,18 @@ export class JwtAuthGuard implements CanActivate {
       }
       // RLS: tenant_users_isolation requires current_tenant. The guard runs
       // before any service wraps a tx, so the bare client misses the row.
-      const membership = await this.prisma.withTenant(user.tenantId, null, (tx) =>
-        tx.tenantUser.findFirst({
-          where: {
-            tenantId: user.tenantId,
-            userId: actingFor,
-            status: MemberStatus.ACTIVE,
-          },
-          select: { role: true },
-        }),
+      const membership = await this.prisma.withTenant(
+        user.tenantId,
+        null,
+        (tx) =>
+          tx.tenantUser.findFirst({
+            where: {
+              tenantId: user.tenantId,
+              userId: actingFor,
+              status: MemberStatus.ACTIVE,
+            },
+            select: { role: true },
+          }),
       );
       if (!membership) {
         throw new ForbiddenException('delegator is no longer an active member');

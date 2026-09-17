@@ -125,7 +125,10 @@ export function configureAutoRefresh(opts: {
     // Only retry once per request.
     if (request.headers.get('x-cliniq-retry') === '1') return response;
 
-    if (!inflight) inflight = doRefresh().finally(() => { inflight = null; });
+    if (!inflight)
+      inflight = doRefresh().finally(() => {
+        inflight = null;
+      });
     const next = await inflight;
 
     if (!next) {
@@ -160,7 +163,9 @@ export function configureAutoRefresh(opts: {
   });
 }
 
-export async function authHeader(getToken: TokenGetter): Promise<Record<string, string>> {
+export async function authHeader(
+  getToken: TokenGetter,
+): Promise<Record<string, string>> {
   const token = await getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

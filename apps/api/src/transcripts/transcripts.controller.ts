@@ -25,13 +25,17 @@ import { AiBudgetService } from '../ai-budget/ai-budget.service.js';
  * per token, so we keep a simple table here and bill from `durationSec` if
  * the provider returned it.
  */
-function estimateSttCostCentavos(durationSec: number | undefined, provider: string): number {
+function estimateSttCostCentavos(
+  durationSec: number | undefined,
+  provider: string,
+): number {
   if (!durationSec || durationSec <= 0) return 1;
   const minutes = durationSec / 60;
-  const pesoPerMinute =
-    /transcribe-medical/i.test(provider) ? 0.014 :
-    /whisper/i.test(provider) ? 0.0036 :
-    0.0072;
+  const pesoPerMinute = /transcribe-medical/i.test(provider)
+    ? 0.014
+    : /whisper/i.test(provider)
+      ? 0.0036
+      : 0.0072;
   return Math.max(1, Math.ceil(minutes * pesoPerMinute * 100));
 }
 
@@ -70,7 +74,11 @@ export class TranscriptsController {
   @Post()
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.AI_USE)
-  @Audit({ action: 'ai.transcribe', entity: 'FileObject', entityIdFrom: 'body:id' })
+  @Audit({
+    action: 'ai.transcribe',
+    entity: 'FileObject',
+    entityIdFrom: 'body:id',
+  })
   async transcribe(
     @Body() dto: TranscribeFileDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -84,8 +92,8 @@ export class TranscriptsController {
       throw new BadRequestException('File must be category CONSULT_AUDIO');
     }
     const bucket = file.isPhi
-      ? this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev'
-      : this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+      ? (this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev')
+      : (this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev');
 
     const result = await this.ai.transcribe({
       s3Bucket: bucket,
@@ -104,6 +112,10 @@ export class TranscriptsController {
         /* logged inside the service */
       });
 
-    return { transcript: result.transcript, provider: result.provider, fileId: file.id };
+    return {
+      transcript: result.transcript,
+      provider: result.provider,
+      fileId: file.id,
+    };
   }
 }

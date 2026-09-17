@@ -13,7 +13,10 @@
  */
 import { bootEnv, type E2EEnv, type E2EClient } from '../support/harness';
 
-async function seedFemalePatient(client: E2EClient, mrn: string): Promise<string> {
+async function seedFemalePatient(
+  client: E2EClient,
+  mrn: string,
+): Promise<string> {
   const res = await client.axios.post('/api/patients', {
     mrn,
     firstName: 'Ana',
@@ -22,7 +25,9 @@ async function seedFemalePatient(client: E2EClient, mrn: string): Promise<string
     sex: 'FEMALE',
   });
   if (res.status !== 201) {
-    throw new Error(`patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`);
+    throw new Error(
+      `patient seed failed: ${res.status} ${JSON.stringify(res.data).slice(0, 200)}`,
+    );
   }
   return res.data.id as string;
 }
@@ -127,7 +132,9 @@ describe('@org/api-e2e ob module', () => {
         lmp: '2026-02-15',
       });
 
-      const list = await client.axios.get(`/api/ob/pregnancies?patientId=${patientId}`);
+      const list = await client.axios.get(
+        `/api/ob/pregnancies?patientId=${patientId}`,
+      );
       expect(list.status).toBe(200);
       expect(Array.isArray(list.data)).toBe(true);
       expect(list.data.length).toBeGreaterThanOrEqual(1);
@@ -193,7 +200,9 @@ describe('@org/api-e2e ob module', () => {
       });
       expect(us.status).toBe(201);
 
-      const cross = await b.client.axios.get(`/api/ob/ultrasound/${us.data.id}`);
+      const cross = await b.client.axios.get(
+        `/api/ob/ultrasound/${us.data.id}`,
+      );
       expect([403, 404]).toContain(cross.status);
     });
 

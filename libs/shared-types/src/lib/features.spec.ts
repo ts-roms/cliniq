@@ -116,8 +116,12 @@ describe('LAB_PLAN_FEATURES (lab ladder)', () => {
   it('LAB_STANDARD adds phase tracking, chat, materials, payment links', () => {
     expect(LAB_PLAN_FEATURES.LAB_STANDARD.has(Features.LAB_PHASES)).toBe(true);
     expect(LAB_PLAN_FEATURES.LAB_STANDARD.has(Features.LAB_CHAT)).toBe(true);
-    expect(LAB_PLAN_FEATURES.LAB_STANDARD.has(Features.LAB_MATERIALS_LOT)).toBe(true);
-    expect(LAB_PLAN_FEATURES.LAB_STANDARD.has(Features.LAB_PAYMENT_LINKS)).toBe(true);
+    expect(LAB_PLAN_FEATURES.LAB_STANDARD.has(Features.LAB_MATERIALS_LOT)).toBe(
+      true,
+    );
+    expect(LAB_PLAN_FEATURES.LAB_STANDARD.has(Features.LAB_PAYMENT_LINKS)).toBe(
+      true,
+    );
   });
 
   it('LAB_PREMIUM strictly includes everything in LAB_STANDARD', () => {
@@ -127,10 +131,16 @@ describe('LAB_PLAN_FEATURES (lab ladder)', () => {
   });
 
   it('LAB_PREMIUM adds treatment plans, AI assist, e-invoice, 3D viewer', () => {
-    expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_TREATMENT_PLAN)).toBe(true);
-    expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_AI_ASSIST)).toBe(true);
+    expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_TREATMENT_PLAN)).toBe(
+      true,
+    );
+    expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_AI_ASSIST)).toBe(
+      true,
+    );
     expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_EINVOICE)).toBe(true);
-    expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_3D_VIEWER)).toBe(true);
+    expect(LAB_PLAN_FEATURES.LAB_PREMIUM.has(Features.LAB_3D_VIEWER)).toBe(
+      true,
+    );
   });
 
   it('Sets contain plain string features (no nested Set objects)', () => {
@@ -145,7 +155,9 @@ describe('LAB_PLAN_FEATURES (lab ladder)', () => {
     expect(labPlanHasFeature('LAB_BASIC', Features.LAB_CATALOG)).toBe(true);
     expect(labPlanHasFeature('LAB_BASIC', Features.LAB_PHASES)).toBe(false);
     expect(labPlanHasFeature('LAB_STANDARD', Features.LAB_PHASES)).toBe(true);
-    expect(labPlanHasFeature('LAB_STANDARD', Features.LAB_AI_ASSIST)).toBe(false);
+    expect(labPlanHasFeature('LAB_STANDARD', Features.LAB_AI_ASSIST)).toBe(
+      false,
+    );
     expect(labPlanHasFeature('LAB_PREMIUM', Features.LAB_AI_ASSIST)).toBe(true);
   });
 });

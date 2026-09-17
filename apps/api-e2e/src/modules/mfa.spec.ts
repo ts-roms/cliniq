@@ -36,7 +36,12 @@ function base32Decode(input: string): Buffer {
 }
 
 /** Compute the 6-digit TOTP for the given base32 secret at the given time (ms). */
-function totpAt(secret: string, atMs = Date.now(), stepSeconds = 30, digits = 6): string {
+function totpAt(
+  secret: string,
+  atMs = Date.now(),
+  stepSeconds = 30,
+  digits = 6,
+): string {
   const counter = Math.floor(atMs / 1000 / stepSeconds);
   const buf = Buffer.alloc(8);
   buf.writeBigUInt64BE(BigInt(counter));
@@ -97,12 +102,16 @@ describe('@org/api-e2e mfa module', () => {
       const status = await client.axios.get('/api/mfa/status');
       expect(status.status).toBe(200);
       expect(status.data.enabled).toBe(true);
-      expect(status.data.backupCodesRemaining).toBe(verify.data.backupCodes.length);
+      expect(status.data.backupCodesRemaining).toBe(
+        verify.data.backupCodes.length,
+      );
 
       // Disable needs a current TOTP. Wait a moment if we're near a 30s rollover
       // so we don't accidentally re-use the same code.
       const disableCode = totpAt(secret);
-      const disable = await client.axios.post('/api/mfa/disable', { code: disableCode });
+      const disable = await client.axios.post('/api/mfa/disable', {
+        code: disableCode,
+      });
       expect(disable.status).toBe(200);
       expect(disable.data.ok).toBe(true);
 
@@ -115,7 +124,9 @@ describe('@org/api-e2e mfa module', () => {
   describe('failure modes', () => {
     it('verify without prior setup → 400', async () => {
       const { client } = await env.makeTenant();
-      const res = await client.axios.post('/api/mfa/verify', { code: '000000' });
+      const res = await client.axios.post('/api/mfa/verify', {
+        code: '000000',
+      });
       expect(res.status).toBe(400);
     });
 
@@ -124,7 +135,9 @@ describe('@org/api-e2e mfa module', () => {
       const setup = await client.axios.post('/api/mfa/setup');
       expect(setup.status).toBe(200);
       // Almost certainly wrong (1 in 10^6 chance of accidental match).
-      const res = await client.axios.post('/api/mfa/verify', { code: '000000' });
+      const res = await client.axios.post('/api/mfa/verify', {
+        code: '000000',
+      });
       // Either invalid format (400) or invalid TOTP (401). The DTO requires
       // exactly 6 digits and '000000' satisfies that → 401 from the service.
       expect(res.status).toBe(401);
@@ -133,7 +146,9 @@ describe('@org/api-e2e mfa module', () => {
     it('verify with a non-numeric code → 400 (DTO validation)', async () => {
       const { client } = await env.makeTenant();
       await client.axios.post('/api/mfa/setup');
-      const res = await client.axios.post('/api/mfa/verify', { code: 'abcdef' });
+      const res = await client.axios.post('/api/mfa/verify', {
+        code: 'abcdef',
+      });
       expect(res.status).toBe(400);
     });
 
@@ -142,7 +157,9 @@ describe('@org/api-e2e mfa module', () => {
       const setup = await client.axios.post('/api/mfa/setup');
       const code = totpAt(setup.data.secret as string);
       await client.axios.post('/api/mfa/verify', { code });
-      const res = await client.axios.post('/api/mfa/disable', { code: '000000' });
+      const res = await client.axios.post('/api/mfa/disable', {
+        code: '000000',
+      });
       expect(res.status).toBe(401);
     });
   });

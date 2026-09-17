@@ -12,7 +12,12 @@
  * Cross-tenant flow needs a LAB tenant and a CLINIC tenant linked together,
  * so we mint both and connect them.
  */
-import { bootEnv, type E2EEnv, type E2ETenant, type E2EClient } from '../support/harness';
+import {
+  bootEnv,
+  type E2EEnv,
+  type E2ETenant,
+  type E2EClient,
+} from '../support/harness';
 
 /** Mint a CLINIC + a LAB tenant and accept an invitation, returning both. */
 async function linkedPair(env: E2EEnv): Promise<{
@@ -67,16 +72,21 @@ describe('@org/api-e2e clinic module', () => {
       const lab = await env.makeTenant({ kind: 'LAB' });
       const clinic = await env.makeTenant({ kind: 'CLINIC' });
 
-      const invite = await lab.client.axios.post('/api/lab/clinic-links/invite', {
-        clinicSlug: clinic.tenant.slug,
-      });
+      const invite = await lab.client.axios.post(
+        '/api/lab/clinic-links/invite',
+        {
+          clinicSlug: clinic.tenant.slug,
+        },
+      );
       expect([200, 201]).toContain(invite.status);
 
-      const inbox = await clinic.client.axios.get('/api/clinic/lab-invitations');
-      expect(inbox.status).toBe(200);
-      const pending = (inbox.data as Array<{ id: string; status: string }>).find(
-        (i) => i.status === 'PENDING',
+      const inbox = await clinic.client.axios.get(
+        '/api/clinic/lab-invitations',
       );
+      expect(inbox.status).toBe(200);
+      const pending = (
+        inbox.data as Array<{ id: string; status: string }>
+      ).find((i) => i.status === 'PENDING');
       expect(pending).toBeDefined();
 
       const reject = await clinic.client.axios.post(
@@ -107,7 +117,9 @@ describe('@org/api-e2e clinic module', () => {
   describe('happy path — lab-treatment-plans (clinic side, read + decide)', () => {
     it('CLINIC list returns array (likely empty until lab proposes)', async () => {
       const { clinic } = await linkedPair(env);
-      const res = await clinic.client.axios.get('/api/clinic/lab-treatment-plans?caseId=none');
+      const res = await clinic.client.axios.get(
+        '/api/clinic/lab-treatment-plans?caseId=none',
+      );
       expect([200, 400]).toContain(res.status); // 400 if caseId is required
     });
   });
@@ -115,7 +127,9 @@ describe('@org/api-e2e clinic module', () => {
   describe('happy path — lab-disputes (clinic side)', () => {
     it('CLINIC list returns array (likely empty until they open one)', async () => {
       const { clinic } = await linkedPair(env);
-      const res = await clinic.client.axios.get('/api/clinic/lab-disputes?caseId=none');
+      const res = await clinic.client.axios.get(
+        '/api/clinic/lab-disputes?caseId=none',
+      );
       expect([200, 400]).toContain(res.status);
     });
   });
@@ -129,9 +143,15 @@ describe('@org/api-e2e clinic module', () => {
       });
 
       const doctor = await env.makeDoctor(clinic.tenant);
-      const inbox = await doctor.client.axios.get('/api/clinic/lab-invitations');
+      const inbox = await doctor.client.axios.get(
+        '/api/clinic/lab-invitations',
+      );
       // List may be allowed; accept must not be.
-      if (inbox.status === 200 && Array.isArray(inbox.data) && inbox.data.length > 0) {
+      if (
+        inbox.status === 200 &&
+        Array.isArray(inbox.data) &&
+        inbox.data.length > 0
+      ) {
         const id = inbox.data[0].id as string;
         const accept = await doctor.client.axios.post(
           `/api/clinic/lab-invitations/${id}/accept`,
@@ -145,7 +165,7 @@ describe('@org/api-e2e clinic module', () => {
   });
 
   describe('multi-tenant isolation', () => {
-    it('A different clinic tenant cannot see another clinic\'s invitations', async () => {
+    it("A different clinic tenant cannot see another clinic's invitations", async () => {
       const lab = await env.makeTenant({ kind: 'LAB' });
       const clinicA = await env.makeTenant({ kind: 'CLINIC' });
       const clinicB = await env.makeTenant({ kind: 'CLINIC' });
@@ -154,7 +174,9 @@ describe('@org/api-e2e clinic module', () => {
         clinicSlug: clinicA.tenant.slug,
       });
 
-      const inboxB = await clinicB.client.axios.get('/api/clinic/lab-invitations');
+      const inboxB = await clinicB.client.axios.get(
+        '/api/clinic/lab-invitations',
+      );
       expect(inboxB.status).toBe(200);
       expect(Array.isArray(inboxB.data) && inboxB.data.length).toBe(0);
     });

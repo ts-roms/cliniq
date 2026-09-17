@@ -35,13 +35,18 @@ describe('@org/api-e2e calendars module', () => {
 
       const token = issued.data.token as string;
       // Public route — fetch without auth header.
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const ics = await bare.get(
         `/api/calendars/providers/${tenant.id}/${tenant.ownerUserId}.ics`,
         { params: { t: token } },
       );
       expect(ics.status).toBe(200);
-      expect(String(ics.headers['content-type'] ?? '')).toContain('text/calendar');
+      expect(String(ics.headers['content-type'] ?? '')).toContain(
+        'text/calendar',
+      );
       expect(String(ics.data)).toContain('BEGIN:VCALENDAR');
       expect(String(ics.data)).toContain('END:VCALENDAR');
     });
@@ -49,7 +54,10 @@ describe('@org/api-e2e calendars module', () => {
 
   describe('authentication', () => {
     it('issue-token endpoint requires a JWT (401 without auth)', async () => {
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get(
         '/api/calendars/providers/some-provider-id/feed-token',
       );
@@ -58,7 +66,10 @@ describe('@org/api-e2e calendars module', () => {
 
     it('.ics with missing token returns 400', async () => {
       const { tenant } = await env.makeTenant();
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get(
         `/api/calendars/providers/${tenant.id}/${tenant.ownerUserId}.ics`,
       );
@@ -67,7 +78,10 @@ describe('@org/api-e2e calendars module', () => {
 
     it('.ics with bogus token returns 401', async () => {
       const { tenant } = await env.makeTenant();
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const res = await bare.get(
         `/api/calendars/providers/${tenant.id}/${tenant.ownerUserId}.ics`,
         { params: { t: 'v1.not-a-real-signature' } },
@@ -91,7 +105,10 @@ describe('@org/api-e2e calendars module', () => {
       // Try to point the public ICS at tenant B's tenantId and providerId
       // using tenant A's token — HMAC includes tenantId+providerId so this
       // must fail verification.
-      const bare = axios.create({ baseURL: env.baseUrl, validateStatus: () => true });
+      const bare = axios.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
       const cross = await bare.get(
         `/api/calendars/providers/${b.tenant.id}/${b.tenant.ownerUserId}.ics`,
         { params: { t: tokenA } },

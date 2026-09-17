@@ -16,16 +16,16 @@ export class RbacGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     // Platform routes have no tenant role — RBAC doesn't apply.
-    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(
+      IS_PLATFORM_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (isPlatform) return true;
 
-    const required = this.reflector.getAllAndOverride<Action[] | undefined>(REQUIRES_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const required = this.reflector.getAllAndOverride<Action[] | undefined>(
+      REQUIRES_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (!required || required.length === 0) return true;
 
     const req = ctx.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
@@ -36,7 +36,9 @@ export class RbacGuard implements CanActivate {
     // role to the delegator's, so this still works.
     const allowed = required.every((a) => can(req.user!.role, a));
     if (!allowed) {
-      throw new ForbiddenException(`role ${req.user.role} lacks: ${required.join(', ')}`);
+      throw new ForbiddenException(
+        `role ${req.user.role} lacks: ${required.join(', ')}`,
+      );
     }
 
     // Step 2: if the request rides on a delegation with a non-empty scope,

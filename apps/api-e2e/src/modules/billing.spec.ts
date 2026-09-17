@@ -40,7 +40,10 @@ describe('@org/api-e2e billing module', () => {
       const { client } = await env.makeTenant();
 
       // Patient prerequisite — invoice needs a real patient row.
-      const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE('BILL-001'));
+      const patient = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('BILL-001'),
+      );
       expect(patient.status).toBe(201);
       const patientId = patient.data.id as string;
 
@@ -57,7 +60,12 @@ describe('@org/api-e2e billing module', () => {
       const inv = await client.axios.post('/api/invoices', {
         patientId,
         items: [
-          { serviceId, description: 'Consultation', quantity: 1, unitPriceCentavos: 50_000 },
+          {
+            serviceId,
+            description: 'Consultation',
+            quantity: 1,
+            unitPriceCentavos: 50_000,
+          },
         ],
       });
       expect(inv.status).toBe(201);
@@ -65,16 +73,22 @@ describe('@org/api-e2e billing module', () => {
       const invoiceId = inv.data.id as string;
 
       // Partial then full payment — last one should flip status to PAID
-      const half = await client.axios.post(`/api/invoices/${invoiceId}/payments`, {
-        amountCentavos: 25_000,
-        method: 'CASH',
-      });
+      const half = await client.axios.post(
+        `/api/invoices/${invoiceId}/payments`,
+        {
+          amountCentavos: 25_000,
+          method: 'CASH',
+        },
+      );
       expect(half.status).toBe(201);
 
-      const rest = await client.axios.post(`/api/invoices/${invoiceId}/payments`, {
-        amountCentavos: 25_000,
-        method: 'CASH',
-      });
+      const rest = await client.axios.post(
+        `/api/invoices/${invoiceId}/payments`,
+        {
+          amountCentavos: 25_000,
+          method: 'CASH',
+        },
+      );
       expect(rest.status).toBe(201);
 
       // GET PDF — only assert the response is a 200 with PDF headers; we
@@ -84,11 +98,17 @@ describe('@org/api-e2e billing module', () => {
         responseType: 'arraybuffer',
       });
       expect(pdf.status).toBe(200);
-      expect(String(pdf.headers['content-type'] ?? '')).toContain('application/pdf');
+      expect(String(pdf.headers['content-type'] ?? '')).toContain(
+        'application/pdf',
+      );
 
-      const list = await client.axios.get(`/api/invoices?patientId=${patientId}`);
+      const list = await client.axios.get(
+        `/api/invoices?patientId=${patientId}`,
+      );
       expect(list.status).toBe(200);
-      expect(list.data.some((i: { id: string }) => i.id === invoiceId)).toBe(true);
+      expect(list.data.some((i: { id: string }) => i.id === invoiceId)).toBe(
+        true,
+      );
     });
 
     it.each(['ADMIN', 'RECEPTIONIST'] as const)(
@@ -100,13 +120,18 @@ describe('@org/api-e2e billing module', () => {
             ? await env.makeAdmin(tenant)
             : await env.makeReceptionist(tenant);
 
-        const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE(`BW-${role}`));
+        const patient = await client.axios.post(
+          '/api/patients',
+          PATIENT_FIXTURE(`BW-${role}`),
+        );
         expect(patient.status).toBe(201);
         const patientId = patient.data.id as string;
 
         const inv = await user.client.axios.post('/api/invoices', {
           patientId,
-          items: [{ description: 'Item', quantity: 1, unitPriceCentavos: 1000 }],
+          items: [
+            { description: 'Item', quantity: 1, unitPriceCentavos: 1000 },
+          ],
         });
         expect(inv.status).toBe(201);
       },
@@ -118,7 +143,10 @@ describe('@org/api-e2e billing module', () => {
       const { tenant, client } = await env.makeTenant();
       const doctor = await env.makeDoctor(tenant);
 
-      const patient = await client.axios.post('/api/patients', PATIENT_FIXTURE('DOC-BILL'));
+      const patient = await client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('DOC-BILL'),
+      );
       const patientId = patient.data.id as string;
 
       const res = await doctor.client.axios.post('/api/invoices', {
@@ -128,7 +156,9 @@ describe('@org/api-e2e billing module', () => {
       expect(res.status).toBe(403);
 
       // Read should succeed because DOCTOR has BILLING_READ.
-      const list = await doctor.client.axios.get(`/api/invoices?patientId=${patientId}`);
+      const list = await doctor.client.axios.get(
+        `/api/invoices?patientId=${patientId}`,
+      );
       expect(list.status).toBe(200);
     });
 
@@ -148,7 +178,10 @@ describe('@org/api-e2e billing module', () => {
       const a = await env.makeTenant();
       const b = await env.makeTenant();
 
-      const patient = await a.client.axios.post('/api/patients', PATIENT_FIXTURE('RLS-BILL'));
+      const patient = await a.client.axios.post(
+        '/api/patients',
+        PATIENT_FIXTURE('RLS-BILL'),
+      );
       const patientId = patient.data.id as string;
       const inv = await a.client.axios.post('/api/invoices', {
         patientId,
@@ -158,10 +191,13 @@ describe('@org/api-e2e billing module', () => {
       const invoiceId = inv.data.id as string;
 
       // Try to pay it from Tenant B — should 404 (invoice not visible).
-      const cross = await b.client.axios.post(`/api/invoices/${invoiceId}/payments`, {
-        amountCentavos: 100,
-        method: 'CASH',
-      });
+      const cross = await b.client.axios.post(
+        `/api/invoices/${invoiceId}/payments`,
+        {
+          amountCentavos: 100,
+          method: 'CASH',
+        },
+      );
       expect(cross.status).toBe(404);
     });
   });

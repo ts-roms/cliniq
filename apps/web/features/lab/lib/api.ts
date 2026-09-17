@@ -129,7 +129,11 @@ async function unwrap<T>(
   // etc.). Surface as a 0-status LabApiError so callers can branch on it
   // like any other failure.
   if (!result.response) {
-    throw new LabApiError(0, result.error ?? null, 'request failed: no response');
+    throw new LabApiError(
+      0,
+      result.error ?? null,
+      'request failed: no response',
+    );
   }
   if (result.response.ok) {
     return (result.data ?? null) as T;
@@ -262,7 +266,10 @@ export interface LabCaseDetail extends LabCaseSummary {
 
 // ── Clinic links ─────────────────────────────────────────────
 
-export function inviteClinic(input: { clinicSlug: string; inviteNote?: string }) {
+export function inviteClinic(input: {
+  clinicSlug: string;
+  inviteNote?: string;
+}) {
   return unwrap<LabClinicLinkSummary>(
     labClinicLinksControllerInvite({ body: input as never }),
   );
@@ -302,13 +309,20 @@ export function listCategories() {
   return unwrap<LabProductCategory[]>(labProductsControllerListCategories({}));
 }
 
-export function createCategory(input: { name: string; description?: string; parentId?: string }) {
+export function createCategory(input: {
+  name: string;
+  description?: string;
+  parentId?: string;
+}) {
   return unwrap<LabProductCategory>(
     labProductsControllerCreateCategory({ body: input as never }),
   );
 }
 
-export function listProducts(opts?: { activeOnly?: boolean; categoryId?: string }) {
+export function listProducts(opts?: {
+  activeOnly?: boolean;
+  categoryId?: string;
+}) {
   const query: { activeOnly?: boolean; categoryId?: string } = {};
   if (opts?.activeOnly) query.activeOnly = true;
   if (opts?.categoryId) query.categoryId = opts.categoryId;
@@ -336,7 +350,10 @@ export function createProduct(input: CreateProductInput) {
   );
 }
 
-export function updateProduct(id: string, input: Partial<CreateProductInput> & { isActive?: boolean }) {
+export function updateProduct(
+  id: string,
+  input: Partial<CreateProductInput> & { isActive?: boolean },
+) {
   return unwrap<LabProductSummary>(
     labProductsControllerUpdateProduct({ path: { id }, body: input as never }),
   );
@@ -350,7 +367,10 @@ export function cloneProduct(id: string) {
 
 // ── Cases (lab side) ─────────────────────────────────────────
 
-export function listLabCases(opts?: { status?: LabCaseStatus; tagId?: string }) {
+export function listLabCases(opts?: {
+  status?: LabCaseStatus;
+  tagId?: string;
+}) {
   const query: { status?: LabCaseStatus; tagId?: string } = {};
   if (opts?.status) query.status = opts.status;
   if (opts?.tagId) query.tagId = opts.tagId;
@@ -363,7 +383,11 @@ export function getLabCase(id: string) {
   return unwrap<LabCaseDetail>(labCasesControllerFindOne({ path: { id } }));
 }
 
-export function transitionLabCase(id: string, status: LabCaseStatus, reason?: string) {
+export function transitionLabCase(
+  id: string,
+  status: LabCaseStatus,
+  reason?: string,
+) {
   return unwrap<LabCaseSummary>(
     labCasesControllerTransition({
       path: { id },
@@ -372,7 +396,10 @@ export function transitionLabCase(id: string, status: LabCaseStatus, reason?: st
   );
 }
 
-export function updateLabCaseAsLab(id: string, input: { unitPrice?: number; notes?: string }) {
+export function updateLabCaseAsLab(
+  id: string,
+  input: { unitPrice?: number; notes?: string },
+) {
   return unwrap<LabCaseSummary>(
     labCasesControllerUpdate({ path: { id }, body: input as never }),
   );
@@ -530,7 +557,11 @@ export interface LabMaterial {
   unitOfMeasure: string;
   description: string | null;
   defaultSupplier: string | null;
-  lots?: Array<{ id: string; status: LabMaterialLotStatus; remainingQty: number }>;
+  lots?: Array<{
+    id: string;
+    status: LabMaterialLotStatus;
+    remainingQty: number;
+  }>;
 }
 
 export interface LabMaterialLot {
@@ -608,7 +639,11 @@ export function createMaterialLot(
 
 export function updateMaterialLot(
   lotId: string,
-  input: { status?: LabMaterialLotStatus; expiresAt?: string | null; notes?: string | null },
+  input: {
+    status?: LabMaterialLotStatus;
+    expiresAt?: string | null;
+    notes?: string | null;
+  },
 ) {
   return unwrap<LabMaterialLot>(
     labMaterialsControllerUpdateLot({
@@ -664,7 +699,11 @@ export function getLabCaseShipment(caseId: string) {
 
 export function upsertLabCaseShipment(
   caseId: string,
-  input: { carrier?: string | null; trackingNumber?: string | null; notes?: string | null },
+  input: {
+    carrier?: string | null;
+    trackingNumber?: string | null;
+    notes?: string | null;
+  },
 ) {
   return unwrap<LabShipment>(
     labCasesControllerUpsertShipment({
@@ -706,9 +745,7 @@ export function listLabTags() {
 }
 
 export function createLabTag(input: { name: string; color?: string }) {
-  return unwrap<LabCaseTag>(
-    labTagsControllerCreate({ body: input as never }),
-  );
+  return unwrap<LabCaseTag>(labTagsControllerCreate({ body: input as never }));
 }
 
 export function deleteLabTag(id: string) {
@@ -731,9 +768,7 @@ export function assignCaseTag(caseId: string, tagId: string) {
 }
 
 export function unassignCaseTag(caseId: string, tagId: string) {
-  return unwrap<void>(
-    labTagsControllerUnassign({ path: { caseId, tagId } }),
-  );
+  return unwrap<void>(labTagsControllerUnassign({ path: { caseId, tagId } }));
 }
 
 // ── Notes (lab-only) ────────────────────────────────────────
@@ -762,7 +797,11 @@ export function createLabCaseNote(caseId: string, body: string) {
   );
 }
 
-export function updateLabCaseNote(caseId: string, noteId: string, body: string) {
+export function updateLabCaseNote(
+  caseId: string,
+  noteId: string,
+  body: string,
+) {
   return unwrap<LabCaseNote>(
     labCasesControllerUpdateNote({
       path: { id: caseId, noteId },
@@ -852,7 +891,11 @@ export function createClinicCase(input: CreateCaseInput) {
   );
 }
 
-export function transitionClinicCase(id: string, status: LabCaseStatus, reason?: string) {
+export function transitionClinicCase(
+  id: string,
+  status: LabCaseStatus,
+  reason?: string,
+) {
   return unwrap<LabCaseSummary>(
     clinicLabCasesControllerTransition({
       path: { id },
@@ -1022,7 +1065,10 @@ export interface InvoiceFilter {
   clinicTenantId?: string;
 }
 
-function invoiceQuery(filter: InvoiceFilter): { status?: LabInvoiceStatus; clinicTenantId?: string } {
+function invoiceQuery(filter: InvoiceFilter): {
+  status?: LabInvoiceStatus;
+  clinicTenantId?: string;
+} {
   const query: { status?: LabInvoiceStatus; clinicTenantId?: string } = {};
   if (filter.status) query.status = filter.status;
   if (filter.clinicTenantId) query.clinicTenantId = filter.clinicTenantId;
@@ -1094,9 +1140,7 @@ export function deleteLabInvoiceItem(id: string, itemId: string) {
 }
 
 export function issueLabInvoice(id: string) {
-  return unwrap<LabInvoiceDetail>(
-    labInvoicesControllerIssue({ path: { id } }),
-  );
+  return unwrap<LabInvoiceDetail>(labInvoicesControllerIssue({ path: { id } }));
 }
 
 export function recordLabInvoicePayment(

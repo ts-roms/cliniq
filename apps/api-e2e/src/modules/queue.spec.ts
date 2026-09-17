@@ -58,7 +58,9 @@ describe('@org/api-e2e queue module', () => {
 
     it('OWNER: can close a CALLED ticket as NO_SHOW', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const q = await client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(q.status).toBe(201);
 
       const ticket = await client.axios.post('/api/queue/tickets', {
@@ -85,7 +87,9 @@ describe('@org/api-e2e queue module', () => {
       const { tenant } = await env.makeTenant({ plan: 'PREMIUM' });
       const admin = await env.makeAdmin(tenant);
 
-      const q = await admin.client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await admin.client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(q.status).toBe(201);
 
       const t = await admin.client.axios.post('/api/queue/tickets', {
@@ -112,7 +116,9 @@ describe('@org/api-e2e queue module', () => {
       const { tenant } = await env.makeTenant({ plan: 'PREMIUM' });
       const recept = await env.makeReceptionist(tenant);
 
-      const q = await recept.client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await recept.client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(q.status).toBe(201);
 
       const t = await recept.client.axios.post('/api/queue/tickets', {
@@ -127,13 +133,17 @@ describe('@org/api-e2e queue module', () => {
     it('DOCTOR cannot create queues (403 — lacks TENANT_MANAGE)', async () => {
       const { tenant } = await env.makeTenant({ plan: 'PREMIUM' });
       const doctor = await env.makeDoctor(tenant);
-      const res = await doctor.client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const res = await doctor.client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(res.status).toBe(403);
     });
 
     it('NURSE cannot issue tickets (403)', async () => {
       const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const q = await client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(q.status).toBe(201);
 
       const nurse = await env.makeNurse(tenant);
@@ -146,7 +156,9 @@ describe('@org/api-e2e queue module', () => {
 
     it('PATIENT cannot call-next (403)', async () => {
       const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const q = await client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(q.status).toBe(201);
 
       const patient = await env.makePatient(tenant);
@@ -157,9 +169,11 @@ describe('@org/api-e2e queue module', () => {
       expect(res.status).toBe(403);
     });
 
-    it('PATIENT cannot close someone else\'s ticket (403)', async () => {
+    it("PATIENT cannot close someone else's ticket (403)", async () => {
       const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const q = await client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       const t = await client.axios.post('/api/queue/tickets', {
         queueId: q.data.id,
         label: 'x',
@@ -176,11 +190,13 @@ describe('@org/api-e2e queue module', () => {
   });
 
   describe('multi-tenant isolation', () => {
-    it('tenant B cannot call-next on tenant A\'s queue (404)', async () => {
+    it("tenant B cannot call-next on tenant A's queue (404)", async () => {
       const a = await env.makeTenant({ plan: 'PREMIUM' });
       const b = await env.makeTenant({ plan: 'PREMIUM' });
 
-      const q = await a.client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await a.client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       expect(q.status).toBe(201);
       await a.client.axios.post('/api/queue/tickets', {
         queueId: q.data.id,
@@ -194,11 +210,13 @@ describe('@org/api-e2e queue module', () => {
       expect(cross.status).toBe(404);
     });
 
-    it('tenant B cannot close tenant A\'s ticket (404)', async () => {
+    it("tenant B cannot close tenant A's ticket (404)", async () => {
       const a = await env.makeTenant({ plan: 'PREMIUM' });
       const b = await env.makeTenant({ plan: 'PREMIUM' });
 
-      const q = await a.client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+      const q = await a.client.axios.post('/api/queue/queues', {
+        kind: 'WALK_IN',
+      });
       const t = await a.client.axios.post('/api/queue/tickets', {
         queueId: q.data.id,
         label: 'isolate',

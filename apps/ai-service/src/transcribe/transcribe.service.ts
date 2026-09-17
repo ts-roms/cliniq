@@ -55,7 +55,9 @@ export class TranscribeService {
     this.languageCode =
       (this.config.get<string>('AWS_TRANSCRIBE_LANGUAGE') as LanguageCode) ??
       ('en-US' as LanguageCode);
-    this.maxWaitMs = Number(this.config.get<string>('TRANSCRIBE_MAX_WAIT_MS') ?? 90_000);
+    this.maxWaitMs = Number(
+      this.config.get<string>('TRANSCRIBE_MAX_WAIT_MS') ?? 90_000,
+    );
     this.pollIntervalMs = Number(
       this.config.get<string>('TRANSCRIBE_POLL_INTERVAL_MS') ?? 1_500,
     );
@@ -103,7 +105,9 @@ export class TranscribeService {
       if (state === 'COMPLETED') {
         const uri = job?.Transcript?.TranscriptFileUri;
         if (!uri) {
-          this.logger.error(`Transcribe ${jobName} COMPLETED but no TranscriptFileUri`);
+          this.logger.error(
+            `Transcribe ${jobName} COMPLETED but no TranscriptFileUri`,
+          );
           return this.stub(req, 'aws-transcribe-no-result');
         }
         const text = await this.fetchTranscriptText(uri);
@@ -171,7 +175,9 @@ export class TranscribeService {
   }
 
   private stub(req: TranscribeRequest, reason = 'stub'): TranscribeResult {
-    this.logger.log(`stub-transcribe s3://${req.s3Bucket}/${req.s3Key} (${req.mimeType}) reason=${reason}`);
+    this.logger.log(
+      `stub-transcribe s3://${req.s3Bucket}/${req.s3Key} (${req.mimeType}) reason=${reason}`,
+    );
     return {
       transcript:
         `[stub transcript for s3://${req.s3Bucket}/${req.s3Key}]. ` +
@@ -190,9 +196,14 @@ function computeDurationSec(
   creation: Date | string | undefined,
 ): number | undefined {
   if (!completion || !creation) return undefined;
-  const end = typeof completion === 'string' ? Date.parse(completion) : completion.getTime();
-  const start = typeof creation === 'string' ? Date.parse(creation) : creation.getTime();
-  if (Number.isNaN(end) || Number.isNaN(start) || end <= start) return undefined;
+  const end =
+    typeof completion === 'string'
+      ? Date.parse(completion)
+      : completion.getTime();
+  const start =
+    typeof creation === 'string' ? Date.parse(creation) : creation.getTime();
+  if (Number.isNaN(end) || Number.isNaN(start) || end <= start)
+    return undefined;
   // Wall-clock job duration is NOT audio duration, but it's the only signal
   // AWS Transcribe gives us without parsing the result JSON. Good enough for
   // a cost estimate; replace with the audio duration once we move to a
