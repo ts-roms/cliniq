@@ -490,7 +490,7 @@ export class LabInvoicesService {
     // hosted-checkout API. Otherwise persist a MANUAL placeholder.
     let externalId = dto.externalId ?? null;
     let url = dto.url ?? null;
-    let provider = dto.provider ?? LabPaymentLinkProvider.MANUAL;
+    const provider = dto.provider ?? LabPaymentLinkProvider.MANUAL;
     if (provider === LabPaymentLinkProvider.PAYMONGO) {
       if (!this.paymongo.isConfigured) {
         throw new BadRequestException(
