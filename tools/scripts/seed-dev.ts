@@ -1,6 +1,6 @@
 /**
  * Idempotent dev seed. Wipes and recreates the `demo` tenant with one user
- * per role (all sharing password `Password123!`) and a few patients, one of
+ * per role (all sharing password `P@ssw0rd123`) and a few patients, one of
  * which has a linked portal login (`patient1@demo.local`). Also seeds a
  * platform-console admin (`platform@cliniq.local`) — separate identity table,
  * not tenant-scoped.
@@ -15,7 +15,7 @@ import { prisma, Role, MemberStatus, TenantStatus, Plan, Sex } from '@org/db';
 import { hashPassword } from '@org/auth';
 
 const TENANT_SLUG = 'demo';
-const PASSWORD = 'Password123!';
+const PASSWORD = 'P@ssw0rd123';
 
 interface PlatformAdminSpec {
   email: string;
@@ -37,7 +37,11 @@ const STAFF: StaffSpec[] = [
   { email: 'admin@demo.local', name: 'Demo Admin', role: Role.ADMIN },
   { email: 'doctor@demo.local', name: 'Dr. Juana Cruz', role: Role.DOCTOR },
   { email: 'nurse@demo.local', name: 'Nurse Pedro Reyes', role: Role.NURSE },
-  { email: 'reception@demo.local', name: 'Reception Mae Santos', role: Role.RECEPTIONIST },
+  {
+    email: 'reception@demo.local',
+    name: 'Reception Mae Santos',
+    role: Role.RECEPTIONIST,
+  },
 ];
 
 interface PatientSpec {
@@ -100,7 +104,9 @@ async function main() {
   // Patient, etc.). Users that were ONLY in the demo tenant are also wiped
   // below to avoid orphaned accounts blocking re-seeding.
   console.log(`→ Resetting tenant "${TENANT_SLUG}"`);
-  const existing = await prisma.tenant.findUnique({ where: { slug: TENANT_SLUG } });
+  const existing = await prisma.tenant.findUnique({
+    where: { slug: TENANT_SLUG },
+  });
   if (existing) {
     const memberUserIds = (
       await prisma.tenantUser.findMany({

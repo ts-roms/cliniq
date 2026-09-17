@@ -44,10 +44,10 @@ export interface ProvisionedSeed {
 const PASSWORD = 'WebE2EPassword123!';
 
 /**
- * Hits the same public api routes the e2e harness uses. We reach into
- * Postgres only for two things the api can't do on the public surface:
- *   1. Promote a fresh user from RECEPTIONIST → DOCTOR.
- *   2. Insert a PlatformAdmin row (no signup endpoint).
+ * Hits the same public api routes the e2e harness uses. Staff join the way a
+ * clinic adds them: the owner invites the address with the target role and
+ * the new user redeems the invite (`/auth/register` is invite-only). We reach
+ * into Postgres only to insert a PlatformAdmin row (no signup endpoint).
  */
 export async function provisionTenants(
   api: APIRequestContext,
@@ -56,7 +56,7 @@ export async function provisionTenants(
   await pg.connect();
 
   try {
-    const clinic = await provisionClinic(api, pg);
+    const clinic = await provisionClinic(api);
     const lab = await provisionLab(api);
     const platform = await provisionPlatformAdmin(api, pg);
     return { clinic, lab, platform };
@@ -65,19 +65,21 @@ export async function provisionTenants(
   }
 }
 
-async function provisionClinic(
-  api: APIRequestContext,
-  pg: PgClient,
-): Promise<SeedTenant> {
+async function provisionClinic(api: APIRequestContext): Promise<SeedTenant> {
   const ts = Date.now();
   const slug =
     `webe2e-clinic-${ts}-${Math.floor(Math.random() * 100_000)}`.toLowerCase();
   const owner = await createTenantWithOwner(api, slug, 'CLINIC');
 
-  const doctor = await registerAndPromote(api, pg, slug, 'DOCTOR');
-  const receptionist = await registerAndPromote(api, pg, slug, 'RECEPTIONIST');
-  // Patient creation needs an authed clinic-staff call (the owner above).
+  // Invites and patient creation need an authed clinic-staff call (the owner).
   const ownerToken = await loginToken(api, owner.user.email);
+  const doctor = await inviteAndRegister(api, slug, ownerToken, 'DOCTOR');
+  const receptionist = await inviteAndRegister(
+    api,
+    slug,
+    ownerToken,
+    'RECEPTIONIST',
+  );
   const patient = await registerPatient(api, slug, ownerToken);
 
   return {
@@ -157,16 +159,40 @@ async function loginToken(
   return body.accessToken as string;
 }
 
-async function registerAndPromote(
+async function inviteAndRegister(
   api: APIRequestContext,
-  pg: PgClient,
   tenantSlug: string,
+  ownerToken: string,
   role: 'DOCTOR' | 'RECEPTIONIST',
 ): Promise<SeedUser> {
   const rand = randomUUID().slice(0, 8);
   const email = `${role.toLowerCase()}-${rand}@e2e.local`;
+
+  const invite = await api.post('/api/members/invites', {
+    headers: { authorization: `Bearer ${ownerToken}` },
+    data: { email, role },
+  });
+  if (invite.status() !== 201) {
+    throw new Error(
+      `invite ${role} failed: ${invite.status()} ${await invite.text()}`,
+    );
+  }
+  const inviteUrl = (await invite.json()).inviteUrl as string | undefined;
+  const inviteToken = inviteUrl
+    ? new URL(inviteUrl).searchParams.get('invite')
+    : null;
+  if (!inviteToken) {
+    throw new Error(`invite ${role} returned no inviteUrl`);
+  }
+
   const reg = await api.post('/api/auth/register', {
-    data: { email, name: `E2E ${role}`, password: PASSWORD, tenantSlug },
+    data: {
+      email,
+      name: `E2E ${role}`,
+      password: PASSWORD,
+      tenantSlug,
+      inviteToken,
+    },
   });
   if (reg.status() !== 201 && reg.status() !== 200) {
     throw new Error(
@@ -174,17 +200,7 @@ async function registerAndPromote(
     );
   }
   const body = await reg.json();
-  const userId = body.user.id as string;
-  const tenantId = body.user.tenantId as string;
-
-  if (role !== 'RECEPTIONIST') {
-    await pg.query(
-      `UPDATE "tenant_users" SET "role" = $1::"Role" WHERE "tenantId" = $2 AND "userId" = $3`,
-      [role, tenantId, userId],
-    );
-  }
-
-  return { email, password: PASSWORD, userId, role };
+  return { email, password: PASSWORD, userId: body.user.id as string, role };
 }
 
 async function registerPatient(

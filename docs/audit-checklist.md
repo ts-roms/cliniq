@@ -261,6 +261,22 @@ Numbers from `find … -name '*.spec.*'`:
       script: **30 spec files / 190 cases** gate the PR (9 original + 21 wip module
       files that pass). The `web-e2e` Playwright job runs with `continue-on-error`
       until it has passed once.
+- [ ] **Playwright suite status** (first run past global setup, 2026-09-17, PR #4):
+      **64 passed / 27 failed / 1 skipped** across chromium, firefox, webkit,
+      tablet-768 and the a11y project. Failure families, all spec-vs-ui or
+      ui bugs — none block the api gate:
+  - `login.spec` ×3 (chromium-public): `getByLabel(/password/i)` now matches
+    both the input and the new "Show password" toggle (`aria-label`) — strict
+    mode violation; use `getByRole('textbox', { name: 'Password' })`.
+  - `webkit-clinic` ×12: every authed page bounces to `/login?next=…` on
+    WebKit only (chromium/firefox pass). The `cliniq.access` cookie isn't
+    being sent back by WebKit on `http://localhost` — check the cookie
+    attributes (`Secure`/`SameSite`) the api sets in `NODE_ENV=production`.
+  - `tablet-768` ×7: sidebar/primary controls not visible at 768px.
+  - `a11y` ×5: axe `color-contrast` (serious) on login, dashboard, patients,
+    queue, patient detail.
+  - `lab.spec` stats charts not visible; `platform.spec` tenant-detail click
+    times out.
 - [ ] **Quarantined e2e specs** — 19 wip module files (35 failing cases, 148
       passing ones lost with them) are excluded in `apps/api-e2e/jest.config.cts`
       (`QUARANTINED_SPECS`; run all with `E2E_INCLUDE_QUARANTINE=1`). Each is a

@@ -9,14 +9,14 @@
 
 ## Prerequisites
 
-| Tool | Version | Why |
-|---|---|---|
-| Node | 22+ | Both apps target Node 22 |
-| pnpm | 10+ | The monorepo uses pnpm workspaces |
-| PostgreSQL | 16 | Database. Skip if using the Docker path |
-| Docker Desktop | latest | Optional — only for the Docker path |
-| Expo Go (mobile) | latest | iOS App Store / Android Play Store |
-| Android Studio / Xcode | optional | Only for **native** simulator builds |
+| Tool                   | Version  | Why                                     |
+| ---------------------- | -------- | --------------------------------------- |
+| Node                   | 22+      | Both apps target Node 22                |
+| pnpm                   | 10+      | The monorepo uses pnpm workspaces       |
+| PostgreSQL             | 16       | Database. Skip if using the Docker path |
+| Docker Desktop         | latest   | Optional — only for the Docker path     |
+| Expo Go (mobile)       | latest   | iOS App Store / Android Play Store      |
+| Android Studio / Xcode | optional | Only for **native** simulator builds    |
 
 ```bash
 node -v       # v22.x or newer
@@ -43,11 +43,11 @@ cp .env.example .env
 
 **`.env` keys you'll touch most:**
 
-| Key | What sets it |
-|---|---|
-| `DATABASE_URL` | Local Postgres connection string |
-| `JWT_SECRET` | Random 32+ char string, any value for dev |
-| `NEXT_PUBLIC_API_URL` | URL the **web** browser hits (default `http://localhost:4000`) |
+| Key                   | What sets it                                                           |
+| --------------------- | ---------------------------------------------------------------------- |
+| `DATABASE_URL`        | Local Postgres connection string                                       |
+| `JWT_SECRET`          | Random 32+ char string, any value for dev                              |
+| `NEXT_PUBLIC_API_URL` | URL the **web** browser hits (default `http://localhost:4000`)         |
 | `EXPO_PUBLIC_API_URL` | URL the **mobile** device hits — needs your LAN IP, see Mobile section |
 
 ---
@@ -68,6 +68,7 @@ curl http://localhost:4000/api/health
 ```
 
 URLs:
+
 - `http://localhost:3000` — web (Next.js)
 - `http://localhost:4000/api` — api (Swagger UI at `/api/docs`)
 - `http://localhost:4100/ai` — ai-service
@@ -111,12 +112,12 @@ pnpm db:seed
 pnpm seed:demo-lab
 ```
 
-Seeded logins (password for both: `Password123!`):
+Seeded logins (password for both: `P@ssw0rd123`):
 
-| Tenant | Login |
-|---|---|
-| `demo` (clinic) | `owner@demo.local` |
-| `demo-lab` (lab) | `lab-owner@demo.local` |
+| Tenant                 | Login                     |
+| ---------------------- | ------------------------- |
+| `demo` (clinic)        | `owner@demo.local`        |
+| `demo-lab` (lab)       | `lab-owner@demo.local`    |
 | `demo-clinic` (clinic) | `clinic-owner@demo.local` |
 
 ---
@@ -135,18 +136,18 @@ change the api URL you must restart `nx dev`.
 
 ### Routes worth knowing
 
-| Route | What |
-|---|---|
-| `/login` | Clinic staff login |
-| `/dashboard` | Post-login landing for clinic staff |
-| `/lab/cases` | Lab-tenant inbox (lands here for `kind: LAB` tenants) |
-| `/lab/billing` | Lab invoices |
-| `/lab/stats` | Lab metrics dashboard |
-| `/lab-cases` | Clinic-side: cases sent to associated labs |
-| `/lab-invoices` | Clinic-side: invoices received from labs |
-| `/portal/login` | Patient portal entry |
-| `/platform/login` | Superadmin console (separate JWT audience) |
-| `/pricing` | Public pricing page |
+| Route             | What                                                  |
+| ----------------- | ----------------------------------------------------- |
+| `/login`          | Clinic staff login                                    |
+| `/dashboard`      | Post-login landing for clinic staff                   |
+| `/lab/cases`      | Lab-tenant inbox (lands here for `kind: LAB` tenants) |
+| `/lab/billing`    | Lab invoices                                          |
+| `/lab/stats`      | Lab metrics dashboard                                 |
+| `/lab-cases`      | Clinic-side: cases sent to associated labs            |
+| `/lab-invoices`   | Clinic-side: invoices received from labs              |
+| `/portal/login`   | Patient portal entry                                  |
+| `/platform/login` | Superadmin console (separate JWT audience)            |
+| `/pricing`        | Public pricing page                                   |
 
 ### Web build (production)
 
@@ -215,12 +216,12 @@ EXPO_PUBLIC_API_URL=http://192.168.1.42:4000
 ```
 
 > **Why not use `EXPO_PUBLIC_API_URL=http://localhost:4000`?** That works
-> only when you run the Expo *web* target in the same browser as the api.
+> only when you run the Expo _web_ target in the same browser as the api.
 > On phones/emulators, `localhost` is the device's own loopback.
 
 > **Expo's env loading rule:** the bundler only inlines vars that start
 > with `EXPO_PUBLIC_`, and it reads them from the `.env` in the
-> *directory you ran the start command from* (i.e. the repo root via
+> _directory you ran the start command from_ (i.e. the repo root via
 > `pnpm nx start @org/mobile`). Renaming the file or running from
 > `apps/mobile/` will silently use a different `.env`.
 
@@ -257,17 +258,17 @@ pnpm nx start @org/mobile
 This boots Metro on `:8081` (the dev bundler) and prints a QR code +
 keyboard menu in your terminal. Leave it running in its own terminal.
 
-| Key | What it does |
-|---|---|
-| `s` | Switch between Expo Go and a development build |
-| `i` | Open iOS Simulator (macOS only, requires Xcode) |
-| `a` | Open Android Emulator (requires Android Studio AVD) |
-| `w` | Open Expo web in your browser (most features work) |
-| `r` | Reload the JS bundle on the connected device |
-| `j` | Open Chrome DevTools to debug the JS bundle |
-| `m` | Toggle the in-app dev menu |
-| `shift+m` | Hide all menus |
-| `?` | Show all shortcuts |
+| Key       | What it does                                        |
+| --------- | --------------------------------------------------- |
+| `s`       | Switch between Expo Go and a development build      |
+| `i`       | Open iOS Simulator (macOS only, requires Xcode)     |
+| `a`       | Open Android Emulator (requires Android Studio AVD) |
+| `w`       | Open Expo web in your browser (most features work)  |
+| `r`       | Reload the JS bundle on the connected device        |
+| `j`       | Open Chrome DevTools to debug the JS bundle         |
+| `m`       | Toggle the in-app dev menu                          |
+| `shift+m` | Hide all menus                                      |
+| `?`       | Show all shortcuts                                  |
 
 To start with a clean cache (after `node_modules` changes, schema regen,
 or Metro acting up):
@@ -285,8 +286,8 @@ cd apps/mobile && npx expo start -c
 With Metro running:
 
 - **iOS:** open the **Camera** app → point at the QR code in the
-  terminal → tap the *Open in Expo Go* banner.
-- **Android:** open **Expo Go** → tap *Scan QR code* → point at the
+  terminal → tap the _Open in Expo Go_ banner.
+- **Android:** open **Expo Go** → tap _Scan QR code_ → point at the
   terminal.
 
 The bundle downloads (10–30 seconds first time), then the app launches.
@@ -310,8 +311,8 @@ simulator and installs the dev build.
 Prereqs:
 
 1. Install **Android Studio** (free).
-2. Open Android Studio → *More Actions* → *Virtual Device Manager*.
-3. *Create Device* → pick a phone profile (Pixel 7 is fine) → pick a
+2. Open Android Studio → _More Actions_ → _Virtual Device Manager_.
+3. _Create Device_ → pick a phone profile (Pixel 7 is fine) → pick a
    system image (any API 33+ → **Google Play** variant for push
    notifications to work).
 4. Add Android SDK platform-tools to your PATH so `adb` is reachable.
@@ -355,11 +356,11 @@ The QR code in Metro now opens **the dev client** instead of Expo Go.
 
 After seeding (Step 3), sign in:
 
-| Account | Sees |
-|---|---|
-| `owner@demo.local` | Staff shell — Patients / Schedule / Lab / Inbox |
+| Account                   | Sees                                              |
+| ------------------------- | ------------------------------------------------- |
+| `owner@demo.local`        | Staff shell — Patients / Schedule / Lab / Inbox   |
 | `clinic-owner@demo.local` | Same staff shell, populated with seeded lab cases |
-| `patient1@demo.local` | Patient portal — Home / Visits / Records / Bills |
+| `patient1@demo.local`     | Patient portal — Home / Visits / Records / Bills  |
 
 > The mobile app reuses the same JWT scheme as web. The session is
 > stored in `expo-secure-store` (iOS Keychain / Android Keystore), so
@@ -373,15 +374,15 @@ automatically when you sign in.
 
 **Where push works:**
 
-| Environment | Receives push? | Notes |
-|---|---|---|
-| Physical iOS device + Expo Go | ✅ | Token rotates per Expo Go session |
-| Physical iOS device + dev client | ✅ | Token stable across reloads |
-| iOS Simulator | ❌ | Apple-imposed — no APNS in the simulator |
-| Physical Android device | ✅ | |
-| Android Emulator (Google Play image) | ✅ | Make sure to pick the *Google Play* AVD variant, not AOSP |
-| Android Emulator (AOSP image) | ❌ | No Play Services → no FCM |
-| Expo web (`w`) | ❌ | Use browser notifications API instead (not wired up) |
+| Environment                          | Receives push? | Notes                                                     |
+| ------------------------------------ | -------------- | --------------------------------------------------------- |
+| Physical iOS device + Expo Go        | ✅             | Token rotates per Expo Go session                         |
+| Physical iOS device + dev client     | ✅             | Token stable across reloads                               |
+| iOS Simulator                        | ❌             | Apple-imposed — no APNS in the simulator                  |
+| Physical Android device              | ✅             |                                                           |
+| Android Emulator (Google Play image) | ✅             | Make sure to pick the _Google Play_ AVD variant, not AOSP |
+| Android Emulator (AOSP image)        | ❌             | No Play Services → no FCM                                 |
+| Expo web (`w`)                       | ❌             | Use browser notifications API instead (not wired up)      |
 
 If you sign in but the api logs `[push] no devices for user X`:
 
@@ -399,6 +400,7 @@ If you sign in but the api logs `[push] no devices for user X`:
 ### "Network request failed" on mobile after login
 
 Either:
+
 1. `EXPO_PUBLIC_API_URL` still points at `localhost` instead of your LAN IP, **or**
 2. Your phone and laptop are on different Wi-Fi networks, **or**
 3. macOS/Windows firewall is blocking inbound port 4000.
@@ -498,11 +500,11 @@ hot-reloading isn't enough.
 
 EAS Build handles iOS/Android binaries. Configured in `apps/mobile/eas.json`:
 
-| Profile | Output |
-|---|---|
-| `development` | dev client (`expo-dev-client`), distribution: internal |
-| `preview` | iOS simulator build + Android APK, distribution: internal |
-| `production` | Android app-bundle for Play Store; iOS goes through `eas submit` |
+| Profile       | Output                                                           |
+| ------------- | ---------------------------------------------------------------- |
+| `development` | dev client (`expo-dev-client`), distribution: internal           |
+| `preview`     | iOS simulator build + Android APK, distribution: internal        |
+| `production`  | Android app-bundle for Play Store; iOS goes through `eas submit` |
 
 Run from `apps/mobile`:
 

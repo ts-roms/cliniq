@@ -40,6 +40,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client + OpenAPI api-client
+        run: |
+          pnpm --dir libs/db exec prisma generate
+          pnpm --dir libs/api-client exec openapi-ts
+          (cd libs/api-client && node scripts/strip-js-extensions.mjs)
+
       - name: Build
         run: pnpm exec nx run @org/web:build
 
