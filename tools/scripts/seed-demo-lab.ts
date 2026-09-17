@@ -54,7 +54,9 @@ async function main() {
         where: { userId: { in: memberUserIds } },
         select: { userId: true },
       });
-      const stillIn = new Set(stillMembers.map((m: { userId: string }) => m.userId));
+      const stillIn = new Set(
+        stillMembers.map((m: { userId: string }) => m.userId),
+      );
       const orphans = memberUserIds.filter((id: string) => !stillIn.has(id));
       if (orphans.length) {
         await prisma.user.deleteMany({ where: { id: { in: orphans } } });
@@ -94,7 +96,11 @@ async function main() {
   const clinicOwner = await prisma.user.upsert({
     where: { email: 'clinic-owner@demo.local' },
     update: { passwordHash },
-    create: { email: 'clinic-owner@demo.local', name: 'Clinic Owner', passwordHash },
+    create: {
+      email: 'clinic-owner@demo.local',
+      name: 'Clinic Owner',
+      passwordHash,
+    },
   });
 
   await prisma.tenantUser.create({
@@ -148,7 +154,14 @@ async function main() {
       name: 'PFM crown',
       description: 'Porcelain-fused-to-metal crown — 7 working days.',
       defaultPrice: 350000, // ₱3,500
-      phases: ['Impression review', 'Wax-up', 'Casting', 'Porcelain', 'Finishing', 'QA'],
+      phases: [
+        'Impression review',
+        'Wax-up',
+        'Casting',
+        'Porcelain',
+        'Finishing',
+        'QA',
+      ],
     },
     {
       categoryId: crowns.id,
@@ -156,7 +169,14 @@ async function main() {
       name: 'Zirconia crown',
       description: 'Full-zirconia crown — 5 working days.',
       defaultPrice: 580000, // ₱5,800
-      phases: ['Scan review', 'CAD design', 'Milling', 'Sintering', 'Finishing', 'QA'],
+      phases: [
+        'Scan review',
+        'CAD design',
+        'Milling',
+        'Sintering',
+        'Finishing',
+        'QA',
+      ],
     },
     {
       categoryId: aligners.id,
@@ -165,7 +185,13 @@ async function main() {
       description: 'Custom thermoformed aligners — 14 working days.',
       defaultPrice: 4500000, // ₱45,000
       pricingMode: LabProductPricingMode.ADJUST_ON_ORDER,
-      phases: ['Scan review', 'Setup design', 'Doctor approval', 'Fabrication', 'QA'],
+      phases: [
+        'Scan review',
+        'Setup design',
+        'Doctor approval',
+        'Fabrication',
+        'QA',
+      ],
     },
     {
       categoryId: dentures.id,
@@ -177,7 +203,10 @@ async function main() {
     },
   ];
 
-  const products: Record<string, { id: string; defaultPrice: number; currency: string }> = {};
+  const products: Record<
+    string,
+    { id: string; defaultPrice: number; currency: string }
+  > = {};
   for (const p of productSpecs) {
     const created = await prisma.labProduct.create({
       data: {
@@ -356,7 +385,12 @@ async function main() {
     },
   ];
 
-  const deliveredCases: Array<{ id: string; unitPrice: number; productName: string; refNumber: number }> = [];
+  const deliveredCases: Array<{
+    id: string;
+    unitPrice: number;
+    productName: string;
+    refNumber: number;
+  }> = [];
   for (const spec of caseSpecs) {
     const product = products[spec.sku];
     if (!product) continue;
@@ -379,11 +413,26 @@ async function main() {
         acceptedByUserId:
           spec.daysAgoAccepted !== undefined ? labOwner.id : null,
         createdAt: daysAgo(spec.daysAgoCreated),
-        submittedAt: spec.daysAgoSubmitted !== undefined ? daysAgo(spec.daysAgoSubmitted) : null,
-        acceptedAt: spec.daysAgoAccepted !== undefined ? daysAgo(spec.daysAgoAccepted) : null,
-        completedAt: spec.daysAgoCompleted !== undefined ? daysAgo(spec.daysAgoCompleted) : null,
-        shippedAt: spec.daysAgoShipped !== undefined ? daysAgo(spec.daysAgoShipped) : null,
-        deliveredAt: spec.daysAgoDelivered !== undefined ? daysAgo(spec.daysAgoDelivered) : null,
+        submittedAt:
+          spec.daysAgoSubmitted !== undefined
+            ? daysAgo(spec.daysAgoSubmitted)
+            : null,
+        acceptedAt:
+          spec.daysAgoAccepted !== undefined
+            ? daysAgo(spec.daysAgoAccepted)
+            : null,
+        completedAt:
+          spec.daysAgoCompleted !== undefined
+            ? daysAgo(spec.daysAgoCompleted)
+            : null,
+        shippedAt:
+          spec.daysAgoShipped !== undefined
+            ? daysAgo(spec.daysAgoShipped)
+            : null,
+        deliveredAt:
+          spec.daysAgoDelivered !== undefined
+            ? daysAgo(spec.daysAgoDelivered)
+            : null,
       },
       include: { product: { select: { name: true } } },
     });

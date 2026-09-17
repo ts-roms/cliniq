@@ -20,11 +20,11 @@ DATABASE_URL='postgresql://postgres:<password>@<public-host>:<port>/railway' \
 
 Lab-related migrations (in apply order):
 
-| Migration | What it adds |
-|---|---|
-| `20260507100000_lab_billing` | `lab_invoices`, `lab_invoice_items`, `lab_payment_links` + RLS |
-| `20260507120000_lab_treatment_plans` | `lab_treatment_plans` + files + approvals |
-| `20260507130000_lab_case_disputes` | `lab_case_disputes` + messages |
+| Migration                            | What it adds                                                   |
+| ------------------------------------ | -------------------------------------------------------------- |
+| `20260507100000_lab_billing`         | `lab_invoices`, `lab_invoice_items`, `lab_payment_links` + RLS |
+| `20260507120000_lab_treatment_plans` | `lab_treatment_plans` + files + approvals                      |
+| `20260507130000_lab_case_disputes`   | `lab_case_disputes` + messages                                 |
 
 To deploy:
 
@@ -63,13 +63,13 @@ config is the worst time to find out.
 
 These default to "feature is off" rather than crashing. Set in Railway:
 
-| Var | Effect when missing |
-|---|---|
-| `RESEND_API_KEY` | Email notifications log only — no invoices/cases/plans emailed |
-| `WEB_URL` | Email links point at `localhost:3000` instead of prod |
-| `AI_SERVICE_URL` | "AI draft" button on treatment plans throws 502 |
-| `PAYMONGO_SECRET_KEY` | "PayMongo link" button throws a friendly error; manual links still work |
-| `PAYMONGO_WEBHOOK_SECRET` | Webhook endpoint rejects all events (signature can't be verified) |
+| Var                       | Effect when missing                                                     |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `RESEND_API_KEY`          | Email notifications log only — no invoices/cases/plans emailed          |
+| `WEB_URL`                 | Email links point at `localhost:3000` instead of prod                   |
+| `AI_SERVICE_URL`          | "AI draft" button on treatment plans throws 502                         |
+| `PAYMONGO_SECRET_KEY`     | "PayMongo link" button throws a friendly error; manual links still work |
+| `PAYMONGO_WEBHOOK_SECRET` | Webhook endpoint rejects all events (signature can't be verified)       |
 
 For the pilot, the minimum-useful set is `RESEND_API_KEY` + `WEB_URL`.
 PayMongo is recommended once the lab is doing real billing.
@@ -90,6 +90,7 @@ DATABASE_URL='postgresql://...' pnpm seed:demo-lab
 ```
 
 Logins after seeding (password: `P@ssw0rd123`):
+
 - Lab owner: `lab-owner@demo.local`
 - Clinic owner: `clinic-owner@demo.local`
 
@@ -151,16 +152,19 @@ hits a Premium endpoint, so it fails closed by design.
 ## Common issues
 
 ### "I clicked Generate from cases and nothing happened"
+
 The clinic side hasn't delivered any cases yet. Generate-from-cases
 only picks up cases in `DELIVERED` status. Confirm by filtering
 `/lab/cases?status=DELIVERED`.
 
 ### "AI draft button errored"
+
 - `AI_SERVICE_URL` not set in Railway, or the ai-service container is
   down. Check `https://<ai-service-domain>/api/health`.
 - Lab plan is below Premium. AI assist is gated by `LAB_AI_ASSIST`.
 
 ### "PayMongo webhook isn't firing"
+
 - `PAYMONGO_WEBHOOK_SECRET` not set → controller returns 401 on every
   event.
 - Check `paymongo-signature` header matches what PayMongo sent. The
@@ -170,6 +174,7 @@ only picks up cases in `DELIVERED` status. Confirm by filtering
   `https://<api-domain>/api/webhooks/paymongo` (not under `/api/lab/`).
 
 ### "Email notifications aren't sending"
+
 - `RESEND_API_KEY` unset → mailer is a no-op (you'll see
   `[mailer:noop]` log lines).
 - The recipient is not the tenant `OWNER` user, or there is no `OWNER`.

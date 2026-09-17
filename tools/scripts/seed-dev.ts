@@ -37,7 +37,11 @@ const STAFF: StaffSpec[] = [
   { email: 'admin@demo.local', name: 'Demo Admin', role: Role.ADMIN },
   { email: 'doctor@demo.local', name: 'Dr. Juana Cruz', role: Role.DOCTOR },
   { email: 'nurse@demo.local', name: 'Nurse Pedro Reyes', role: Role.NURSE },
-  { email: 'reception@demo.local', name: 'Reception Mae Santos', role: Role.RECEPTIONIST },
+  {
+    email: 'reception@demo.local',
+    name: 'Reception Mae Santos',
+    role: Role.RECEPTIONIST,
+  },
 ];
 
 interface PatientSpec {
@@ -100,7 +104,9 @@ async function main() {
   // Patient, etc.). Users that were ONLY in the demo tenant are also wiped
   // below to avoid orphaned accounts blocking re-seeding.
   console.log(`→ Resetting tenant "${TENANT_SLUG}"`);
-  const existing = await prisma.tenant.findUnique({ where: { slug: TENANT_SLUG } });
+  const existing = await prisma.tenant.findUnique({
+    where: { slug: TENANT_SLUG },
+  });
   if (existing) {
     const memberUserIds = (
       await prisma.tenantUser.findMany({
