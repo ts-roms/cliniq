@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:shared", "type:lib"]
+    "tags": [
+      "scope:shared",
+      "type:lib"
+    ]
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -22,5 +25,9 @@
     "@nestjs/common": "^11.0.0",
     "@prisma/adapter-pg": "*",
     "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0"
   }
 }

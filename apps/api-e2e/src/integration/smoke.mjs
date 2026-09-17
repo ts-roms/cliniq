@@ -16,7 +16,6 @@ import pg from 'pg';
 const API = process.env.API_URL ?? 'http://localhost:4000';
 const DATABASE_URL = process.env.DATABASE_URL;
 const slug = `pilot-${Date.now()}`;
-const ownerEmail = `owner-${Date.now()}@cliniq.test`;
 const userEmail = `user-${Date.now()}@cliniq.test`;
 const password = 'integration-test-pw-1';
 
@@ -33,7 +32,11 @@ async function jsonRequest(path, init = {}, expectedStatus = 200) {
   });
   const text = await res.text();
   let body;
-  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text;
+  }
   if (res.status !== expectedStatus) {
     fail(`${path} expected ${expectedStatus} got ${res.status}`, body);
   }
@@ -48,7 +51,9 @@ async function waitForApi() {
         log(`api healthy after ${i * 500}ms`);
         return;
       }
-    } catch { /* not up yet */ }
+    } catch {
+      /* not up yet */
+    }
     await new Promise((r) => setTimeout(r, 500));
   }
   fail('api never became healthy within 30s');
@@ -89,17 +94,23 @@ async function main() {
       body: JSON.stringify({
         slug,
         name: 'Pilot Clinic',
-        ownerEmail,
+        ownerEmail: userEmail,
         ownerName: 'Dr. Integration',
+        // The AI draft step below is feature-gated (ai_soap); STARTER 402s.
+        plan: 'PREMIUM',
       }),
     },
     201,
   );
   assert.equal(tenant.slug, slug);
+  assert.ok(
+    tenant.bootstrapToken,
+    'password-less tenant create must return a bootstrapToken',
+  );
   log(`tenant ${tenant.id} created`);
 
-  // ── Register a regular user on that tenant ─────
-  const registered = await jsonRequest(
+  // ── Register is invite-only: slug alone must be refused ──
+  await jsonRequest(
     '/api/auth/register',
     {
       method: 'POST',
@@ -110,10 +121,29 @@ async function main() {
         tenantSlug: slug,
       }),
     },
+    403,
+  );
+  log('register without invite refused (403)');
+
+  // ── Register the first owner with the bootstrap token ──
+  // The bootstrap token is bound to ownerEmail; the smoke user IS the owner.
+  const registered = await jsonRequest(
+    '/api/auth/register',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        email: userEmail,
+        name: 'Dr. Smoke',
+        password,
+        tenantSlug: slug,
+        bootstrapToken: tenant.bootstrapToken,
+      }),
+    },
     201,
   );
   assert.ok(registered.accessToken);
-  log('register ok');
+  assert.equal(registered.user.role, 'OWNER');
+  log('register via bootstrap token ok');
 
   // ── Login + /me ────────────────────────────────
   const session = await jsonRequest(
@@ -132,7 +162,7 @@ async function main() {
   assert.equal(me.email, userEmail);
   log('me ok');
 
-  // ── Patient CRUD (RECEPTIONIST has PATIENT_WRITE) ──
+  // ── Patient CRUD (OWNER has PATIENT_WRITE) ──
   const patient = await jsonRequest(
     '/api/patients',
     {
@@ -152,7 +182,9 @@ async function main() {
   assert.ok(patient.id);
   log(`patient ${patient.id} created`);
 
-  const list = await jsonRequest('/api/patients?limit=5', { headers: authHeaders });
+  const list = await jsonRequest('/api/patients?limit=5', {
+    headers: authHeaders,
+  });
   assert.ok(list.items.some((p) => p.id === patient.id));
   log(`patient list returned (total=${list.total})`);
 
@@ -188,6 +220,18 @@ async function main() {
   );
   assert.ok(consult.id);
   log(`consult ${consult.id} started`);
+
+  // ── AI processing consent (ConsentsInterceptor blocks drafts without it) ─
+  await jsonRequest(
+    `/api/patients/${patient.id}/consents`,
+    {
+      method: 'PUT',
+      headers: docHeaders,
+      body: JSON.stringify({ type: 'AI_PROCESSING', granted: true }),
+    },
+    200,
+  );
+  log('AI_PROCESSING consent granted');
 
   // ── Generate SOAP draft (api → stub ai-service) ─
   const transcript =
@@ -241,7 +285,10 @@ async function main() {
   );
   assert.ok(vital.id);
   // BMI is auto-computed from weight/height (70 / 1.7^2 ≈ 24.22)
-  assert.ok(vital.bmi && vital.bmi > 20 && vital.bmi < 30, `bmi out of expected range: ${vital.bmi}`);
+  assert.ok(
+    vital.bmi && vital.bmi > 20 && vital.bmi < 30,
+    `bmi out of expected range: ${vital.bmi}`,
+  );
   log(`vital ${vital.id} recorded (bmi=${vital.bmi})`);
 
   const allergy = await jsonRequest(
@@ -396,7 +443,10 @@ async function main() {
     {
       method: 'PATCH',
       headers: ownerHeaders,
-      body: JSON.stringify({ status: 'RESOLVED', resolution: 'Record exported via /api/patients/:id/export' }),
+      body: JSON.stringify({
+        status: 'RESOLVED',
+        resolution: 'Record exported via /api/patients/:id/export',
+      }),
     },
     200,
   );

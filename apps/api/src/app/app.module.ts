@@ -4,11 +4,14 @@ import {
   type NestModule,
 } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from '@org/db';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { TenantsModule } from '../tenants/tenants.module.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { MembersModule } from '../members/members.module.js';
 import { PatientsModule } from '../patients/patients.module.js';
 import { ConsultationsModule } from '../consultations/consultations.module.js';
 import { PrescriptionsModule } from '../prescriptions/prescriptions.module.js';
@@ -47,10 +50,15 @@ import { LabModule } from '../lab/lab.module.js';
 import { QueueModule } from '../queue/queue.module.js';
 import { ObModule } from '../ob/ob.module.js';
 import { TenantContextMiddleware } from '../common/tenant-context.middleware.js';
+import { buildThrottlerOptions } from '../common/throttle.config.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Rate limiting — registered before AuthModule so ThrottlerGuard runs
+    // ahead of the JWT/RBAC guards and a flood of bad tokens is bounded
+    // before it costs a signature verify each.
+    ThrottlerModule.forRoot(buildThrottlerOptions()),
     PrismaModule,
     AiClientModule,
     AiBudgetModule,
@@ -60,6 +68,7 @@ import { TenantContextMiddleware } from '../common/tenant-context.middleware.js'
     NotificationsModule,
     WebhooksModule,
     AuthModule,
+    MembersModule,
     TenantsModule,
     PatientsModule,
     ConsentsModule,
@@ -93,7 +102,7 @@ import { TenantContextMiddleware } from '../common/tenant-context.middleware.js'
     ObModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

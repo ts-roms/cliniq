@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:api", "type:app"],
+    "tags": [
+      "scope:api",
+      "type:app"
+    ],
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -89,6 +92,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/swagger": "^11.0.0",
     "@org/auth": "workspace:*",
     "@org/db": "workspace:*",

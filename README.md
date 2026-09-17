@@ -181,14 +181,31 @@ curl -X POST http://localhost:4000/api/tenants \
   -H 'content-type: application/json' \
   -d '{"slug":"acme","name":"Acme Clinic","ownerEmail":"doc@acme.ph","ownerName":"Dr. Cruz"}'
 
-# Login (returns access + refresh tokens)
+# Login (returns access + refresh tokens; 5 bad passwords lock the account for 15 min)
 curl -X POST http://localhost:4000/api/auth/login \
   -H 'content-type: application/json' \
   -d '{"email":"doc@acme.ph","password":"hunter2hunter2"}'
 
 # Use the token on protected routes
 curl http://localhost:4000/api/auth/me -H "Authorization: Bearer <token>"
+
+# Add staff — registration is invite-only. The response includes inviteUrl;
+# the invitee opens it (/signup?invite=…) or POSTs /auth/register with inviteToken.
+curl -X POST http://localhost:4000/api/members/invites \
+  -H "Authorization: Bearer <token>" -H 'content-type: application/json' \
+  -d '{"email":"nurse@acme.ph","role":"NURSE"}'
+
+# Sign out (revokes the refresh session); /auth/logout-all for every device
+curl -X POST http://localhost:4000/api/auth/logout \
+  -H "Authorization: Bearer <token>" -H 'content-type: application/json' \
+  -d '{"refreshToken":"<refresh>"}'
 ```
+
+If `POST /tenants` is called **without** `ownerPassword` (the web signup flow),
+it returns a 15-minute `bootstrapToken`; pass it to `/auth/register` to create
+the first OWNER. Credential endpoints are rate-limited per ip
+(`THROTTLE_AUTH_LIMIT`, default 10/min). See `docs/audit-checklist.md` for
+the rest of the auth hardening and `.env.example` for the knobs.
 
 Gate any controller route with the action vocabulary from `@org/auth`:
 

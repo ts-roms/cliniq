@@ -17,48 +17,46 @@ matters for context)
 
 ## P0 — Security / data-integrity (fix before any real clinic data)
 
-- [ ] **Open self-registration into any tenant.** `POST /api/auth/register` is
-  `@Public()` and only needs a `tenantSlug`; the user is created as an `ACTIVE`
-  `RECEPTIONIST` with full patient-read access. Slugs are public (`GET /tenants/:slug`
-  is `@Public()`, and slugs are the subdomain). Anyone can join any clinic.
-  → `apps/api/src/auth/auth.service.ts:55-78`, `apps/api/src/tenants/tenants.controller.ts:29-33`
-  Fix: replace with an invite flow (token emailed by OWNER/ADMIN), or gate
-  register behind a one-time invite code. Default new members to `PENDING`.
-- [ ] **No staff management endpoints.** `tenantUser.update` is never called
-  anywhere in the API — there is no way to promote/demote a role, deactivate a
-  member, or remove someone from a tenant. The register comment says "rely on an
-  OWNER/ADMIN to promote them", but nothing implements that.
-  → new `members` module (list / invite / change-role / deactivate) + web UI under
-  `admin/settings`.
-- [ ] **No rate limiting anywhere on the API.** `@nestjs/throttler` is not installed.
-  `/auth/login`, `/auth/register`, `/tenants` (public create), `/auth/patient-register`,
-  MFA verify, and the PayMongo webhook are all unthrottled. The tenants controller
-  comment defers this to "the edge", but there is no edge (no WAF / CloudFront rule
-  in `infra/terraform/`).
-  → `apps/api/src/main.ts`, `apps/api/src/app/app.module.ts`
-- [ ] **No account lockout / failed-login tracking.** Combined with no throttling,
-  password brute-force is unbounded. `platform-auth.service.ts:48` explicitly notes
-  lockouts are not implemented.
-- [ ] **Refresh tokens are stateless and cannot be revoked.** `auth.service.ts:190`
-  verifies a JWT with `audience=cliniq-refresh` and re-issues; there is no server-side
-  session/refresh table, no rotation-with-replay-detection, no logout endpoint.
-  A stolen refresh token is valid for the full 7 days.
-  → add `RefreshSession` model (hash, userId, expiresAt, revokedAt), rotate on use,
-  `POST /auth/logout`, "sign out everywhere".
-- [ ] **No password reset / forgot-password.** Zero hits for `reset-password` /
-  `forgot-password` in `apps/` or `libs/`. Clinic staff who forget a password have
-  no recovery path except a DB edit.
+> **Status (2026-09-17):** all P0 items below except the last two are done on
+> `claude/application-audit-checklist-*` — see `apps/api/src/members/`,
+> `apps/api/src/auth/`, `apps/api/src/common/throttle.config.ts`,
+> `apps/ai-service/src/common/service-token.guard.ts`, migration
+> `20260917000000_auth_hardening`, and `apps/api-e2e/src/auth-hardening.spec.ts`
+> (11 e2e cases). Deployment needs two new secrets: `AI_SERVICE_TOKEN` (both
+> api + ai-service) and, behind a proxy, `TRUST_PROXY=1`.
+
+- [x] **Open self-registration into any tenant.** `POST /auth/register` now
+  requires an `inviteToken` (from `POST /members/invites`) or the one-shot
+  `bootstrapToken` that `POST /tenants` returns for a password-less create
+  (first OWNER only, 15 min, bound to `ownerEmail`). A slug alone → 403.
+- [x] **No staff management endpoints.** New `members` module: list, invite /
+  resend / revoke, change role, suspend / reactivate, remove. Rules: ADMIN
+  can't grant or touch OWNER, nobody edits themselves, last active OWNER can't
+  be demoted/suspended/removed, PATIENT memberships are out of scope. Web UI:
+  "Team" card on `/admin/settings`; accept page at `/signup?invite=…`.
+- [x] **No rate limiting.** `@nestjs/throttler` global guard (`THROTTLE_LIMIT`
+  per `THROTTLE_TTL_MS` per ip) + a tight `THROTTLE_AUTH_LIMIT` bucket on
+  login / register / refresh / forgot / reset / tenant signup / MFA verify /
+  platform login. In-process storage — swap for Redis when >1 replica.
+- [x] **No account lockout.** `AUTH_LOCKOUT_THRESHOLD` failed password/TOTP
+  attempts → `AUTH_LOCKOUT_MINUTES` lock (`users.failedLoginCount / lockedUntil`).
+- [x] **Refresh tokens stateless / unrevocable.** `refresh_sessions` table;
+  rotation on every refresh with replay detection (re-presenting a rotated
+  token revokes the whole user+tenant family); `POST /auth/logout`,
+  `POST /auth/logout-all`; suspension / removal / role change / password reset
+  revoke sessions. Access tokens still live to `JWT_EXPIRES_IN` — keep it short.
+- [x] **No password reset.** `POST /auth/forgot-password` (always 200) +
+  `POST /auth/reset-password`; web pages `/forgot-password`, `/reset-password`.
+- [x] **ai-service unauthenticated.** `ServiceTokenGuard` checks
+  `X-AI-Service-Token` against `AI_SERVICE_TOKEN`; refuses to boot in
+  production without it. The api's `AiClientService` sends it.
 - [ ] **Web session is in `localStorage`, not an httpOnly cookie.**
   `apps/web/features/auth/session.ts:3` says "swap for httpOnly cookies";
   `apps/web/middleware.ts:38,51` sets `httpOnly: false`. Any XSS = full token theft.
   Two pages also hand-roll `localStorage.getItem('cliniq.session')` for fetches
   (`(app)/queue/page.tsx:79`, `(app)/queue/display/page.tsx:43`) instead of going
-  through `@org/api-client`.
-- [ ] **ai-service has no authentication.** No `X-AI-Service-Token` / shared secret;
-  only `helmet()`. If it is reachable on the network (Railway public domain, or the
-  ECS service without a private SG), anyone can burn Bedrock budget and submit PHI.
-  → `apps/ai-service/src/main.ts`; `webhooks.service.ts:90` reuses `JWT_SECRET` as
-  a shared secret elsewhere — do the same with a dedicated `AI_SERVICE_TOKEN`.
+  through `@org/api-client`. (Needs a Next route handler + cookie-aware
+  `configureAuth`; larger change, not done in this pass.)
 - [ ] **Appointment status machine is half-wired.** `IN_PROGRESS`, `COMPLETED`, and
   `NO_SHOW` are never written by any code path (`grep AppointmentStatus.NO_SHOW` →
   0 hits outside the enum). `reports/no-shows` queries a status nothing sets, and the
@@ -66,10 +64,31 @@ matters for context)
   → `apps/api/src/appointments/appointments.service.ts:193-221` — only `CHECKED_IN`
   and `CANCELLED` transitions exist.
 
+### Follow-ups surfaced while doing P0
+- [ ] `JwtAuthGuard` acting-for path reads `tenantUser` outside `withTenant`
+  (`apps/api/src/auth/guards/jwt-auth.guard.ts` ~line 80) — same RLS-context bug
+  class as `3fcf1ad`; under `cliniq_app` delegations will 403. Not fixed here.
+- [ ] Multi-tenant users: an invite to an email that already has an account is
+  refused (409). Needs an "accept while signed in" path + tenant switcher.
+- [ ] Platform-admin login has no lockout / refresh-session table (only the
+  throttle bucket). Mirror the tenant-side treatment.
+- [ ] Access tokens keep working for up to `JWT_EXPIRES_IN` after suspension /
+  removal. Either accept the 15-min window or add a per-request membership
+  check in `JwtAuthGuard` (one indexed query, must run inside `withTenant`).
+- [ ] Throttler storage is per-process; multi-replica deploys need
+  `ThrottlerStorageRedis`.
+
 ## P1 — Core-loop functional gaps vs. the MVP plan
 
 ### Auth & onboarding (plan Phase 1)
-- [ ] Invite-user flow with magic link via Resend (plan wk 4) — see P0 above.
+- [x] Fixed in passing: `PLAN_FEATURES` / `LAB_PLAN_FEATURES` were built with
+  `[...set]` which swc-loose compiles to `[].concat(set)` — PREMIUM tenants lost
+  every PRO feature at runtime (`libs/shared-types/src/lib/features.ts`, now
+  `Array.from`, with `features.spec.ts` asserting the ladders).
+- [x] Fixed in passing: `LabClinicLinksService.isLinkActive` ran a raw query with
+  no tenant GUC → always false under `cliniq_app` (clinic could never submit a
+  lab case). Now wrapped in `withTenant`.
+- [x] Invite-user flow via Resend (plan wk 4) — done, see P0 above.
 - [ ] MFA is opt-in via `/mfa/setup`; the plan says **mandatory for clinical roles**.
   No enforcement that DOCTOR/NURSE/OWNER have TOTP enrolled; no `@RequiresMfa`
   gating found on clinical routes despite the e2e plan referencing it.
@@ -197,7 +216,12 @@ Numbers from `find … -name '*.spec.*'`:
 
 - [ ] Follow `docs/e2e-testing-plan.md` (currently **untracked** in the main checkout —
   commit it). Its Phase 2 references P0-2 (throttler), P0-3 (ai-service secret),
-  P0-6 (cookie auth) as prerequisites; none of those P0s are done (see above).
+  P0-6 (cookie auth) as prerequisites; P0-2 and P0-3 are now done, P0-6 is not.
+- [x] `ci.yml` api-integration job now also runs `nx run @org/api-e2e:e2e` (7 spec
+  files, 29 cases) after the smoke script. `smoke.mjs` was stale (feature gates,
+  consent interceptor) and is fixed.
+- [ ] `lab.spec.ts` "clinic + lab pair" flaked once in 5 full-suite runs under
+  parallel load (passes in isolation). Watch it in CI; consider `--runInBand`.
 - [ ] Prompt eval gate: `libs/ai-prompts/evals/*` exist and run against a stub, but no
   CI job runs them.
 - [ ] No coverage reporting/ratchet in CI.

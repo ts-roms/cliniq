@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   LabPlan,
   MemberStatus,
@@ -8,14 +14,17 @@ import {
   TenantKind,
   TenantStatus,
 } from '@org/db';
-import { hashPassword } from '@org/auth';
+import { hashPassword, signJwt, JWT_AUDIENCES } from '@org/auth';
 import { CreateTenantDto } from './dto/create-tenant.dto.js';
 
 @Injectable()
 export class TenantsService {
   private readonly logger = new Logger(TenantsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   async create(dto: CreateTenantDto) {
     // Public signup runs without a tenant context. Under the cliniq_app
@@ -41,7 +50,7 @@ export class TenantsService {
       : null;
 
     const kind = dto.kind ?? TenantKind.CLINIC;
-    return this.prisma.withPlatformContext(async (tx) => {
+    const created = await this.prisma.withPlatformContext(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           slug: dto.slug,
@@ -49,7 +58,8 @@ export class TenantsService {
           kind,
           // Clinic tenants get a Plan; lab tenants get a LabPlan.
           plan: kind === TenantKind.CLINIC ? (dto.plan ?? Plan.STARTER) : null,
-          labPlan: kind === TenantKind.LAB ? (dto.labPlan ?? LabPlan.LAB_BASIC) : null,
+          labPlan:
+            kind === TenantKind.LAB ? (dto.labPlan ?? LabPlan.LAB_BASIC) : null,
           status: TenantStatus.TRIAL,
           trialEndsAt: this.addDays(new Date(), 30),
         },
@@ -59,8 +69,10 @@ export class TenantsService {
       // via /api/auth/register, which creates the User + TenantUser. Skip
       // owner provisioning here so we don't conflict on the unique email.
       if (!passwordHash) {
-        this.logger.log(`Created tenant ${tenant.slug} (${tenant.id}) without owner — pending /auth/register`);
-        return tenant;
+        this.logger.log(
+          `Created tenant ${tenant.slug} (${tenant.id}) without owner — pending /auth/register`,
+        );
+        return { tenant, ownerless: true as const };
       }
 
       // Upsert: existing User keeps its passwordHash (don't trample creds for
@@ -82,9 +94,32 @@ export class TenantsService {
         },
       });
 
-      this.logger.log(`Created tenant ${tenant.slug} (${tenant.id}) with owner ${ownerUser.email}`);
-      return tenant;
+      this.logger.log(
+        `Created tenant ${tenant.slug} (${tenant.id}) with owner ${ownerUser.email}`,
+      );
+      return { tenant, ownerless: false as const };
     });
+
+    if (!created.ownerless) return created.tenant;
+
+    // One-shot proof that THIS caller created the tenant. /auth/register
+    // accepts it only while the tenant has zero members and only for the
+    // ownerEmail baked in here. 15 minutes is plenty for the signup form's
+    // next request; an abandoned shell simply stays ownerless.
+    const bootstrapToken = await signJwt(
+      {
+        sub: 'bootstrap',
+        tid: created.tenant.id,
+        role: Role.OWNER,
+        email: dto.ownerEmail.toLowerCase(),
+      },
+      {
+        secret: this.config.getOrThrow<string>('JWT_SECRET'),
+        expiresIn: '15m',
+        audience: JWT_AUDIENCES.BOOTSTRAP,
+      },
+    );
+    return { ...created.tenant, bootstrapToken };
   }
 
   async findBySlug(slug: string) {

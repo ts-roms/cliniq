@@ -1,6 +1,6 @@
 # Running the E2E Test Suite
 
-> Lives at [`apps/api-e2e/src/`](../../apps/api-e2e/src/). Six spec files
+> Lives at [`apps/api-e2e/src/`](../../apps/api-e2e/src/). Seven spec files
 > exercise the api end-to-end as a real client would: the suite never
 > touches the database directly, only the public HTTP surface.
 
@@ -8,6 +8,7 @@
 
 | File | What it asserts |
 |---|---|
+| `auth-hardening.spec.ts` | Invite-only registration + bootstrap token, members lifecycle (invite → accept → role → suspend → remove), refresh rotation + replay detection, logout, forgot/reset password, lockout. Needs `THROTTLE_AUTH_LIMIT` ≥ 200 and `AUTH_EXPOSE_DEBUG_TOKENS=true` on the api (the reset case is skipped otherwise). |
 | `tenant-isolation.spec.ts` | Cross-tenant RLS leaks — patients, queue tickets, OB pregnancies. Most important security regression test. |
 | `feature-gates.spec.ts` | `@RequiresFeature` returns 402 when the tenant's plan doesn't include the flag. |
 | `queue.spec.ts` | Issue ticket → call-next → close. Priority bumping. Empty-queue 404. |
@@ -23,8 +24,9 @@
 ## Running locally
 
 ```bash
-# Terminal 1 — start the api
-pnpm nx serve @org/api
+# Terminal 1 — start the api (raise the auth throttle so the suite isn't 429'd,
+# and expose reset tokens so the password-reset case can complete)
+THROTTLE_AUTH_LIMIT=1000 AUTH_EXPOSE_DEBUG_TOKENS=true pnpm nx serve @org/api
 
 # Terminal 2 — run the suite
 pnpm nx run @org/api-e2e:e2e

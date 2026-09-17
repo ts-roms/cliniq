@@ -49,6 +49,8 @@ model Tenant {
   users     TenantUser[]
   patients  Patient[]
   locations Location[]
+  invites   TenantInvite[]
+  refreshSessions RefreshSession[]
 
   // Lab-side (kind=LAB) connections to clinics that send orders here.
   labLinks    LabClinicLink[] @relation("LabLinks")
@@ -946,11 +948,20 @@ model User {
 
   lastLogin     DateTime?
 
+  // Brute-force lockout. Incremented on every failed password check, reset
+  // to 0 on success. Once it hits AUTH_LOCKOUT_THRESHOLD the login path
+  // sets `lockedUntil` and refuses attempts until it passes.
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenants       TenantUser[]
+  sentInvites   TenantInvite[]        @relation("InviteSender")
+  refreshSessions RefreshSession[]
+  passwordResets  PasswordResetToken[]
   consultations Consultation[] @relation("ConsultProvider")
   prescriptions Prescription[] @relation("RxProvider")
   appointments  Appointment[]  @relation("ApptProvider")
@@ -1021,6 +1032,74 @@ enum MemberStatus {
   INVITED
   ACTIVE
   SUSPENDED
+}
+
+// Staff invitation. The ONLY way to join an existing tenant — /auth/register
+// requires a valid invite token (or the one-shot bootstrap token issued by
+// POST /tenants for the first owner). We store a sha256 of the opaque token,
+// never the token itself; the raw token only ever lives in the invite email
+// and the inviter's response body.
+model TenantInvite {
+  id              String    @id @default(cuid())
+  tenantId        String
+  email           String
+  role            Role
+  tokenHash       String    @unique
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  acceptedUserId  String?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy User   @relation("InviteSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, email])
+  @@map("tenant_invites")
+}
+
+// Server-side refresh-token state. Every refresh JWT carries `sid` = this
+// row's id. Refresh rotates the row (revokes the old, inserts a new one
+// linked via replacedById); presenting an already-rotated token is treated
+// as theft and revokes the whole user+tenant family. Logout / member
+// suspension / password reset revoke rows so the 7-day refresh window can
+// be cut short server-side.
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tenantId     String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId, tenantId])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+}
+
+// Forgot-password flow. Single-use, short-lived (AUTH_RESET_TTL_MIN).
+// Hash-only storage, same reasoning as TenantInvite.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 // ──────────────────────────────────────────────

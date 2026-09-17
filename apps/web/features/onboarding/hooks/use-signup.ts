@@ -28,18 +28,29 @@ export function useSignup(opts?: { onSuccess?: () => void }) {
         },
       });
       if (tErr || !tenant) {
-        const msg = (tErr as { message?: string } | undefined)?.message ?? 'Could not create clinic';
+        const msg =
+          (tErr as { message?: string } | undefined)?.message ??
+          'Could not create clinic';
         throw new Error(msg);
       }
 
-      // 2. Register a regular user account so we can log in.
-      //    The owner shell from step 1 lives separately for now (no password).
+      // 2. Register the first OWNER. /auth/register is invite-only; the
+      //    one-shot bootstrapToken from step 1 is what proves we created
+      //    this tenant (a slug alone no longer gets anyone in).
+      const bootstrapToken = (tenant as { bootstrapToken?: string })
+        .bootstrapToken;
+      if (!bootstrapToken) {
+        throw new Error(
+          'Clinic created, but no bootstrap token was returned. Try signing in.',
+        );
+      }
       const { data: registered, error: rErr } = await authControllerRegister({
         body: {
           email: input.ownerEmail,
           name: input.ownerName,
           password: input.password,
           tenantSlug: input.slug,
+          bootstrapToken,
         },
       });
       if (rErr || !registered) {

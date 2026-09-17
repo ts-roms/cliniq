@@ -57,20 +57,20 @@ export const Features = {
 
   // ── Lab features ────────────────────────────────────────────────
   // Basic+ (every paid lab tier)
-  LAB_CATALOG: 'lab_catalog',           // custom product catalog
+  LAB_CATALOG: 'lab_catalog', // custom product catalog
   LAB_DYNAMIC_FORMS: 'lab_dynamic_forms', // unlimited multi-language forms
-  LAB_ORDERS: 'lab_orders',             // digital case/order requests
+  LAB_ORDERS: 'lab_orders', // digital case/order requests
   LAB_FILE_UPLOADS: 'lab_file_uploads', // STL/ZIP/PDF/JPG, no size limit
-  LAB_CALENDAR: 'lab_calendar',         // standard/urgent calendar
+  LAB_CALENDAR: 'lab_calendar', // standard/urgent calendar
   LAB_PUBLIC_REQUEST: 'lab_public_request', // anonymous public request link
-  LAB_LOYALTY: 'lab_loyalty',           // tiered loyalty discounts
+  LAB_LOYALTY: 'lab_loyalty', // tiered loyalty discounts
 
   // Standard+
-  LAB_PHASES: 'lab_phases',             // manufacturing phase tracking
-  LAB_CHAT: 'lab_chat',                 // per-order chat
+  LAB_PHASES: 'lab_phases', // manufacturing phase tracking
+  LAB_CHAT: 'lab_chat', // per-order chat
   LAB_INTERNAL_NOTES: 'lab_internal_notes',
   LAB_TAGS: 'lab_tags',
-  LAB_MULTILAB: 'lab_multilab',         // multi-lab assignment
+  LAB_MULTILAB: 'lab_multilab', // multi-lab assignment
   LAB_CONFORMITY_DOCS: 'lab_conformity_docs',
   LAB_CONSENT_ESIGN: 'lab_consent_esign',
   LAB_MATERIALS_LOT: 'lab_materials_lot',
@@ -79,10 +79,10 @@ export const Features = {
   LAB_STATS_PANEL: 'lab_stats_panel',
 
   // Premium-only
-  LAB_EINVOICE: 'lab_einvoice',         // PH BIR e-invoice integration
+  LAB_EINVOICE: 'lab_einvoice', // PH BIR e-invoice integration
   LAB_TREATMENT_PLAN: 'lab_treatment_plan',
-  LAB_3D_VIEWER: 'lab_3d_viewer',       // OnyxCeph/3Shape
-  LAB_AI_ASSIST: 'lab_ai_assist',       // GPT-4 / Bedrock
+  LAB_3D_VIEWER: 'lab_3d_viewer', // OnyxCeph/3Shape
+  LAB_AI_ASSIST: 'lab_ai_assist', // GPT-4 / Bedrock
   LAB_MACHINE_CONTROL: 'lab_machine_control',
   LAB_DISPUTE_MANAGER: 'lab_dispute_manager',
   LAB_CUSTOM_DOMAIN: 'lab_custom_domain', // on-demand
@@ -99,14 +99,19 @@ export const MAX_LOCATIONS_PER_PLAN: Record<Plan, number> = {
 };
 
 // Plan → unlocked features. Higher tiers strictly include lower tiers'
-// features (enforced in this file's tests).
+// features (enforced in features.spec.ts).
+//
+// NOTE: lower tiers are folded in with Array.from(), never `[...set]`.
+// The api bundle is compiled with swc in loose mode, which turns a Set
+// spread into `[].concat(set)` — the Set lands in the new Set as ONE
+// element and the tier silently loses every inherited feature.
 const STARTER_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
   Features.CORE_EMR,
   Features.REPORTS_BASIC,
 ]);
 
 const PRO_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...STARTER_FEATURES,
+  ...Array.from(STARTER_FEATURES),
   Features.REPORTS_ADVANCED,
   Features.INVENTORY,
   Features.LABS,
@@ -119,7 +124,7 @@ const PRO_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
 ]);
 
 const PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...PRO_FEATURES,
+  ...Array.from(PRO_FEATURES),
   Features.AI_DERMATOLOGY,
   Features.WEBHOOKS,
   Features.CALENDAR_SYNC,
@@ -165,7 +170,7 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     id: 'STARTER',
     label: 'Starter',
     tagline: 'Solo practitioners and single-location clinics.',
-    features: [...STARTER_FEATURES],
+    features: Array.from(STARTER_FEATURES),
     maxLocations: 1,
     priceMonthly: 149900, // ₱1,499 / month — placeholder
     currency: 'PHP',
@@ -175,7 +180,7 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
     id: 'PRO',
     label: 'Pro',
     tagline: 'Growing clinics with telemedicine, labs, and HMO billing.',
-    features: [...PRO_FEATURES],
+    features: Array.from(PRO_FEATURES),
     maxLocations: 3,
     priceMonthly: 499900, // ₱4,999 / month — placeholder
     currency: 'PHP',
@@ -185,8 +190,9 @@ export const PLAN_META: Record<Plan, PlanMeta> = {
   PREMIUM: {
     id: 'PREMIUM',
     label: 'Premium',
-    tagline: 'Multi-location groups with full AI suite, integrations, and custom retention.',
-    features: [...PREMIUM_FEATURES],
+    tagline:
+      'Multi-location groups with full AI suite, integrations, and custom retention.',
+    features: Array.from(PREMIUM_FEATURES),
     maxLocations: Number.POSITIVE_INFINITY,
     priceMonthly: 1499900, // ₱14,999 / month — placeholder
     currency: 'PHP',
@@ -224,7 +230,7 @@ const LAB_BASIC_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
 ]);
 
 const LAB_STANDARD_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...LAB_BASIC_FEATURES,
+  ...Array.from(LAB_BASIC_FEATURES),
   Features.LAB_PHASES,
   Features.LAB_CHAT,
   Features.LAB_INTERNAL_NOTES,
@@ -239,7 +245,7 @@ const LAB_STANDARD_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
 ]);
 
 const LAB_PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>([
-  ...LAB_STANDARD_FEATURES,
+  ...Array.from(LAB_STANDARD_FEATURES),
   Features.LAB_EINVOICE,
   Features.LAB_TREATMENT_PLAN,
   Features.LAB_3D_VIEWER,
@@ -269,9 +275,13 @@ export interface LabPlanLimits {
 }
 
 export const LAB_PLAN_LIMITS: Record<LabPlan, LabPlanLimits> = {
-  LAB_BASIC:    { ordersPerMonth: 500,  usersPerLab: 200,  cloudStorageGb: 5 },
+  LAB_BASIC: { ordersPerMonth: 500, usersPerLab: 200, cloudStorageGb: 5 },
   LAB_STANDARD: { ordersPerMonth: 1000, usersPerLab: null, cloudStorageGb: 15 },
-  LAB_PREMIUM:  { ordersPerMonth: null, usersPerLab: null, cloudStorageGb: null },
+  LAB_PREMIUM: {
+    ordersPerMonth: null,
+    usersPerLab: null,
+    cloudStorageGb: null,
+  },
 };
 
 export function labPlanLimits(plan: LabPlan): LabPlanLimits {
@@ -296,7 +306,7 @@ export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
     id: 'LAB_BASIC',
     label: 'Basic',
     tagline: 'Solo labs and small teams getting started with digital ordering.',
-    features: [...LAB_BASIC_FEATURES],
+    features: Array.from(LAB_BASIC_FEATURES),
     limits: LAB_PLAN_LIMITS.LAB_BASIC,
     priceMonthly: 107900, // ₱1,079 / month
     currency: 'PHP',
@@ -305,8 +315,9 @@ export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
   LAB_STANDARD: {
     id: 'LAB_STANDARD',
     label: 'Standard',
-    tagline: 'Growing labs that need workflow phases, chat, and materials traceability.',
-    features: [...LAB_STANDARD_FEATURES],
+    tagline:
+      'Growing labs that need workflow phases, chat, and materials traceability.',
+    features: Array.from(LAB_STANDARD_FEATURES),
     limits: LAB_PLAN_LIMITS.LAB_STANDARD,
     priceMonthly: 165500, // ₱1,655 / month
     currency: 'PHP',
@@ -316,8 +327,9 @@ export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
   LAB_PREMIUM: {
     id: 'LAB_PREMIUM',
     label: 'Premium',
-    tagline: 'Multi-lab groups with treatment plans, 3D viewers, AI assist, and custom infra.',
-    features: [...LAB_PREMIUM_FEATURES],
+    tagline:
+      'Multi-lab groups with treatment plans, 3D viewers, AI assist, and custom infra.',
+    features: Array.from(LAB_PREMIUM_FEATURES),
     limits: LAB_PLAN_LIMITS.LAB_PREMIUM,
     priceMonthly: 359900, // ₱3,599 / month
     currency: 'PHP',
@@ -337,4 +349,8 @@ export function formatLabPlanPrice(meta: LabPlanMeta): string {
   return formatter.format(meta.priceMonthly / 100);
 }
 
-export const ALL_LAB_PLANS: LabPlan[] = ['LAB_BASIC', 'LAB_STANDARD', 'LAB_PREMIUM'];
+export const ALL_LAB_PLANS: LabPlan[] = [
+  'LAB_BASIC',
+  'LAB_STANDARD',
+  'LAB_PREMIUM',
+];

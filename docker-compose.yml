@@ -71,7 +71,15 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
       AI_SERVICE_URL: http://ai-service:4100
+      # Shared secret for ai-service (its ServiceTokenGuard). Same value on
+      # both services. The dev default is fine on a laptop, not anywhere else.
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-only-ai-service-token-change-me}
       PORTAL_BASE_URL: ${PORTAL_BASE_URL:-http://localhost:3000}
+      # Behind a reverse proxy set TRUST_PROXY=1 so rate limits key on the
+      # real client ip (X-Forwarded-For) rather than the proxy's.
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      THROTTLE_AUTH_LIMIT: ${THROTTLE_AUTH_LIMIT:-10}
       # Optional integration env. Mailer/Sms/TURN go no-op when unset.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
@@ -98,6 +106,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4100
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-only-ai-service-token-change-me}
       AWS_REGION: ${AWS_REGION:-ap-southeast-1}
       # Bedrock creds are optional in dev — when missing, ai-service falls
       # back to stub responses for the SOAP/derm endpoints.

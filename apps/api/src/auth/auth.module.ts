@@ -7,9 +7,10 @@ import { RbacGuard } from './guards/rbac.guard.js';
 import { FeatureGuard } from './guards/feature.guard.js';
 import { DelegationsModule } from '../delegations/delegations.module.js';
 import { MfaModule } from '../mfa/mfa.module.js';
+import { MailerModule } from '../mailer/mailer.module.js';
 
 @Module({
-  imports: [DelegationsModule, MfaModule],
+  imports: [DelegationsModule, MfaModule, MailerModule],
   controllers: [AuthController],
   providers: [
     AuthService,

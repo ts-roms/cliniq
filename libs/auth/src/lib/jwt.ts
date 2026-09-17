@@ -6,6 +6,9 @@
 //   - cliniq-refresh       — tenant-scoped refresh tokens
 //   - cliniq-platform      — platform admin access tokens (SaaS operators)
 //   - cliniq-platform-refresh — platform admin refresh tokens
+//   - cliniq-bootstrap     — one-shot token from POST /tenants that lets the
+//                            signup flow register the FIRST owner of a fresh
+//                            tenant. 15 min TTL, no other use.
 // jose's jwtVerify rejects on audience mismatch, so a stolen tenant access
 // token can't impersonate a platform admin and vice versa.
 
@@ -13,8 +16,8 @@ import { SignJWT, jwtVerify, type JWTPayload as JosePayload } from 'jose';
 import type { Role } from './roles.js';
 
 export interface ClinIqJwtPayload extends JosePayload {
-  sub: string;        // user id
-  tid: string;        // tenant id
+  sub: string; // user id
+  tid: string; // tenant id
   role: Role;
   email?: string;
   // For role=PATIENT only — id of the Patient record this account represents.
@@ -26,12 +29,16 @@ export interface ClinIqJwtPayload extends JosePayload {
   // Tenants don't change kind in practice, so JWT staleness on this field
   // isn't an operational concern.
   tk?: 'CLINIC' | 'LAB';
+  // Refresh tokens only — id of the RefreshSession row backing this token.
+  // Lets the server rotate/revoke a specific session instead of trusting
+  // the JWT's own expiry.
+  sid?: string;
 }
 
 export interface PlatformJwtPayload extends JosePayload {
-  sub: string;       // PlatformAdmin id
+  sub: string; // PlatformAdmin id
   email: string;
-  typ: 'platform';   // sentinel — defense in depth alongside the audience check
+  typ: 'platform'; // sentinel — defense in depth alongside the audience check
 }
 
 const ISSUER = 'cliniq';
@@ -39,6 +46,7 @@ const AUDIENCE_TENANT = 'cliniq-app';
 const AUDIENCE_TENANT_REFRESH = 'cliniq-refresh';
 const AUDIENCE_PLATFORM = 'cliniq-platform';
 const AUDIENCE_PLATFORM_REFRESH = 'cliniq-platform-refresh';
+const AUDIENCE_BOOTSTRAP = 'cliniq-bootstrap';
 const DEFAULT_TTL = '15m';
 
 export const JWT_AUDIENCES = {
@@ -46,6 +54,7 @@ export const JWT_AUDIENCES = {
   TENANT_REFRESH: AUDIENCE_TENANT_REFRESH,
   PLATFORM: AUDIENCE_PLATFORM,
   PLATFORM_REFRESH: AUDIENCE_PLATFORM_REFRESH,
+  BOOTSTRAP: AUDIENCE_BOOTSTRAP,
 } as const;
 
 function key(secret: string): Uint8Array {
@@ -64,7 +73,7 @@ export interface SignOptions {
 
 export async function signJwt(
   payload: Omit<ClinIqJwtPayload, 'iss' | 'aud' | 'iat' | 'exp'>,
-  opts: SignOptions
+  opts: SignOptions,
 ): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
@@ -77,7 +86,7 @@ export async function signJwt(
 
 export async function verifyJwt(
   token: string,
-  opts: { secret: string; issuer?: string; audience?: string }
+  opts: { secret: string; issuer?: string; audience?: string },
 ): Promise<ClinIqJwtPayload> {
   const { payload } = await jwtVerify(token, key(opts.secret), {
     issuer: opts.issuer ?? ISSUER,
@@ -111,7 +120,9 @@ export async function verifyPlatformJwt(
     audience: opts.audience ?? AUDIENCE_PLATFORM,
   });
   if (typeof payload.sub !== 'string') throw new Error('jwt: missing sub');
-  if (typeof payload['email'] !== 'string') throw new Error('jwt: missing email');
-  if (payload['typ'] !== 'platform') throw new Error('jwt: not a platform token');
+  if (typeof payload['email'] !== 'string')
+    throw new Error('jwt: missing email');
+  if (payload['typ'] !== 'platform')
+    throw new Error('jwt: not a platform token');
   return payload as PlatformJwtPayload;
 }

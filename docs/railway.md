@@ -109,6 +109,9 @@ literal values across services.
 | `JWT_EXPIRES_IN` | `15m` |
 | `REFRESH_TOKEN_EXPIRES_IN` | `7d` |
 | `AI_SERVICE_URL` | `http://${{ai-service.RAILWAY_PRIVATE_DOMAIN}}:4100` |
+| `AI_SERVICE_TOKEN` | 32+ random chars, **same value on `ai-service`** (it refuses to boot in production without one) |
+| `TRUST_PROXY` | `1` (Railway terminates TLS in front of the api; needed so rate limits see the real client ip) |
+| `THROTTLE_AUTH_LIMIT` / `THROTTLE_LIMIT` | optional; defaults 10 / 300 per minute per ip |
 | `PORTAL_BASE_URL` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` |
 | `CORS_ORIGINS` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` |
 | `PUBLIC_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
@@ -138,6 +141,7 @@ literal values across services.
 | `AWS_SECRET_ACCESS_KEY` | from AWS |
 | `BEDROCK_MODEL_SOAP` | Bedrock model id (or unset for stub responses) |
 | `BEDROCK_MODEL_DERM` | Bedrock model id (or unset for stub responses) |
+| `AI_SERVICE_TOKEN` | same value as on `api` — required, the service exits at boot without it |
 | `CORS_ORIGINS` | `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}` |
 
 > Without `AWS_*` and `BEDROCK_MODEL_*` set, ai-service falls back to stub

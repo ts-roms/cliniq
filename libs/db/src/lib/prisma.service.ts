@@ -88,6 +88,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get tenant() { return this.client.tenant; }
   get user() { return this.client.user; }
   get tenantUser() { return this.client.tenantUser; }
+  get tenantInvite() { return this.client.tenantInvite; }
+  get refreshSession() { return this.client.refreshSession; }
+  get passwordResetToken() { return this.client.passwordResetToken; }
   get patient() { return this.client.patient; }
   get consultation() { return this.client.consultation; }
   get aiSuggestion() { return this.client.aiSuggestion; }
