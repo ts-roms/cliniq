@@ -11,8 +11,8 @@
  * `demo-clinic`) is wiped first via Tenant cascade, then recreated.
  *
  * Login credentials after seeding:
- *   Lab owner:    lab-owner@demo.local    / Password123!
- *   Clinic owner: clinic-owner@demo.local / Password123!
+ *   Lab owner:    lab-owner@demo.local    / P@ssw0rd123
+ *   Clinic owner: clinic-owner@demo.local / P@ssw0rd123
  */
 import {
   prisma,
@@ -33,7 +33,7 @@ import { hashPassword } from '@org/auth';
 
 const LAB_SLUG = 'demo-lab';
 const CLINIC_SLUG = 'demo-clinic';
-const PASSWORD = 'Password123!';
+const PASSWORD = 'P@ssw0rd123';
 
 async function main() {
   const passwordHash = await hashPassword(PASSWORD);

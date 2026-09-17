@@ -89,7 +89,7 @@ Useful for showing prospects the populated UI before they sign.
 DATABASE_URL='postgresql://...' pnpm seed:demo-lab
 ```
 
-Logins after seeding (password: `Password123!`):
+Logins after seeding (password: `P@ssw0rd123`):
 - Lab owner: `lab-owner@demo.local`
 - Clinic owner: `clinic-owner@demo.local`
 

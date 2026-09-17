@@ -111,7 +111,7 @@ pnpm db:seed
 pnpm seed:demo-lab
 ```
 
-Seeded logins (password for both: `Password123!`):
+Seeded logins (password for both: `P@ssw0rd123`):
 
 | Tenant | Login |
 |---|---|

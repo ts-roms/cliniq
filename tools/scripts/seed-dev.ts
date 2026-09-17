@@ -1,6 +1,6 @@
 /**
  * Idempotent dev seed. Wipes and recreates the `demo` tenant with one user
- * per role (all sharing password `Password123!`) and a few patients, one of
+ * per role (all sharing password `P@ssw0rd123`) and a few patients, one of
  * which has a linked portal login (`patient1@demo.local`). Also seeds a
  * platform-console admin (`platform@cliniq.local`) — separate identity table,
  * not tenant-scoped.
@@ -15,7 +15,7 @@ import { prisma, Role, MemberStatus, TenantStatus, Plan, Sex } from '@org/db';
 import { hashPassword } from '@org/auth';
 
 const TENANT_SLUG = 'demo';
-const PASSWORD = 'Password123!';
+const PASSWORD = 'P@ssw0rd123';
 
 interface PlatformAdminSpec {
   email: string;
