@@ -1,0 +1,35 @@
+{
+  "cookies": [
+    {
+      "name": "cliniq.platform.refresh",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NGM2ZGUwZS03ZjVlLTQwMjYtYjU5MC0xYjVkNmRlOTE3YjYiLCJlbWFpbCI6InBsYXRmb3JtLWQxNjMzN2VkQGUyZS5sb2NhbCIsInR5cCI6InBsYXRmb3JtIiwiaXNzIjoiY2xpbmlxIiwiYXVkIjoiY2xpbmlxLXBsYXRmb3JtLXJlZnJlc2giLCJpYXQiOjE3Nzg1ODQxMjEsImV4cCI6MTc3OTE4ODkyMX0.wdC4Q9YyOZoj7guz1Zg4xgOkTcTwDW-KdC36JXf61XI",
+      "domain": "localhost",
+      "path": "/api/platform/auth",
+      "expires": 1779188921.985401,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "cliniq.platform.access",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NGM2ZGUwZS03ZjVlLTQwMjYtYjU5MC0xYjVkNmRlOTE3YjYiLCJlbWFpbCI6InBsYXRmb3JtLWQxNjMzN2VkQGUyZS5sb2NhbCIsInR5cCI6InBsYXRmb3JtIiwiaXNzIjoiY2xpbmlxIiwiYXVkIjoiY2xpbmlxLXBsYXRmb3JtIiwiaWF0IjoxNzc4NTg0MTIxLCJleHAiOjE3Nzg1ODUwMjF9.gUQ7eiI7uRb7JVO2oszubczHv9VPG3W-x-mGO0KRBWI",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1778585021.984182,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "cliniq.platform-session",
+          "value": "{\"admin\":{\"id\":\"64c6de0e-7f5e-4026-b590-1b5d6de917b6\",\"email\":\"platform-d16337ed@e2e.local\"}}"
+        }
+      ]
+    }
+  ]
+}

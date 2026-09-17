@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -16,6 +16,12 @@ import {
   Select,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import {
+  SearchSelect,
+  type SearchSelectItem,
+} from '@/shared/components/forms/search-select';
+import { useDebouncedCallback } from '@/shared/hooks/use-debounced-callback';
+import { usePatientList } from '@/features/patients';
 import { useFreeSlots, useProviders } from '@/features/availability';
 import {
   createAppointmentSchema,
@@ -45,8 +51,8 @@ export function NewAppointmentDialog({
         <DialogHeader>
           <DialogTitle>Schedule appointment</DialogTitle>
           <DialogDescription>
-            Pick a provider and a free slot; the list honours their hours and
-            time off.
+            Search the patient by name or MRN, pick a provider and a free slot;
+            the slot list honours their hours and time off.
           </DialogDescription>
         </DialogHeader>
         <NewAppointmentForm
@@ -92,16 +98,47 @@ function NewAppointmentForm({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateAppointmentInput, unknown, CreateAppointmentOutput>({
     resolver: zodResolver(createAppointmentSchema),
     defaultValues: {
       type: 'CONSULT',
+      patientId: '',
       providerId: defaultProviderId ?? '',
       startsAt: defaultStartIso(defaultDate),
       endsAt: defaultEndIso(defaultDate),
     },
   });
+
+  // Patient picker — server-side search, debounced so /api/patients isn't
+  // hit per keystroke. An empty query returns the first page so the list is
+  // useful before typing.
+  const [patientQuery, setPatientQuery] = useState('');
+  const patients = usePatientList(patientQuery);
+  const [setPatientQueryDebounced] = useDebouncedCallback(
+    (q: string) => setPatientQuery(q),
+    200,
+  );
+  const patientItems: SearchSelectItem[] = useMemo(
+    () =>
+      (patients.data?.items ?? []).map((p) => ({
+        id: p.id,
+        label: `${p.firstName} ${p.lastName}`,
+        sublabel: p.mrn,
+      })),
+    [patients.data],
+  );
+  const providerItems: SearchSelectItem[] = useMemo(
+    () =>
+      (providers.data ?? []).map((p) => ({
+        id: p.id,
+        label: p.name,
+        sublabel:
+          p.specialty ?? p.role.charAt(0) + p.role.slice(1).toLowerCase(),
+      })),
+    [providers.data],
+  );
 
   const providerId = watch('providerId');
   const startsAt = watch('startsAt');
@@ -131,19 +168,42 @@ function NewAppointmentForm({
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="Patient ID" error={errors.patientId?.message}>
-          <Input placeholder="cl..." {...register('patientId')} />
+        <FormField label="Patient" error={errors.patientId?.message}>
+          <Controller
+            control={control}
+            name="patientId"
+            render={({ field }) => (
+              <SearchSelect
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                items={patientItems}
+                isLoading={patients.isFetching}
+                onQueryChange={setPatientQueryDebounced}
+                placeholder="Search by name or MRN…"
+                emptyMessage={
+                  patientQuery
+                    ? 'No matching patients'
+                    : 'Start typing to search'
+                }
+              />
+            )}
+          />
         </FormField>
         <FormField label="Provider" error={errors.providerId?.message}>
-          <Select {...register('providerId')}>
-            <option value="">Select…</option>
-            {(providers.data ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.specialty ? ` · ${p.specialty}` : ''}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name="providerId"
+            render={({ field }) => (
+              <SearchSelect
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                items={providerItems}
+                isLoading={providers.isFetching}
+                placeholder="Pick a provider…"
+                emptyMessage="No bookable providers"
+              />
+            )}
+          />
         </FormField>
       </div>
       <div className="grid grid-cols-2 gap-3">

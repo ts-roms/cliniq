@@ -18,6 +18,26 @@ import {
 } from '../auth/decorators/current-user.decorator.js';
 import { FilesService } from '../files/files.service.js';
 import { AiClientService } from '../ai-client/ai-client.service.js';
+import { AiBudgetService } from '../ai-budget/ai-budget.service.js';
+
+/**
+ * Estimate STT cost in centavos. Most STT pricing is per audio-second, not
+ * per token, so we keep a simple table here and bill from `durationSec` if
+ * the provider returned it.
+ */
+function estimateSttCostCentavos(
+  durationSec: number | undefined,
+  provider: string,
+): number {
+  if (!durationSec || durationSec <= 0) return 1;
+  const minutes = durationSec / 60;
+  const pesoPerMinute = /transcribe-medical/i.test(provider)
+    ? 0.014
+    : /whisper/i.test(provider)
+      ? 0.0036
+      : 0.0072;
+  return Math.max(1, Math.ceil(minutes * pesoPerMinute * 100));
+}
 
 class TranscribeFileDto {
   @ApiProperty({ description: 'fileId returned by POST /api/files/presign' })
@@ -48,29 +68,54 @@ export class TranscriptsController {
     private readonly files: FilesService,
     private readonly ai: AiClientService,
     private readonly config: ConfigService,
+    private readonly budget: AiBudgetService,
   ) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.AI_USE)
-  @Audit({ action: 'ai.transcribe', entity: 'FileObject', entityIdFrom: 'body:id' })
+  @Audit({
+    action: 'ai.transcribe',
+    entity: 'FileObject',
+    entityIdFrom: 'body:id',
+  })
   async transcribe(
     @Body() dto: TranscribeFileDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TranscribeResponseDto> {
+    // Refuse the call if the tenant's monthly AI cap is hit. Throws 429 with
+    // the usage payload so the web client can show "AI budget reached".
+    await this.budget.assertNotExceeded(user.tenantId);
+
     const file = await this.files.confirm(dto.fileId, user);
     if (file.category !== 'CONSULT_AUDIO') {
       throw new BadRequestException('File must be category CONSULT_AUDIO');
     }
     const bucket = file.isPhi
-      ? this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev'
-      : this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+      ? (this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev')
+      : (this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev');
 
     const result = await this.ai.transcribe({
       s3Bucket: bucket,
       s3Key: file.s3Key,
       mimeType: file.mimeType,
     });
-    return { transcript: result.transcript, provider: result.provider, fileId: file.id };
+
+    // Bill duration. `record` is fire-and-forget by design — losing the
+    // ledger update must never break the user-visible transcript.
+    void this.budget
+      .record(
+        user.tenantId,
+        estimateSttCostCentavos(result.durationSec, result.provider),
+      )
+      .catch(() => {
+        /* logged inside the service */
+      });
+
+    return {
+      transcript: result.transcript,
+      provider: result.provider,
+      fileId: file.id,
+    };
   }
 }

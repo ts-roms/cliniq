@@ -37,10 +37,14 @@ export class WebhooksService {
   ): Promise<void> {
     let url: string | undefined;
     try {
-      const tenant = await this.prisma.tenant.findFirst({
-        where: { id: tenantId, deletedAt: null },
-        select: { settings: true },
-      });
+      // RLS: needs withTenant or the bare client read returns null and the
+      // webhook is silently skipped.
+      const tenant = await this.prisma.withTenant(tenantId, null, (tx) =>
+        tx.tenant.findFirst({
+          where: { id: tenantId, deletedAt: null },
+          select: { settings: true },
+        }),
+      );
       const settings = tenant?.settings as {
         appointmentWebhookUrl?: string;
       } | null;

@@ -184,12 +184,38 @@ export class ConsultationsService {
           status: true,
           appointmentId: true,
           appointment: { select: { status: true } },
+          // The four SOAP fields too, so we can refuse to complete a totally
+          // blank consultation — not clinical correctness, just "the doctor
+          // documented something".
+          subjective: true,
+          objective: true,
+          assessment: true,
+          plan: true,
         },
       });
       if (!existing)
         throw new NotFoundException(`Consultation ${id} not found`);
       if (existing.status === ConsultStatus.COMPLETED) {
         throw new BadRequestException('Already completed');
+      }
+      // JSON columns: a Tiptap doc, a plain string, or null. "Blank" = null,
+      // empty string, or an object/array with nothing in it.
+      const isBlank = (v: unknown): boolean => {
+        if (v == null) return true;
+        if (typeof v === 'string') return v.trim() === '';
+        if (Array.isArray(v)) return v.length === 0;
+        if (typeof v === 'object') return Object.keys(v as object).length === 0;
+        return false;
+      };
+      if (
+        isBlank(existing.subjective) &&
+        isBlank(existing.objective) &&
+        isBlank(existing.assessment) &&
+        isBlank(existing.plan)
+      ) {
+        throw new BadRequestException(
+          'Cannot complete an empty consultation. Document at least one SOAP field first.',
+        );
       }
       const now = new Date();
       // Close the booked slot too. If the appointment was cancelled or

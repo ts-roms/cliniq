@@ -1,14 +1,115 @@
 // Direct fetcher for the Lab module API. Uses the tenant session JWT (same
-// session as the rest of the clinic app — labs are tenants too). When the
-// typed @org/api-client is regenerated, this can collapse to thin wrappers
-// or get replaced entirely.
+// session as the rest of the clinic app — labs are tenants too). Now backed
+// by the generated `@org/api-client` typed SDK; cookies ride on every call
+// via the globally configured client (see apps/web/app/providers.tsx).
 
-import { loadSession, clearSession } from '@/features/auth';
-
-const API_BASE =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (typeof process !== 'undefined' && (process as any).env?.NEXT_PUBLIC_API_URL) ||
-  'http://localhost:4000';
+import { clearSession } from '@/features/auth';
+import {
+  clinicLabCasesControllerConfirmFile,
+  clinicLabCasesControllerCreate,
+  clinicLabCasesControllerCreateMessage,
+  clinicLabCasesControllerFindOne,
+  clinicLabCasesControllerGetShipment,
+  clinicLabCasesControllerList,
+  clinicLabCasesControllerListMessages,
+  clinicLabCasesControllerListPhases,
+  clinicLabCasesControllerMarkDelivered,
+  clinicLabCasesControllerPresignFile,
+  clinicLabCasesControllerTransition,
+  clinicLabDisputesControllerClose,
+  clinicLabDisputesControllerList,
+  clinicLabDisputesControllerOpen,
+  clinicLabDisputesControllerPostMessage,
+  clinicLabInvitationsControllerAccept,
+  clinicLabInvitationsControllerList,
+  clinicLabInvitationsControllerReject,
+  clinicLabInvoicesControllerFindOne,
+  clinicLabInvoicesControllerGetPdf,
+  clinicLabInvoicesControllerList,
+  clinicLabTreatmentPlansControllerDecide,
+  clinicLabTreatmentPlansControllerFindOne,
+  clinicLabTreatmentPlansControllerList,
+  labCasesControllerAdvancePhase,
+  labCasesControllerConfirmFile,
+  labCasesControllerCreateMessage,
+  labCasesControllerCreateNote,
+  labCasesControllerDeleteNote,
+  labCasesControllerFindOne,
+  labCasesControllerGetShipment,
+  labCasesControllerList,
+  labCasesControllerListMessages,
+  labCasesControllerListNotes,
+  labCasesControllerListPhases,
+  labCasesControllerMarkDelivered,
+  labCasesControllerPresignFile,
+  labCasesControllerTransition,
+  labCasesControllerUpdate,
+  labCasesControllerUpdateNote,
+  labCasesControllerUpsertShipment,
+  labClinicLinksControllerInvite,
+  labClinicLinksControllerList,
+  labClinicLinksControllerRevoke,
+  labComplianceControllerCaptureFromClinic,
+  labComplianceControllerCreateConformity,
+  labComplianceControllerCreateConsent,
+  labComplianceControllerListConformity,
+  labComplianceControllerListConsentClinic,
+  labComplianceControllerListConsentLab,
+  labComplianceControllerListSignaturesClinic,
+  labComplianceControllerListSignaturesLab,
+  labComplianceControllerRemoveConformity,
+  labComplianceControllerRemoveConsent,
+  labComplianceControllerRenderConformityPdf,
+  labDisputesControllerClose,
+  labDisputesControllerList,
+  labDisputesControllerOpen,
+  labDisputesControllerPostMessage,
+  labInvoicesControllerAddItem,
+  labInvoicesControllerCancelPaymentLink,
+  labInvoicesControllerCreate,
+  labInvoicesControllerCreatePaymentLink,
+  labInvoicesControllerDeleteItem,
+  labInvoicesControllerFindOne,
+  labInvoicesControllerGenerate,
+  labInvoicesControllerGeneratePdf,
+  labInvoicesControllerIssue,
+  labInvoicesControllerList,
+  labInvoicesControllerRecordPayment,
+  labInvoicesControllerSweep,
+  labInvoicesControllerUpdate,
+  labInvoicesControllerUpdateItem,
+  labInvoicesControllerVoidInvoice,
+  labMaterialsControllerCreate,
+  labMaterialsControllerCreateLot,
+  labMaterialsControllerDeleteUsage,
+  labMaterialsControllerList,
+  labMaterialsControllerListLots,
+  labMaterialsControllerListUsages,
+  labMaterialsControllerRecordUsage,
+  labMaterialsControllerRemove,
+  labMaterialsControllerUpdateLot,
+  labProductsControllerCloneProduct,
+  labProductsControllerCreateCategory,
+  labProductsControllerCreateProduct,
+  labProductsControllerListCategories,
+  labProductsControllerListProducts,
+  labProductsControllerUpdateProduct,
+  labStatsControllerOverview,
+  labTagsControllerAssign,
+  labTagsControllerCreate,
+  labTagsControllerList,
+  labTagsControllerListForCase,
+  labTagsControllerRemove,
+  labTagsControllerUnassign,
+  labTreatmentPlansControllerCreate,
+  labTreatmentPlansControllerDeleteFile,
+  labTreatmentPlansControllerDraftSummary,
+  labTreatmentPlansControllerFindOne,
+  labTreatmentPlansControllerList,
+  labTreatmentPlansControllerPresignFile,
+  labTreatmentPlansControllerPropose,
+  labTreatmentPlansControllerUpdate,
+} from '@org/api-client';
 
 export class LabApiError extends Error {
   constructor(
@@ -20,41 +121,32 @@ export class LabApiError extends Error {
   }
 }
 
-async function call<T>(
-  path: string,
-  init: RequestInit & { auth?: boolean } = {},
+async function unwrap<T>(
+  promise: Promise<{ data?: unknown; error?: unknown; response?: Response }>,
 ): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (!headers.has('content-type') && init.body) {
-    headers.set('content-type', 'application/json');
+  const result = await promise;
+  // No response = network/transport failure (fetch threw, DNS, CORS preflight,
+  // etc.). Surface as a 0-status LabApiError so callers can branch on it
+  // like any other failure.
+  if (!result.response) {
+    throw new LabApiError(
+      0,
+      result.error ?? null,
+      'request failed: no response',
+    );
   }
-  if (init.auth !== false) {
-    const session = loadSession();
-    if (session?.accessToken) {
-      headers.set('authorization', `Bearer ${session.accessToken}`);
-    }
+  if (result.response.ok) {
+    return (result.data ?? null) as T;
   }
-  const res = await fetch(`${API_BASE}/api${path}`, { ...init, headers });
-  const text = await res.text();
-  const body = text ? safeJson(text) : null;
-  if (!res.ok) {
-    if (res.status === 401) clearSession();
-    const fromBody =
-      body && typeof body === 'object'
-        ? (body as { message?: string }).message
-        : undefined;
-    const message = fromBody ?? `request failed: ${res.status}`;
-    throw new LabApiError(res.status, body, message);
-  }
-  return body as T;
-}
-
-function safeJson(s: string): unknown {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return s;
-  }
+  const status = result.response.status;
+  if (status === 401) clearSession();
+  const body = (result.error ?? result.data) as unknown;
+  const fromBody =
+    body && typeof body === 'object'
+      ? (body as { message?: string }).message
+      : undefined;
+  const message = fromBody ?? `request failed: ${status}`;
+  throw new LabApiError(status, body, message);
 }
 
 // ── Shared types ─────────────────────────────────────────────
@@ -174,58 +266,69 @@ export interface LabCaseDetail extends LabCaseSummary {
 
 // ── Clinic links ─────────────────────────────────────────────
 
-export function inviteClinic(input: { clinicSlug: string; inviteNote?: string }) {
-  return call<LabClinicLinkSummary>('/lab/clinic-links/invite', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+export function inviteClinic(input: {
+  clinicSlug: string;
+  inviteNote?: string;
+}) {
+  return unwrap<LabClinicLinkSummary>(
+    labClinicLinksControllerInvite({ body: input as never }),
+  );
 }
 
 export function listLabClinicLinks() {
-  return call<LabClinicLinkSummary[]>('/lab/clinic-links');
+  return unwrap<LabClinicLinkSummary[]>(labClinicLinksControllerList({}));
 }
 
 export function revokeLabInvitation(id: string) {
-  return call<LabClinicLinkSummary>(`/lab/clinic-links/${id}`, { method: 'DELETE' });
+  return unwrap<LabClinicLinkSummary>(
+    labClinicLinksControllerRevoke({ path: { id } }),
+  );
 }
 
 // ── Clinic-side: invitations ─────────────────────────────────
 
 export function listClinicInvitations() {
-  return call<LabClinicLinkSummary[]>('/clinic/lab-invitations');
+  return unwrap<LabClinicLinkSummary[]>(clinicLabInvitationsControllerList({}));
 }
 
 export function acceptInvitation(id: string) {
-  return call<LabClinicLinkSummary>(`/clinic/lab-invitations/${id}/accept`, {
-    method: 'POST',
-  });
+  return unwrap<LabClinicLinkSummary>(
+    clinicLabInvitationsControllerAccept({ path: { id } }),
+  );
 }
 
 export function rejectInvitation(id: string) {
-  return call<LabClinicLinkSummary>(`/clinic/lab-invitations/${id}/reject`, {
-    method: 'POST',
-  });
+  return unwrap<LabClinicLinkSummary>(
+    clinicLabInvitationsControllerReject({ path: { id } }),
+  );
 }
 
 // ── Catalog (lab side) ──────────────────────────────────────
 
 export function listCategories() {
-  return call<LabProductCategory[]>('/lab/categories');
+  return unwrap<LabProductCategory[]>(labProductsControllerListCategories({}));
 }
 
-export function createCategory(input: { name: string; description?: string; parentId?: string }) {
-  return call<LabProductCategory>('/lab/categories', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+export function createCategory(input: {
+  name: string;
+  description?: string;
+  parentId?: string;
+}) {
+  return unwrap<LabProductCategory>(
+    labProductsControllerCreateCategory({ body: input as never }),
+  );
 }
 
-export function listProducts(opts?: { activeOnly?: boolean; categoryId?: string }) {
-  const params = new URLSearchParams();
-  if (opts?.activeOnly) params.set('activeOnly', 'true');
-  if (opts?.categoryId) params.set('categoryId', opts.categoryId);
-  const qs = params.toString();
-  return call<LabProductSummary[]>(`/lab/products${qs ? `?${qs}` : ''}`);
+export function listProducts(opts?: {
+  activeOnly?: boolean;
+  categoryId?: string;
+}) {
+  const query: { activeOnly?: boolean; categoryId?: string } = {};
+  if (opts?.activeOnly) query.activeOnly = true;
+  if (opts?.categoryId) query.categoryId = opts.categoryId;
+  return unwrap<LabProductSummary[]>(
+    labProductsControllerListProducts({ query: query as never }),
+  );
 }
 
 export interface CreateProductInput {
@@ -242,49 +345,64 @@ export interface CreateProductInput {
 }
 
 export function createProduct(input: CreateProductInput) {
-  return call<LabProductSummary>('/lab/products', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabProductSummary>(
+    labProductsControllerCreateProduct({ body: input as never }),
+  );
 }
 
-export function updateProduct(id: string, input: Partial<CreateProductInput> & { isActive?: boolean }) {
-  return call<LabProductSummary>(`/lab/products/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+export function updateProduct(
+  id: string,
+  input: Partial<CreateProductInput> & { isActive?: boolean },
+) {
+  return unwrap<LabProductSummary>(
+    labProductsControllerUpdateProduct({ path: { id }, body: input as never }),
+  );
 }
 
 export function cloneProduct(id: string) {
-  return call<LabProductSummary>(`/lab/products/${id}/clone`, { method: 'POST' });
+  return unwrap<LabProductSummary>(
+    labProductsControllerCloneProduct({ path: { id } }),
+  );
 }
 
 // ── Cases (lab side) ─────────────────────────────────────────
 
-export function listLabCases(opts?: { status?: LabCaseStatus; tagId?: string }) {
-  const params = new URLSearchParams();
-  if (opts?.status) params.set('status', opts.status);
-  if (opts?.tagId) params.set('tagId', opts.tagId);
-  const qs = params.toString();
-  return call<LabCaseSummary[]>(`/lab/cases${qs ? `?${qs}` : ''}`);
+export function listLabCases(opts?: {
+  status?: LabCaseStatus;
+  tagId?: string;
+}) {
+  const query: { status?: LabCaseStatus; tagId?: string } = {};
+  if (opts?.status) query.status = opts.status;
+  if (opts?.tagId) query.tagId = opts.tagId;
+  return unwrap<LabCaseSummary[]>(
+    labCasesControllerList({ query: query as never }),
+  );
 }
 
 export function getLabCase(id: string) {
-  return call<LabCaseDetail>(`/lab/cases/${id}`);
+  return unwrap<LabCaseDetail>(labCasesControllerFindOne({ path: { id } }));
 }
 
-export function transitionLabCase(id: string, status: LabCaseStatus, reason?: string) {
-  return call<LabCaseSummary>(`/lab/cases/${id}/transitions`, {
-    method: 'POST',
-    body: JSON.stringify({ status, reason }),
-  });
+export function transitionLabCase(
+  id: string,
+  status: LabCaseStatus,
+  reason?: string,
+) {
+  return unwrap<LabCaseSummary>(
+    labCasesControllerTransition({
+      path: { id },
+      body: { status, reason } as never,
+    }),
+  );
 }
 
-export function updateLabCaseAsLab(id: string, input: { unitPrice?: number; notes?: string }) {
-  return call<LabCaseSummary>(`/lab/cases/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+export function updateLabCaseAsLab(
+  id: string,
+  input: { unitPrice?: number; notes?: string },
+) {
+  return unwrap<LabCaseSummary>(
+    labCasesControllerUpdate({ path: { id }, body: input as never }),
+  );
 }
 
 // ── Phases ──────────────────────────────────────────────────
@@ -300,21 +418,27 @@ export interface LabCasePhaseEvent {
 }
 
 export function listLabCasePhases(caseId: string) {
-  return call<LabCasePhaseEvent[]>(`/lab/cases/${caseId}/phases`);
+  return unwrap<LabCasePhaseEvent[]>(
+    labCasesControllerListPhases({ path: { id: caseId } }),
+  );
 }
 
 export function listClinicCasePhases(caseId: string) {
-  return call<LabCasePhaseEvent[]>(`/clinic/lab-cases/${caseId}/phases`);
+  return unwrap<LabCasePhaseEvent[]>(
+    clinicLabCasesControllerListPhases({ path: { id: caseId } }),
+  );
 }
 
 export function advanceLabCasePhase(
   caseId: string,
   input: { phase?: string; notes?: string },
 ) {
-  return call<LabCasePhaseEvent>(`/lab/cases/${caseId}/phases/advance`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabCasePhaseEvent>(
+    labCasesControllerAdvancePhase({
+      path: { id: caseId },
+      body: input as never,
+    }),
+  );
 }
 
 // ── Compliance: conformity + consent templates ──────────────
@@ -344,7 +468,9 @@ export interface LabConsentSignature {
 }
 
 export function listConformityTemplates() {
-  return call<LabComplianceTemplate[]>('/lab/conformity-templates');
+  return unwrap<LabComplianceTemplate[]>(
+    labComplianceControllerListConformity({}),
+  );
 }
 export function createConformityTemplate(input: {
   name: string;
@@ -352,20 +478,25 @@ export function createConformityTemplate(input: {
   productId?: string;
   isDefault?: boolean;
 }) {
-  return call<LabComplianceTemplate>('/lab/conformity-templates', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabComplianceTemplate>(
+    labComplianceControllerCreateConformity({ body: input as never }),
+  );
 }
 export function deleteConformityTemplate(id: string) {
-  return call<void>(`/lab/conformity-templates/${id}`, { method: 'DELETE' });
+  return unwrap<void>(
+    labComplianceControllerRemoveConformity({ path: { id } }),
+  );
 }
 
 export function listLabConsentTemplates() {
-  return call<LabComplianceTemplate[]>('/lab/consent-templates');
+  return unwrap<LabComplianceTemplate[]>(
+    labComplianceControllerListConsentLab({}),
+  );
 }
 export function listClinicConsentTemplates() {
-  return call<LabComplianceTemplate[]>('/clinic/consent-templates');
+  return unwrap<LabComplianceTemplate[]>(
+    labComplianceControllerListConsentClinic({}),
+  );
 }
 export function createConsentTemplate(input: {
   name: string;
@@ -373,20 +504,23 @@ export function createConsentTemplate(input: {
   productId?: string;
   isDefault?: boolean;
 }) {
-  return call<LabComplianceTemplate>('/lab/consent-templates', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabComplianceTemplate>(
+    labComplianceControllerCreateConsent({ body: input as never }),
+  );
 }
 export function deleteConsentTemplate(id: string) {
-  return call<void>(`/lab/consent-templates/${id}`, { method: 'DELETE' });
+  return unwrap<void>(labComplianceControllerRemoveConsent({ path: { id } }));
 }
 
 export function listLabCaseSignatures(caseId: string) {
-  return call<LabConsentSignature[]>(`/lab/cases/${caseId}/signatures`);
+  return unwrap<LabConsentSignature[]>(
+    labComplianceControllerListSignaturesLab({ path: { caseId } }),
+  );
 }
 export function listClinicCaseSignatures(caseId: string) {
-  return call<LabConsentSignature[]>(`/clinic/lab-cases/${caseId}/signatures`);
+  return unwrap<LabConsentSignature[]>(
+    labComplianceControllerListSignaturesClinic({ path: { caseId } }),
+  );
 }
 export function captureClinicCaseSignature(
   caseId: string,
@@ -397,10 +531,12 @@ export function captureClinicCaseSignature(
     signatureFileKey: string;
   },
 ) {
-  return call<LabConsentSignature>(`/clinic/lab-cases/${caseId}/signatures`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabConsentSignature>(
+    labComplianceControllerCaptureFromClinic({
+      path: { caseId },
+      body: input as never,
+    }),
+  );
 }
 
 // ── Materials + LOTs ────────────────────────────────────────
@@ -421,7 +557,11 @@ export interface LabMaterial {
   unitOfMeasure: string;
   description: string | null;
   defaultSupplier: string | null;
-  lots?: Array<{ id: string; status: LabMaterialLotStatus; remainingQty: number }>;
+  lots?: Array<{
+    id: string;
+    status: LabMaterialLotStatus;
+    remainingQty: number;
+  }>;
 }
 
 export interface LabMaterialLot {
@@ -450,7 +590,7 @@ export interface LabMaterialUsage {
 }
 
 export function listMaterials() {
-  return call<LabMaterial[]>('/lab/materials');
+  return unwrap<LabMaterial[]>(labMaterialsControllerList({}));
 }
 
 export function createMaterial(input: {
@@ -461,18 +601,19 @@ export function createMaterial(input: {
   description?: string;
   defaultSupplier?: string;
 }) {
-  return call<LabMaterial>('/lab/materials', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabMaterial>(
+    labMaterialsControllerCreate({ body: input as never }),
+  );
 }
 
 export function deleteMaterial(id: string) {
-  return call<void>(`/lab/materials/${id}`, { method: 'DELETE' });
+  return unwrap<void>(labMaterialsControllerRemove({ path: { id } }));
 }
 
 export function listMaterialLots(materialId: string) {
-  return call<LabMaterialLot[]>(`/lab/materials/${materialId}/lots`);
+  return unwrap<LabMaterialLot[]>(
+    labMaterialsControllerListLots({ path: { id: materialId } }),
+  );
 }
 
 export function createMaterialLot(
@@ -488,40 +629,54 @@ export function createMaterialLot(
     notes?: string;
   },
 ) {
-  return call<LabMaterialLot>(`/lab/materials/${materialId}/lots`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabMaterialLot>(
+    labMaterialsControllerCreateLot({
+      path: { id: materialId },
+      body: input as never,
+    }),
+  );
 }
 
 export function updateMaterialLot(
   lotId: string,
-  input: { status?: LabMaterialLotStatus; expiresAt?: string | null; notes?: string | null },
+  input: {
+    status?: LabMaterialLotStatus;
+    expiresAt?: string | null;
+    notes?: string | null;
+  },
 ) {
-  return call<LabMaterialLot>(`/lab/lots/${lotId}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabMaterialLot>(
+    labMaterialsControllerUpdateLot({
+      path: { lotId },
+      body: input as never,
+    }),
+  );
 }
 
 export function listCaseMaterialUsages(caseId: string) {
-  return call<LabMaterialUsage[]>(`/lab/cases/${caseId}/material-usages`);
+  return unwrap<LabMaterialUsage[]>(
+    labMaterialsControllerListUsages({ path: { caseId } }),
+  );
 }
 
 export function recordCaseMaterialUsage(
   caseId: string,
   input: { lotId: string; qty: number },
 ) {
-  return call<LabMaterialUsage>(`/lab/cases/${caseId}/material-usages`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabMaterialUsage>(
+    labMaterialsControllerRecordUsage({
+      path: { caseId },
+      body: input as never,
+    }),
+  );
 }
 
 export function deleteCaseMaterialUsage(caseId: string, usageId: string) {
-  return call<void>(`/lab/cases/${caseId}/material-usages/${usageId}`, {
-    method: 'DELETE',
-  });
+  return unwrap<void>(
+    labMaterialsControllerDeleteUsage({
+      path: { caseId, usageId },
+    }),
+  );
 }
 
 // ── Shipments ───────────────────────────────────────────────
@@ -537,33 +692,43 @@ export interface LabShipment {
 }
 
 export function getLabCaseShipment(caseId: string) {
-  return call<LabShipment | null>(`/lab/cases/${caseId}/shipment`);
+  return unwrap<LabShipment | null>(
+    labCasesControllerGetShipment({ path: { id: caseId } }),
+  );
 }
 
 export function upsertLabCaseShipment(
   caseId: string,
-  input: { carrier?: string | null; trackingNumber?: string | null; notes?: string | null },
+  input: {
+    carrier?: string | null;
+    trackingNumber?: string | null;
+    notes?: string | null;
+  },
 ) {
-  return call<LabShipment>(`/lab/cases/${caseId}/shipment`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabShipment>(
+    labCasesControllerUpsertShipment({
+      path: { id: caseId },
+      body: input as never,
+    }),
+  );
 }
 
 export function markLabCaseDelivered(caseId: string) {
-  return call<LabShipment>(`/lab/cases/${caseId}/shipment/delivered`, {
-    method: 'POST',
-  });
+  return unwrap<LabShipment>(
+    labCasesControllerMarkDelivered({ path: { id: caseId } }),
+  );
 }
 
 export function getClinicCaseShipment(caseId: string) {
-  return call<LabShipment | null>(`/clinic/lab-cases/${caseId}/shipment`);
+  return unwrap<LabShipment | null>(
+    clinicLabCasesControllerGetShipment({ path: { id: caseId } }),
+  );
 }
 
 export function markClinicCaseDelivered(caseId: string) {
-  return call<LabShipment>(`/clinic/lab-cases/${caseId}/shipment/delivered`, {
-    method: 'POST',
-  });
+  return unwrap<LabShipment>(
+    clinicLabCasesControllerMarkDelivered({ path: { id: caseId } }),
+  );
 }
 
 // ── Tags (lab-only) ─────────────────────────────────────────
@@ -576,33 +741,34 @@ export interface LabCaseTag {
 }
 
 export function listLabTags() {
-  return call<LabCaseTag[]>('/lab/tags');
+  return unwrap<LabCaseTag[]>(labTagsControllerList({}));
 }
 
 export function createLabTag(input: { name: string; color?: string }) {
-  return call<LabCaseTag>('/lab/tags', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabCaseTag>(labTagsControllerCreate({ body: input as never }));
 }
 
 export function deleteLabTag(id: string) {
-  return call<void>(`/lab/tags/${id}`, { method: 'DELETE' });
+  return unwrap<void>(labTagsControllerRemove({ path: { id } }));
 }
 
 export function listCaseTags(caseId: string) {
-  return call<LabCaseTag[]>(`/lab/cases/${caseId}/tags`);
+  return unwrap<LabCaseTag[]>(
+    labTagsControllerListForCase({ path: { caseId } }),
+  );
 }
 
 export function assignCaseTag(caseId: string, tagId: string) {
-  return call<unknown>(`/lab/cases/${caseId}/tags`, {
-    method: 'POST',
-    body: JSON.stringify({ tagId }),
-  });
+  return unwrap<unknown>(
+    labTagsControllerAssign({
+      path: { caseId },
+      body: { tagId } as never,
+    }),
+  );
 }
 
 export function unassignCaseTag(caseId: string, tagId: string) {
-  return call<void>(`/lab/cases/${caseId}/tags/${tagId}`, { method: 'DELETE' });
+  return unwrap<void>(labTagsControllerUnassign({ path: { caseId, tagId } }));
 }
 
 // ── Notes (lab-only) ────────────────────────────────────────
@@ -617,25 +783,37 @@ export interface LabCaseNote {
 }
 
 export function listLabCaseNotes(caseId: string) {
-  return call<LabCaseNote[]>(`/lab/cases/${caseId}/notes`);
+  return unwrap<LabCaseNote[]>(
+    labCasesControllerListNotes({ path: { id: caseId } }),
+  );
 }
 
 export function createLabCaseNote(caseId: string, body: string) {
-  return call<LabCaseNote>(`/lab/cases/${caseId}/notes`, {
-    method: 'POST',
-    body: JSON.stringify({ body }),
-  });
+  return unwrap<LabCaseNote>(
+    labCasesControllerCreateNote({
+      path: { id: caseId },
+      body: { body } as never,
+    }),
+  );
 }
 
-export function updateLabCaseNote(caseId: string, noteId: string, body: string) {
-  return call<LabCaseNote>(`/lab/cases/${caseId}/notes/${noteId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ body }),
-  });
+export function updateLabCaseNote(
+  caseId: string,
+  noteId: string,
+  body: string,
+) {
+  return unwrap<LabCaseNote>(
+    labCasesControllerUpdateNote({
+      path: { id: caseId, noteId },
+      body: { body } as never,
+    }),
+  );
 }
 
 export function deleteLabCaseNote(caseId: string, noteId: string) {
-  return call<void>(`/lab/cases/${caseId}/notes/${noteId}`, { method: 'DELETE' });
+  return unwrap<void>(
+    labCasesControllerDeleteNote({ path: { id: caseId, noteId } }),
+  );
 }
 
 // ── Messages (chat — both sides) ────────────────────────────
@@ -650,25 +828,33 @@ export interface LabCaseMessage {
 }
 
 export function listLabCaseMessages(caseId: string) {
-  return call<LabCaseMessage[]>(`/lab/cases/${caseId}/messages`);
+  return unwrap<LabCaseMessage[]>(
+    labCasesControllerListMessages({ path: { id: caseId } }),
+  );
 }
 
 export function createLabCaseMessage(caseId: string, body: string) {
-  return call<LabCaseMessage>(`/lab/cases/${caseId}/messages`, {
-    method: 'POST',
-    body: JSON.stringify({ body }),
-  });
+  return unwrap<LabCaseMessage>(
+    labCasesControllerCreateMessage({
+      path: { id: caseId },
+      body: { body } as never,
+    }),
+  );
 }
 
 export function listClinicCaseMessages(caseId: string) {
-  return call<LabCaseMessage[]>(`/clinic/lab-cases/${caseId}/messages`);
+  return unwrap<LabCaseMessage[]>(
+    clinicLabCasesControllerListMessages({ path: { id: caseId } }),
+  );
 }
 
 export function createClinicCaseMessage(caseId: string, body: string) {
-  return call<LabCaseMessage>(`/clinic/lab-cases/${caseId}/messages`, {
-    method: 'POST',
-    body: JSON.stringify({ body }),
-  });
+  return unwrap<LabCaseMessage>(
+    clinicLabCasesControllerCreateMessage({
+      path: { id: caseId },
+      body: { body } as never,
+    }),
+  );
 }
 
 // ── Cases (clinic side) ─────────────────────────────────────
@@ -686,26 +872,36 @@ export interface CreateCaseInput {
 }
 
 export function listClinicCases(opts?: { status?: LabCaseStatus }) {
-  const qs = opts?.status ? `?status=${opts.status}` : '';
-  return call<LabCaseSummary[]>(`/clinic/lab-cases${qs}`);
+  const query: { status?: LabCaseStatus } = {};
+  if (opts?.status) query.status = opts.status;
+  return unwrap<LabCaseSummary[]>(
+    clinicLabCasesControllerList({ query: query as never }),
+  );
 }
 
 export function getClinicCase(id: string) {
-  return call<LabCaseDetail>(`/clinic/lab-cases/${id}`);
+  return unwrap<LabCaseDetail>(
+    clinicLabCasesControllerFindOne({ path: { id } }),
+  );
 }
 
 export function createClinicCase(input: CreateCaseInput) {
-  return call<LabCaseSummary>('/clinic/lab-cases', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabCaseSummary>(
+    clinicLabCasesControllerCreate({ body: input as never }),
+  );
 }
 
-export function transitionClinicCase(id: string, status: LabCaseStatus, reason?: string) {
-  return call<LabCaseSummary>(`/clinic/lab-cases/${id}/transitions`, {
-    method: 'POST',
-    body: JSON.stringify({ status, reason }),
-  });
+export function transitionClinicCase(
+  id: string,
+  status: LabCaseStatus,
+  reason?: string,
+) {
+  return unwrap<LabCaseSummary>(
+    clinicLabCasesControllerTransition({
+      path: { id },
+      body: { status, reason } as never,
+    }),
+  );
 }
 
 // ── Files (works for both sides; routing differs) ──────────
@@ -722,32 +918,40 @@ export function presignClinicCaseFile(
   caseId: string,
   input: { filename: string; mimeType: string; sizeBytes: number },
 ) {
-  return call<PresignResponse>(`/clinic/lab-cases/${caseId}/files/presign`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<PresignResponse>(
+    clinicLabCasesControllerPresignFile({
+      path: { id: caseId },
+      body: input as never,
+    }),
+  );
 }
 
 export function confirmClinicCaseFile(caseId: string, fileId: string) {
-  return call<LabCaseFile>(`/clinic/lab-cases/${caseId}/files/${fileId}/confirm`, {
-    method: 'POST',
-  });
+  return unwrap<LabCaseFile>(
+    clinicLabCasesControllerConfirmFile({
+      path: { id: caseId, fileId },
+    }),
+  );
 }
 
 export function presignLabCaseFile(
   caseId: string,
   input: { filename: string; mimeType: string; sizeBytes: number },
 ) {
-  return call<PresignResponse>(`/lab/cases/${caseId}/files/presign`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<PresignResponse>(
+    labCasesControllerPresignFile({
+      path: { id: caseId },
+      body: input as never,
+    }),
+  );
 }
 
 export function confirmLabCaseFile(caseId: string, fileId: string) {
-  return call<LabCaseFile>(`/lab/cases/${caseId}/files/${fileId}/confirm`, {
-    method: 'POST',
-  });
+  return unwrap<LabCaseFile>(
+    labCasesControllerConfirmFile({
+      path: { id: caseId, fileId },
+    }),
+  );
 }
 
 /** Upload a file to S3 via the presigned URL returned by the api. */
@@ -861,51 +1065,59 @@ export interface InvoiceFilter {
   clinicTenantId?: string;
 }
 
-function invoiceQuery(filter: InvoiceFilter): string {
-  const params = new URLSearchParams();
-  if (filter.status) params.set('status', filter.status);
-  if (filter.clinicTenantId) params.set('clinicTenantId', filter.clinicTenantId);
-  const qs = params.toString();
-  return qs ? `?${qs}` : '';
+function invoiceQuery(filter: InvoiceFilter): {
+  status?: LabInvoiceStatus;
+  clinicTenantId?: string;
+} {
+  const query: { status?: LabInvoiceStatus; clinicTenantId?: string } = {};
+  if (filter.status) query.status = filter.status;
+  if (filter.clinicTenantId) query.clinicTenantId = filter.clinicTenantId;
+  return query;
 }
 
 export function listLabInvoices(filter: InvoiceFilter = {}) {
-  return call<LabInvoiceSummary[]>(`/lab/invoices${invoiceQuery(filter)}`);
+  return unwrap<LabInvoiceSummary[]>(
+    labInvoicesControllerList({ query: invoiceQuery(filter) as never }),
+  );
 }
 
 export function getLabInvoice(id: string) {
-  return call<LabInvoiceDetail>(`/lab/invoices/${id}`);
+  return unwrap<LabInvoiceDetail>(
+    labInvoicesControllerFindOne({ path: { id } }),
+  );
 }
 
 export function createLabInvoice(input: CreateInvoiceInput) {
-  return call<LabInvoiceDetail>('/lab/invoices', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabInvoiceDetail>(
+    labInvoicesControllerCreate({ body: input as never }),
+  );
 }
 
 export function generateInvoiceFromCases(input: GenerateFromCasesInput) {
-  return call<LabInvoiceDetail>('/lab/invoices/generate-from-cases', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabInvoiceDetail>(
+    labInvoicesControllerGenerate({ body: input as never }),
+  );
 }
 
 export function updateLabInvoice(
   id: string,
   input: { dueAt?: string | null; notes?: string | null; taxCents?: number },
 ) {
-  return call<LabInvoiceDetail>(`/lab/invoices/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabInvoiceDetail>(
+    labInvoicesControllerUpdate({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export function addLabInvoiceItem(id: string, input: InvoiceItemInput) {
-  return call<LabInvoiceItem>(`/lab/invoices/${id}/items`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabInvoiceItem>(
+    labInvoicesControllerAddItem({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export function updateLabInvoiceItem(
@@ -913,32 +1125,40 @@ export function updateLabInvoiceItem(
   itemId: string,
   input: Partial<InvoiceItemInput>,
 ) {
-  return call<LabInvoiceItem>(`/lab/invoices/${id}/items/${itemId}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabInvoiceItem>(
+    labInvoicesControllerUpdateItem({
+      path: { id, itemId },
+      body: input as never,
+    }),
+  );
 }
 
 export function deleteLabInvoiceItem(id: string, itemId: string) {
-  return call<void>(`/lab/invoices/${id}/items/${itemId}`, { method: 'DELETE' });
+  return unwrap<void>(
+    labInvoicesControllerDeleteItem({ path: { id, itemId } }),
+  );
 }
 
 export function issueLabInvoice(id: string) {
-  return call<LabInvoiceDetail>(`/lab/invoices/${id}/issue`, { method: 'POST' });
+  return unwrap<LabInvoiceDetail>(labInvoicesControllerIssue({ path: { id } }));
 }
 
 export function recordLabInvoicePayment(
   id: string,
   input: { amountCents: number; paidAt?: string; reference?: string },
 ) {
-  return call<LabInvoiceDetail>(`/lab/invoices/${id}/payments`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabInvoiceDetail>(
+    labInvoicesControllerRecordPayment({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export function voidLabInvoice(id: string) {
-  return call<LabInvoiceDetail>(`/lab/invoices/${id}/void`, { method: 'POST' });
+  return unwrap<LabInvoiceDetail>(
+    labInvoicesControllerVoidInvoice({ path: { id } }),
+  );
 }
 
 export function createLabPaymentLink(
@@ -951,24 +1171,30 @@ export function createLabPaymentLink(
     expiresAt?: string;
   },
 ) {
-  return call<LabPaymentLink>(`/lab/invoices/${id}/payment-links`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabPaymentLink>(
+    labInvoicesControllerCreatePaymentLink({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export function cancelLabPaymentLink(id: string, linkId: string) {
-  return call<LabPaymentLink>(`/lab/invoices/${id}/payment-links/${linkId}`, {
-    method: 'DELETE',
-  });
+  return unwrap<LabPaymentLink>(
+    labInvoicesControllerCancelPaymentLink({ path: { id, linkId } }),
+  );
 }
 
 export function listClinicInvoices(filter: InvoiceFilter = {}) {
-  return call<LabInvoiceSummary[]>(`/clinic/lab-invoices${invoiceQuery(filter)}`);
+  return unwrap<LabInvoiceSummary[]>(
+    clinicLabInvoicesControllerList({ query: invoiceQuery(filter) as never }),
+  );
 }
 
 export function getClinicInvoice(id: string) {
-  return call<LabInvoiceDetail>(`/clinic/lab-invoices/${id}`);
+  return unwrap<LabInvoiceDetail>(
+    clinicLabInvoicesControllerFindOne({ path: { id } }),
+  );
 }
 
 export interface PdfDownload {
@@ -978,18 +1204,26 @@ export interface PdfDownload {
 }
 
 export function generateLabInvoicePdf(id: string) {
-  return call<PdfDownload>(`/lab/invoices/${id}/pdf`, { method: 'POST' });
+  return unwrap<PdfDownload>(
+    labInvoicesControllerGeneratePdf({ path: { id } }),
+  );
 }
 
 export function getClinicInvoicePdf(id: string) {
-  return call<PdfDownload>(`/clinic/lab-invoices/${id}/pdf`);
+  return unwrap<PdfDownload>(
+    clinicLabInvoicesControllerGetPdf({ path: { id } }),
+  );
 }
 
 export function renderConformityPdf(caseId: string, templateId?: string) {
-  const qs = templateId ? `?templateId=${encodeURIComponent(templateId)}` : '';
-  return call<PdfDownload>(`/lab/cases/${caseId}/conformity-pdf${qs}`, {
-    method: 'POST',
-  });
+  const query: { templateId?: string } = {};
+  if (templateId) query.templateId = templateId;
+  return unwrap<PdfDownload>(
+    labComplianceControllerRenderConformityPdf({
+      path: { caseId },
+      query: query as never,
+    }),
+  );
 }
 
 export interface MonthlySweepResult {
@@ -999,8 +1233,11 @@ export interface MonthlySweepResult {
 }
 
 export function runMonthlyInvoiceSweep(period?: string) {
-  const qs = period ? `?period=${encodeURIComponent(period)}` : '';
-  return call<MonthlySweepResult>(`/lab/invoices/sweep${qs}`, { method: 'POST' });
+  const query: { period?: string } = {};
+  if (period) query.period = period;
+  return unwrap<MonthlySweepResult>(
+    labInvoicesControllerSweep({ query: query as never }),
+  );
 }
 
 // ── Stats ───────────────────────────────────────────────────
@@ -1020,7 +1257,7 @@ export interface LabStatsOverview {
 }
 
 export function getLabStats() {
-  return call<LabStatsOverview>('/lab/stats');
+  return unwrap<LabStatsOverview>(labStatsControllerOverview({}));
 }
 
 // ── Treatment plans ────────────────────────────────────────
@@ -1084,23 +1321,27 @@ export interface LabTreatmentPlan {
 }
 
 export function listLabTreatmentPlans(caseId: string) {
-  return call<LabTreatmentPlan[]>(
-    `/lab/treatment-plans?caseId=${encodeURIComponent(caseId)}`,
+  return unwrap<LabTreatmentPlan[]>(
+    labTreatmentPlansControllerList({ query: { caseId } }),
   );
 }
 
 export function listClinicTreatmentPlans(caseId: string) {
-  return call<LabTreatmentPlan[]>(
-    `/clinic/lab-treatment-plans?caseId=${encodeURIComponent(caseId)}`,
+  return unwrap<LabTreatmentPlan[]>(
+    clinicLabTreatmentPlansControllerList({ query: { caseId } }),
   );
 }
 
 export function getLabTreatmentPlan(id: string) {
-  return call<LabTreatmentPlan>(`/lab/treatment-plans/${id}`);
+  return unwrap<LabTreatmentPlan>(
+    labTreatmentPlansControllerFindOne({ path: { id } }),
+  );
 }
 
 export function getClinicTreatmentPlan(id: string) {
-  return call<LabTreatmentPlan>(`/clinic/lab-treatment-plans/${id}`);
+  return unwrap<LabTreatmentPlan>(
+    clinicLabTreatmentPlansControllerFindOne({ path: { id } }),
+  );
 }
 
 export function createLabTreatmentPlan(input: {
@@ -1108,26 +1349,27 @@ export function createLabTreatmentPlan(input: {
   title: string;
   summary: string;
 }) {
-  return call<LabTreatmentPlan>('/lab/treatment-plans', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabTreatmentPlan>(
+    labTreatmentPlansControllerCreate({ body: input as never }),
+  );
 }
 
 export function updateLabTreatmentPlan(
   id: string,
   input: { title?: string; summary?: string },
 ) {
-  return call<LabTreatmentPlan>(`/lab/treatment-plans/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(input),
-  });
+  return unwrap<LabTreatmentPlan>(
+    labTreatmentPlansControllerUpdate({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export function proposeLabTreatmentPlan(id: string) {
-  return call<LabTreatmentPlan>(`/lab/treatment-plans/${id}/propose`, {
-    method: 'POST',
-  });
+  return unwrap<LabTreatmentPlan>(
+    labTreatmentPlansControllerPropose({ path: { id } }),
+  );
 }
 
 export function presignLabTreatmentPlanFile(
@@ -1139,32 +1381,35 @@ export function presignLabTreatmentPlanFile(
     kind?: LabTreatmentPlanFileKind;
   },
 ) {
-  return call<PresignResponse>(`/lab/treatment-plans/${id}/files/presign`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return unwrap<PresignResponse>(
+    labTreatmentPlansControllerPresignFile({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }
 
 export function deleteLabTreatmentPlanFile(id: string, fileId: string) {
-  return call<void>(`/lab/treatment-plans/${id}/files/${fileId}`, {
-    method: 'DELETE',
-  });
+  return unwrap<void>(
+    labTreatmentPlansControllerDeleteFile({ path: { id, fileId } }),
+  );
 }
 
 export function decideTreatmentPlan(
   id: string,
   input: { decision: LabTreatmentPlanDecision; notes?: string },
 ) {
-  return call<LabTreatmentPlan>(
-    `/clinic/lab-treatment-plans/${id}/decisions`,
-    { method: 'POST', body: JSON.stringify(input) },
+  return unwrap<LabTreatmentPlan>(
+    clinicLabTreatmentPlansControllerDecide({
+      path: { id },
+      body: input as never,
+    }),
   );
 }
 
 export function draftLabTreatmentPlanSummary(caseId: string) {
-  return call<{ summary: string }>(
-    `/lab/treatment-plans/draft-summary?caseId=${encodeURIComponent(caseId)}`,
-    { method: 'POST' },
+  return unwrap<{ summary: string }>(
+    labTreatmentPlansControllerDraftSummary({ query: { caseId } }),
   );
 }
 
@@ -1205,14 +1450,14 @@ export interface LabCaseDispute {
   messages: LabCaseDisputeMessage[];
 }
 
-function disputePath(side: 'lab' | 'clinic', tail = ''): string {
-  const root = side === 'lab' ? '/lab/disputes' : '/clinic/lab-disputes';
-  return tail ? `${root}${tail}` : root;
-}
-
 export function listLabDisputes(side: 'lab' | 'clinic', caseId: string) {
-  return call<LabCaseDispute[]>(
-    `${disputePath(side)}?caseId=${encodeURIComponent(caseId)}`,
+  if (side === 'lab') {
+    return unwrap<LabCaseDispute[]>(
+      labDisputesControllerList({ query: { caseId } }),
+    );
+  }
+  return unwrap<LabCaseDispute[]>(
+    clinicLabDisputesControllerList({ query: { caseId } }),
   );
 }
 
@@ -1220,10 +1465,14 @@ export function openLabDispute(
   side: 'lab' | 'clinic',
   input: { caseId: string; kind: LabCaseDisputeKind; reason: string },
 ) {
-  return call<LabCaseDispute>(disputePath(side), {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  if (side === 'lab') {
+    return unwrap<LabCaseDispute>(
+      labDisputesControllerOpen({ body: input as never }),
+    );
+  }
+  return unwrap<LabCaseDispute>(
+    clinicLabDisputesControllerOpen({ body: input as never }),
+  );
 }
 
 export function postLabDisputeMessage(
@@ -1231,10 +1480,20 @@ export function postLabDisputeMessage(
   id: string,
   body: string,
 ) {
-  return call<LabCaseDisputeMessage>(disputePath(side, `/${id}/messages`), {
-    method: 'POST',
-    body: JSON.stringify({ body }),
-  });
+  if (side === 'lab') {
+    return unwrap<LabCaseDisputeMessage>(
+      labDisputesControllerPostMessage({
+        path: { id },
+        body: { body } as never,
+      }),
+    );
+  }
+  return unwrap<LabCaseDisputeMessage>(
+    clinicLabDisputesControllerPostMessage({
+      path: { id },
+      body: { body } as never,
+    }),
+  );
 }
 
 export function closeLabDispute(
@@ -1245,8 +1504,18 @@ export function closeLabDispute(
     notes?: string;
   },
 ) {
-  return call<LabCaseDispute>(disputePath(side, `/${id}/close`), {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  if (side === 'lab') {
+    return unwrap<LabCaseDispute>(
+      labDisputesControllerClose({
+        path: { id },
+        body: input as never,
+      }),
+    );
+  }
+  return unwrap<LabCaseDispute>(
+    clinicLabDisputesControllerClose({
+      path: { id },
+      body: input as never,
+    }),
+  );
 }

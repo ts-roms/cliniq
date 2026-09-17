@@ -91,6 +91,17 @@ describe('Appointment lifecycle', () => {
     const again = await client.axios.patch(`/api/appointments/${id}/start`);
     expect(again.status).toBe(409);
 
+    // A totally blank consult can't be completed (the doctor must document
+    // something) — write one SOAP field, then close it.
+    const blank = await client.axios.post(
+      `/api/consultations/${consultId}/complete`,
+    );
+    expect(blank.status).toBe(400);
+    const noted = await client.axios.patch(`/api/consultations/${consultId}`, {
+      subjective: { chiefComplaint: 'Follow-up, feeling better' },
+    });
+    expect(noted.status).toBe(200);
+
     // Completing the consult completes the appointment.
     const done = await client.axios.post(
       `/api/consultations/${consultId}/complete`,

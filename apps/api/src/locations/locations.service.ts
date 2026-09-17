@@ -8,7 +8,10 @@ import {
 import { PrismaService } from '@org/db';
 import { maxLocationsForPlan, type Plan } from '@org/shared-types';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
-import type { CreateLocationDto, UpdateLocationDto } from './dto/location.dto.js';
+import type {
+  CreateLocationDto,
+  UpdateLocationDto,
+} from './dto/location.dto.js';
 
 @Injectable()
 export class LocationsService {
@@ -34,10 +37,17 @@ export class LocationsService {
     // so the client can render an upgrade CTA distinct from validation errors.
     // Only CLINIC tenants have a `plan`; LAB tenants don't have location caps
     // here (lab equivalent is multi-lab + delivery centers, separate flow).
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { kind: true, plan: true },
-    });
+    // RLS: bare `this.prisma.tenant.findUnique` returns null because the
+    // `current_tenant` GUC isn't set on the bare client. Wrap in withTenant.
+    const tenant = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.tenant.findUnique({
+          where: { id: user.tenantId },
+          select: { kind: true, plan: true },
+        }),
+    );
     if (!tenant) throw new NotFoundException('tenant not found');
     const cap =
       tenant.kind === 'CLINIC' && tenant.plan
@@ -65,7 +75,10 @@ export class LocationsService {
         where: { name: dto.name, deletedAt: null },
         select: { id: true },
       });
-      if (dupe) throw new BadRequestException(`A location named "${dto.name}" already exists`);
+      if (dupe)
+        throw new BadRequestException(
+          `A location named "${dto.name}" already exists`,
+        );
 
       if (dto.isPrimary) {
         await tx.location.updateMany({
@@ -96,7 +109,9 @@ export class LocationsService {
 
   async update(id: string, dto: UpdateLocationDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const loc = await tx.location.findFirst({ where: { id, deletedAt: null } });
+      const loc = await tx.location.findFirst({
+        where: { id, deletedAt: null },
+      });
       if (!loc) throw new NotFoundException(`Location ${id} not found`);
 
       if (dto.isPrimary && !loc.isPrimary) {
@@ -125,10 +140,14 @@ export class LocationsService {
 
   async remove(id: string, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const loc = await tx.location.findFirst({ where: { id, deletedAt: null } });
+      const loc = await tx.location.findFirst({
+        where: { id, deletedAt: null },
+      });
       if (!loc) throw new NotFoundException(`Location ${id} not found`);
       if (loc.isPrimary) {
-        throw new BadRequestException('Cannot delete the primary location — set another as primary first.');
+        throw new BadRequestException(
+          'Cannot delete the primary location — set another as primary first.',
+        );
       }
       await tx.location.update({
         where: { id },

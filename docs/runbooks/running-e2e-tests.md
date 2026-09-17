@@ -1,6 +1,6 @@
 # Running the E2E Test Suite
 
-> Lives at [`apps/api-e2e/src/`](../../apps/api-e2e/src/). Nine spec files
+> Lives at [`apps/api-e2e/src/`](../../apps/api-e2e/src/). Thirty spec files gate CI (nine flow-level files plus the passing `src/modules/*` per-module files); nineteen `src/modules/*` files are quarantined in `jest.config.cts` until their assertions match the api — run everything with `E2E_INCLUDE_QUARANTINE=1`. The original nine
 > exercise the api end-to-end as a real client would: the suite never
 > touches the database directly, only the public HTTP surface.
 
@@ -29,6 +29,9 @@
 # Terminal 1 — start the api (raise the auth throttle so the suite isn't 429'd,
 # and expose reset tokens so the password-reset case can complete)
 THROTTLE_AUTH_LIMIT=1000 AUTH_EXPOSE_DEBUG_TOKENS=true pnpm nx serve @org/api
+
+# The harness also opens a direct Postgres connection (platform-admin fixtures,
+# cleanup), so DATABASE_URL must point at the same database the api uses.
 
 # Terminal 2 — run the suite
 pnpm nx run @org/api-e2e:e2e

@@ -2,17 +2,28 @@
 // Stored under a distinct localStorage key so a clinic user and a platform
 // admin can stay logged in side-by-side in the same browser without
 // stepping on each other.
+//
+// JWTs live in the httpOnly `cliniq.platform.access` / `cliniq.platform.refresh`
+// cookies. localStorage only holds the admin identity for UI shell decisions
+// (e.g., "show platform nav?"). Tolerate the older shape that included tokens
+// — they're dropped on read.
 
 const KEY = 'cliniq.platform-session';
 const EVENT = 'cliniq:platform-session';
 
+export interface PlatformAdminIdentity {
+  id: string;
+  email: string;
+}
+
+export interface PlatformLoginPayload {
+  accessToken?: string;
+  refreshToken?: string;
+  admin: PlatformAdminIdentity;
+}
+
 export interface PlatformSession {
-  accessToken: string;
-  refreshToken: string;
-  admin: {
-    id: string;
-    email: string;
-  };
+  admin: PlatformAdminIdentity;
 }
 
 let cached: PlatformSession | null | undefined;
@@ -22,7 +33,12 @@ function read(): PlatformSession | null {
   const raw = window.localStorage.getItem(KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as PlatformSession;
+    const parsed = JSON.parse(raw) as Partial<PlatformSession> & {
+      accessToken?: unknown;
+      refreshToken?: unknown;
+    };
+    if (!parsed?.admin) return null;
+    return { admin: parsed.admin };
   } catch {
     return null;
   }
@@ -33,11 +49,14 @@ export function loadPlatformSession(): PlatformSession | null {
   return cached;
 }
 
-export function savePlatformSession(session: PlatformSession): void {
+export function savePlatformSession(
+  payload: PlatformLoginPayload | PlatformSession,
+): void {
   if (typeof window === 'undefined') return;
-  cached = session;
-  window.localStorage.setItem(KEY, JSON.stringify(session));
-  window.dispatchEvent(new CustomEvent(EVENT, { detail: session }));
+  const next: PlatformSession = { admin: payload.admin };
+  cached = next;
+  window.localStorage.setItem(KEY, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent(EVENT, { detail: next }));
 }
 
 export function clearPlatformSession(): void {

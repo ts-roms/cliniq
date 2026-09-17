@@ -23,52 +23,72 @@ export class PrescriptionsService {
    * Standalone safety check (the web UI calls this on every Rx-form change
    * to surface warnings live without writing anything).
    */
-  precheck(dto: Pick<CreatePrescriptionDto, 'items' | 'knownAllergies' | 'currentMedications'>) {
+  precheck(
+    dto: Pick<
+      CreatePrescriptionDto,
+      'items' | 'knownAllergies' | 'currentMedications'
+    >,
+  ) {
     const findings = checkInteractions({
       newDrugs: dto.items.map((i) => i.drugName),
       currentMedications: dto.currentMedications,
       allergies: dto.knownAllergies,
     });
-    return { findings, blocking: findings.some((f) => f.severity === 'urgent') };
+    return {
+      findings,
+      blocking: findings.some((f) => f.severity === 'urgent'),
+    };
   }
 
   async create(dto: CreatePrescriptionDto, user: AuthenticatedUser) {
-    // Provider must have an active PRC license to issue an Rx in PH.
-    const provider = await this.prisma.user.findUnique({
-      where: { id: user.userId },
-      select: {
-        id: true,
-        name: true,
-        prcLicenseNumber: true,
-        prcLicenseExpiry: true,
-        prcSpecialty: true,
-      },
-    });
-    if (!provider?.prcLicenseNumber) {
-      throw new BadRequestException(
-        'Cannot issue prescription: PRC license number missing on your profile. Settings → My profile.',
-      );
-    }
-    if (provider.prcLicenseExpiry && provider.prcLicenseExpiry.getTime() < Date.now()) {
-      throw new BadRequestException(
-        'Cannot issue prescription: PRC license has expired. Update your profile.',
-      );
-    }
-
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      // Provider must have an active PRC license to issue an Rx in PH.
+      // Read inside the same RLS context as the rest of the writes — the
+      // `users_visible_in_tenant` policy needs current_tenant set.
+      const provider = await tx.user.findUnique({
+        where: { id: user.userId },
+        select: {
+          id: true,
+          name: true,
+          prcLicenseNumber: true,
+          prcLicenseExpiry: true,
+          prcSpecialty: true,
+        },
+      });
+      if (!provider?.prcLicenseNumber) {
+        throw new BadRequestException(
+          'Cannot issue prescription: PRC license number missing on your profile. Settings → My profile.',
+        );
+      }
+      if (
+        provider.prcLicenseExpiry &&
+        provider.prcLicenseExpiry.getTime() < Date.now()
+      ) {
+        throw new BadRequestException(
+          'Cannot issue prescription: PRC license has expired. Update your profile.',
+        );
+      }
+
       const patient = await tx.patient.findFirst({
         where: { id: dto.patientId, deletedAt: null },
         select: { id: true },
       });
-      if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${dto.patientId} not found`);
 
       if (dto.consultationId) {
         const consult = await tx.consultation.findFirst({
-          where: { id: dto.consultationId, patientId: dto.patientId, deletedAt: null },
+          where: {
+            id: dto.consultationId,
+            patientId: dto.patientId,
+            deletedAt: null,
+          },
           select: { id: true },
         });
         if (!consult) {
-          throw new NotFoundException(`Consultation ${dto.consultationId} not found`);
+          throw new NotFoundException(
+            `Consultation ${dto.consultationId} not found`,
+          );
         }
       }
 
@@ -100,7 +120,9 @@ export class PrescriptionsService {
       // Resolve drug catalog refs (when the client passed drugId). We pull
       // the catalog row inside the same transaction so RLS scopes naturally
       // and fail closed if it disappears mid-request.
-      const catalogIds = dto.items.map((i) => i.drugId).filter((id): id is string => !!id);
+      const catalogIds = dto.items
+        .map((i) => i.drugId)
+        .filter((id): id is string => !!id);
       const catalogRows = catalogIds.length
         ? await tx.drug.findMany({
             where: { id: { in: catalogIds }, active: true },
@@ -140,7 +162,8 @@ export class PrescriptionsService {
       const blocking = findings.some((f) => f.severity === 'urgent');
       if (blocking && !dto.override) {
         throw new BadRequestException({
-          message: 'Prescription blocked by safety check. Pass override=true to acknowledge.',
+          message:
+            'Prescription blocked by safety check. Pass override=true to acknowledge.',
           findings,
         });
       }
@@ -242,7 +265,9 @@ export class PrescriptionsService {
       });
       if (!rx) throw new NotFoundException(`Prescription ${id} not found`);
 
-      const tenant = await tx.tenant.findFirst({ select: { name: true, settings: true } });
+      const tenant = await tx.tenant.findFirst({
+        select: { name: true, settings: true },
+      });
       const location = await tx.location.findFirst({
         where: { isPrimary: true, deletedAt: null, active: true },
         select: {
@@ -266,7 +291,10 @@ export class PrescriptionsService {
           providerSpecialty: rx.providerSpecialty,
           items: rx.items,
         },
-        tenant: { name: tenant?.name ?? 'Clinic', settings: tenant?.settings as never },
+        tenant: {
+          name: tenant?.name ?? 'Clinic',
+          settings: tenant?.settings as never,
+        },
         location,
         patient: rx.patient,
       });
@@ -295,12 +323,18 @@ export class PrescriptionsService {
    * Acceptable race risk for the MVP — wrap in a sequence per tenant if needed.
    */
   private async nextNumber(
-    tx: { prescription: { count: (a: { where: Record<string, unknown> }) => Promise<number> } },
+    tx: {
+      prescription: {
+        count: (a: { where: Record<string, unknown> }) => Promise<number>;
+      };
+    },
     tenantId: string,
   ): Promise<string> {
     const now = new Date();
     const yyyymm = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
     const count = await tx.prescription.count({
       where: { tenantId, issuedAt: { gte: monthStart } },
     });

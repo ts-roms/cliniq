@@ -5,7 +5,11 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3';
 import { PrismaService } from '@org/db';
 
 /**
@@ -32,21 +36,35 @@ export class FilesJanitorService implements OnModuleInit, OnModuleDestroy {
   private readonly retainDeletedDays: number;
   private timer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
     });
-    this.bucketPhi = this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
-    this.bucketPublic = this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
-    this.enabled = (this.config.get<string>('JANITOR_ENABLED') ?? 'false') === 'true';
-    this.intervalMs = Number(this.config.get<string>('JANITOR_INTERVAL_MS') ?? 60 * 60 * 1000);
-    this.orphanMaxAgeMin = Number(this.config.get<string>('ORPHAN_MAX_AGE_MIN') ?? 60);
-    this.retainDeletedDays = Number(this.config.get<string>('RETAIN_DELETED_DAYS') ?? 90);
+    this.bucketPhi =
+      this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
+    this.bucketPublic =
+      this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+    this.enabled =
+      (this.config.get<string>('JANITOR_ENABLED') ?? 'false') === 'true';
+    this.intervalMs = Number(
+      this.config.get<string>('JANITOR_INTERVAL_MS') ?? 60 * 60 * 1000,
+    );
+    this.orphanMaxAgeMin = Number(
+      this.config.get<string>('ORPHAN_MAX_AGE_MIN') ?? 60,
+    );
+    this.retainDeletedDays = Number(
+      this.config.get<string>('RETAIN_DELETED_DAYS') ?? 90,
+    );
   }
 
   onModuleInit(): void {
     if (!this.enabled) {
-      this.logger.log('files janitor disabled (set JANITOR_ENABLED=true to enable)');
+      this.logger.log(
+        'files janitor disabled (set JANITOR_ENABLED=true to enable)',
+      );
       return;
     }
     this.timer = setInterval(() => {
@@ -75,35 +93,56 @@ export class FilesJanitorService implements OnModuleInit, OnModuleDestroy {
 
   private async reapOrphans(): Promise<number> {
     const cutoff = new Date(Date.now() - this.orphanMaxAgeMin * 60_000);
-    // NOTE: janitor runs as the admin Prisma role (no withTenant) — reaping
-    // is a system task that crosses tenant boundaries.
-    const rows = await this.prisma.fileObject.findMany({
-      where: { status: 'PENDING' as never, createdAt: { lt: cutoff } },
-      select: { id: true, s3Key: true, isPhi: true, tenantId: true },
-      take: 500,
-    });
+    // Janitor is a system task — iterate over every active tenant so each
+    // tenant's RLS context is active for its own deletes. Mirrors the
+    // pattern used by the appointment reminder cron.
+    const tenants = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findMany({ where: { deletedAt: null }, select: { id: true } }),
+    );
     let count = 0;
-    for (const row of rows) {
-      await this.tryDeleteFromS3(row.s3Key, row.isPhi);
-      await this.prisma.fileObject.delete({ where: { id: row.id } });
-      count++;
+    for (const tenant of tenants) {
+      const rows = await this.prisma.withTenant(tenant.id, null, (tx) =>
+        tx.fileObject.findMany({
+          where: { status: 'PENDING' as never, createdAt: { lt: cutoff } },
+          select: { id: true, s3Key: true, isPhi: true },
+          take: 500,
+        }),
+      );
+      for (const row of rows) {
+        await this.tryDeleteFromS3(row.s3Key, row.isPhi);
+        await this.prisma.withTenant(tenant.id, null, (tx) =>
+          tx.fileObject.delete({ where: { id: row.id } }),
+        );
+        count++;
+      }
     }
     if (count > 0) this.logger.log(`reaped ${count} orphaned PENDING file(s)`);
     return count;
   }
 
   private async reapDeleted(): Promise<number> {
-    const cutoff = new Date(Date.now() - this.retainDeletedDays * 24 * 60 * 60_000);
-    const rows = await this.prisma.fileObject.findMany({
-      where: { status: 'DELETED' as never, deletedAt: { lt: cutoff } },
-      select: { id: true, s3Key: true, isPhi: true },
-      take: 500,
-    });
+    const cutoff = new Date(
+      Date.now() - this.retainDeletedDays * 24 * 60 * 60_000,
+    );
+    const tenants = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findMany({ where: { deletedAt: null }, select: { id: true } }),
+    );
     let count = 0;
-    for (const row of rows) {
-      await this.tryDeleteFromS3(row.s3Key, row.isPhi);
-      await this.prisma.fileObject.delete({ where: { id: row.id } });
-      count++;
+    for (const tenant of tenants) {
+      const rows = await this.prisma.withTenant(tenant.id, null, (tx) =>
+        tx.fileObject.findMany({
+          where: { status: 'DELETED' as never, deletedAt: { lt: cutoff } },
+          select: { id: true, s3Key: true, isPhi: true },
+          take: 500,
+        }),
+      );
+      for (const row of rows) {
+        await this.tryDeleteFromS3(row.s3Key, row.isPhi);
+        await this.prisma.withTenant(tenant.id, null, (tx) =>
+          tx.fileObject.delete({ where: { id: row.id } }),
+        );
+        count++;
+      }
     }
     if (count > 0) this.logger.log(`reaped ${count} long-deleted file(s)`);
     return count;
@@ -114,9 +153,13 @@ export class FilesJanitorService implements OnModuleInit, OnModuleDestroy {
     try {
       // HEAD first so a 404 doesn't trip our metrics on already-orphaned keys.
       await this.s3.send(new HeadObjectCommand({ Bucket: bucket, Key: s3Key }));
-      await this.s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: s3Key }));
+      await this.s3.send(
+        new DeleteObjectCommand({ Bucket: bucket, Key: s3Key }),
+      );
     } catch (err) {
-      this.logger.debug(`s3 delete skipped for ${s3Key}: ${(err as Error).message}`);
+      this.logger.debug(
+        `s3 delete skipped for ${s3Key}: ${(err as Error).message}`,
+      );
     }
   }
 }

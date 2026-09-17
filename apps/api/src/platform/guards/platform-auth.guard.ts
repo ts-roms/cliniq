@@ -24,15 +24,12 @@ export class PlatformAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    // Only run on @PlatformAuth-marked routes; everything else is the
-    // tenant JwtAuthGuard's concern.
-    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(
+      IS_PLATFORM_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (!isPlatform) return true;
 
-    // Login/refresh are platform routes but @Public — no token to verify.
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       ctx.getHandler(),
       ctx.getClass(),
@@ -41,14 +38,21 @@ export class PlatformAuthGuard implements CanActivate {
 
     const req = ctx.switchToHttp().getRequest<{
       headers: Record<string, string | string[] | undefined>;
+      cookies?: Record<string, string>;
       platformAdmin?: AuthenticatedPlatformAdmin;
     }>();
     const header = req.headers.authorization;
     const raw = Array.isArray(header) ? header[0] : header;
-    if (!raw?.startsWith('Bearer ')) {
+    let token: string | null = null;
+    if (raw?.startsWith('Bearer ')) {
+      token = raw.slice(7);
+    } else if (req.cookies?.['cliniq.platform.access']) {
+      // Web platform UI carries the JWT in the httpOnly cookie.
+      token = req.cookies['cliniq.platform.access'];
+    }
+    if (!token) {
       throw new UnauthorizedException('missing bearer token');
     }
-    const token = raw.slice(7);
     const secret = this.config.getOrThrow<string>('JWT_SECRET');
 
     let payload;

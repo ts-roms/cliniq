@@ -22,9 +22,17 @@ COPY libs/api-client/package.json libs/api-client/
 COPY apps/web/package.json apps/web/
 COPY apps/mobile/package.json apps/mobile/
 COPY apps/api-e2e/package.json apps/api-e2e/
+COPY apps/web-e2e/package.json apps/web-e2e/
 COPY apps/ai-service/package.json apps/ai-service/
 COPY apps/ai-service-e2e/package.json apps/ai-service-e2e/
-RUN pnpm install --frozen-lockfile
+# Try strict (CI / prod) install first; if the lockfile is out of
+# sync with package.json (common in dev when a new dep was just
+# added), fall back to a non-frozen install rather than failing
+# the whole `docker compose up`. CI explicitly runs the strict
+# form via `pnpm install --frozen-lockfile` before docker build,
+# so we don't silently drift in production.
+RUN pnpm install --frozen-lockfile --ignore-scripts \
+ || pnpm install --no-frozen-lockfile --ignore-scripts
 
 # ── build ─────────────────────────────────────────
 FROM deps AS build

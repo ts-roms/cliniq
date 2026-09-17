@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService, TeleSessionStatus } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
@@ -73,26 +77,49 @@ export class MeService {
   async records(user: AuthenticatedUser) {
     const patientId = this.requirePatientId(user);
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const [allergies, medications, conditions, vitals, prescriptions, labOrders] =
-        await Promise.all([
-          tx.allergy.findMany({ where: { patientId } }),
-          tx.medication.findMany({ where: { patientId }, orderBy: { startedOn: 'desc' } }),
-          tx.condition.findMany({ where: { patientId }, orderBy: { diagnosedOn: 'desc' } }),
-          tx.vital.findMany({ where: { patientId }, orderBy: { recordedAt: 'desc' }, take: 10 }),
-          tx.prescription.findMany({
-            where: { patientId, deletedAt: null },
-            orderBy: { issuedAt: 'desc' },
-            include: { items: true },
-            take: 20,
-          }),
-          tx.labOrder.findMany({
-            where: { patientId, deletedAt: null },
-            include: { items: { orderBy: { createdAt: 'asc' } } },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
-          }),
-        ]);
-      return { allergies, medications, conditions, vitals, prescriptions, labOrders };
+      const [
+        allergies,
+        medications,
+        conditions,
+        vitals,
+        prescriptions,
+        labOrders,
+      ] = await Promise.all([
+        tx.allergy.findMany({ where: { patientId } }),
+        tx.medication.findMany({
+          where: { patientId },
+          orderBy: { startedOn: 'desc' },
+        }),
+        tx.condition.findMany({
+          where: { patientId },
+          orderBy: { diagnosedOn: 'desc' },
+        }),
+        tx.vital.findMany({
+          where: { patientId },
+          orderBy: { recordedAt: 'desc' },
+          take: 10,
+        }),
+        tx.prescription.findMany({
+          where: { patientId, deletedAt: null },
+          orderBy: { issuedAt: 'desc' },
+          include: { items: true },
+          take: 20,
+        }),
+        tx.labOrder.findMany({
+          where: { patientId, deletedAt: null },
+          include: { items: { orderBy: { createdAt: 'asc' } } },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        }),
+      ]);
+      return {
+        allergies,
+        medications,
+        conditions,
+        vitals,
+        prescriptions,
+        labOrders,
+      };
     });
   }
 
@@ -102,13 +129,19 @@ export class MeService {
    * critical bit — a portal user must not be able to render arbitrary invoice
    * PDFs from their tenant.
    */
-  async invoicePdf(invoiceId: string, user: AuthenticatedUser): Promise<Buffer> {
+  async invoicePdf(
+    invoiceId: string,
+    user: AuthenticatedUser,
+  ): Promise<Buffer> {
     const patientId = this.requirePatientId(user);
-    const owns = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.invoice.findFirst({
-        where: { id: invoiceId, patientId, deletedAt: null },
-        select: { id: true },
-      }),
+    const owns = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.invoice.findFirst({
+          where: { id: invoiceId, patientId, deletedAt: null },
+          select: { id: true },
+        }),
     );
     if (!owns) throw new NotFoundException(`Invoice ${invoiceId} not found`);
     return this.billing.renderInvoicePdf(invoiceId, user);
@@ -122,21 +155,31 @@ export class MeService {
    */
   async teleActive(user: AuthenticatedUser) {
     const patientId = this.requirePatientId(user);
-    const session = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.teleSession.findFirst({
-        where: {
-          patientId,
-          status: { in: [TeleSessionStatus.PENDING, TeleSessionStatus.ACTIVE] },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
+    const { session, provider } = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const session = await tx.teleSession.findFirst({
+          where: {
+            patientId,
+            status: {
+              in: [TeleSessionStatus.PENDING, TeleSessionStatus.ACTIVE],
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (!session) return { session: null, provider: null };
+        // No relation defined on TeleSession.providerId — fetch the user
+        // separately. Inside the same RLS context so users_visible_in_tenant
+        // matches.
+        const provider = await tx.user.findFirst({
+          where: { id: session.providerId },
+          select: { name: true },
+        });
+        return { session, provider };
+      },
     );
     if (!session) return null;
-    // No relation defined on TeleSession.providerId — fetch the user separately.
-    const provider = await this.prisma.user.findFirst({
-      where: { id: session.providerId },
-      select: { name: true },
-    });
     const base = this.config.get<string>('PORTAL_BASE_URL') ?? '';
     return {
       id: session.id,

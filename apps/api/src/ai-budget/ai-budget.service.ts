@@ -1,9 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   NotificationKind,
@@ -57,10 +52,16 @@ export class AiBudgetService {
 
   /** Returns the plan-tier budget for a tenant, falling back to env default. */
   async budgetFor(tenantId: string): Promise<number> {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: { plan: true },
-    });
+    // RLS: bare `this.prisma.tenant.findUnique` is null-filtered when called
+    // outside an active tenant context (e.g. from a worker or before the
+    // request middleware fires). Wrap in withTenant so the per-tenant GUC
+    // is set for this read.
+    const tenant = await this.prisma.withTenant(tenantId, null, (tx) =>
+      tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: { plan: true },
+      }),
+    );
     if (!tenant) return this.fallbackBudgetCentavos;
     return PLAN_BUDGETS_CENTAVOS[tenant.plan] ?? this.fallbackBudgetCentavos;
   }
@@ -75,7 +76,8 @@ export class AiBudgetService {
     if (usage.hardStopped || usage.spentCentavos >= usage.budgetCentavos) {
       throw new HttpException(
         {
-          message: 'AI budget for this month reached. Upgrade plan or wait until next cycle.',
+          message:
+            'AI budget for this month reached. Upgrade plan or wait until next cycle.',
           usage,
         },
         HttpStatus.TOO_MANY_REQUESTS,
@@ -93,28 +95,45 @@ export class AiBudgetService {
 
     const monthYear = currentMonthKey();
     const planBudget = await this.budgetFor(tenantId);
-    const updated = await this.prisma.aiBudget.upsert({
-      where: { tenantId_monthYear: { tenantId, monthYear } },
-      create: {
-        tenantId,
-        monthYear,
-        budgetCentavos: planBudget,
-        spentCentavos: costCentavos,
-        alertsSent: 0,
+    // RLS: ai_budgets is tenant-scoped. Wrap both the upsert and the
+    // potential follow-up update in the same tenant context.
+    const { updated, next } = await this.prisma.withTenant(
+      tenantId,
+      null,
+      async (tx) => {
+        const updated = await tx.aiBudget.upsert({
+          where: { tenantId_monthYear: { tenantId, monthYear } },
+          create: {
+            tenantId,
+            monthYear,
+            budgetCentavos: planBudget,
+            spentCentavos: costCentavos,
+            alertsSent: 0,
+          },
+          update: { spentCentavos: { increment: costCentavos } },
+        });
+        const ratio =
+          updated.spentCentavos / Math.max(1, updated.budgetCentavos);
+        const newAlertsSent = ALERT_THRESHOLDS.filter((t) => ratio >= t).length;
+        if (
+          newAlertsSent > updated.alertsSent ||
+          (ratio >= 1 && !updated.hardStopped)
+        ) {
+          const next = await tx.aiBudget.update({
+            where: { id: updated.id },
+            data: {
+              alertsSent: newAlertsSent,
+              hardStopped: ratio >= 1,
+            },
+          });
+          return { updated, next };
+        }
+        return { updated, next: null as null | typeof updated };
       },
-      update: { spentCentavos: { increment: costCentavos } },
-    });
+    );
 
     const ratio = updated.spentCentavos / Math.max(1, updated.budgetCentavos);
-    const newAlertsSent = ALERT_THRESHOLDS.filter((t) => ratio >= t).length;
-    if (newAlertsSent > updated.alertsSent || (ratio >= 1 && !updated.hardStopped)) {
-      const next = await this.prisma.aiBudget.update({
-        where: { id: updated.id },
-        data: {
-          alertsSent: newAlertsSent,
-          hardStopped: ratio >= 1,
-        },
-      });
+    if (next) {
       this.logger.warn(
         `tenant=${tenantId} ai-budget ${(ratio * 100).toFixed(1)}% used ` +
           `(${next.spentCentavos}/${next.budgetCentavos}¢, alerts=${next.alertsSent}, stopped=${next.hardStopped})`,
@@ -124,7 +143,9 @@ export class AiBudgetService {
         this.logger.warn(`alert email failed: ${(err as Error).message}`),
       );
       // Mirror the email alert as an in-app notification to OWNER/ADMIN.
-      const pct = Math.round((next.spentCentavos / Math.max(1, next.budgetCentavos)) * 100);
+      const pct = Math.round(
+        (next.spentCentavos / Math.max(1, next.budgetCentavos)) * 100,
+      );
       void this.notif.notifyRoles(tenantId, ['OWNER', 'ADMIN'], {
         kind: NotificationKind.AI_BUDGET_ALERT,
         severity: next.hardStopped
@@ -145,16 +166,30 @@ export class AiBudgetService {
 
   private async notifyOwners(
     tenantId: string,
-    state: { spentCentavos: number; budgetCentavos: number; hardStopped: boolean; monthYear: string },
+    state: {
+      spentCentavos: number;
+      budgetCentavos: number;
+      hardStopped: boolean;
+      monthYear: string;
+    },
   ): Promise<void> {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: { name: true, slug: true },
-    });
-    const owners = await this.prisma.tenantUser.findMany({
-      where: { tenantId, role: Role.OWNER, status: 'ACTIVE' as never },
-      include: { user: { select: { email: true } } },
-    });
+    // Both reads need RLS context to survive the tenants_self_read /
+    // tenant_users_self_read policies.
+    const { tenant, owners } = await this.prisma.withTenant(
+      tenantId,
+      null,
+      async (tx) => {
+        const tenant = await tx.tenant.findUnique({
+          where: { id: tenantId },
+          select: { name: true, slug: true },
+        });
+        const owners = await tx.tenantUser.findMany({
+          where: { tenantId, role: Role.OWNER, status: 'ACTIVE' as never },
+          include: { user: { select: { email: true } } },
+        });
+        return { tenant, owners };
+      },
+    );
     const recipients = owners.map((o) => o.user.email).filter(Boolean);
     if (recipients.length === 0) return;
 
@@ -173,9 +208,12 @@ export class AiBudgetService {
 
   async getUsage(tenantId: string): Promise<BudgetUsage> {
     const monthYear = currentMonthKey();
-    const row = await this.prisma.aiBudget.findUnique({
-      where: { tenantId_monthYear: { tenantId, monthYear } },
-    });
+    // RLS: ai_budgets needs current_tenant — wrap the read.
+    const row = await this.prisma.withTenant(tenantId, null, (tx) =>
+      tx.aiBudget.findUnique({
+        where: { tenantId_monthYear: { tenantId, monthYear } },
+      }),
+    );
     if (!row) {
       const planBudget = await this.budgetFor(tenantId);
       return {

@@ -16,6 +16,24 @@ import type { AuthenticatedUser } from '../decorators/current-user.decorator.js'
 import { DelegationsService } from '../../delegations/delegations.service.js';
 
 const ACTING_FOR_HEADER = 'x-acting-for';
+const ACCESS_COOKIE = 'cliniq.access';
+
+/**
+ * Extract the access JWT from either the `Authorization: Bearer …` header
+ * (mobile clients, external integrations) or the httpOnly `cliniq.access`
+ * cookie (web). Header takes precedence so a service can override the cookie
+ * for one-off calls during the migration. Returns null if neither is present.
+ */
+function extractAccessToken(req: {
+  headers: Record<string, string | string[] | undefined>;
+  cookies?: Record<string, string>;
+}): string | null {
+  const header = req.headers.authorization;
+  const raw = Array.isArray(header) ? header[0] : header;
+  if (raw?.startsWith('Bearer ')) return raw.slice(7);
+  const cookie = req.cookies?.[ACCESS_COOKIE];
+  return typeof cookie === 'string' && cookie.length > 0 ? cookie : null;
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -30,10 +48,10 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     // Platform routes go through PlatformAuthGuard, not this one.
-    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(
+      IS_PLATFORM_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (isPlatform) return true;
 
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -44,14 +62,13 @@ export class JwtAuthGuard implements CanActivate {
 
     const req = ctx.switchToHttp().getRequest<{
       headers: Record<string, string | string[] | undefined>;
+      cookies?: Record<string, string>;
       user?: AuthenticatedUser;
     }>();
-    const header = req.headers.authorization;
-    const raw = Array.isArray(header) ? header[0] : header;
-    if (!raw?.startsWith('Bearer ')) {
+    const token = extractAccessToken(req);
+    if (!token) {
       throw new UnauthorizedException('missing bearer token');
     }
-    const token = raw.slice(7);
     const secret = this.config.getOrThrow<string>('JWT_SECRET');
 
     let payload;
@@ -73,7 +90,9 @@ export class JwtAuthGuard implements CanActivate {
     // X-Acting-For: <userId>. If present, validate an active delegation exists
     // and override the request's effective role with the delegator's role.
     const actingForRaw = req.headers[ACTING_FOR_HEADER];
-    const actingFor = Array.isArray(actingForRaw) ? actingForRaw[0] : actingForRaw;
+    const actingFor = Array.isArray(actingForRaw)
+      ? actingForRaw[0]
+      : actingForRaw;
     if (actingFor && actingFor.trim().length > 0) {
       if (actingFor === user.userId) {
         throw new ForbiddenException('cannot act on behalf of yourself');
@@ -86,16 +105,21 @@ export class JwtAuthGuard implements CanActivate {
       if (!delegation) {
         throw new ForbiddenException('no active delegation for that user');
       }
-      // Look up the delegator's current tenant role — it may differ from the
-      // role at grant time, and we always honor what's current.
-      const membership = await this.prisma.tenantUser.findFirst({
-        where: {
-          tenantId: user.tenantId,
-          userId: actingFor,
-          status: MemberStatus.ACTIVE,
-        },
-        select: { role: true },
-      });
+      // RLS: tenant_users_isolation requires current_tenant. The guard runs
+      // before any service wraps a tx, so the bare client misses the row.
+      const membership = await this.prisma.withTenant(
+        user.tenantId,
+        null,
+        (tx) =>
+          tx.tenantUser.findFirst({
+            where: {
+              tenantId: user.tenantId,
+              userId: actingFor,
+              status: MemberStatus.ACTIVE,
+            },
+            select: { role: true },
+          }),
+      );
       if (!membership) {
         throw new ForbiddenException('delegator is no longer an active member');
       }

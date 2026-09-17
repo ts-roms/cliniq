@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipServiceAuth } from '../common/public.decorator.js';
 
 @Controller('health')
+@SkipServiceAuth()
 export class HealthController {
   @Get()
   check() {

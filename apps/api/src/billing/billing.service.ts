@@ -50,32 +50,46 @@ export class BillingService {
    * payments + patient via RLS, then tenant + settings outside the RLS scope
    * (settings is needed for branding in the PDF header).
    */
-  async renderInvoicePdf(invoiceId: string, user: AuthenticatedUser): Promise<Buffer> {
-    const invoice = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const inv = await tx.invoice.findFirst({
-        where: { id: invoiceId, deletedAt: null },
-        include: {
-          items: { orderBy: { id: 'asc' } },
-          payments: { orderBy: { paidAt: 'asc' } },
-          patient: {
-            select: {
-              mrn: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
+  async renderInvoicePdf(
+    invoiceId: string,
+    user: AuthenticatedUser,
+  ): Promise<Buffer> {
+    const invoice = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const inv = await tx.invoice.findFirst({
+          where: { id: invoiceId, deletedAt: null },
+          include: {
+            items: { orderBy: { id: 'asc' } },
+            payments: { orderBy: { paidAt: 'asc' } },
+            patient: {
+              select: {
+                mrn: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
             },
           },
-        },
-      });
-      if (!inv) throw new NotFoundException(`Invoice ${invoiceId} not found`);
-      return inv;
-    });
+        });
+        if (!inv) throw new NotFoundException(`Invoice ${invoiceId} not found`);
+        return inv;
+      },
+    );
 
-    const tenant = await this.prisma.tenant.findFirst({
-      where: { id: user.tenantId, deletedAt: null },
-      select: { name: true, currency: true, settings: true },
-    });
+    // RLS: bare `this.prisma.tenant.findFirst` returns null because the
+    // `current_tenant` GUC isn't set on the bare client. Wrap in withTenant.
+    const tenant = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.tenant.findFirst({
+          where: { id: user.tenantId, deletedAt: null },
+          select: { name: true, currency: true, settings: true },
+        }),
+    );
     if (!tenant) throw new NotFoundException('tenant not found');
 
     return renderInvoicePdf({
@@ -108,7 +122,11 @@ export class BillingService {
         name: tenant.name,
         currency: tenant.currency,
         settings: tenant.settings as {
-          branding?: { logoUrl?: string; tagline?: string; primaryColor?: string };
+          branding?: {
+            logoUrl?: string;
+            tagline?: string;
+            primaryColor?: string;
+          };
           defaultInvoiceNotes?: string;
           vatPercent?: number;
         } | null,
@@ -122,7 +140,8 @@ export class BillingService {
         where: { id: dto.patientId, deletedAt: null },
         select: { id: true },
       });
-      if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${dto.patientId} not found`);
 
       const subtotal = dto.items.reduce(
         (sum, i) => sum + i.unitPriceCentavos * i.quantity,
@@ -162,11 +181,20 @@ export class BillingService {
     });
   }
 
-  async recordPayment(invoiceId: string, dto: RecordPaymentDto, user: AuthenticatedUser) {
+  async recordPayment(
+    invoiceId: string,
+    dto: RecordPaymentDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const inv = await tx.invoice.findFirst({
         where: { id: invoiceId, deletedAt: null },
-        select: { id: true, totalCentavos: true, paidCentavos: true, status: true },
+        select: {
+          id: true,
+          totalCentavos: true,
+          paidCentavos: true,
+          status: true,
+        },
       });
       if (!inv) throw new NotFoundException(`Invoice ${invoiceId} not found`);
       if (inv.status === InvoiceStatus.CANCELLED) {
@@ -203,12 +231,18 @@ export class BillingService {
   }
 
   private async nextNumber(
-    tx: { invoice: { count: (a: { where: Record<string, unknown> }) => Promise<number> } },
+    tx: {
+      invoice: {
+        count: (a: { where: Record<string, unknown> }) => Promise<number>;
+      };
+    },
     tenantId: string,
   ): Promise<string> {
     const now = new Date();
     const yyyymm = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
     const count = await tx.invoice.count({
       where: { tenantId, issuedAt: { gte: monthStart } },
     });

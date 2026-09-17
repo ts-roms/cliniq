@@ -397,6 +397,7 @@
             "description": ""
           }
         },
+        "summary": "Logout — revokes the refresh session and clears the cookies",
         "tags": ["Auth"]
       }
     },
@@ -4527,6 +4528,19 @@
             "description": ""
           }
         },
+        "tags": ["platform-auth"]
+      }
+    },
+    "/api/platform/auth/logout": {
+      "post": {
+        "operationId": "PlatformAuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Platform logout — clears the platform session cookies",
         "tags": ["platform-auth"]
       }
     },
@@ -8942,8 +8956,7 @@
           "refreshToken": {
             "type": "string"
           }
-        },
-        "required": ["refreshToken"]
+        }
       },
       "RegisterPatientDto": {
         "type": "object",
@@ -10368,8 +10381,7 @@
           "refreshToken": {
             "type": "string"
           }
-        },
-        "required": ["refreshToken"]
+        }
       },
       "TenantStatus": {
         "type": "string",
