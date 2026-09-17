@@ -30,18 +30,18 @@ cliniq/
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Monorepo | Nx 22 + pnpm workspaces |
-| Web app | Next.js 15 + React 19 + Tailwind + shadcn |
-| Marketing | React 19 + Vite + Tailwind + shadcn (shared `libs/ui`) |
-| Mobile | Expo 54 + React Native |
-| API | NestJS 11 + Webpack build |
-| Database | PostgreSQL + Prisma 7 |
-| Forms | react-hook-form + zod |
-| Data | TanStack Query (with Devtools) |
-| Auth | JWT (planned: WebAuthn for clinical roles) |
-| AI | Bedrock (Claude Sonnet/Haiku) — see `docs/07` and `docs/08` |
+| Layer     | Choice                                                      |
+| --------- | ----------------------------------------------------------- |
+| Monorepo  | Nx 22 + pnpm workspaces                                     |
+| Web app   | Next.js 15 + React 19 + Tailwind + shadcn                   |
+| Marketing | React 19 + Vite + Tailwind + shadcn (shared `libs/ui`)      |
+| Mobile    | Expo 54 + React Native                                      |
+| API       | NestJS 11 + Webpack build                                   |
+| Database  | PostgreSQL + Prisma 7                                       |
+| Forms     | react-hook-form + zod                                       |
+| Data      | TanStack Query (with Devtools)                              |
+| Auth      | JWT (planned: WebAuthn for clinical roles)                  |
+| AI        | Bedrock (Claude Sonnet/Haiku) — see `docs/07` and `docs/08` |
 
 ## Prerequisites
 
@@ -115,13 +115,13 @@ pnpm nx sync                         # sync TS project references
 
 Tags applied to every project:
 
-| Project | tags |
-|---|---|
-| `@org/web`        | `scope:web`, `type:app` |
-| `@org/marketing`  | `scope:marketing`, `type:app` |
-| `@org/api`        | `scope:api`, `type:app` |
-| `@org/mobile`     | `scope:mobile`, `type:app` |
-| `@org/ui`, `@org/db`, `@org/shared-types`, `@org/auth`, `@org/api-client`, `@org/ai-prompts` | `scope:shared`, `type:lib` |
+| Project                                                                                      | tags                          |
+| -------------------------------------------------------------------------------------------- | ----------------------------- |
+| `@org/web`                                                                                   | `scope:web`, `type:app`       |
+| `@org/marketing`                                                                             | `scope:marketing`, `type:app` |
+| `@org/api`                                                                                   | `scope:api`, `type:app`       |
+| `@org/mobile`                                                                                | `scope:mobile`, `type:app`    |
+| `@org/ui`, `@org/db`, `@org/shared-types`, `@org/auth`, `@org/api-client`, `@org/ai-prompts` | `scope:shared`, `type:lib`    |
 
 Apps may only depend on `scope:shared` libs — never on each other. Enforced by `@nx/enforce-module-boundaries` in `eslint.config.mjs`.
 
@@ -139,6 +139,7 @@ pnpm nx g @nx/nest:module --project=@org/api --directory=apps/api/src/<name>
 ```
 
 After generating, add `tags` in the new project's `package.json`:
+
 ```json
 { "nx": { "tags": ["scope:shared", "type:lib"] } }
 ```
@@ -157,6 +158,7 @@ The schema lives in `libs/db/prisma/schema.prisma`. The full target schema is in
 ## Tailwind + shadcn
 
 `libs/ui` owns:
+
 - The shared Tailwind preset (`tailwind.preset.cjs`)
 - The shadcn CSS variables (`src/globals.css`)
 - The `cn()` helper and reusable components

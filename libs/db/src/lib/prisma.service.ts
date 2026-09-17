@@ -85,83 +85,237 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   // ── Proxy the most-used Prisma surface ─────────────────────
 
-  get tenant() { return this.client.tenant; }
-  get user() { return this.client.user; }
-  get tenantUser() { return this.client.tenantUser; }
-  get tenantInvite() { return this.client.tenantInvite; }
-  get refreshSession() { return this.client.refreshSession; }
-  get passwordResetToken() { return this.client.passwordResetToken; }
-  get patient() { return this.client.patient; }
-  get consultation() { return this.client.consultation; }
-  get aiSuggestion() { return this.client.aiSuggestion; }
-  get prescription() { return this.client.prescription; }
-  get prescriptionItem() { return this.client.prescriptionItem; }
-  get auditLog() { return this.client.auditLog; }
-  get fileObject() { return this.client.fileObject; }
-  get patientConsent() { return this.client.patientConsent; }
-  get aiBudget() { return this.client.aiBudget; }
-  get appointment() { return this.client.appointment; }
-  get providerAvailability() { return this.client.providerAvailability; }
-  get providerTimeOff() { return this.client.providerTimeOff; }
-  get vital() { return this.client.vital; }
-  get allergy() { return this.client.allergy; }
-  get medication() { return this.client.medication; }
-  get condition() { return this.client.condition; }
-  get service() { return this.client.service; }
-  get invoice() { return this.client.invoice; }
-  get invoiceItem() { return this.client.invoiceItem; }
-  get payment() { return this.client.payment; }
-  get dataSubjectRequest() { return this.client.dataSubjectRequest; }
-  get inventoryItem() { return this.client.inventoryItem; }
-  get stockBatch() { return this.client.stockBatch; }
-  get stockMovement() { return this.client.stockMovement; }
-  get hmoProvider() { return this.client.hmoProvider; }
-  get hmoMembership() { return this.client.hmoMembership; }
-  get hmoClaim() { return this.client.hmoClaim; }
-  get labOrder() { return this.client.labOrder; }
-  get labOrderItem() { return this.client.labOrderItem; }
-  get teleSession() { return this.client.teleSession; }
-  get teleSignal() { return this.client.teleSignal; }
-  get notification() { return this.client.notification; }
-  get dentalChart() { return this.client.dentalChart; }
-  get dentalToothEntry() { return this.client.dentalToothEntry; }
-  get dentalSurfaceFinding() { return this.client.dentalSurfaceFinding; }
-  get delegation() { return this.client.delegation; }
-  get drug() { return this.client.drug; }
-  get icdCode() { return this.client.icdCode; }
-  get location() { return this.client.location; }
-  get platformAdmin() { return this.client.platformAdmin; }
-  get labClinicLink() { return this.client.labClinicLink; }
-  get labProductCategory() { return this.client.labProductCategory; }
-  get labProduct() { return this.client.labProduct; }
-  get labCase() { return this.client.labCase; }
-  get labCaseFile() { return this.client.labCaseFile; }
-  get labCasePhaseEvent() { return this.client.labCasePhaseEvent; }
-  get labCaseNote() { return this.client.labCaseNote; }
-  get labCaseMessage() { return this.client.labCaseMessage; }
-  get labCaseTag() { return this.client.labCaseTag; }
-  get labCaseTagAssignment() { return this.client.labCaseTagAssignment; }
-  get labShipment() { return this.client.labShipment; }
-  get labMaterial() { return this.client.labMaterial; }
-  get labMaterialLot() { return this.client.labMaterialLot; }
-  get labMaterialUsage() { return this.client.labMaterialUsage; }
-  get labConformityDocTemplate() { return this.client.labConformityDocTemplate; }
-  get labConsentTemplate() { return this.client.labConsentTemplate; }
-  get labConsentSignature() { return this.client.labConsentSignature; }
-  get labInvoice() { return this.client.labInvoice; }
-  get labInvoiceItem() { return this.client.labInvoiceItem; }
-  get labPaymentLink() { return this.client.labPaymentLink; }
-  get labTreatmentPlan() { return this.client.labTreatmentPlan; }
-  get labTreatmentPlanFile() { return this.client.labTreatmentPlanFile; }
-  get labTreatmentPlanApproval() { return this.client.labTreatmentPlanApproval; }
-  get labCaseDispute() { return this.client.labCaseDispute; }
-  get labCaseDisputeMessage() { return this.client.labCaseDisputeMessage; }
-  get queue() { return this.client.queue; }
-  get queueTicket() { return this.client.queueTicket; }
-  get obPregnancy() { return this.client.obPregnancy; }
-  get obVisit() { return this.client.obVisit; }
-  get ultrasoundReport() { return this.client.ultrasoundReport; }
-  get ultrasoundFile() { return this.client.ultrasoundFile; }
+  get tenant() {
+    return this.client.tenant;
+  }
+  get user() {
+    return this.client.user;
+  }
+  get tenantUser() {
+    return this.client.tenantUser;
+  }
+  get tenantInvite() {
+    return this.client.tenantInvite;
+  }
+  get refreshSession() {
+    return this.client.refreshSession;
+  }
+  get passwordResetToken() {
+    return this.client.passwordResetToken;
+  }
+  get patient() {
+    return this.client.patient;
+  }
+  get consultation() {
+    return this.client.consultation;
+  }
+  get aiSuggestion() {
+    return this.client.aiSuggestion;
+  }
+  get prescription() {
+    return this.client.prescription;
+  }
+  get prescriptionItem() {
+    return this.client.prescriptionItem;
+  }
+  get auditLog() {
+    return this.client.auditLog;
+  }
+  get fileObject() {
+    return this.client.fileObject;
+  }
+  get patientConsent() {
+    return this.client.patientConsent;
+  }
+  get aiBudget() {
+    return this.client.aiBudget;
+  }
+  get appointment() {
+    return this.client.appointment;
+  }
+  get providerAvailability() {
+    return this.client.providerAvailability;
+  }
+  get providerTimeOff() {
+    return this.client.providerTimeOff;
+  }
+  get vital() {
+    return this.client.vital;
+  }
+  get allergy() {
+    return this.client.allergy;
+  }
+  get medication() {
+    return this.client.medication;
+  }
+  get condition() {
+    return this.client.condition;
+  }
+  get service() {
+    return this.client.service;
+  }
+  get invoice() {
+    return this.client.invoice;
+  }
+  get invoiceItem() {
+    return this.client.invoiceItem;
+  }
+  get payment() {
+    return this.client.payment;
+  }
+  get dataSubjectRequest() {
+    return this.client.dataSubjectRequest;
+  }
+  get inventoryItem() {
+    return this.client.inventoryItem;
+  }
+  get stockBatch() {
+    return this.client.stockBatch;
+  }
+  get stockMovement() {
+    return this.client.stockMovement;
+  }
+  get hmoProvider() {
+    return this.client.hmoProvider;
+  }
+  get hmoMembership() {
+    return this.client.hmoMembership;
+  }
+  get hmoClaim() {
+    return this.client.hmoClaim;
+  }
+  get labOrder() {
+    return this.client.labOrder;
+  }
+  get labOrderItem() {
+    return this.client.labOrderItem;
+  }
+  get teleSession() {
+    return this.client.teleSession;
+  }
+  get teleSignal() {
+    return this.client.teleSignal;
+  }
+  get notification() {
+    return this.client.notification;
+  }
+  get dentalChart() {
+    return this.client.dentalChart;
+  }
+  get dentalToothEntry() {
+    return this.client.dentalToothEntry;
+  }
+  get dentalSurfaceFinding() {
+    return this.client.dentalSurfaceFinding;
+  }
+  get delegation() {
+    return this.client.delegation;
+  }
+  get drug() {
+    return this.client.drug;
+  }
+  get icdCode() {
+    return this.client.icdCode;
+  }
+  get location() {
+    return this.client.location;
+  }
+  get platformAdmin() {
+    return this.client.platformAdmin;
+  }
+  get labClinicLink() {
+    return this.client.labClinicLink;
+  }
+  get labProductCategory() {
+    return this.client.labProductCategory;
+  }
+  get labProduct() {
+    return this.client.labProduct;
+  }
+  get labCase() {
+    return this.client.labCase;
+  }
+  get labCaseFile() {
+    return this.client.labCaseFile;
+  }
+  get labCasePhaseEvent() {
+    return this.client.labCasePhaseEvent;
+  }
+  get labCaseNote() {
+    return this.client.labCaseNote;
+  }
+  get labCaseMessage() {
+    return this.client.labCaseMessage;
+  }
+  get labCaseTag() {
+    return this.client.labCaseTag;
+  }
+  get labCaseTagAssignment() {
+    return this.client.labCaseTagAssignment;
+  }
+  get labShipment() {
+    return this.client.labShipment;
+  }
+  get labMaterial() {
+    return this.client.labMaterial;
+  }
+  get labMaterialLot() {
+    return this.client.labMaterialLot;
+  }
+  get labMaterialUsage() {
+    return this.client.labMaterialUsage;
+  }
+  get labConformityDocTemplate() {
+    return this.client.labConformityDocTemplate;
+  }
+  get labConsentTemplate() {
+    return this.client.labConsentTemplate;
+  }
+  get labConsentSignature() {
+    return this.client.labConsentSignature;
+  }
+  get labInvoice() {
+    return this.client.labInvoice;
+  }
+  get labInvoiceItem() {
+    return this.client.labInvoiceItem;
+  }
+  get labPaymentLink() {
+    return this.client.labPaymentLink;
+  }
+  get labTreatmentPlan() {
+    return this.client.labTreatmentPlan;
+  }
+  get labTreatmentPlanFile() {
+    return this.client.labTreatmentPlanFile;
+  }
+  get labTreatmentPlanApproval() {
+    return this.client.labTreatmentPlanApproval;
+  }
+  get labCaseDispute() {
+    return this.client.labCaseDispute;
+  }
+  get labCaseDisputeMessage() {
+    return this.client.labCaseDisputeMessage;
+  }
+  get queue() {
+    return this.client.queue;
+  }
+  get queueTicket() {
+    return this.client.queueTicket;
+  }
+  get obPregnancy() {
+    return this.client.obPregnancy;
+  }
+  get obVisit() {
+    return this.client.obVisit;
+  }
+  get ultrasoundReport() {
+    return this.client.ultrasoundReport;
+  }
+  get ultrasoundFile() {
+    return this.client.ultrasoundFile;
+  }
 
   $transaction<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T>;
   $transaction<T>(promises: Array<Promise<T>>): Promise<T[]>;
@@ -169,11 +323,17 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.$transaction(arg as never);
   }
 
-  $queryRaw<T = unknown>(query: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+  $queryRaw<T = unknown>(
+    query: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<T> {
     return this.client.$queryRaw(query, ...values) as Promise<T>;
   }
 
-  $executeRaw(query: TemplateStringsArray, ...values: unknown[]): Promise<number> {
+  $executeRaw(
+    query: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<number> {
     return this.client.$executeRaw(query, ...values);
   }
 
@@ -194,15 +354,21 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     fn: (tx: PrismaClient) => Promise<T>,
   ): Promise<T> {
     if (!isCuidLike(tenantId)) {
-      throw new Error(`PrismaService.withTenant: invalid tenantId "${tenantId}"`);
+      throw new Error(
+        `PrismaService.withTenant: invalid tenantId "${tenantId}"`,
+      );
     }
     if (userId !== null && !isCuidLike(userId)) {
       throw new Error(`PrismaService.withTenant: invalid userId "${userId}"`);
     }
     return this.client.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${tenantId}'`);
+      await tx.$executeRawUnsafe(
+        `SET LOCAL app.current_tenant = '${tenantId}'`,
+      );
       // app.current_user collides with the reserved keyword `current_user`.
-      await tx.$executeRawUnsafe(`SET LOCAL app.current_user_id = '${userId ?? ''}'`);
+      await tx.$executeRawUnsafe(
+        `SET LOCAL app.current_user_id = '${userId ?? ''}'`,
+      );
       return fn(tx as unknown as PrismaClient);
     });
   }
@@ -213,7 +379,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
    * Use ONLY from the platform admin module, where cross-tenant reads/writes
    * are intentional. SET LOCAL ensures the flag dies with the transaction.
    */
-  async withPlatformContext<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
+  async withPlatformContext<T>(
+    fn: (tx: PrismaClient) => Promise<T>,
+  ): Promise<T> {
     return this.client.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(`SET LOCAL app.platform_admin = '1'`);
       return fn(tx as unknown as PrismaClient);
@@ -231,9 +399,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
    * route's own `withTenant` wrap. Centralise the lookup here so every
    * caller sets the right context.
    */
-  async getTenantContext(
-    tenantId: string,
-  ): Promise<{ kind: string; plan: string | null; labPlan: string | null } | null> {
+  async getTenantContext(tenantId: string): Promise<{
+    kind: string;
+    plan: string | null;
+    labPlan: string | null;
+  } | null> {
     if (!isCuidLike(tenantId)) return null;
     return this.withTenant(tenantId, null, (tx) =>
       tx.tenant.findUnique({

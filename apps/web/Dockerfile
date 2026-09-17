@@ -2,7 +2,10 @@
 # Multi-stage build for the ClinIQ Next.js web app (standalone output).
 
 FROM node:22-alpine AS base
-RUN corepack enable
+# Pinned: unpinned corepack resolves the latest pnpm (11.x), which rejects the
+# pnpm 10 `onlyBuiltDependencies` config and fails install. Keep in step with
+# PNPM_VERSION in .github/workflows/ci.yml.
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 WORKDIR /workspace
 
 FROM base AS deps
