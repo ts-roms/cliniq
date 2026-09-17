@@ -17,8 +17,7 @@
           "passWithNoTests": true
         },
         "dependsOn": [
-          "@org/api:build",
-          "@org/api:serve"
+          "@org/api:build"
         ]
       }
     }

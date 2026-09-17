@@ -1,8 +1,20 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
 export class StartConsultationDto {
-  @ApiProperty({ description: 'Patient id' })
+  @ApiPropertyOptional({
+    description:
+      'Patient id. Required unless appointmentId is given (then it must match).',
+  })
+  @IsOptional()
   @IsString()
-  patientId!: string;
+  patientId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Open the consult from a booked slot: the appointment moves to IN_PROGRESS and completes with the consult.',
+  })
+  @IsOptional()
+  @IsString()
+  appointmentId?: string;
 }

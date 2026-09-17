@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  Lock,
   Package,
   Settings,
   ShieldCheck,
@@ -16,22 +17,47 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { Session } from '@/features/auth/session';
+import { Features, useEntitlements, type Feature } from '@/features/auth';
 import { useTenantSettings } from '@/features/settings';
 import { useT } from '@/shared/i18n';
 
 const AUDIT_ROLES = new Set(['OWNER', 'ADMIN']);
-const INVENTORY_ROLES = new Set(['OWNER', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']);
+const INVENTORY_ROLES = new Set([
+  'OWNER',
+  'ADMIN',
+  'DOCTOR',
+  'NURSE',
+  'RECEPTIONIST',
+]);
 const CLAIMS_ROLES = new Set(['OWNER', 'ADMIN', 'RECEPTIONIST']);
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Role-based visibility — items where show=false are hidden entirely. */
   show: boolean;
+  /** When set, the item is plan-gated. If the active plan doesn't include
+   *  the feature, the item renders disabled with an upgrade badge. */
+  requires?: Feature;
 }
 
 export function homeHrefFor(role: string): string {
   return AUDIT_ROLES.has(role) ? '/dashboard' : '/patients';
+}
+
+// Maps a Plan/LabPlan enum value to a short badge label.
+function planBadge(plan: string | null): string {
+  switch (plan) {
+    case 'PRO':
+    case 'LAB_STANDARD':
+      return 'Pro';
+    case 'PREMIUM':
+    case 'LAB_PREMIUM':
+      return 'Premium';
+    default:
+      return 'Upgrade';
+  }
 }
 
 export function SideNav({
@@ -46,6 +72,7 @@ export function SideNav({
   const pathname = usePathname();
   const settings = useTenantSettings();
   const t = useT();
+  const entitlements = useEntitlements();
 
   // Close drawer on route change (mobile)
   useEffect(() => {
@@ -66,15 +93,50 @@ export function SideNav({
   const canSeeInventory = INVENTORY_ROLES.has(session.user.role);
   const canSeeClaims = CLAIMS_ROLES.has(session.user.role);
 
+  // Items are kept in the array even when plan-gated; entitlements drives the
+  // disabled vs enabled rendering. Items hidden by role-based `show` are
+  // filtered out below — those aren't sold as upgrades.
   const items: NavItem[] = [
-    { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard, show: canSeeAudit },
+    {
+      href: '/dashboard',
+      label: t('nav.dashboard'),
+      icon: LayoutDashboard,
+      show: canSeeAudit,
+    },
     { href: '/patients', label: t('nav.patients'), icon: Users, show: true },
     { href: '/schedule', label: t('nav.schedule'), icon: Calendar, show: true },
-    { href: '/inventory', label: t('nav.inventory'), icon: Package, show: canSeeInventory },
-    { href: '/admin/claims', label: t('nav.claims'), icon: FileText, show: canSeeClaims },
-    { href: '/audit', label: t('nav.audit'), icon: ShieldCheck, show: canSeeAudit },
-    { href: '/admin/dsr', label: t('nav.dsr'), icon: ClipboardList, show: canSeeAudit },
-    { href: '/admin/settings', label: t('nav.settings'), icon: Settings, show: session.user.role === 'OWNER' },
+    {
+      href: '/inventory',
+      label: t('nav.inventory'),
+      icon: Package,
+      show: canSeeInventory,
+      requires: Features.INVENTORY,
+    },
+    {
+      href: '/admin/claims',
+      label: t('nav.claims'),
+      icon: FileText,
+      show: canSeeClaims,
+      requires: Features.HMO,
+    },
+    {
+      href: '/audit',
+      label: t('nav.audit'),
+      icon: ShieldCheck,
+      show: canSeeAudit,
+    },
+    {
+      href: '/admin/dsr',
+      label: t('nav.dsr'),
+      icon: ClipboardList,
+      show: canSeeAudit,
+    },
+    {
+      href: '/admin/settings',
+      label: t('nav.settings'),
+      icon: Settings,
+      show: session.user.role === 'OWNER',
+    },
   ].filter((i) => i.show);
 
   const branding = settings.data?.settings?.branding;
@@ -85,7 +147,9 @@ export function SideNav({
     <Link
       href={home}
       className="flex min-w-0 items-center gap-2 px-4 py-4"
-      style={branding?.primaryColor ? { color: branding.primaryColor } : undefined}
+      style={
+        branding?.primaryColor ? { color: branding.primaryColor } : undefined
+      }
     >
       {branding?.logoUrl ? (
         <img src={branding.logoUrl} alt={clinicName} className="h-7 w-auto" />
@@ -103,6 +167,34 @@ export function SideNav({
       {items.map((i) => {
         const active = pathname === i.href || pathname.startsWith(i.href + '/');
         const Icon = i.icon;
+        const locked = !!i.requires && !entitlements.hasFeature(i.requires);
+
+        if (locked) {
+          const requiredPlan = i.requires
+            ? entitlements.requiredPlanFor(i.requires)
+            : null;
+          const badge = planBadge(requiredPlan);
+          const upgradeTitle = requiredPlan
+            ? `Available on ${badge} — upgrade to unlock`
+            : 'Not included in your current plan';
+          return (
+            <div
+              key={i.href}
+              role="link"
+              aria-disabled="true"
+              title={upgradeTitle}
+              className="flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground/60 select-none"
+            >
+              <Icon className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="truncate">{i.label}</span>
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <Lock className="h-3 w-3" aria-hidden />
+                {badge}
+              </span>
+            </div>
+          );
+        }
+
         return (
           <Link
             key={i.href}

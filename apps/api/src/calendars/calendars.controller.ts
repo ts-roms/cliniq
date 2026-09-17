@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Features } from '@org/shared-types';
 import { Public } from '../auth/decorators/public.decorator.js';
+import { RequiresFeature } from '../auth/decorators/requires-feature.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -17,6 +19,7 @@ import { CalendarsService } from './calendars.service.js';
 
 @ApiTags('calendars')
 @ApiBearerAuth('jwt')
+@RequiresFeature(Features.CALENDAR_SYNC)
 @Controller('calendars')
 export class CalendarsController {
   constructor(private readonly cal: CalendarsService) {}

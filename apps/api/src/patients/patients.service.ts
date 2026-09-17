@@ -25,8 +25,11 @@ export class PatientsService {
       if (existing) {
         throw new ConflictException(`MRN ${dto.mrn} already exists in this clinic`);
       }
+      // `createdBy` isn't a column on Patient — actor identity for creates
+      // lives in the AuditLog table via the @Audit interceptor on the
+      // controller. Drop it from the payload to satisfy Prisma.
       const patient = await tx.patient.create({
-        data: { ...dto, tenantId: user.tenantId, createdBy: user.userId },
+        data: { ...dto, tenantId: user.tenantId },
       });
       this.logger.log(`Patient ${patient.id} (${patient.mrn}) created by ${user.userId}`);
       return patient;

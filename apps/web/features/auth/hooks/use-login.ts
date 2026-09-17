@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { authControllerLogin } from '@org/api-client';
-import { saveSession, type Session } from '../session';
+import { saveSession, type LoginPayload } from '../session';
 
 export interface LoginInput {
   email: string;
@@ -11,15 +11,18 @@ export interface LoginInput {
 
 export function useLogin(opts?: { onSuccess?: () => void }) {
   return useMutation({
-    mutationFn: async (input: LoginInput): Promise<Session> => {
+    mutationFn: async (input: LoginInput): Promise<LoginPayload> => {
       const { data, error } = await authControllerLogin({
         body: { email: input.email, password: input.password },
       });
       if (error || !data) throw new Error('Invalid credentials');
-      return data as unknown as Session;
+      // The api sets `cliniq.access` + `cliniq.refresh` httpOnly cookies in
+      // the response — JS can't see them. We only persist the `user` block
+      // in localStorage for UI-shell decisions; tokens stay server-side.
+      return data as unknown as LoginPayload;
     },
-    onSuccess: (session) => {
-      saveSession(session);
+    onSuccess: (payload) => {
+      saveSession(payload);
       opts?.onSuccess?.();
     },
   });

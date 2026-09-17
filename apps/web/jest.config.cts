@@ -13,6 +13,16 @@ const config = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   coverageDirectory: '../../coverage/apps/web',
   testEnvironment: 'jsdom',
+  // Mirrors the `paths` block in apps/web/tsconfig.json. nextJest() wires
+  // these up automatically when invoked from a clean Next.js project, but
+  // this workspace nests it under Nx + a workspace preset, and the
+  // resolvedBaseUrl override below would strip path-alias support too.
+  // Defining them explicitly keeps test resolution aligned with TS.
+  moduleNameMapper: {
+    '^@/features/(.*)$': '<rootDir>/features/$1',
+    '^@/shared/(.*)$': '<rootDir>/shared/$1',
+    '^@/(.*)$': '<rootDir>/$1',
+  },
 };
 
 const jestConfig = createJestConfig(config);

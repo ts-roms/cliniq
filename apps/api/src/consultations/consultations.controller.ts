@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
+import { Features } from '@org/shared-types';
 import { Audit } from '../audit/audit.decorator.js';
 import { RequiresConsent } from '../consents/decorators/requires-consent.decorator.js';
 import { ConsentTypeDto } from '../consents/dto/set-consent.dto.js';
@@ -21,6 +22,7 @@ import { DecideAiSuggestionDto } from './dto/submit-ai-suggestion.dto.js';
 import { GenerateSoapDto } from './dto/generate-soap.dto.js';
 import { GenerateDermDto } from './dto/generate-derm.dto.js';
 import { Requires } from '../auth/decorators/requires.decorator.js';
+import { RequiresFeature } from '../auth/decorators/requires-feature.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -75,6 +77,7 @@ export class ConsultationsController {
   @Post(':id/drafts/dermatology')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.AI_USE)
+  @RequiresFeature(Features.AI_DERMATOLOGY)
   @RequiresConsent(ConsentTypeDto.AI_PROCESSING, 'param:id-consultation')
   @Audit({ action: 'ai.draft.derm', entity: 'Consultation', entityIdFrom: 'param:id' })
   generateDerm(
@@ -88,6 +91,7 @@ export class ConsultationsController {
   @Post(':id/drafts/soap')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.AI_USE)
+  @RequiresFeature(Features.AI_SOAP)
   @RequiresConsent(ConsentTypeDto.AI_PROCESSING, 'param:id-consultation')
   @Audit({ action: 'ai.draft.soap', entity: 'Consultation', entityIdFrom: 'param:id' })
   generateSoap(

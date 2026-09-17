@@ -38,20 +38,27 @@ export class NotificationsService {
 
   async notify(input: NotifyInput): Promise<void> {
     try {
-      await this.prisma.notification.create({
-        data: {
-          tenantId: input.tenantId,
-          userId: input.userId,
-          kind: input.kind,
-          severity: input.severity ?? 'INFO',
-          title: input.title,
-          body: input.body,
-          link: input.link,
-          entityId: input.entityId,
-        },
-      });
+      // RLS: notifications WITH CHECK requires current_tenant_id() = tenantId.
+      // Callers commonly invoke this fire-and-forget (`void notify(...)`) so
+      // they aren't already inside a withTenant block.
+      await this.prisma.withTenant(input.tenantId, null, (tx) =>
+        tx.notification.create({
+          data: {
+            tenantId: input.tenantId,
+            userId: input.userId,
+            kind: input.kind,
+            severity: input.severity ?? 'INFO',
+            title: input.title,
+            body: input.body,
+            link: input.link,
+            entityId: input.entityId,
+          },
+        }),
+      );
     } catch (err) {
-      this.logger.error(`notify failed (${input.kind}): ${(err as Error).message}`);
+      this.logger.error(
+        `notify failed (${input.kind}): ${(err as Error).message}`,
+      );
       return; // don't push if the in-app row didn't even land
     }
     // Fire-and-forget push fan-out. PushService swallows its own errors and
@@ -66,20 +73,24 @@ export class NotificationsService {
   async notifyMany(input: NotifyManyInput): Promise<void> {
     if (input.userIds.length === 0) return;
     try {
-      await this.prisma.notification.createMany({
-        data: input.userIds.map((userId) => ({
-          tenantId: input.tenantId,
-          userId,
-          kind: input.kind,
-          severity: input.severity ?? 'INFO',
-          title: input.title,
-          body: input.body,
-          link: input.link,
-          entityId: input.entityId,
-        })),
-      });
+      await this.prisma.withTenant(input.tenantId, null, (tx) =>
+        tx.notification.createMany({
+          data: input.userIds.map((userId) => ({
+            tenantId: input.tenantId,
+            userId,
+            kind: input.kind,
+            severity: input.severity ?? 'INFO',
+            title: input.title,
+            body: input.body,
+            link: input.link,
+            entityId: input.entityId,
+          })),
+        }),
+      );
     } catch (err) {
-      this.logger.error(`notifyMany failed (${input.kind}): ${(err as Error).message}`);
+      this.logger.error(
+        `notifyMany failed (${input.kind}): ${(err as Error).message}`,
+      );
       return;
     }
     void this.push.sendToUsers(input.userIds, {
@@ -92,13 +103,18 @@ export class NotificationsService {
   /** Convenience: fan-out to all ACTIVE users in a tenant matching any of the given roles. */
   async notifyRoles(
     tenantId: string,
-    roles: Array<'OWNER' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PATIENT'>,
+    roles: Array<
+      'OWNER' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PATIENT'
+    >,
     payload: Omit<NotifyInput, 'tenantId' | 'userId'>,
   ): Promise<void> {
-    const members = await this.prisma.tenantUser.findMany({
-      where: { tenantId, status: 'ACTIVE', role: { in: roles } },
-      select: { userId: true },
-    });
+    // tenant_users is RLS-scoped — read inside the tenant's context.
+    const members = await this.prisma.withTenant(tenantId, null, (tx) =>
+      tx.tenantUser.findMany({
+        where: { tenantId, status: 'ACTIVE', role: { in: roles } },
+        select: { userId: true },
+      }),
+    );
     await this.notifyMany({
       tenantId,
       userIds: members.map((m) => m.userId),
@@ -152,7 +168,11 @@ export class NotificationsService {
 }
 
 /** Shape passed to the mobile client via Expo's data field. Stays small. */
-function pushData(input: { kind: NotificationKind; link?: string; entityId?: string }) {
+function pushData(input: {
+  kind: NotificationKind;
+  link?: string;
+  entityId?: string;
+}) {
   return {
     kind: input.kind,
     ...(input.link ? { link: input.link } : {}),

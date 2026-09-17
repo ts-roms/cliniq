@@ -28,18 +28,26 @@ export class WebhooksService {
     event:
       | 'appointment.created'
       | 'appointment.checked_in'
-      | 'appointment.cancelled',
+      | 'appointment.started'
+      | 'appointment.completed'
+      | 'appointment.cancelled'
+      | 'appointment.no_show'
+      | 'appointment.rescheduled',
     payload: Record<string, unknown>,
   ): Promise<void> {
     let url: string | undefined;
     try {
-      const tenant = await this.prisma.tenant.findFirst({
-        where: { id: tenantId, deletedAt: null },
-        select: { settings: true },
-      });
-      const settings = tenant?.settings as
-        | { appointmentWebhookUrl?: string }
-        | null;
+      // RLS: needs withTenant or the bare client read returns null and the
+      // webhook is silently skipped.
+      const tenant = await this.prisma.withTenant(tenantId, null, (tx) =>
+        tx.tenant.findFirst({
+          where: { id: tenantId, deletedAt: null },
+          select: { settings: true },
+        }),
+      );
+      const settings = tenant?.settings as {
+        appointmentWebhookUrl?: string;
+      } | null;
       url = settings?.appointmentWebhookUrl;
     } catch (err) {
       this.logger.warn(`webhook lookup failed: ${(err as Error).message}`);

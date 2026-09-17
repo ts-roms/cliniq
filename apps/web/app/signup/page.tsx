@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -6,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@org/ui';
-import { SignupForm } from '@/features/onboarding';
+import { SignupEntry } from '@/features/onboarding';
 
 export default function SignupPage() {
   return (
@@ -15,12 +16,18 @@ export default function SignupPage() {
         <CardHeader>
           <CardTitle className="font-extralight">Start your clinic</CardTitle>
           <CardDescription>
-            Free 30-day trial. Add patients, scribe consultations, prescribe — all in
-            one place.
+            Free 30-day trial. Add patients, scribe consultations, prescribe —
+            all in one place.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SignupForm />
+          {/* SignupEntry reads ?plan= / ?invite= via useSearchParams, which
+              forces a client-side render. Suspense boundary lets the page
+              still statically prerender the surrounding shell. With ?invite=
+              it renders the accept-invite form instead of the clinic wizard. */}
+          <Suspense fallback={<SignupFormSkeleton />}>
+            <SignupEntry />
+          </Suspense>
           <p className="text-center text-xs text-muted-foreground">
             Already have a clinic?{' '}
             <Link href="/login" className="text-primary hover:underline">
@@ -30,5 +37,16 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+function SignupFormSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden>
+      <div className="h-16 rounded-lg border border-border/60 bg-muted/30" />
+      <div className="h-9 rounded-md bg-muted/40" />
+      <div className="h-9 rounded-md bg-muted/40" />
+      <div className="h-9 rounded-md bg-muted/40" />
+    </div>
   );
 }

@@ -2,7 +2,10 @@
 # Multi-stage build for the ClinIQ Next.js web app (standalone output).
 
 FROM node:22-alpine AS base
-RUN corepack enable
+# Pinned: unpinned corepack resolves the latest pnpm (11.x), which rejects the
+# pnpm 10 `onlyBuiltDependencies` config and fails install. Keep in step with
+# PNPM_VERSION in .github/workflows/ci.yml.
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 WORKDIR /workspace
 
 FROM base AS deps
@@ -10,6 +13,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json 
 COPY apps/web/package.json apps/web/
 COPY apps/api/package.json apps/api/
 COPY apps/api-e2e/package.json apps/api-e2e/
+COPY apps/web-e2e/package.json apps/web-e2e/
 COPY apps/mobile/package.json apps/mobile/
 COPY apps/ai-service/package.json apps/ai-service/
 COPY apps/ai-service-e2e/package.json apps/ai-service-e2e/
@@ -19,10 +23,24 @@ COPY libs/shared-types/package.json libs/shared-types/
 COPY libs/ui/package.json libs/ui/
 COPY libs/ai-prompts/package.json libs/ai-prompts/
 COPY libs/api-client/package.json libs/api-client/
-RUN pnpm install --frozen-lockfile
+# Try strict (CI / prod) install first; if the lockfile is out of
+# sync with package.json (common in dev when a new dep was just
+# added), fall back to a non-frozen install rather than failing
+# the whole `docker compose up`. CI explicitly runs the strict
+# form via `pnpm install --frozen-lockfile` before docker build,
+# so we don't silently drift in production.
+RUN pnpm install --frozen-lockfile --ignore-scripts \
+ || pnpm install --no-frozen-lockfile --ignore-scripts
 
 FROM deps AS build
 COPY . .
+# Build-time public env. Next.js inlines NEXT_PUBLIC_* into the client bundle
+# during `next build`, so the value MUST be present at this stage. Railway
+# passes service variables as build args only when the Dockerfile declares
+# them with ARG — runtime-only env wouldn't reach Next.js's compiler.
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Regenerate the typed api-client SDK from apps/api/openapi.json (committed in
 # git as the contract snapshot). Done inline rather than via the nx target so we
 # don't transitively trigger an api build, which would require a live DB.

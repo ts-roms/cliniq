@@ -4,13 +4,23 @@ import { waitForPortOpen } from '@nx/node/utils';
 var __TEARDOWN_MESSAGE__: string;
 
 module.exports = async function () {
-  // Start services that that the app needs to run (e.g. database, docker-compose, etc.).
-  console.log('\nSetting up...\n');
+  // Wait for the api to be reachable before any spec runs. The api serves
+  // on port 4000 by default; override via API_E2E_URL or HOST/PORT.
+  console.log('\nSetting up e2e...\n');
 
-  const host = process.env.HOST ?? 'localhost';
-  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+  const url = process.env.API_E2E_URL;
+  let host = process.env.HOST ?? 'localhost';
+  let port = process.env.PORT ? Number(process.env.PORT) : 4000;
+  if (url) {
+    try {
+      const u = new URL(url);
+      host = u.hostname;
+      port = u.port ? Number(u.port) : u.protocol === 'https:' ? 443 : 80;
+    } catch {
+      // fall through with defaults
+    }
+  }
   await waitForPortOpen(port, { host });
 
-  // Hint: Use `globalThis` to pass variables to global teardown.
-  globalThis.__TEARDOWN_MESSAGE__ = '\nTearing down...\n';
+  globalThis.__TEARDOWN_MESSAGE__ = '\nTearing down e2e...\n';
 };

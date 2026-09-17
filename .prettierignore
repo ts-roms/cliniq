@@ -4,3 +4,8 @@
 /.nx/cache
 /.nx/workspace-data
 .nx/self-healing
+# Lockfiles are machine-written; prettier would churn thousands of lines on every install
+pnpm-lock.yaml
+
+# swc configs are JSON without an extension prettier can infer
+*.swcrc

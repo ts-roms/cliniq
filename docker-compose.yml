@@ -24,12 +24,16 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-cliniq}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/00-cliniq-app-role.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cliniq}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cliniq}',
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -50,7 +54,7 @@ services:
       # Migrations run as the postgres superuser so RLS policies + role grants
       # in the `20260501000001_rls_policies` migration can take effect.
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cliniq}?schema=public
-    restart: "no"
+    restart: 'no'
 
   api:
     build:
@@ -71,7 +75,15 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
       AI_SERVICE_URL: http://ai-service:4100
+      # Shared secret for ai-service (its ServiceAuthGuard). Same value on
+      # both services. The dev default is fine on a laptop, not anywhere else.
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-only-ai-service-token-change-me}
       PORTAL_BASE_URL: ${PORTAL_BASE_URL:-http://localhost:3000}
+      # Behind a reverse proxy set TRUST_PROXY=1 so rate limits key on the
+      # real client ip (X-Forwarded-For) rather than the proxy's.
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      THROTTLE_AUTH_LIMIT: ${THROTTLE_AUTH_LIMIT:-10}
       # Optional integration env. Mailer/Sms/TURN go no-op when unset.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
@@ -84,8 +96,10 @@ services:
       TURN_USERNAME: ${TURN_USERNAME:-}
       TURN_CREDENTIAL: ${TURN_CREDENTIAL:-}
       APPT_REMINDERS_ENABLED: ${APPT_REMINDERS_ENABLED:-false}
+      APPT_AUTO_NOSHOW_ENABLED: ${APPT_AUTO_NOSHOW_ENABLED:-false}
+      APPT_NOSHOW_GRACE_MINUTES: ${APPT_NOSHOW_GRACE_MINUTES:-30}
     ports:
-      - "${API_PORT:-4000}:4000"
+      - '${API_PORT:-4000}:4000'
 
   ai-service:
     build:
@@ -98,6 +112,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4100
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-only-ai-service-token-change-me}
       AWS_REGION: ${AWS_REGION:-ap-southeast-1}
       # Bedrock creds are optional in dev — when missing, ai-service falls
       # back to stub responses for the SOAP/derm endpoints.
@@ -106,12 +121,18 @@ services:
       BEDROCK_MODEL_SOAP: ${BEDROCK_MODEL_SOAP:-}
       BEDROCK_MODEL_DERM: ${BEDROCK_MODEL_DERM:-}
     ports:
-      - "${AI_PORT:-4100}:4100"
+      - '${AI_PORT:-4100}:4100'
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      # NEXT_PUBLIC_* is inlined by `next build` at build time. The Dockerfile
+      # declares `ARG NEXT_PUBLIC_API_URL` — we MUST forward it here, otherwise
+      # the client bundle ships with an empty baseUrl and login fetches resolve
+      # to the web's own origin (404 on /api/auth/login).
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     container_name: cliniq-web
     depends_on:
       api:
@@ -119,11 +140,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      # Public env: baked into the client bundle at build time. To change it,
-      # rebuild the web image.
+      # Kept for SSR / server components that may read process.env at runtime.
+      # The client bundle was already baked at build time via build.args above.
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - '${WEB_PORT:-3000}:3000'
 
 volumes:
   postgres-data:

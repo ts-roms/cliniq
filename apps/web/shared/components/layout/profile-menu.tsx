@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Globe, LogOut } from 'lucide-react';
-import { clearSession, type Session } from '@/features/auth/session';
+import { type Session } from '@/features/auth/session';
+import { useLogout } from '@/features/auth/hooks/use-logout';
 import { languages, setLang, useLang, useT, type Lang } from '@/shared/i18n';
 
 function initialsFor(email: string): string {
@@ -38,10 +39,7 @@ export function ProfileMenu({ session }: { session: Session }) {
     };
   }, [open]);
 
-  const signOut = () => {
-    clearSession();
-    router.replace('/login');
-  };
+  const signOut = useLogout(() => router.replace('/login'));
 
   const initials = initialsFor(session.user.email);
 

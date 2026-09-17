@@ -39,7 +39,7 @@ export class FileClaimDto {
 }
 
 export class UpdateClaimDto {
-  @ApiPropertyOptional({ enum: HmoClaimStatus })
+  @ApiPropertyOptional({ enum: HmoClaimStatus, enumName: 'HmoClaimStatus' })
   @IsOptional()
   @IsEnum(HmoClaimStatus)
   status?: HmoClaimStatus;

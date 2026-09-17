@@ -5,6 +5,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import { useDebouncedCallback } from '@/shared/hooks/use-debounced-callback';
 import { useElapsedSeconds } from '@/shared/hooks/use-elapsed';
 import type { SoapNote } from '../schemas/consultation';
+import { soapSectionText } from '../lib/soap-text';
 
 interface Props {
   initial: SoapNote;
@@ -17,11 +18,31 @@ interface Props {
   autosaveDelayMs?: number;
 }
 
-const SECTIONS: Array<{ key: keyof SoapNote; label: string; placeholder: string }> = [
-  { key: 'subjective', label: 'Subjective', placeholder: 'Chief complaint, HPI, ROS…' },
-  { key: 'objective', label: 'Objective', placeholder: 'Vitals, physical exam findings…' },
-  { key: 'assessment', label: 'Assessment', placeholder: 'Differential, diagnoses with reasoning…' },
-  { key: 'plan', label: 'Plan', placeholder: 'Diagnostics, meds, follow-up, education…' },
+const SECTIONS: Array<{
+  key: keyof SoapNote;
+  label: string;
+  placeholder: string;
+}> = [
+  {
+    key: 'subjective',
+    label: 'Subjective',
+    placeholder: 'Chief complaint, HPI, ROS…',
+  },
+  {
+    key: 'objective',
+    label: 'Objective',
+    placeholder: 'Vitals, physical exam findings…',
+  },
+  {
+    key: 'assessment',
+    label: 'Assessment',
+    placeholder: 'Differential, diagnoses with reasoning…',
+  },
+  {
+    key: 'plan',
+    label: 'Plan',
+    placeholder: 'Diagnostics, meds, follow-up, education…',
+  },
 ];
 
 export function SoapEditor({
@@ -33,10 +54,10 @@ export function SoapEditor({
   autosaveDelayMs = 2500,
 }: Props) {
   const [draft, setDraft] = useState<Record<keyof SoapNote, string>>({
-    subjective: extractText(initial.subjective),
-    objective: extractText(initial.objective),
-    assessment: extractText(initial.assessment),
-    plan: extractText(initial.plan),
+    subjective: soapSectionText(initial.subjective),
+    objective: soapSectionText(initial.objective),
+    assessment: soapSectionText(initial.assessment),
+    plan: soapSectionText(initial.plan),
   });
   const [isDirty, setIsDirty] = useState(false);
 
@@ -53,7 +74,10 @@ export function SoapEditor({
     [onSave],
   );
 
-  const [scheduleAutosave, flush] = useDebouncedCallback(persist, autosaveDelayMs);
+  const [scheduleAutosave, flush] = useDebouncedCallback(
+    persist,
+    autosaveDelayMs,
+  );
 
   const update = (key: keyof SoapNote, value: string) => {
     if (locked) return;
@@ -82,7 +106,11 @@ export function SoapEditor({
             locked={locked}
           />
         </div>
-        <Button size="sm" onClick={saveNow} disabled={locked || isSaving || !isDirty}>
+        <Button
+          size="sm"
+          onClick={saveNow}
+          disabled={locked || isSaving || !isDirty}
+        >
           {isSaving ? 'Saving…' : locked ? 'Locked' : 'Save'}
         </Button>
       </CardHeader>
@@ -115,9 +143,14 @@ function SaveStatus({
 }) {
   const elapsed = useElapsedSeconds(lastSavedAt);
 
-  if (locked) return <span className="text-xs text-muted-foreground">Locked</span>;
-  if (isSaving) return <span className="text-xs text-muted-foreground">Saving…</span>;
-  if (isDirty) return <span className="text-xs text-muted-foreground">Unsaved changes</span>;
+  if (locked)
+    return <span className="text-xs text-muted-foreground">Locked</span>;
+  if (isSaving)
+    return <span className="text-xs text-muted-foreground">Saving…</span>;
+  if (isDirty)
+    return (
+      <span className="text-xs text-muted-foreground">Unsaved changes</span>
+    );
   if (lastSavedAt) {
     return (
       <span className="text-xs text-muted-foreground">
@@ -164,14 +197,4 @@ function SoapSection({
       />
     </div>
   );
-}
-
-// SOAP blocks are stored as JSON for future rich-text. For the MVP editor we
-// flatten to a single text field per section.
-function extractText(value: SoapNote[keyof SoapNote] | undefined): string {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  const v = value as Record<string, unknown>;
-  if (typeof v.text === 'string') return v.text;
-  return JSON.stringify(value, null, 2);
 }

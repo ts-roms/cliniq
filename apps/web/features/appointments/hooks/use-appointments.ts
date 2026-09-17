@@ -4,8 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   appointmentsControllerCancel,
   appointmentsControllerCheckIn,
+  appointmentsControllerComplete,
   appointmentsControllerCreate,
   appointmentsControllerList,
+  appointmentsControllerNoShow,
+  appointmentsControllerReschedule,
+  appointmentsControllerStart,
 } from '@org/api-client';
 import type {
   Appointment,
@@ -36,18 +40,52 @@ export function useAppointmentRange(
   });
 }
 
+/**
+ * Thrown when the api refuses a slot for availability reasons (422). Carries
+ * `overridable` so the form can offer "book anyway" (which re-sends with
+ * `force: true`). Double-booking (409) is a plain Error — never overridable.
+ */
+export class AvailabilityError extends Error {
+  constructor(
+    message: string,
+    public readonly reason: 'outside_hours' | 'time_off',
+    public readonly overridable: boolean,
+  ) {
+    super(message);
+    this.name = 'AvailabilityError';
+  }
+}
+
 export function useCreateAppointment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: CreateAppointmentOutput) => {
-      const { data, error } = await appointmentsControllerCreate({
+    mutationFn: async (
+      input: CreateAppointmentOutput & { force?: boolean },
+    ) => {
+      const { data, error, response } = await appointmentsControllerCreate({
         body: {
           ...input,
           startsAt: new Date(input.startsAt).toISOString(),
           endsAt: new Date(input.endsAt).toISOString(),
         },
       });
-      if (error || !data) throw new Error('Create failed');
+      if (error || !data) {
+        const e = error as
+          | {
+              message?: string;
+              reason?: 'outside_hours' | 'time_off';
+              overridable?: boolean;
+            }
+          | undefined;
+        if (response?.status === 422 && e?.reason) {
+          throw new AvailabilityError(
+            e.message ?? 'outside provider hours',
+            e.reason,
+            !!e.overridable,
+          );
+        }
+        throw new Error(messageOf(error, 'Create failed'));
+      }
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),
@@ -69,10 +107,89 @@ export function useCheckInAppointment() {
 export function useCancelAppointment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await appointmentsControllerCancel({ path: { id } });
-      if (error) throw new Error('Cancel failed');
+    mutationFn: async (input: string | { id: string; reason?: string }) => {
+      const { id, reason } =
+        typeof input === 'string' ? { id: input, reason: undefined } : input;
+      const { error } = await appointmentsControllerCancel({
+        path: { id },
+        body: reason ? { reason } : {},
+      });
+      if (error) throw new Error(messageOf(error, 'Cancel failed'));
       return { id };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),
+  });
+}
+
+function messageOf(error: unknown, fallback: string): string {
+  const msg = (error as { message?: string | string[] } | undefined)?.message;
+  if (Array.isArray(msg)) return msg.join(', ');
+  return msg || fallback;
+}
+
+/** IN_PROGRESS + opens the consult; resolves with the consultation id. */
+export function useStartAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      id: string,
+    ): Promise<{ id: string; consultationId: string | null }> => {
+      const { data, error } = await appointmentsControllerStart({
+        path: { id },
+      });
+      if (error || !data)
+        throw new Error(messageOf(error, 'Could not start the consult'));
+      const appt = data as unknown as Appointment;
+      return { id, consultationId: appt.consultation?.id ?? null };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),
+  });
+}
+
+export function useCompleteAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await appointmentsControllerComplete({ path: { id } });
+      if (error)
+        throw new Error(messageOf(error, 'Could not complete the appointment'));
+      return { id };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),
+  });
+}
+
+export function useNoShowAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await appointmentsControllerNoShow({ path: { id } });
+      if (error) throw new Error(messageOf(error, 'Could not mark as no-show'));
+      return { id };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),
+  });
+}
+
+export function useRescheduleAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      startsAt: string;
+      endsAt: string;
+      providerId?: string;
+    }) => {
+      const { error } = await appointmentsControllerReschedule({
+        path: { id: input.id },
+        body: {
+          startsAt: new Date(input.startsAt).toISOString(),
+          endsAt: new Date(input.endsAt).toISOString(),
+          ...(input.providerId ? { providerId: input.providerId } : {}),
+        },
+      });
+      if (error) throw new Error(messageOf(error, 'Could not reschedule'));
+      return { id: input.id };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),
   });

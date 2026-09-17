@@ -1,15 +1,21 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
   PrismaService,
+  AppointmentStatus,
   ConsultStatus,
   AiSuggestionStatus,
   AiSuggestionKind,
 } from '@org/db';
+import {
+  canTransition,
+  transitionData,
+} from '../appointments/appointment-transitions.js';
 import type { StartConsultationDto } from './dto/start-consultation.dto.js';
 import type { UpdateConsultationDto } from './dto/update-consultation.dto.js';
 import {
@@ -39,24 +45,78 @@ export class ConsultationsService {
     private readonly icd: IcdCodesService,
   ) {}
 
+  /**
+   * Open a consult. With `appointmentId` the consult is bound to that booked
+   * slot: the patient comes from the appointment (a mismatching patientId
+   * is a 400), the appointment moves to IN_PROGRESS in the same transaction,
+   * and completing the consult later completes the appointment. Without it,
+   * this is a walk-in / ad-hoc consult and needs `patientId`.
+   */
   async start(dto: StartConsultationDto, user: AuthenticatedUser) {
+    if (!dto.patientId && !dto.appointmentId) {
+      throw new BadRequestException('patientId or appointmentId is required');
+    }
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      let patientId = dto.patientId;
+
+      if (dto.appointmentId) {
+        const appt = await tx.appointment.findFirst({
+          where: { id: dto.appointmentId, deletedAt: null },
+          select: {
+            id: true,
+            patientId: true,
+            status: true,
+            consultation: { select: { id: true } },
+          },
+        });
+        if (!appt)
+          throw new NotFoundException(
+            `Appointment ${dto.appointmentId} not found`,
+          );
+        if (patientId && patientId !== appt.patientId) {
+          throw new BadRequestException(
+            'patientId does not match the appointment',
+          );
+        }
+        if (appt.consultation) {
+          throw new ConflictException({
+            message: 'a consultation is already open for this appointment',
+            consultationId: appt.consultation.id,
+          });
+        }
+        if (!canTransition(appt.status, AppointmentStatus.IN_PROGRESS)) {
+          throw new ConflictException(
+            `cannot start a consult on a ${appt.status} appointment`,
+          );
+        }
+        patientId = appt.patientId;
+        await tx.appointment.update({
+          where: { id: appt.id },
+          data: transitionData(AppointmentStatus.IN_PROGRESS),
+        });
+      }
+
       const patient = await tx.patient.findFirst({
-        where: { id: dto.patientId, deletedAt: null },
+        where: { id: patientId, deletedAt: null },
         select: { id: true },
       });
-      if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${patientId} not found`);
 
       const consult = await tx.consultation.create({
         data: {
           tenantId: user.tenantId,
           patientId: patient.id,
           providerId: user.userId,
+          appointmentId: dto.appointmentId ?? null,
           startedAt: new Date(),
           status: ConsultStatus.IN_PROGRESS,
         },
       });
-      this.logger.log(`Consult ${consult.id} started for patient ${patient.id} by ${user.userId}`);
+      this.logger.log(
+        `Consult ${consult.id} started for patient ${patient.id} by ${user.userId}` +
+          (dto.appointmentId ? ` (appointment ${dto.appointmentId})` : ''),
+      );
       return consult;
     });
   }
@@ -82,7 +142,11 @@ export class ConsultationsService {
     });
   }
 
-  async update(id: string, dto: UpdateConsultationDto, user: AuthenticatedUser) {
+  async update(
+    id: string,
+    dto: UpdateConsultationDto,
+    user: AuthenticatedUser,
+  ) {
     // Validate ICD-10 codes against the global catalog before save —
     // anything not in the catalog must be a typo or an unmapped code, both
     // worth blocking. Empty/undefined arrays skip the check.
@@ -100,9 +164,12 @@ export class ConsultationsService {
         where: { id, deletedAt: null },
         select: { id: true, status: true, lockedAt: true },
       });
-      if (!existing) throw new NotFoundException(`Consultation ${id} not found`);
+      if (!existing)
+        throw new NotFoundException(`Consultation ${id} not found`);
       if (existing.lockedAt) {
-        throw new BadRequestException('Consultation is locked; create a revision instead');
+        throw new BadRequestException(
+          'Consultation is locked; create a revision instead',
+        );
       }
       return tx.consultation.update({ where: { id }, data: dto });
     });
@@ -112,18 +179,64 @@ export class ConsultationsService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.consultation.findFirst({
         where: { id, deletedAt: null },
-        select: { id: true, status: true },
+        select: {
+          id: true,
+          status: true,
+          appointmentId: true,
+          appointment: { select: { status: true } },
+          // The four SOAP fields too, so we can refuse to complete a totally
+          // blank consultation — not clinical correctness, just "the doctor
+          // documented something".
+          subjective: true,
+          objective: true,
+          assessment: true,
+          plan: true,
+        },
       });
-      if (!existing) throw new NotFoundException(`Consultation ${id} not found`);
+      if (!existing)
+        throw new NotFoundException(`Consultation ${id} not found`);
       if (existing.status === ConsultStatus.COMPLETED) {
         throw new BadRequestException('Already completed');
+      }
+      // JSON columns: a Tiptap doc, a plain string, or null. "Blank" = null,
+      // empty string, or an object/array with nothing in it.
+      const isBlank = (v: unknown): boolean => {
+        if (v == null) return true;
+        if (typeof v === 'string') return v.trim() === '';
+        if (Array.isArray(v)) return v.length === 0;
+        if (typeof v === 'object') return Object.keys(v as object).length === 0;
+        return false;
+      };
+      if (
+        isBlank(existing.subjective) &&
+        isBlank(existing.objective) &&
+        isBlank(existing.assessment) &&
+        isBlank(existing.plan)
+      ) {
+        throw new BadRequestException(
+          'Cannot complete an empty consultation. Document at least one SOAP field first.',
+        );
+      }
+      const now = new Date();
+      // Close the booked slot too. If the appointment was cancelled or
+      // otherwise moved under us, leave it — the consult record stands on
+      // its own and a 409 here would block the doctor from signing off.
+      if (
+        existing.appointmentId &&
+        existing.appointment &&
+        canTransition(existing.appointment.status, AppointmentStatus.COMPLETED)
+      ) {
+        await tx.appointment.update({
+          where: { id: existing.appointmentId },
+          data: transitionData(AppointmentStatus.COMPLETED, now),
+        });
       }
       return tx.consultation.update({
         where: { id },
         data: {
           status: ConsultStatus.COMPLETED,
-          endedAt: new Date(),
-          lockedAt: new Date(),
+          endedAt: now,
+          lockedAt: now,
         },
       });
     });
@@ -137,7 +250,8 @@ export class ConsultationsService {
         where: { id: consultId, deletedAt: null },
         select: { id: true },
       });
-      if (!consult) throw new NotFoundException(`Consultation ${consultId} not found`);
+      if (!consult)
+        throw new NotFoundException(`Consultation ${consultId} not found`);
       return tx.aiSuggestion.findMany({
         where: { consultationId: consultId },
         orderBy: { createdAt: 'desc' },
@@ -215,13 +329,15 @@ export class ConsultationsService {
         where: { id: consultId, deletedAt: null },
         select: { id: true, patientId: true },
       });
-      if (!consult) throw new NotFoundException(`Consultation ${consultId} not found`);
+      if (!consult)
+        throw new NotFoundException(`Consultation ${consultId} not found`);
 
       const patient = await tx.patient.findUnique({
         where: { id: consult.patientId },
         select: { id: true, dateOfBirth: true, sex: true },
       });
-      if (!patient) throw new NotFoundException('Patient missing for this consultation');
+      if (!patient)
+        throw new NotFoundException('Patient missing for this consultation');
 
       const recent = await tx.consultation.findMany({
         where: {
@@ -230,7 +346,12 @@ export class ConsultationsService {
           status: 'COMPLETED' as never,
           deletedAt: null,
         },
-        select: { id: true, startedAt: true, assessment: true, diagnosisCodes: true },
+        select: {
+          id: true,
+          startedAt: true,
+          assessment: true,
+          diagnosisCodes: true,
+        },
         orderBy: { startedAt: 'desc' },
         take: 3,
       });
@@ -248,7 +369,8 @@ export class ConsultationsService {
       });
 
       const ageYears = Math.floor(
-        (Date.now() - patient.dateOfBirth.getTime()) / (1000 * 60 * 60 * 24 * 365.25),
+        (Date.now() - patient.dateOfBirth.getTime()) /
+          (1000 * 60 * 60 * 24 * 365.25),
       );
 
       const knownConditions = dedupeStrings(
@@ -292,14 +414,18 @@ export class ConsultationsService {
     await this.budget.assertNotExceeded(user.tenantId);
 
     // Confirm + collect S3 keys; assertion via FilesService re-checks tenant ownership.
-    const files = await Promise.all(fileIds.map((id) => this.files.confirm(id, user)));
+    const files = await Promise.all(
+      fileIds.map((id) => this.files.confirm(id, user)),
+    );
     if (files.some((f) => f.category !== 'CONSULT_ATTACHMENT')) {
-      throw new BadRequestException('All files must be category CONSULT_ATTACHMENT');
+      throw new BadRequestException(
+        'All files must be category CONSULT_ATTACHMENT',
+      );
     }
     const isPhi = files[0]?.isPhi ?? true;
     const bucket = isPhi
-      ? this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev'
-      : this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+      ? (this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev')
+      : (this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev');
 
     const context = await this.loadDraftContext(consultId, user);
 
@@ -324,7 +450,9 @@ export class ConsultationsService {
           cacheReadTokens: aiResult.cacheReadTokens,
         }),
       )
-      .catch((err) => this.logger.warn(`budget.record failed: ${(err as Error).message}`));
+      .catch((err) =>
+        this.logger.warn(`budget.record failed: ${(err as Error).message}`),
+      );
 
     return this.createDraft(
       context.consultId,
@@ -351,7 +479,8 @@ export class ConsultationsService {
         where: { id: consultId, deletedAt: null },
         select: { id: true },
       });
-      if (!consult) throw new NotFoundException(`Consultation ${consultId} not found`);
+      if (!consult)
+        throw new NotFoundException(`Consultation ${consultId} not found`);
       return tx.aiSuggestion.create({
         data: {
           tenantId: user.tenantId,
@@ -375,9 +504,12 @@ export class ConsultationsService {
       const suggestion = await tx.aiSuggestion.findFirst({
         where: { id: suggestionId, consultationId: consultId },
       });
-      if (!suggestion) throw new NotFoundException(`Suggestion ${suggestionId} not found`);
+      if (!suggestion)
+        throw new NotFoundException(`Suggestion ${suggestionId} not found`);
       if (suggestion.status !== AiSuggestionStatus.PENDING) {
-        throw new BadRequestException(`Suggestion already ${suggestion.status}`);
+        throw new BadRequestException(
+          `Suggestion already ${suggestion.status}`,
+        );
       }
 
       const status =
@@ -389,19 +521,24 @@ export class ConsultationsService {
 
       const editDistance =
         dto.editedContent && dto.decision === AiSuggestionDecision.EDIT_ACCEPT
-          ? estimateEditDistance(suggestion.draftJson as Record<string, unknown>, dto.editedContent)
+          ? estimateEditDistance(
+              suggestion.draftJson as Record<string, unknown>,
+              dto.editedContent,
+            )
           : null;
 
       return tx.aiSuggestion.update({
         where: { id: suggestion.id },
         data: {
           status,
-          acceptedAt: status === AiSuggestionStatus.REJECTED ? null : new Date(),
-          acceptedBy: status === AiSuggestionStatus.REJECTED ? null : user.userId,
-          draftJson:
-            (dto.decision === AiSuggestionDecision.EDIT_ACCEPT && dto.editedContent
-              ? dto.editedContent
-              : suggestion.draftJson) as never,
+          acceptedAt:
+            status === AiSuggestionStatus.REJECTED ? null : new Date(),
+          acceptedBy:
+            status === AiSuggestionStatus.REJECTED ? null : user.userId,
+          draftJson: (dto.decision === AiSuggestionDecision.EDIT_ACCEPT &&
+          dto.editedContent
+            ? dto.editedContent
+            : suggestion.draftJson) as never,
           editDistance,
         },
       });

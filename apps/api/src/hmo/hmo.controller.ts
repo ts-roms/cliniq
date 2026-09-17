@@ -11,9 +11,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
+import { Features } from '@org/shared-types';
 import { HmoClaimStatus } from '@org/db';
 import { Audit } from '../audit/audit.decorator.js';
 import { Requires } from '../auth/decorators/requires.decorator.js';
+import { RequiresFeature } from '../auth/decorators/requires-feature.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -30,6 +32,7 @@ import {
 
 @ApiTags('hmo')
 @ApiBearerAuth('jwt')
+@RequiresFeature(Features.HMO)
 @Controller()
 export class HmoController {
   constructor(private readonly hmo: HmoService) {}

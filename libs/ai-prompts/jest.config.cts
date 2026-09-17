@@ -18,4 +18,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  // No spec files in this project yet — keep `nx test` green instead of
+  // failing the whole run-many with "No tests found, exiting with code 1".
+  passWithNoTests: true,
 };

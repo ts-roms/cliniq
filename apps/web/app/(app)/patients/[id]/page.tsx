@@ -24,6 +24,7 @@ import { InvoicesCard } from '@/features/billing';
 import { HmoCardsCard } from '@/features/hmo';
 import { LabOrdersCard } from '@/features/labs';
 import { DentalChartCard } from '@/features/dental';
+import { ObCard, UltrasoundCard } from '@/features/ob';
 
 export default function PatientDetailPage({
   params,
@@ -77,6 +78,8 @@ export default function PatientDetailPage({
         <PrescriptionsCard patientId={patient.data.id} />
         <LabOrdersCard patientId={patient.data.id} />
         <DentalChartCard patientId={patient.data.id} />
+        <ObCard patientId={patient.data.id} />
+        <UltrasoundCard patientId={patient.data.id} />
         <InvoicesCard patientId={patient.data.id} />
       </div>
     </div>

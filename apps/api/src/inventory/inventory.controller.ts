@@ -11,8 +11,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
+import { Features } from '@org/shared-types';
 import { Audit } from '../audit/audit.decorator.js';
 import { Requires } from '../auth/decorators/requires.decorator.js';
+import { RequiresFeature } from '../auth/decorators/requires-feature.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -28,6 +30,7 @@ import {
 
 @ApiTags('inventory')
 @ApiBearerAuth('jwt')
+@RequiresFeature(Features.INVENTORY)
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inv: InventoryService) {}

@@ -32,10 +32,25 @@ export class AiClientService {
   private readonly logger = new Logger(AiClientService.name);
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly serviceToken: string | null;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
-    this.timeoutMs = Number(this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000);
+    this.baseUrl =
+      this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
+    this.timeoutMs = Number(
+      this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000,
+    );
+    const token = this.config.get<string>('AI_SERVICE_TOKEN');
+    this.serviceToken =
+      typeof token === 'string' && token.length > 0 ? token : null;
+    if (!this.serviceToken && process.env.NODE_ENV === 'production') {
+      // Loud at boot so an ops misconfig is obvious in the logs even if no
+      // AI call is ever made.
+      this.logger.error(
+        'AI_SERVICE_TOKEN is not set in production — ai-service will reject every call. ' +
+          'Set it in your environment (SSM Parameter Store / .env) ASAP.',
+      );
+    }
   }
 
   async draftSoap(req: SoapDraftRequest): Promise<SoapDraftResponse> {
@@ -48,6 +63,29 @@ export class AiClientService {
     mimeType: string;
   }): Promise<{ transcript: string; provider: string; durationSec?: number }> {
     return this.requestJson('/ai/transcribe', req);
+  }
+
+  async draftLabTreatmentPlan(req: {
+    case: {
+      refNumber: number | null;
+      productName: string;
+      urgency: 'STANDARD' | 'URGENT';
+      patientLabel: string | null;
+      doctorLabel: string | null;
+      notes: string | null;
+      formData: Record<string, unknown> | null;
+    };
+    materialsUsed?: Array<{ material: string; lot: string }>;
+  }): Promise<{
+    summary: string;
+    promptVersion: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadTokens: number;
+    latencyMs: number;
+  }> {
+    return this.requestJson('/lab-drafts/treatment-plan', req);
   }
 
   async dermatologyDraft(req: {
@@ -82,9 +120,14 @@ export class AiClientService {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
+        const headers: Record<string, string> = {
+          'content-type': 'application/json',
+        };
+        if (this.serviceToken)
+          headers['x-ai-service-token'] = this.serviceToken;
         const res = await fetch(url, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers,
           body: JSON.stringify(body),
           signal: controller.signal,
         });
@@ -98,7 +141,9 @@ export class AiClientService {
       } catch (err) {
         lastErr = err;
         if (err instanceof BadGatewayException) throw err; // don't retry HTTP errors
-        this.logger.warn(`ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`);
+        this.logger.warn(
+          `ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`,
+        );
       } finally {
         clearTimeout(timer);
       }

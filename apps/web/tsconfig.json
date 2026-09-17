@@ -36,7 +36,7 @@
     "features/**/*.tsx",
     "shared/**/*.ts",
     "shared/**/*.tsx",
-    "middleware.ts",
+    "proxy.ts",
     "../../apps/web/.next/types/**/*.ts",
     "../../dist/apps/web/.next/types/**/*.ts",
     "next-env.d.ts"
@@ -62,6 +62,9 @@
     },
     {
       "path": "../../libs/api-client"
+    },
+    {
+      "path": "../../libs/shared-types"
     },
     {
       "path": "../../libs/ui"
