@@ -41,7 +41,8 @@ async function bootstrap() {
     origin: (
       process.env.CORS_ORIGINS ??
       [
-        'http://localhost:3000', // web (Next.js)
+        'http://localhost:3007', // web (Next.js)
+        'http://localhost:3000', // web (legacy default port)
         'http://localhost:4200', // legacy nx default
         'http://localhost:4300',
         'http://localhost:8081', // Expo web (default Metro web port)

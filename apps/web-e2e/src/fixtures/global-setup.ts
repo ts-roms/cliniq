@@ -30,7 +30,7 @@ import { provisionTenants, type ProvisionedSeed } from './provision';
 export default async function globalSetup(config: FullConfig) {
   const baseURL =
     (config.projects[0].use.baseURL as string | undefined) ??
-    'http://localhost:3000';
+    'http://localhost:3007';
   const apiURL = process.env.API_E2E_URL ?? 'http://localhost:4000';
 
   // 1. Provision test data via the api.
@@ -204,7 +204,7 @@ async function waitForPostLoginRedirect(
     const authLog = await collectAuthLog().catch(() => [] as AuthResponseLog[]);
 
     const apiUrl = process.env.API_E2E_URL ?? 'http://localhost:4000';
-    const webUrl = process.env.WEB_E2E_BASE_URL ?? 'http://localhost:3000';
+    const webUrl = process.env.WEB_E2E_BASE_URL ?? 'http://localhost:3007';
 
     const formatted = [
       `[global-setup:${label}] login did not redirect away from ${loginPath} within 20s.`,

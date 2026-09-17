@@ -69,7 +69,7 @@ curl http://localhost:4000/api/health
 
 URLs:
 
-- `http://localhost:3000` — web (Next.js)
+- `http://localhost:3007` — web (Next.js)
 - `http://localhost:4000/api` — api (Swagger UI at `/api/docs`)
 - `http://localhost:4100/ai` — ai-service
 
@@ -91,7 +91,7 @@ pnpm --dir libs/db exec prisma migrate deploy
 # 2. Run each app in a separate terminal
 pnpm nx serve @org/api          # http://localhost:4000/api
 pnpm nx serve @org/ai-service   # http://localhost:4100
-pnpm nx dev   @org/web          # http://localhost:3000
+pnpm nx dev   @org/web          # http://localhost:3007
 ```
 
 > **First-time gotcha:** if Prisma reports a stale generated client, run
@@ -130,7 +130,7 @@ The web app is already running if you took the Docker path. For native:
 pnpm nx dev @org/web
 ```
 
-Open `http://localhost:3000`. The web reads `NEXT_PUBLIC_API_URL` at
+Open `http://localhost:3007`. The web reads `NEXT_PUBLIC_API_URL` at
 **build time** (Next.js bakes public env into the bundle), so if you
 change the api URL you must restart `nx dev`.
 

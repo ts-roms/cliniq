@@ -78,7 +78,7 @@ services:
       # Shared secret for ai-service (its ServiceAuthGuard). Same value on
       # both services. The dev default is fine on a laptop, not anywhere else.
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-only-ai-service-token-change-me}
-      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-http://localhost:3000}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-http://localhost:3007}
       # Behind a reverse proxy set TRUST_PROXY=1 so rate limits key on the
       # real client ip (X-Forwarded-For) rather than the proxy's.
       TRUST_PROXY: ${TRUST_PROXY:-}
@@ -144,7 +144,7 @@ services:
       # The client bundle was already baked at build time via build.args above.
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     ports:
-      - '${WEB_PORT:-3000}:3000'
+      - '${WEB_PORT:-3007}:3000'
 
 volumes:
   postgres-data:

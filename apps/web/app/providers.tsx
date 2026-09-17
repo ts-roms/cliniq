@@ -18,7 +18,7 @@ import { getActingAs } from '@/features/delegations/acting-as';
 // session cookies automatically. We no longer pass tokens via JS.
 // Use `||` (not `??`) so an empty-string NEXT_PUBLIC_API_URL also falls back
 // to the default. An empty value silently produces same-origin requests
-// (page on :3000 → /api/auth/login → 404), which is hard to spot.
+// (page on :3007 → /api/auth/login → 404), which is hard to spot.
 client.setConfig({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
 });

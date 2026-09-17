@@ -145,7 +145,7 @@ jobs:
       JWT_SECRET: integration-test-secret-must-be-32-chars-long-yes-it-is
       NODE_ENV: production
       PORT: '4000'
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3007
       # The e2e suite hammers the credential endpoints from one ip; the
       # default 10/min auth bucket would 429 it. Keep throttling ON (so the
       # guard is exercised) but with a ceiling the suite can't reach.
@@ -291,12 +291,12 @@ jobs:
       DATABASE_URL_APP: postgresql://cliniq_app:cliniq_app@localhost:5432/cliniq_test?schema=public
       JWT_SECRET: webe2e-secret-must-be-32-chars-long-yes-it-is
       NODE_ENV: production
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3007
       COOKIE_SAMESITE: lax
       THROTTLE_AUTH_LIMIT: '1000'
       THROTTLE_LIMIT: '5000'
       AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
-      WEB_E2E_BASE_URL: http://localhost:3000
+      WEB_E2E_BASE_URL: http://localhost:3007
       API_E2E_URL: http://localhost:4000
       PW_NO_WEBSERVERS: '1' # we boot api + web ourselves below
 
@@ -360,13 +360,13 @@ jobs:
 
       - name: Boot web in background
         env:
-          PORT: '3000'
+          PORT: '3007'
           NEXT_PUBLIC_API_URL: http://localhost:4000
           HOSTNAME: '0.0.0.0'
         run: |
           # `next start` runs the production server. We launch from the web
           # app's directory so the build output is found correctly.
-          (cd apps/web && pnpm exec next start -p 3000 > ../../web.log 2>&1) &
+          (cd apps/web && pnpm exec next start -p 3007 > ../../web.log 2>&1) &
           echo $! > web.pid
 
       - name: Wait for api
@@ -380,7 +380,7 @@ jobs:
       - name: Wait for web
         run: |
           for i in {1..60}; do
-            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then break; fi
+            if curl -fsS http://localhost:3007/ >/dev/null 2>&1; then break; fi
             sleep 2
           done
 

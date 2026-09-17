@@ -69,7 +69,7 @@ cp .env.example .env
 pnpm docker:up      # docker compose up -d --build
 
 # Browse:
-#   http://localhost:3000      web (Next.js)
+#   http://localhost:3007      web (Next.js)
 #   http://localhost:4000/api  api (NestJS) — health: /api/health
 #   http://localhost:4100/ai   ai-service (Bedrock proxy, stub-fallback)
 ```
@@ -101,7 +101,7 @@ pnpm docker:up      # docker compose up -d --build
 
 ```bash
 pnpm docker:up:web        # postgres → migrate → api → web
-open http://localhost:3000
+open http://localhost:3007
 ```
 
 Rebuild web alone after a UI change (nothing else restarts):
@@ -120,7 +120,7 @@ Each is overridable in `.env`:
 
 | Variable        | Default | Service    |
 | --------------- | ------- | ---------- |
-| `WEB_PORT`      | `3000`  | web        |
+| `WEB_PORT`      | `3007`  | web        |
 | `API_PORT`      | `4000`  | api        |
 | `AI_PORT`       | `4100`  | ai-service |
 | `POSTGRES_PORT` | `5432`  | postgres   |
@@ -152,14 +152,14 @@ project name. To run them individually (separate terminals, cleaner logs):
 
 | Script            | Runs                       | URL                       |
 | ----------------- | -------------------------- | ------------------------- |
-| `pnpm dev:web`    | `nx dev @org/web`          | http://localhost:3000     |
+| `pnpm dev:web`    | `nx dev @org/web`          | http://localhost:3007     |
 | `pnpm dev:api`    | `nx serve @org/api`        | http://localhost:4000/api |
 | `pnpm dev:ai`     | `nx serve @org/ai-service` | http://localhost:4100     |
 | `pnpm dev:mobile` | `nx start @org/mobile`     | Expo dev menu             |
 
 #### Running only the web app natively
 
-`pnpm dev:web` starts Next.js on :3000, but the app talks to the api for
+`pnpm dev:web` starts Next.js on :3007, but the app talks to the api for
 everything — so pair it with either a native api (`pnpm dev:api`) or the
 dockerised one (`pnpm docker:up`, which also brings up postgres). Point the
 web app at whichever you chose via `NEXT_PUBLIC_API_URL` in `.env`
@@ -169,7 +169,7 @@ Production-mode check of the web app without Docker:
 
 ```bash
 pnpm build:web      # nx build @org/web
-pnpm start:web      # nx start @org/web — serves the built output on :3000
+pnpm start:web      # nx start @org/web — serves the built output on :3007
 ```
 
 ### Database scripts
@@ -211,7 +211,7 @@ Three suites live in the workspace, each owned by a sibling `*-e2e` project:
 | --------------------- | ---------------- | ----------------------------------- | ----------------------------------------------------------- |
 | `@org/api-e2e`        | Jest + supertest | api on :4000                        | tenant isolation, RBAC, queue, OB, lab, feature gates       |
 | `@org/ai-service-e2e` | Jest             | ai-service on :4100                 | Bedrock proxy contract                                      |
-| `@org/web-e2e`        | Playwright       | web on :3000 (driving api on :4000) | clinic / portal / lab / platform shells + responsive + a11y |
+| `@org/web-e2e`        | Playwright       | web on :3007 (driving api on :4000) | clinic / portal / lab / platform shells + responsive + a11y |
 
 ### Prereqs
 
@@ -266,7 +266,7 @@ HTML report lands at `apps/web-e2e/playwright-report/` — open `index.html` (or
 | Variable           | Used by                                                                    | Default                 |
 | ------------------ | -------------------------------------------------------------------------- | ----------------------- |
 | `API_E2E_URL`      | api-e2e wait-for-port + web-e2e provisioner                                | `http://127.0.0.1:4000` |
-| `WEB_E2E_BASE_URL` | web-e2e Playwright base URL                                                | `http://127.0.0.1:3000` |
+| `WEB_E2E_BASE_URL` | web-e2e Playwright base URL                                                | `http://127.0.0.1:3007` |
 | `HOST` / `PORT`    | api-e2e + ai-service-e2e port wait (alternative to `API_E2E_URL`)          | `localhost` / `4000`    |
 | `CI`               | web-e2e (forces `forbidOnly`, 2 retries, 2 workers, html+github reporters) | unset                   |
 

@@ -638,7 +638,7 @@ export class AuthService {
     });
 
     const base =
-      this.config.get<string>('PORTAL_BASE_URL') ?? 'http://localhost:3000';
+      this.config.get<string>('PORTAL_BASE_URL') ?? 'http://localhost:3007';
     const url = `${base}/reset-password?token=${encodeURIComponent(token)}`;
     await this.mailer.send({
       to: email,

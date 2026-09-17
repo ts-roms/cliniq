@@ -362,7 +362,7 @@ export class MembersService {
 
   private inviteUrl(token: string, slug: string): string {
     const base =
-      this.config.get<string>('PORTAL_BASE_URL') ?? 'http://localhost:3000';
+      this.config.get<string>('PORTAL_BASE_URL') ?? 'http://localhost:3007';
     return `${base}/signup?invite=${encodeURIComponent(token)}&tenant=${encodeURIComponent(slug)}`;
   }
 
