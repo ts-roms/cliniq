@@ -36,7 +36,7 @@
     "features/**/*.tsx",
     "shared/**/*.ts",
     "shared/**/*.tsx",
-    "middleware.ts",
+    "proxy.ts",
     "../../apps/web/.next/types/**/*.ts",
     "../../dist/apps/web/.next/types/**/*.ts",
     "next-env.d.ts"

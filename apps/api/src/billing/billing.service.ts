@@ -72,10 +72,14 @@ export class BillingService {
       return inv;
     });
 
-    const tenant = await this.prisma.tenant.findFirst({
-      where: { id: user.tenantId, deletedAt: null },
-      select: { name: true, currency: true, settings: true },
-    });
+    // RLS: bare `this.prisma.tenant.findFirst` returns null because the
+    // `current_tenant` GUC isn't set on the bare client. Wrap in withTenant.
+    const tenant = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
+      tx.tenant.findFirst({
+        where: { id: user.tenantId, deletedAt: null },
+        select: { name: true, currency: true, settings: true },
+      }),
+    );
     if (!tenant) throw new NotFoundException('tenant not found');
 
     return renderInvoicePdf({

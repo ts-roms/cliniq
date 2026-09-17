@@ -32,21 +32,19 @@ export class AiClientService {
   private readonly logger = new Logger(AiClientService.name);
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
-  private readonly serviceToken: string | undefined;
+  private readonly serviceToken: string | null;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl =
-      this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
-    this.timeoutMs = Number(
-      this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000,
-    );
-    // Shared secret the ai-service's ServiceTokenGuard checks. Same env var
-    // on both sides; blank = ai-service runs open (dev only).
+    this.baseUrl = this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
+    this.timeoutMs = Number(this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000);
     const token = this.config.get<string>('AI_SERVICE_TOKEN');
-    this.serviceToken = token && token.length > 0 ? token : undefined;
-    if (!this.serviceToken) {
-      this.logger.warn(
-        'AI_SERVICE_TOKEN not set — calling ai-service without a service token',
+    this.serviceToken = typeof token === 'string' && token.length > 0 ? token : null;
+    if (!this.serviceToken && process.env.NODE_ENV === 'production') {
+      // Loud at boot so an ops misconfig is obvious in the logs even if no
+      // AI call is ever made.
+      this.logger.error(
+        'AI_SERVICE_TOKEN is not set in production — ai-service will reject every call. ' +
+          'Set it in your environment (SSM Parameter Store / .env) ASAP.',
       );
     }
   }
@@ -118,14 +116,11 @@ export class AiClientService {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
+        const headers: Record<string, string> = { 'content-type': 'application/json' };
+        if (this.serviceToken) headers['x-ai-service-token'] = this.serviceToken;
         const res = await fetch(url, {
           method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            ...(this.serviceToken
-              ? { 'x-ai-service-token': this.serviceToken }
-              : {}),
-          },
+          headers,
           body: JSON.stringify(body),
           signal: controller.signal,
         });
@@ -139,9 +134,7 @@ export class AiClientService {
       } catch (err) {
         lastErr = err;
         if (err instanceof BadGatewayException) throw err; // don't retry HTTP errors
-        this.logger.warn(
-          `ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`,
-        );
+        this.logger.warn(`ai-service ${path} attempt ${i + 1} failed: ${(err as Error).message}`);
       } finally {
         clearTimeout(timer);
       }

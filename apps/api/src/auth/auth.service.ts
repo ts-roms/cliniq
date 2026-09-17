@@ -557,6 +557,22 @@ export class AuthService {
     return { revoked: res.count };
   }
 
+  /**
+   * Revoke by token alone — for the public logout route, where the access
+   * token may already be expired. The hash is unguessable, so possession of
+   * the refresh token is the authorisation.
+   */
+  async logoutByToken(refreshToken: string | undefined) {
+    if (!refreshToken) return { revoked: 0 };
+    const res = await this.prisma.withPlatformContext((tx) =>
+      tx.refreshSession.updateMany({
+        where: { tokenHash: hashToken(refreshToken), revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    );
+    return { revoked: res.count };
+  }
+
   /** "Sign out everywhere" for the caller in their current tenant. */
   async logoutAll(userId: string, tenantId: string) {
     const revoked = await this.revokeAllSessions(userId, tenantId);
@@ -695,7 +711,9 @@ export class AuthService {
     const tenant = await this.prisma.withPlatformContext((tx) =>
       tx.tenant.findUnique({
         where: { id: tenantId },
-        select: { kind: true },
+        // `plan` / `labPlan` ride along so the web can render plan-gated UI
+        // (disabled nav items, upgrade badges) without an extra round-trip.
+        select: { kind: true, plan: true, labPlan: true },
       }),
     );
     const tk = tenant?.kind === 'LAB' ? 'LAB' : 'CLINIC';
@@ -767,6 +785,10 @@ export class AuthService {
           tenantKind: tk,
           role,
           patientId: patientId ?? null,
+          // plan / labPlan ride along so the web can render plan-gated UI
+          // (disabled nav items, upgrade badges) without an extra round-trip.
+          plan: tenant?.plan ?? null,
+          labPlan: tenant?.labPlan ?? null,
         },
       },
     };

@@ -2,6 +2,12 @@
 **/dist
 **/build
 **/.next
+# TS project-reference output + incremental caches. Gitignored, so a clean CI
+# checkout never has them — but a dev's working tree does, and copying them in
+# lets a stale .d.ts / tsbuildinfo from the host decide what `next build`'s
+# typecheck sees. Keep the image building from source only.
+**/out-tsc
+**/*.tsbuildinfo
 **/.expo
 **/.turbo
 **/storybook-static

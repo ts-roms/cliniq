@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { loadSession } from '@/features/auth/session';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -13,10 +12,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 export function useInvoicePdf() {
   return useMutation({
     mutationFn: async (invoiceId: string) => {
-      const token = loadSession()?.accessToken;
-      if (!token) throw new Error('not signed in');
+      // Auth rides on the httpOnly `cliniq.access` cookie.
       const res = await fetch(`${API_BASE}/api/invoices/${invoiceId}/pdf`, {
-        headers: { authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (!res.ok) {
         throw new Error(`Failed to fetch PDF (${res.status})`);

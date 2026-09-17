@@ -18,6 +18,10 @@ import {
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
 import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
 import { AiClientService } from '../../ai-client/ai-client.service.js';
+import {
+  AiBudgetService,
+  estimateCostCentavos,
+} from '../../ai-budget/ai-budget.service.js';
 import type {
   CreateTreatmentPlanDto,
   PresignTreatmentPlanFileDto,
@@ -36,6 +40,7 @@ export class LabTreatmentPlansService {
     private readonly config: ConfigService,
     private readonly notify: LabNotificationsService,
     private readonly ai: AiClientService,
+    private readonly budget: AiBudgetService,
   ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
@@ -398,6 +403,10 @@ export class LabTreatmentPlansService {
    * was tuned on. Lab-only.
    */
   async draftSummary(caseId: string, user: AuthenticatedUser): Promise<{ summary: string }> {
+    // Hard cap — refuse the call before we touch ai-service / Bedrock if the
+    // lab tenant is out of budget for the month.
+    await this.budget.assertNotExceeded(user.tenantId);
+
     const ctx = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const labCase = await tx.labCase.findFirst({
         where: { id: caseId, labTenantId: user.tenantId, deletedAt: null },
@@ -430,6 +439,23 @@ export class LabTreatmentPlansService {
     this.logger.log(
       `ai draft for case ${caseId}: model=${result.model} tokens=${result.inputTokens}/${result.outputTokens} latency=${result.latencyMs}ms`,
     );
+
+    // Charge the lab tenant's monthly budget. Fire-and-forget — a logging
+    // failure in bookkeeping must not break the user-facing flow.
+    void this.budget
+      .record(
+        user.tenantId,
+        estimateCostCentavos({
+          model: result.model,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
+          cacheReadTokens: result.cacheReadTokens,
+        }),
+      )
+      .catch((err) =>
+        this.logger.warn(`budget.record failed: ${(err as Error).message}`),
+      );
+
     return { summary: result.summary };
   }
 

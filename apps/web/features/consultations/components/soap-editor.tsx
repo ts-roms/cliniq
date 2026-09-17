@@ -5,6 +5,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import { useDebouncedCallback } from '@/shared/hooks/use-debounced-callback';
 import { useElapsedSeconds } from '@/shared/hooks/use-elapsed';
 import type { SoapNote } from '../schemas/consultation';
+import { soapSectionText } from '../lib/soap-text';
 
 interface Props {
   initial: SoapNote;
@@ -33,10 +34,10 @@ export function SoapEditor({
   autosaveDelayMs = 2500,
 }: Props) {
   const [draft, setDraft] = useState<Record<keyof SoapNote, string>>({
-    subjective: extractText(initial.subjective),
-    objective: extractText(initial.objective),
-    assessment: extractText(initial.assessment),
-    plan: extractText(initial.plan),
+    subjective: soapSectionText(initial.subjective),
+    objective: soapSectionText(initial.objective),
+    assessment: soapSectionText(initial.assessment),
+    plan: soapSectionText(initial.plan),
   });
   const [isDirty, setIsDirty] = useState(false);
 
@@ -164,14 +165,4 @@ function SoapSection({
       />
     </div>
   );
-}
-
-// SOAP blocks are stored as JSON for future rich-text. For the MVP editor we
-// flatten to a single text field per section.
-function extractText(value: SoapNote[keyof SoapNote] | undefined): string {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  const v = value as Record<string, unknown>;
-  if (typeof v.text === 'string') return v.text;
-  return JSON.stringify(value, null, 2);
 }

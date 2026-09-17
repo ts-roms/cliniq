@@ -223,47 +223,60 @@ export class TeleService {
     granted: boolean,
     patientToken: string,
   ) {
-    const session = await this.prisma.teleSession.findFirst({
-      where: { id: sessionId },
-    });
+    // No JWT here — the patient token is the only credential. Look up the
+    // session under platform context, verify the token matches, then drop
+    // into the session's tenant for the actual update so the audit trigger
+    // sees the right tenant.
+    const session = await this.prisma.withPlatformContext((tx) =>
+      tx.teleSession.findFirst({ where: { id: sessionId } }),
+    );
     if (!session) throw new NotFoundException(`Session ${sessionId} not found`);
     if (session.patientToken !== patientToken) {
       throw new UnauthorizedException('invalid patient token');
     }
-    return this.prisma.teleSession.update({
-      where: { id: sessionId },
-      data: granted
-        ? { recordingConsentAt: new Date(), recordingDeclinedAt: null }
-        : { recordingDeclinedAt: new Date(), recordingConsentAt: null },
-    });
+    return this.prisma.withTenant(session.tenantId, null, (tx) =>
+      tx.teleSession.update({
+        where: { id: sessionId },
+        data: granted
+          ? { recordingConsentAt: new Date(), recordingDeclinedAt: null }
+          : { recordingDeclinedAt: new Date(), recordingConsentAt: null },
+      }),
+    );
   }
 
   // ── Patient join (token-based, no JWT) ───────────
 
   async join(joinToken: string): Promise<PatientJoinResponse> {
-    // Patient join bypasses RLS — we look up by joinToken globally and trust
-    // the (tenantId, joinToken) unique index. Token has 24 bytes of entropy
-    // so it's not guessable. RLS-bound queries below use the tenant context.
-    const session = await this.prisma.teleSession.findFirst({
-      where: { joinToken },
-      include: {
-        patient: { select: { firstName: true, lastName: true } },
-      },
-    });
+    // joinToken is the patient's only credential — we don't know the
+    // tenantId until we resolve the session. Look up under platform context
+    // (the new `tele_sessions_platform_all` policy gates this), then run
+    // the provider lookup and status transition under the session's tenant.
+    const session = await this.prisma.withPlatformContext((tx) =>
+      tx.teleSession.findFirst({
+        where: { joinToken },
+        include: {
+          patient: { select: { firstName: true, lastName: true } },
+        },
+      }),
+    );
     if (!session) throw new UnauthorizedException('invalid join token');
     if (session.status === TeleSessionStatus.ENDED || session.status === TeleSessionStatus.CANCELLED) {
       throw new ForbiddenException('session is closed');
     }
-    const provider = await this.prisma.user.findFirst({
-      where: { id: session.providerId },
-      select: { name: true },
-    });
+    const provider = await this.prisma.withTenant(session.tenantId, null, (tx) =>
+      tx.user.findFirst({
+        where: { id: session.providerId },
+        select: { name: true },
+      }),
+    );
     // First join transitions PENDING → ACTIVE.
     if (session.status === TeleSessionStatus.PENDING) {
-      await this.prisma.teleSession.update({
-        where: { id: session.id },
-        data: { status: TeleSessionStatus.ACTIVE, startedAt: new Date() },
-      });
+      await this.prisma.withTenant(session.tenantId, null, (tx) =>
+        tx.teleSession.update({
+          where: { id: session.id },
+          data: { status: TeleSessionStatus.ACTIVE, startedAt: new Date() },
+        }),
+      );
     }
     return {
       id: session.id,
@@ -288,11 +301,13 @@ export class TeleService {
     auth: { kind: 'provider'; user: AuthenticatedUser } | { kind: 'patient'; token: string },
   ) {
     const session = await this.requireAuthorizedSession(sessionId, auth);
-    return this.prisma.teleSignal.findMany({
-      where: { sessionId: session.id, seq: { gt: since } },
-      orderBy: { seq: 'asc' },
-      take: 200,
-    });
+    return this.prisma.withTenant(session.tenantId, null, (tx) =>
+      tx.teleSignal.findMany({
+        where: { sessionId: session.id, seq: { gt: since } },
+        orderBy: { seq: 'asc' },
+        take: 200,
+      }),
+    );
   }
 
   async postSignal(
@@ -306,7 +321,7 @@ export class TeleService {
       throw new ForbiddenException('session ended');
     }
     const fromRole = auth.kind === 'provider' ? TeleRole.DOCTOR : TeleRole.PATIENT;
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.withTenant(session.tenantId, null, async (tx) => {
       const last = await tx.teleSignal.findFirst({
         where: { sessionId: session.id },
         orderBy: { seq: 'desc' },
@@ -347,9 +362,19 @@ export class TeleService {
     sessionId: string,
     auth: { kind: 'provider'; user: AuthenticatedUser } | { kind: 'patient'; token: string },
   ) {
-    const session = await this.prisma.teleSession.findFirst({
-      where: { id: sessionId },
-    });
+    // Provider flows have a JWT and known tenantId — read under their RLS
+    // context so an attacker passing someone else's sessionId can't even
+    // get a row back. Patient flows authenticate purely via patientToken;
+    // we don't yet know which tenant owns the session, so the lookup runs
+    // under platform context and the token check enforces authorization.
+    const session =
+      auth.kind === 'provider'
+        ? await this.prisma.withTenant(auth.user.tenantId, auth.user.userId, (tx) =>
+            tx.teleSession.findFirst({ where: { id: sessionId } }),
+          )
+        : await this.prisma.withPlatformContext((tx) =>
+            tx.teleSession.findFirst({ where: { id: sessionId } }),
+          );
     if (!session) throw new NotFoundException(`Session ${sessionId} not found`);
     if (auth.kind === 'provider') {
       if (session.tenantId !== auth.user.tenantId) {

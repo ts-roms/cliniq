@@ -2,11 +2,11 @@
 
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@org/ui';
 import {
+  CompleteConsultDialog,
   SoapDraftPanel,
   SoapEditor,
-  useCompleteConsultation,
+  soapSectionText,
   useConsultation,
   useDecideSuggestion,
   useGenerateSoapDraft,
@@ -29,7 +29,6 @@ export default function ConsultationDetailPage({
   const suggestions = useSuggestions(id);
   const generate = useGenerateSoapDraft(id);
   const decide = useDecideSuggestion(id);
-  const complete = useCompleteConsultation(id);
 
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const updateSoap = useUpdateSoap(id);
@@ -58,13 +57,18 @@ export default function ConsultationDetailPage({
   return (
     <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
       <ConsultHeader
+        consultationId={id}
         startedAt={c.startedAt}
         endedAt={c.endedAt ?? null}
         status={c.status}
         patientId={c.patientId}
         locked={locked}
-        isCompleting={complete.isPending}
-        onComplete={() => complete.mutate()}
+        soap={{
+          subjective: soapSectionText(c.subjective),
+          objective: soapSectionText(c.objective),
+          assessment: soapSectionText(c.assessment),
+          plan: soapSectionText(c.plan),
+        }}
       />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -107,21 +111,26 @@ export default function ConsultationDetailPage({
 }
 
 function ConsultHeader({
+  consultationId,
   startedAt,
   endedAt,
   status,
   patientId,
   locked,
-  isCompleting,
-  onComplete,
+  soap,
 }: {
+  consultationId: string;
   startedAt: string;
   endedAt: string | null;
   status: string;
   patientId: string;
   locked: boolean;
-  isCompleting: boolean;
-  onComplete: () => void;
+  soap: {
+    subjective: string | null;
+    objective: string | null;
+    assessment: string | null;
+    plan: string | null;
+  };
 }) {
   // Live tick while in progress; freeze the duration once ended.
   const liveSec = useElapsedSeconds(endedAt ? null : startedAt);
@@ -147,9 +156,7 @@ function ConsultHeader({
           </p>
         </div>
         {!locked && (
-          <Button variant="outline" onClick={onComplete} disabled={isCompleting}>
-            {isCompleting ? 'Completing…' : 'Mark complete'}
-          </Button>
+          <CompleteConsultDialog consultationId={consultationId} soap={soap} />
         )}
       </div>
     </header>

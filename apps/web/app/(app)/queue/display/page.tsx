@@ -36,13 +36,13 @@ export default function QueueDisplayPage() {
     queryKey: ['queue', 'display'],
     refetchInterval: 5000,
     queryFn: async (): Promise<Array<{ queue: Queue; tickets: Ticket[] }>> => {
+      // Token rides on the httpOnly cookie; `credentials: 'include'` attaches
+      // it. This page is meant to live on a fullscreen TV — the cookie is set
+      // when staff opens the queue page on the same machine; no JS token
+      // handling required.
       const res = await fetch(
         `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'}/api/queue/display`,
-        {
-          headers: {
-            authorization: `Bearer ${typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('cliniq.session') ?? '{}').accessToken ?? '') : ''}`,
-          },
-        },
+        { credentials: 'include' },
       );
       if (!res.ok) throw new Error(`feed ${res.status}`);
       return (await res.json()) as Array<{ queue: Queue; tickets: Ticket[] }>;

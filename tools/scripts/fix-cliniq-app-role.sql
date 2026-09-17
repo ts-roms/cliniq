@@ -28,7 +28,7 @@
   \set cliniq_app_password '''cliniq_app'''
 \endif
 
-ALTER ROLE cliniq_app WITH LOGIN PASSWORD :cliniq_app_password;
+ALTER ROLE cliniq_app WITH LOGIN PASSWORD :cliniq_app_password NOSUPERUSER NOBYPASSRLS;
 
 -- 2. Database + schema access.
 DO $$

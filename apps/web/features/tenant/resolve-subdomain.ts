@@ -1,5 +1,5 @@
-// Pure tenant-slug resolver from a hostname. Used by the Edge middleware.
-// No imports — keeps the middleware bundle tiny.
+// Pure tenant-slug resolver from a hostname. Used by the Edge proxy.
+// No imports — keeps the proxy bundle tiny.
 
 const RESERVED = new Set(['www', 'app', 'marketing', 'api', 'admin']);
 const HOST_REGEX = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;

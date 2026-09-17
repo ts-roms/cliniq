@@ -18,6 +18,15 @@ import { randomBytes } from 'node:crypto';
 const BACKUP_CODE_COUNT = 10;
 const BACKUP_CODE_BYTES = 5; // 10 hex chars
 
+// MFA operates on the `users` table, which is RLS-scoped (you can only see
+// users that share at least one tenant). MFA flows can run BEFORE the
+// authenticating user's tenant context is established (login MFA challenge,
+// re-enrollment from settings on a user who belongs to multiple tenants),
+// and the table itself only grants writes through the `users_platform_all`
+// bypass policy. So every DB call here runs under `withPlatformContext`.
+// The endpoints are already strictly per-user — the service receives a
+// `userId` and only touches that row — so platform-mode privilege is
+// scoped to "this one user's MFA state."
 @Injectable()
 export class MfaService {
   private readonly logger = new Logger(MfaService.name);
@@ -38,10 +47,12 @@ export class MfaService {
    * commits the new one).
    */
   async beginEnrollment(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, mfaEnabled: true },
-    });
+    })
+    );
     if (!user) throw new UnauthorizedException();
 
     const secret = generateTotpSecret();
@@ -49,10 +60,12 @@ export class MfaService {
     // and only flip mfaEnabled at the end. If a user re-enrolls without
     // confirming, they keep the old `mfaEnabled=true` with the new secret —
     // that's a UX trap we accept for now and document in the UI.
-    await this.prisma.user.update({
+    await this.prisma.withPlatformContext((tx) =>
+      tx.user.update({
       where: { id: userId },
       data: { mfaSecret: secret },
-    });
+    })
+    );
 
     const issuer = this.config.get<string>('MFA_ISSUER') ?? 'ClinIQ';
     const otpauthUrl = buildOtpAuthUrl({
@@ -74,10 +87,12 @@ export class MfaService {
    * before we flip mfaEnabled and issue backup codes.
    */
   async verifyAndEnable(userId: string, code: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
       where: { id: userId },
       select: { mfaSecret: true },
-    });
+    })
+    );
     if (!user?.mfaSecret) {
       throw new BadRequestException('Enrollment not started — call /mfa/setup first');
     }
@@ -90,10 +105,12 @@ export class MfaService {
     );
     // Store bcrypt hashes — never the plaintext. Returned to the user once.
     const hashed = await Promise.all(plainBackupCodes.map((c) => hashPassword(c)));
-    await this.prisma.user.update({
+    await this.prisma.withPlatformContext((tx) =>
+      tx.user.update({
       where: { id: userId },
       data: { mfaEnabled: true, mfaBackupCodes: hashed },
-    });
+    })
+    );
     this.logger.log(`MFA enabled for user ${userId}`);
     return { backupCodes: plainBackupCodes };
   }
@@ -106,14 +123,16 @@ export class MfaService {
     if (!(await this.verifySecondFactor(userId, code))) {
       throw new UnauthorizedException('Invalid code');
     }
-    await this.prisma.user.update({
+    await this.prisma.withPlatformContext((tx) =>
+      tx.user.update({
       where: { id: userId },
       data: {
         mfaEnabled: false,
         mfaSecret: null,
         mfaBackupCodes: [],
       },
-    });
+    })
+    );
     this.logger.log(`MFA disabled for user ${userId}`);
   }
 
@@ -122,14 +141,16 @@ export class MfaService {
    * one-shot — a successful match is removed from the user's list.
    */
   async verifySecondFactor(userId: string, code: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
       where: { id: userId },
       select: {
         mfaEnabled: true,
         mfaSecret: true,
         mfaBackupCodes: true,
       },
-    });
+    })
+    );
     if (!user?.mfaEnabled || !user.mfaSecret) return false;
 
     if (verifyTotp(code, user.mfaSecret)) return true;
@@ -141,10 +162,12 @@ export class MfaService {
       if (await verifyPassword(cleaned, user.mfaBackupCodes[i])) {
         // Consume the code.
         const remaining = user.mfaBackupCodes.filter((_, idx) => idx !== i);
-        await this.prisma.user.update({
+        await this.prisma.withPlatformContext((tx) =>
+      tx.user.update({
           where: { id: userId },
           data: { mfaBackupCodes: remaining },
-        });
+        })
+    );
         this.logger.warn(`User ${userId} used a backup code (${remaining.length} left)`);
         return true;
       }
@@ -153,10 +176,12 @@ export class MfaService {
   }
 
   async status(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
       where: { id: userId },
       select: { mfaEnabled: true, mfaBackupCodes: true },
-    });
+    })
+    );
     return {
       enabled: !!user?.mfaEnabled,
       backupCodesRemaining: user?.mfaBackupCodes.length ?? 0,

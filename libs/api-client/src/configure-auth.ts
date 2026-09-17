@@ -1,5 +1,20 @@
 import { client } from './generated/client.gen';
 
+/**
+ * Enable cookie-based auth on every request. Required for the web client
+ * since it now reads session tokens from the httpOnly `cliniq.access` cookie
+ * (XSS-safe). Idempotent — safe to call from multiple bootstraps. Mobile
+ * (Expo) clients should NOT call this; they pass `Authorization: Bearer …`
+ * from SecureStore via configureAuth() and keep `credentials: 'omit'`
+ * (the default) so the api never sees a cookie jar.
+ */
+let cookiesInstalled = false;
+export function configureCookies(): void {
+  if (cookiesInstalled) return;
+  cookiesInstalled = true;
+  client.setConfig({ credentials: 'include' });
+}
+
 type TokenGetter = () => string | null | Promise<string | null>;
 type RefreshGetter = () => string | null | Promise<string | null>;
 type ActingAsGetter = () => string | null | Promise<string | null>;
@@ -22,8 +37,6 @@ let installed = false;
  * Inject a function that returns the current access token. Called on every
  * outgoing request. Web (Next.js): pull from session/cookies. Mobile (Expo):
  * pull from SecureStore.
- *
- * Safe to call multiple times — only one interceptor is registered.
  */
 export function configureAuth(getToken: TokenGetter): void {
   if (installed) return;
@@ -41,8 +54,6 @@ let actingAsInstalled = false;
  * Attach an X-Acting-For header on every outgoing request when the caller
  * has opted into a delegation. The api validates this against an active
  * Delegation row and overrides the request's effective role on the server.
- *
- * Safe to call multiple times — only one interceptor is registered.
  */
 export function configureActingAs(getActingAs: ActingAsGetter): void {
   if (actingAsInstalled) return;
@@ -65,10 +76,6 @@ let refreshInstalled = false;
  *      session + redirect to /login) and return the original 401 response.
  *
  * Concurrent 401s share a single in-flight refresh promise to avoid stampedes.
- *
- * Pre-req: the access-token getter passed to configureAuth() must read from
- * the same store that onRefreshed writes to, so retried requests pick up the
- * new token.
  */
 export function configureAutoRefresh(opts: {
   getRefreshToken: RefreshGetter;
@@ -96,6 +103,11 @@ export function configureAutoRefresh(opts: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: token }),
+        // When cookies are enabled, the api also accepts (and rotates) the
+        // refresh token via the `cliniq.refresh` httpOnly cookie. Either
+        // path works; this keeps backward compat with mobile while letting
+        // the web client refresh with an empty body.
+        credentials: cookiesInstalled ? 'include' : 'omit',
       });
       if (!res.ok) return null;
       const json = (await res.json()) as RefreshedTokens;

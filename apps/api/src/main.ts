@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -32,6 +33,10 @@ async function bootstrap() {
         /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy,
       );
   }
+  // Parse `Cookie:` so cookie-based session auth works. Used by JwtAuthGuard
+  // (falls back to `cliniq.access` cookie when no bearer header) and by the
+  // /auth/refresh route (reads `cliniq.refresh` cookie).
+  app.use(cookieParser());
   app.enableCors({
     origin: (
       process.env.CORS_ORIGINS ??

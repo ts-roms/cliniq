@@ -2,3 +2,17 @@ packages:
   - 'packages/*'
   - 'apps/*'
   - 'libs/*'
+allowBuilds:
+  '@nestjs/core': true
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
+  '@swc/core': true
+  detox: true
+  dtrace-provider: true
+  esbuild: true
+  less: true
+  nx: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

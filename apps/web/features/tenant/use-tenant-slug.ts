@@ -1,6 +1,6 @@
 'use client';
 
-// Client-side tenant slug reader. Reads the cookie set by middleware.ts.
+// Client-side tenant slug reader. Reads the cookie set by proxy.ts.
 // For server components, read req.headers.get('x-cliniq-tenant') instead.
 
 const COOKIE = 'cliniq_tenant';

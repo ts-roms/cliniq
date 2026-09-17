@@ -34,10 +34,14 @@ export class LocationsService {
     // so the client can render an upgrade CTA distinct from validation errors.
     // Only CLINIC tenants have a `plan`; LAB tenants don't have location caps
     // here (lab equivalent is multi-lab + delivery centers, separate flow).
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { kind: true, plan: true },
-    });
+    // RLS: bare `this.prisma.tenant.findUnique` returns null because the
+    // `current_tenant` GUC isn't set on the bare client. Wrap in withTenant.
+    const tenant = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
+      tx.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: { kind: true, plan: true },
+      }),
+    );
     if (!tenant) throw new NotFoundException('tenant not found');
     const cap =
       tenant.kind === 'CLINIC' && tenant.plan

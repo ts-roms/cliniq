@@ -196,6 +196,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get teleSignal() {
     return this.client.teleSignal;
   }
+  get pushToken() {
+    return this.client.pushToken;
+  }
   get notification() {
     return this.client.notification;
   }

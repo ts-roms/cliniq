@@ -124,6 +124,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://cliniq:cliniq@localhost:5432/cliniq_test?schema=public
+      DATABASE_URL_APP: postgresql://cliniq_app:cliniq_app@localhost:5432/cliniq_test?schema=public
       JWT_SECRET: integration-test-secret-must-be-32-chars-long-yes-it-is
       NODE_ENV: production
       PORT: '4000'
@@ -160,6 +161,9 @@ jobs:
         env: { PGPASSWORD: cliniq }
         run: |
           psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
 
       - name: Build api
         run: pnpm exec nx run @org/api:build
@@ -184,7 +188,7 @@ jobs:
       - name: Run api e2e suite (Jest, real HTTP + RLS)
         env:
           API_E2E_URL: http://localhost:4000
-        run: pnpm exec nx run @org/api-e2e:e2e
+        run: pnpm exec nx run @org/api-e2e:e2e --skip-nx-cache
 
       - name: Stop services
         if: always()
@@ -227,3 +231,147 @@ jobs:
           tags: cliniq-api:pr-${{ github.event.pull_request.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ────────────────────────────────────────────────────────────
+  # Playwright web e2e — boots api + web + Postgres, then runs
+  # specs across chromium / firefox / webkit. Per the e2e plan:
+  # full browser matrix on every PR (cross-browser confidence)
+  # plus the responsive viewport sweep + a11y smoke.
+  # ────────────────────────────────────────────────────────────
+  web-e2e:
+    name: Web e2e (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: affected
+    # The Playwright suite landed with the May-2026 wip and has not yet been
+    # run green end-to-end in CI. Keep it visible but non-blocking until it
+    # is; flip this off once a run passes (docs/audit-checklist.md P3).
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cliniq
+          POSTGRES_PASSWORD: cliniq
+          POSTGRES_DB: cliniq_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cliniq -d cliniq_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://cliniq:cliniq@localhost:5432/cliniq_test?schema=public
+      DATABASE_URL_APP: postgresql://cliniq_app:cliniq_app@localhost:5432/cliniq_test?schema=public
+      JWT_SECRET: webe2e-secret-must-be-32-chars-long-yes-it-is
+      NODE_ENV: production
+      CORS_ORIGINS: http://localhost:3000
+      COOKIE_SAMESITE: lax
+      THROTTLE_AUTH_LIMIT: '1000'
+      THROTTLE_LIMIT: '5000'
+      AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
+      WEB_E2E_BASE_URL: http://localhost:3000
+      API_E2E_URL: http://localhost:4000
+      PW_NO_WEBSERVERS: '1' # we boot api + web ourselves below
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: '10' }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Apply migrations
+        working-directory: libs/db
+        run: |
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+
+      - name: Provision cliniq_app role
+        env: { PGPASSWORD: cliniq }
+        run: |
+          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
+          psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
+
+      - name: Build api
+        run: pnpm exec nx run @org/api:build
+
+      - name: Build web (production)
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+        run: pnpm exec nx run @org/web:build
+
+      - name: Boot api in background
+        env:
+          PORT: '4000'
+        run: |
+          node apps/api/dist/main.js > api.log 2>&1 &
+          echo $! > api.pid
+
+      - name: Boot web in background
+        env:
+          PORT: '3000'
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          HOSTNAME: '0.0.0.0'
+        run: |
+          # `next start` runs the production server. We launch from the web
+          # app's directory so the build output is found correctly.
+          (cd apps/web && pnpm exec next start -p 3000 > ../../web.log 2>&1) &
+          echo $! > web.pid
+
+      - name: Wait for api
+        run: |
+          for i in {1..40}; do
+            if curl -fsS http://localhost:4000/api/health >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:4000/api/health
+
+      - name: Wait for web
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+
+      - name: Run Playwright suite
+        run: pnpm exec nx run @org/web-e2e:e2e --skip-nx-cache
+        env:
+          CI: 'true'
+
+      - name: Stop services
+        if: always()
+        run: |
+          if [[ -f api.pid ]]; then kill "$(cat api.pid)" 2>/dev/null || true; fi
+          if [[ -f web.pid ]]; then kill "$(cat web.pid)" 2>/dev/null || true; fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web-e2e/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-server-logs
+          path: |
+            api.log
+            web.log
+          if-no-files-found: ignore

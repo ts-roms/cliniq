@@ -55,7 +55,9 @@ export class LabInvoicesService {
           labTenantId: user.tenantId,
           deletedAt: null,
           ...(filter.status ? { status: filter.status } : {}),
-          ...(filter.clinicTenantId ? { clinicTenantId: filter.clinicTenantId } : {}),
+          ...(filter.clinicTenantId
+            ? { clinicTenantId: filter.clinicTenantId }
+            : {}),
         },
         orderBy: [{ createdAt: 'desc' }],
         include: {
@@ -74,15 +76,14 @@ export class LabInvoicesService {
           deletedAt: null,
           // Clinic side never sees DRAFT (lab is still composing) — shield
           // them from work-in-progress invoices.
-          status:
-            filter.status ?? {
-              in: [
-                LabInvoiceStatus.ISSUED,
-                LabInvoiceStatus.PAID,
-                LabInvoiceStatus.OVERDUE,
-                LabInvoiceStatus.VOID,
-              ],
-            },
+          status: filter.status ?? {
+            in: [
+              LabInvoiceStatus.ISSUED,
+              LabInvoiceStatus.PAID,
+              LabInvoiceStatus.OVERDUE,
+              LabInvoiceStatus.VOID,
+            ],
+          },
         },
         orderBy: [{ createdAt: 'desc' }],
         include: {
@@ -122,14 +123,22 @@ export class LabInvoicesService {
 
   async createDraft(dto: CreateLabInvoiceDto, user: AuthenticatedUser) {
     await this.assertLabTenant(user);
-    const linked = await this.links.isLinkActive(user.tenantId, dto.clinicTenantId);
+    const linked = await this.links.isLinkActive(
+      user.tenantId,
+      dto.clinicTenantId,
+    );
     if (!linked) {
       throw new BadRequestException('no active link with that clinic');
     }
     const items = dto.items ?? [];
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       // Verify any caseIds belong to this lab + clinic combo.
-      await this.assertCaseOwnership(tx, items, user.tenantId, dto.clinicTenantId);
+      await this.assertCaseOwnership(
+        tx,
+        items,
+        user.tenantId,
+        dto.clinicTenantId,
+      );
 
       const lines = items.map((it) => this.normalizeItem(it));
       const subtotal = lines.reduce((sum, it) => sum + it.amountCents, 0);
@@ -173,7 +182,10 @@ export class LabInvoicesService {
    */
   async generateFromCases(dto: GenerateFromCasesDto, user: AuthenticatedUser) {
     await this.assertLabTenant(user);
-    const linked = await this.links.isLinkActive(user.tenantId, dto.clinicTenantId);
+    const linked = await this.links.isLinkActive(
+      user.tenantId,
+      dto.clinicTenantId,
+    );
     if (!linked) {
       throw new BadRequestException('no active link with that clinic');
     }
@@ -192,7 +204,9 @@ export class LabInvoicesService {
           'one or more cases not found / not owned by this lab + clinic',
         );
       }
-      const wrongStatus = cases.find((c) => c.status !== LabCaseStatus.DELIVERED);
+      const wrongStatus = cases.find(
+        (c) => c.status !== LabCaseStatus.DELIVERED,
+      );
       if (wrongStatus) {
         throw new BadRequestException(
           `case ${wrongStatus.refNumber ?? wrongStatus.id} is ${wrongStatus.status}; only DELIVERED cases can be invoiced`,
@@ -276,7 +290,11 @@ export class LabInvoicesService {
 
   // ── Items ────────────────────────────────────────────────
 
-  async addItem(invoiceId: string, dto: AddLabInvoiceItemDto, user: AuthenticatedUser) {
+  async addItem(
+    invoiceId: string,
+    dto: AddLabInvoiceItemDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const invoice = await this.loadDraftAsLab(tx, invoiceId, user.tenantId);
       await this.assertCaseOwnership(
@@ -347,34 +365,40 @@ export class LabInvoicesService {
 
   /** DRAFT → ISSUED. Allocates a per-lab refNumber. */
   async issue(id: string, user: AuthenticatedUser) {
-    const updated = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const invoice = await this.loadDraftAsLab(tx, id, user.tenantId);
-      if (invoice.totalCents <= 0) {
-        throw new BadRequestException('cannot issue a zero-total invoice');
-      }
-      const max = await tx.labInvoice.aggregate({
-        where: { labTenantId: user.tenantId },
-        _max: { refNumber: true },
-      });
-      const refNumber = (max._max.refNumber ?? 0) + 1;
-      const result = await tx.labInvoice.update({
-        where: { id },
-        data: {
-          status: LabInvoiceStatus.ISSUED,
-          refNumber,
-          issuedAt: new Date(),
-        },
-        include: { items: true, paymentLinks: true },
-      });
-      this.logger.log(
-        `lab invoice ${id} issued as ref ${refNumber} by ${user.userId}`,
-      );
-      return result;
-    });
+    const updated = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const invoice = await this.loadDraftAsLab(tx, id, user.tenantId);
+        if (invoice.totalCents <= 0) {
+          throw new BadRequestException('cannot issue a zero-total invoice');
+        }
+        const max = await tx.labInvoice.aggregate({
+          where: { labTenantId: user.tenantId },
+          _max: { refNumber: true },
+        });
+        const refNumber = (max._max.refNumber ?? 0) + 1;
+        const result = await tx.labInvoice.update({
+          where: { id },
+          data: {
+            status: LabInvoiceStatus.ISSUED,
+            refNumber,
+            issuedAt: new Date(),
+          },
+          include: { items: true, paymentLinks: true },
+        });
+        this.logger.log(
+          `lab invoice ${id} issued as ref ${refNumber} by ${user.userId}`,
+        );
+        return result;
+      },
+    );
     // Fire-and-forget: notify the clinic owner. Wrapped so a mailer hiccup
     // never bubbles back to the controller and rolls back the transaction.
     void this.notifyInvoiceIssued(updated.id).catch((err) => {
-      this.logger.warn(`invoice-issued notify failed: ${(err as Error).message}`);
+      this.logger.warn(
+        `invoice-issued notify failed: ${(err as Error).message}`,
+      );
     });
     return updated;
   }
@@ -384,7 +408,11 @@ export class LabInvoicesService {
    * cumulative paid amount reaches the total, the invoice flips to PAID.
    * Lab-side only — clinic webhook flow lands in Phase 5.
    */
-  async recordPayment(id: string, dto: RecordLabInvoicePaymentDto, user: AuthenticatedUser) {
+  async recordPayment(
+    id: string,
+    dto: RecordLabInvoicePaymentDto,
+    user: AuthenticatedUser,
+  ) {
     const { invoice, fullyPaid } = await this.prisma.withTenant(
       user.tenantId,
       user.userId,
@@ -399,7 +427,9 @@ export class LabInvoicesService {
           );
         }
         if (existing.status === LabInvoiceStatus.DRAFT) {
-          throw new BadRequestException('issue the invoice before recording payment');
+          throw new BadRequestException(
+            'issue the invoice before recording payment',
+          );
         }
         const newPaid = existing.paidCents + dto.amountCents;
         if (newPaid > existing.totalCents) {
@@ -426,7 +456,9 @@ export class LabInvoicesService {
     );
     if (fullyPaid) {
       void this.notifyInvoicePaid(invoice.id).catch((err) => {
-        this.logger.warn(`invoice-paid notify failed: ${(err as Error).message}`);
+        this.logger.warn(
+          `invoice-paid notify failed: ${(err as Error).message}`,
+        );
       });
     }
     return invoice;
@@ -466,25 +498,37 @@ export class LabInvoicesService {
     // Step 1: validate + reserve amount in our own tx. We don't open a
     // PayMongo link inside the DB transaction — outbound HTTP calls inside
     // a Postgres tx hold connections too long.
-    const reservation = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const invoice = await tx.labInvoice.findFirst({
-        where: { id: invoiceId, labTenantId: user.tenantId, deletedAt: null },
-        include: { lab: { select: { name: true } }, clinic: { select: { name: true } } },
-      });
-      if (!invoice) throw new NotFoundException('invoice not found');
-      if (invoice.status !== LabInvoiceStatus.ISSUED && invoice.status !== LabInvoiceStatus.OVERDUE) {
-        throw new BadRequestException('payment links require an ISSUED or OVERDUE invoice');
-      }
-      const outstanding = invoice.totalCents - invoice.paidCents;
-      if (outstanding <= 0) {
-        throw new BadRequestException('invoice is already fully paid');
-      }
-      const amount = dto.amountCents ?? outstanding;
-      if (amount > outstanding) {
-        throw new BadRequestException('amount exceeds outstanding balance');
-      }
-      return { invoice, amount };
-    });
+    const reservation = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const invoice = await tx.labInvoice.findFirst({
+          where: { id: invoiceId, labTenantId: user.tenantId, deletedAt: null },
+          include: {
+            lab: { select: { name: true } },
+            clinic: { select: { name: true } },
+          },
+        });
+        if (!invoice) throw new NotFoundException('invoice not found');
+        if (
+          invoice.status !== LabInvoiceStatus.ISSUED &&
+          invoice.status !== LabInvoiceStatus.OVERDUE
+        ) {
+          throw new BadRequestException(
+            'payment links require an ISSUED or OVERDUE invoice',
+          );
+        }
+        const outstanding = invoice.totalCents - invoice.paidCents;
+        if (outstanding <= 0) {
+          throw new BadRequestException('invoice is already fully paid');
+        }
+        const amount = dto.amountCents ?? outstanding;
+        if (amount > outstanding) {
+          throw new BadRequestException('amount exceeds outstanding balance');
+        }
+        return { invoice, amount };
+      },
+    );
 
     // Step 2: if the request asks for PayMongo and we have creds, hit the
     // hosted-checkout API. Otherwise persist a MANUAL placeholder.
@@ -525,7 +569,11 @@ export class LabInvoicesService {
     );
   }
 
-  async cancelPaymentLink(invoiceId: string, linkId: string, user: AuthenticatedUser) {
+  async cancelPaymentLink(
+    invoiceId: string,
+    linkId: string,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const invoice = await tx.labInvoice.findFirst({
         where: { id: invoiceId, labTenantId: user.tenantId, deletedAt: null },
@@ -659,7 +707,8 @@ export class LabInvoicesService {
       }),
     );
     if (!inv) return;
-    const ref = inv.refNumber !== null ? `INV-${inv.refNumber}` : inv.id.slice(-8);
+    const ref =
+      inv.refNumber !== null ? `INV-${inv.refNumber}` : inv.id.slice(-8);
     const total = `${inv.currency} ${(inv.totalCents / 100).toFixed(2)}`;
     const url = this.notify.webUrl(`/lab-invoices/${inv.id}`);
     await this.notify.notifyOwner(inv.clinicTenantId, (r) => ({
@@ -667,7 +716,9 @@ export class LabInvoicesService {
       text:
         `Hi ${r.name ?? 'there'},\n\n` +
         `${inv.lab.name} has issued invoice ${ref} to ${inv.clinic.name} for ${total}.\n` +
-        (inv.dueAt ? `Due: ${inv.dueAt.toISOString().slice(0, 10)}\n\n` : '\n') +
+        (inv.dueAt
+          ? `Due: ${inv.dueAt.toISOString().slice(0, 10)}\n\n`
+          : '\n') +
         `View it here: ${url}\n\n` +
         `— ClinIQ Lab`,
       link: `/lab-invoices/${inv.id}`,
@@ -687,7 +738,8 @@ export class LabInvoicesService {
       }),
     );
     if (!inv) return;
-    const ref = inv.refNumber !== null ? `INV-${inv.refNumber}` : inv.id.slice(-8);
+    const ref =
+      inv.refNumber !== null ? `INV-${inv.refNumber}` : inv.id.slice(-8);
     const total = `${inv.currency} ${(inv.totalCents / 100).toFixed(2)}`;
     const url = this.notify.webUrl(`/lab/billing/${inv.id}`);
     await this.notify.notifyOwner(inv.labTenantId, (r) => ({
@@ -751,7 +803,11 @@ export class LabInvoicesService {
         },
       });
       if (candidates.length === 0) {
-        return { period: range.label, invoicesCreated: 0, invoices: [] as { id: string }[] };
+        return {
+          period: range.label,
+          invoicesCreated: 0,
+          invoices: [] as { id: string }[],
+        };
       }
       // Bucket by clinic.
       const byClinic = new Map<string, typeof candidates>();
@@ -760,11 +816,14 @@ export class LabInvoicesService {
         list.push(c);
         byClinic.set(c.clinicTenantId, list);
       }
-      const created: Array<{ id: string; clinicTenantId: string; totalCents: number }> = [];
+      const created: Array<{
+        id: string;
+        clinicTenantId: string;
+        totalCents: number;
+      }> = [];
       for (const [clinicTenantId, cases] of byClinic) {
         const lines = cases.map((c, idx) => {
-          const ref =
-            c.refNumber !== null ? `#${c.refNumber}` : c.id.slice(-6);
+          const ref = c.refNumber !== null ? `#${c.refNumber}` : c.id.slice(-6);
           return {
             caseId: c.id,
             description: `${c.product.name} — case ${ref}`,
@@ -812,15 +871,18 @@ export class LabInvoicesService {
    * presigned download URL.
    */
   async generatePdfAsLab(id: string, user: AuthenticatedUser) {
-    const invoice = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labInvoice.findFirst({
-        where: { id, labTenantId: user.tenantId, deletedAt: null },
-        include: {
-          items: { orderBy: [{ sortOrder: 'asc' }, { description: 'asc' }] },
-          lab: { select: { id: true, name: true, slug: true, kind: true } },
-          clinic: { select: { id: true, name: true, slug: true } },
-        },
-      }),
+    const invoice = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labInvoice.findFirst({
+          where: { id, labTenantId: user.tenantId, deletedAt: null },
+          include: {
+            items: { orderBy: [{ sortOrder: 'asc' }, { description: 'asc' }] },
+            lab: { select: { id: true, name: true, slug: true, kind: true } },
+            clinic: { select: { id: true, name: true, slug: true } },
+          },
+        }),
     );
     if (!invoice) throw new NotFoundException('invoice not found');
     return this.renderAndPersist(invoice);
@@ -832,15 +894,18 @@ export class LabInvoicesService {
    * has been rendered yet.
    */
   async getPdfAsClinic(id: string, user: AuthenticatedUser) {
-    const invoice = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labInvoice.findFirst({
-        where: { id, clinicTenantId: user.tenantId, deletedAt: null },
-        include: {
-          items: { orderBy: [{ sortOrder: 'asc' }, { description: 'asc' }] },
-          lab: { select: { id: true, name: true, slug: true, kind: true } },
-          clinic: { select: { id: true, name: true, slug: true } },
-        },
-      }),
+    const invoice = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labInvoice.findFirst({
+          where: { id, clinicTenantId: user.tenantId, deletedAt: null },
+          include: {
+            items: { orderBy: [{ sortOrder: 'asc' }, { description: 'asc' }] },
+            lab: { select: { id: true, name: true, slug: true, kind: true } },
+            clinic: { select: { id: true, name: true, slug: true } },
+          },
+        }),
     );
     if (!invoice) throw new NotFoundException('invoice not found');
     if (invoice.status === LabInvoiceStatus.DRAFT) {
@@ -873,10 +938,12 @@ export class LabInvoicesService {
   }
 
   private drawInvoice(doc: PDFKit.PDFDocument, invoice: InvoiceForPdf): void {
-    const ref = invoice.refNumber !== null ? `INV-${invoice.refNumber}` : 'DRAFT';
+    const ref =
+      invoice.refNumber !== null ? `INV-${invoice.refNumber}` : 'DRAFT';
     this.pdf.drawLetterhead(doc, {
       labName: invoice.lab.name,
-      labKindLabel: invoice.lab.kind === 'LAB' ? 'Dental laboratory' : undefined,
+      labKindLabel:
+        invoice.lab.kind === 'LAB' ? 'Dental laboratory' : undefined,
       docTitle: 'Invoice',
       docRef: `Ref ${ref}  ·  Status ${invoice.status}`,
     });
@@ -886,11 +953,15 @@ export class LabInvoicesService {
       { label: 'Currency', value: invoice.currency },
       {
         label: 'Issued',
-        value: invoice.issuedAt ? new Date(invoice.issuedAt).toLocaleDateString() : '—',
+        value: invoice.issuedAt
+          ? new Date(invoice.issuedAt).toLocaleDateString()
+          : '—',
       },
       {
         label: 'Due',
-        value: invoice.dueAt ? new Date(invoice.dueAt).toLocaleDateString() : '—',
+        value: invoice.dueAt
+          ? new Date(invoice.dueAt).toLocaleDateString()
+          : '—',
       },
     ];
     this.pdf.drawKeyValueGrid(doc, meta, 2);
@@ -911,12 +982,18 @@ export class LabInvoicesService {
     doc.text('UNIT', colUnit, tableTop, { width: 80, align: 'right' });
     doc.text('AMOUNT', colAmt, tableTop, { width: 70, align: 'right' });
     doc.fillColor('black');
-    doc.moveTo(left, tableTop + 14).lineTo(right, tableTop + 14).stroke();
+    doc
+      .moveTo(left, tableTop + 14)
+      .lineTo(right, tableTop + 14)
+      .stroke();
     doc.y = tableTop + 18;
 
     doc.font('Helvetica').fontSize(10);
     if (invoice.items.length === 0) {
-      doc.fillColor('#999').text('No line items.', left, doc.y).fillColor('black');
+      doc
+        .fillColor('#999')
+        .text('No line items.', left, doc.y)
+        .fillColor('black');
     }
     for (const it of invoice.items) {
       const y = doc.y;
@@ -958,10 +1035,18 @@ export class LabInvoicesService {
 
     if (invoice.notes) {
       doc.moveDown(1);
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#666').text('NOTES', left);
-      doc.font('Helvetica').fontSize(10).fillColor('black').text(invoice.notes, {
-        width: usable,
-      });
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(9)
+        .fillColor('#666')
+        .text('NOTES', left);
+      doc
+        .font('Helvetica')
+        .fontSize(10)
+        .fillColor('black')
+        .text(invoice.notes, {
+          width: usable,
+        });
     }
 
     this.pdf.drawFooter(doc, `${invoice.lab.name} · Invoice ${ref}`);
@@ -1035,9 +1120,7 @@ export class LabInvoicesService {
     });
     if (!invoice) throw new NotFoundException('invoice not found');
     if (invoice.status !== LabInvoiceStatus.DRAFT) {
-      throw new BadRequestException(
-        `cannot edit a ${invoice.status} invoice`,
-      );
+      throw new BadRequestException(`cannot edit a ${invoice.status} invoice`);
     }
     return invoice;
   }
@@ -1105,7 +1188,11 @@ function formatMoney(cents: number, currency: string): string {
  * "auto-bill on the 1st" external scheduler — it always picks a complete
  * month even when the cron fires slightly past midnight.
  */
-function resolvePeriod(input: string | null): { from: Date; to: Date; label: string } {
+function resolvePeriod(input: string | null): {
+  from: Date;
+  to: Date;
+  label: string;
+} {
   let year: number;
   let month0: number; // 0-indexed
   if (input && /^\d{4}-\d{2}$/u.test(input)) {

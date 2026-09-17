@@ -122,21 +122,29 @@ export class MeService {
    */
   async teleActive(user: AuthenticatedUser) {
     const patientId = this.requirePatientId(user);
-    const session = await this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.teleSession.findFirst({
-        where: {
-          patientId,
-          status: { in: [TeleSessionStatus.PENDING, TeleSessionStatus.ACTIVE] },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
+    const { session, provider } = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const session = await tx.teleSession.findFirst({
+          where: {
+            patientId,
+            status: { in: [TeleSessionStatus.PENDING, TeleSessionStatus.ACTIVE] },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (!session) return { session: null, provider: null };
+        // No relation defined on TeleSession.providerId — fetch the user
+        // separately. Inside the same RLS context so users_visible_in_tenant
+        // matches.
+        const provider = await tx.user.findFirst({
+          where: { id: session.providerId },
+          select: { name: true },
+        });
+        return { session, provider };
+      },
     );
     if (!session) return null;
-    // No relation defined on TeleSession.providerId — fetch the user separately.
-    const provider = await this.prisma.user.findFirst({
-      where: { id: session.providerId },
-      select: { name: true },
-    });
     const base = this.config.get<string>('PORTAL_BASE_URL') ?? '';
     return {
       id: session.id,
