@@ -1,6 +1,6 @@
 # Running the E2E Test Suite
 
-> Lives at [`apps/api-e2e/src/`](../../apps/api-e2e/src/). Seven spec files
+> Lives at [`apps/api-e2e/src/`](../../apps/api-e2e/src/). Eight spec files
 > exercise the api end-to-end as a real client would: the suite never
 > touches the database directly, only the public HTTP surface.
 
@@ -8,6 +8,7 @@
 
 | File | What it asserts |
 |---|---|
+| `appointments.spec.ts` | Status machine: book → check-in → start (opens consult) → complete; illegal moves 409; provider double-booking 409 (back-to-back allowed); manual + swept no-show; reschedule from NO_SHOW; cross-tenant 404. |
 | `auth-hardening.spec.ts` | Invite-only registration + bootstrap token, members lifecycle (invite → accept → role → suspend → remove), refresh rotation + replay detection, logout, forgot/reset password, lockout. Needs `THROTTLE_AUTH_LIMIT` ≥ 200 and `AUTH_EXPOSE_DEBUG_TOKENS=true` on the api (the reset case is skipped otherwise). |
 | `tenant-isolation.spec.ts` | Cross-tenant RLS leaks — patients, queue tickets, OB pregnancies. Most important security regression test. |
 | `feature-gates.spec.ts` | `@RequiresFeature` returns 402 when the tenant's plan doesn't include the flag. |

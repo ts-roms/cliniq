@@ -1,12 +1,19 @@
 'use client';
 
 import { memo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@org/ui';
+import { useSession } from '@/features/auth';
 import type { Appointment, AppointmentStatus } from '../schemas/appointment';
 import {
   useCancelAppointment,
   useCheckInAppointment,
+  useCompleteAppointment,
+  useNoShowAppointment,
+  useStartAppointment,
 } from '../hooks/use-appointments';
+import { RescheduleDialog } from './reschedule-dialog';
 
 const STATUS_TONE: Record<AppointmentStatus, string> = {
   SCHEDULED: 'bg-blue-100 text-blue-800',
@@ -17,6 +24,9 @@ const STATUS_TONE: Record<AppointmentStatus, string> = {
   NO_SHOW: 'bg-rose-100 text-rose-800',
 };
 
+/** Roles that hold CONSULT_WRITE — mirrors libs/auth roles.ts. */
+const CLINICAL_ROLES = new Set(['OWNER', 'DOCTOR', 'NURSE']);
+
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], {
     hour: '2-digit',
@@ -24,16 +34,52 @@ function formatTime(iso: string): string {
   });
 }
 
+/**
+ * One schedule row with the actions the state machine allows from its
+ * current status (see apps/api/src/appointments/appointment-transitions.ts):
+ *
+ *   SCHEDULED    check in · start · no-show · reschedule · cancel
+ *   CHECKED_IN   start · no-show · cancel
+ *   IN_PROGRESS  open consult · complete · cancel
+ *   NO_SHOW      reschedule
+ *   COMPLETED / CANCELLED  —
+ */
 export const AppointmentRow = memo(function AppointmentRow({
   appt,
 }: {
   appt: Appointment;
 }) {
-  const checkIn = useCheckInAppointment();
-  const cancel = useCancelAppointment();
+  const router = useRouter();
+  const session = useSession();
+  const clinical = CLINICAL_ROLES.has(session?.user.role ?? '');
 
-  const canCheckIn = appt.status === 'SCHEDULED';
-  const canCancel = appt.status === 'SCHEDULED' || appt.status === 'CHECKED_IN';
+  const checkIn = useCheckInAppointment();
+  const start = useStartAppointment();
+  const complete = useCompleteAppointment();
+  const noShow = useNoShowAppointment();
+  const cancel = useCancelAppointment();
+  const busy =
+    checkIn.isPending ||
+    start.isPending ||
+    complete.isPending ||
+    noShow.isPending ||
+    cancel.isPending;
+  const error =
+    checkIn.error ??
+    start.error ??
+    complete.error ??
+    noShow.error ??
+    cancel.error;
+
+  const s = appt.status;
+  const canCheckIn = s === 'SCHEDULED';
+  const canStart = clinical && (s === 'SCHEDULED' || s === 'CHECKED_IN');
+  const canComplete = clinical && s === 'IN_PROGRESS';
+  const canNoShow = s === 'SCHEDULED' || s === 'CHECKED_IN';
+  const canReschedule =
+    s === 'SCHEDULED' || s === 'CHECKED_IN' || s === 'NO_SHOW';
+  const canCancel =
+    s === 'SCHEDULED' || s === 'CHECKED_IN' || s === 'IN_PROGRESS';
 
   return (
     <tr className="border-b last:border-0">
@@ -57,31 +103,88 @@ export const AppointmentRow = memo(function AppointmentRow({
         >
           {appt.status.replace('_', ' ')}
         </span>
+        {appt.consultation && (
+          <Link
+            href={`/consultations/${appt.consultation.id}`}
+            className="ml-2 text-xs text-primary hover:underline"
+          >
+            consult
+          </Link>
+        )}
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
         {appt.reason ?? '—'}
+        {appt.cancelReason && (
+          <span className="block text-xs italic">
+            cancelled: {appt.cancelReason}
+          </span>
+        )}
       </td>
       <td className="px-4 py-3 text-right">
-        {canCheckIn && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={checkIn.isPending}
-            onClick={() => checkIn.mutate(appt.id)}
-          >
-            {checkIn.isPending ? '…' : 'Check in'}
-          </Button>
-        )}
-        {canCancel && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="ml-1 text-destructive hover:text-destructive"
-            disabled={cancel.isPending}
-            onClick={() => cancel.mutate(appt.id)}
-          >
-            Cancel
-          </Button>
+        <div className="flex flex-wrap justify-end gap-1">
+          {canCheckIn && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => checkIn.mutate(appt.id)}
+            >
+              Check in
+            </Button>
+          )}
+          {canStart && (
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                start.mutate(appt.id, {
+                  onSuccess: ({ consultationId }) => {
+                    if (consultationId)
+                      router.push(`/consultations/${consultationId}`);
+                  },
+                })
+              }
+            >
+              Start consult
+            </Button>
+          )}
+          {canComplete && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => complete.mutate(appt.id)}
+            >
+              Complete
+            </Button>
+          )}
+          {canReschedule && <RescheduleDialog appt={appt} />}
+          {canNoShow && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => noShow.mutate(appt.id)}
+            >
+              No-show
+            </Button>
+          )}
+          {canCancel && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              disabled={busy}
+              onClick={() => cancel.mutate(appt.id)}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
+        {error && (
+          <p className="mt-1 text-xs text-destructive">
+            {(error as Error).message}
+          </p>
         )}
       </td>
     </tr>

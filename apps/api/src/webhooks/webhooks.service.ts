@@ -28,7 +28,11 @@ export class WebhooksService {
     event:
       | 'appointment.created'
       | 'appointment.checked_in'
-      | 'appointment.cancelled',
+      | 'appointment.started'
+      | 'appointment.completed'
+      | 'appointment.cancelled'
+      | 'appointment.no_show'
+      | 'appointment.rescheduled',
     payload: Record<string, unknown>,
   ): Promise<void> {
     let url: string | undefined;
@@ -37,9 +41,9 @@ export class WebhooksService {
         where: { id: tenantId, deletedAt: null },
         select: { settings: true },
       });
-      const settings = tenant?.settings as
-        | { appointmentWebhookUrl?: string }
-        | null;
+      const settings = tenant?.settings as {
+        appointmentWebhookUrl?: string;
+      } | null;
       url = settings?.appointmentWebhookUrl;
     } catch (err) {
       this.logger.warn(`webhook lookup failed: ${(err as Error).message}`);

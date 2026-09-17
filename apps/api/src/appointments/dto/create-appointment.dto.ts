@@ -1,7 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AppointmentType } from '@org/db';
+import { AppointmentStatus, AppointmentType } from '@org/db';
 
 export class CreateAppointmentDto {
   @ApiProperty()
@@ -22,7 +28,10 @@ export class CreateAppointmentDto {
   @IsDate()
   endsAt!: Date;
 
-  @ApiPropertyOptional({ enum: AppointmentType, default: AppointmentType.CONSULT })
+  @ApiPropertyOptional({
+    enum: AppointmentType,
+    default: AppointmentType.CONSULT,
+  })
   @IsOptional()
   @IsEnum(AppointmentType)
   type?: AppointmentType;
@@ -62,4 +71,9 @@ export class AppointmentRangeDto {
   @IsOptional()
   @IsString()
   patientId?: string;
+
+  @ApiPropertyOptional({ enum: AppointmentStatus })
+  @IsOptional()
+  @IsEnum(AppointmentStatus)
+  status?: AppointmentStatus;
 }

@@ -17,7 +17,7 @@ matters for context)
 
 ## P0 — Security / data-integrity (fix before any real clinic data)
 
-> **Status (2026-09-17):** all P0 items below except the last two are done on
+> **Status (2026-09-17):** all P0 items below except the httpOnly-cookie one are done on
 > `claude/application-audit-checklist-*` — see `apps/api/src/members/`,
 > `apps/api/src/auth/`, `apps/api/src/common/throttle.config.ts`,
 > `apps/ai-service/src/common/service-token.guard.ts`, migration
@@ -57,12 +57,18 @@ matters for context)
   (`(app)/queue/page.tsx:79`, `(app)/queue/display/page.tsx:43`) instead of going
   through `@org/api-client`. (Needs a Next route handler + cookie-aware
   `configureAuth`; larger change, not done in this pass.)
-- [ ] **Appointment status machine is half-wired.** `IN_PROGRESS`, `COMPLETED`, and
-  `NO_SHOW` are never written by any code path (`grep AppointmentStatus.NO_SHOW` →
-  0 hits outside the enum). `reports/no-shows` queries a status nothing sets, and the
-  no-show prediction differentiator (overview §3 #4) has no data feeding it.
-  → `apps/api/src/appointments/appointments.service.ts:193-221` — only `CHECKED_IN`
-  and `CANCELLED` transitions exist.
+- [x] **Appointment status machine.** Transition table in
+  `apps/api/src/appointments/appointment-transitions.ts` (SCHEDULED → CHECKED_IN →
+  IN_PROGRESS → COMPLETED, with CANCELLED / NO_SHOW branches; illegal moves 409).
+  New routes: `GET :id`, `PATCH :id/start` (opens the consult), `:id/complete`,
+  `:id/no-show`, `:id/reschedule`, `POST no-show-sweep` (admin); `?status=` filter.
+  `POST /consultations` takes `appointmentId`; completing the consult completes the
+  slot. Lifecycle timestamps (`checkedInAt … noShowAt`, `cancelReason`) on the row.
+  Provider double-booking refused twice: service pre-check (409 with the clashing
+  id) + a `btree_gist` exclusion constraint on live rows. Auto no-show sweep
+  (`APPT_AUTO_NOSHOW_ENABLED`, `APPT_NOSHOW_GRACE_MINUTES`) on the reminder timer.
+  Web schedule rows expose every legal action + a reschedule dialog.
+  `reports/no-shows` now has data. Migration `20260917100000_appointment_lifecycle`.
 
 ### Follow-ups surfaced while doing P0
 - [ ] `JwtAuthGuard` acting-for path reads `tenantUser` outside `withTenant`
@@ -108,17 +114,20 @@ matters for context)
 ### Appointments (plan wk 6–7)
 - [ ] **Provider availability rules** (working hours, breaks, days off) — not modelled.
   0 hits for `availability` / `workingHours`.
-- [ ] **Reschedule** endpoint — only `create / list / check-in / cancel` exist.
-- [ ] **Slot conflict detection** — no DB exclusion constraint or service-level overlap
-  check on `Appointment(providerId, startsAt, endsAt)`.
+- [x] **Reschedule** endpoint — `PATCH :id/reschedule` (see P0).
+- [x] **Slot conflict detection** — service overlap check + DB exclusion constraint
+  (see P0). Note: the constraint will refuse to apply on a DB that already holds
+  overlapping live appointments for one provider — clean those up first.
+- [x] Fixed in passing: the reminder sweep queried `appointments` with no tenant GUC
+  → saw nothing under `cliniq_app`, so reminders never fired. Now runs in platform
+  context with matching `appointments_platform_*` RLS policies.
 - [ ] **Waitlist** — 0 hits.
 - [ ] **Public per-tenant booking page** — `portal/*` requires patient login; there is
   no anonymous `book.<slug>.cliniq.app` flow.
-- [~] Reminders: an in-process `setInterval` loop in `appointments.service.ts:43-51`,
-  default **off** (`APPT_REMINDERS_ENABLED=false`). Single lead time (60 min), not the
-  planned 24h + 1h. Runs inside the API process, so it double-fires with >1 replica
-  and dies with the pod. Needs a worker (`@nestjs/schedule` is installed but unused
-  for this) or an external scheduler.
+- [~] Reminders (+ the new auto no-show sweep): an in-process `setInterval` loop,
+  default **off**. Single lead time (60 min), not the planned 24h + 1h. Runs inside
+  the API process, so it double-fires with >1 replica and dies with the pod. Needs a
+  worker (`@nestjs/schedule` is installed but unused for this) or an external scheduler.
 - [ ] Calendar week/day view: `schedule/page.tsx` exists; verify it is a real calendar
   and not a list (not verified in this audit).
 
@@ -217,8 +226,8 @@ Numbers from `find … -name '*.spec.*'`:
 - [ ] Follow `docs/e2e-testing-plan.md` (currently **untracked** in the main checkout —
   commit it). Its Phase 2 references P0-2 (throttler), P0-3 (ai-service secret),
   P0-6 (cookie auth) as prerequisites; P0-2 and P0-3 are now done, P0-6 is not.
-- [x] `ci.yml` api-integration job now also runs `nx run @org/api-e2e:e2e` (7 spec
-  files, 29 cases) after the smoke script. `smoke.mjs` was stale (feature gates,
+- [x] `ci.yml` api-integration job now also runs `nx run @org/api-e2e:e2e` (8 spec
+  files, 34 cases) after the smoke script. `smoke.mjs` was stale (feature gates,
   consent interceptor) and is fixed.
 - [ ] `lab.spec.ts` "clinic + lab pair" flaked once in 5 full-suite runs under
   parallel load (passes in isolation). Watch it in CI; consider `--runInBand`.

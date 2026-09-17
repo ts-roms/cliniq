@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  extensions = [pgcrypto, pg_trgm]
+  extensions = [pgcrypto, pg_trgm, btree_gist]
 }
 
 // ──────────────────────────────────────────────
@@ -1162,6 +1162,8 @@ model Consultation {
   tenantId   String
   patientId  String
   providerId String   // user.id of the doctor
+  // Optional back-link to the booked slot. Walk-ins / ad-hoc consults leave it null.
+  appointmentId String? @unique
   startedAt  DateTime @default(now())
   endedAt    DateTime?
 
@@ -1181,6 +1183,7 @@ model Consultation {
 
   patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   provider      User           @relation("ConsultProvider", fields: [providerId], references: [id])
+  appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   suggestions   AiSuggestion[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
@@ -1449,6 +1452,19 @@ model Appointment {
   notes          String?
   reminderSentAt DateTime?
 
+  // Lifecycle timestamps — one per transition so reports can measure wait
+  // time (checkedInAt → startedAt), consult length, and no-show lag without
+  // joining the audit log. Set by AppointmentsService.transition(); the
+  // status column stays the source of truth for "where is it now".
+  checkedInAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  noShowAt     DateTime?
+  cancelReason String?
+  // Previous slot when this appointment was rescheduled (audit convenience).
+  rescheduledFromStartsAt DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -1456,6 +1472,10 @@ model Appointment {
   patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
   provider     User          @relation("ApptProvider", fields: [providerId], references: [id])
   teleSessions TeleSession[]
+  // The consultation opened from this appointment (PATCH /appointments/:id/start
+  // or POST /consultations with appointmentId). Completing it completes the
+  // appointment. At most one per appointment.
+  consultation Consultation?
 
   @@index([tenantId, startsAt])
   @@index([tenantId, providerId, startsAt])

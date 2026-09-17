@@ -8,11 +8,18 @@ export {
   useCreateAppointment,
   useCheckInAppointment,
   useCancelAppointment,
+  useStartAppointment,
+  useCompleteAppointment,
+  useNoShowAppointment,
+  useRescheduleAppointment,
 } from './hooks/use-appointments';
+export { RescheduleDialog } from './components/reschedule-dialog';
 export {
   appointmentTypeEnum,
   appointmentStatusEnum,
   createAppointmentSchema,
+  rescheduleSchema,
+  type RescheduleInput,
   type Appointment,
   type AppointmentStatus,
   type AppointmentType,

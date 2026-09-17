@@ -123,7 +123,9 @@ function NewAppointmentForm({
         <Input placeholder="e.g. sore throat 3 days" {...register('reason')} />
       </FormField>
       {create.error && (
-        <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
       <DialogFooter className="pt-2">
         <Button type="button" variant="outline" onClick={onDone}>

@@ -1943,6 +1943,79 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SCHEDULED",
+                "CHECKED_IN",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "CANCELLED",
+                "NO_SHOW"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/api/appointments/no-show-sweep": {
+      "post": {
+        "operationId": "AppointmentsController_noShowSweep",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoShowSweepDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/api/appointments/{id}": {
+      "get": {
+        "operationId": "AppointmentsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1988,6 +2061,128 @@
         ]
       }
     },
+    "/api/appointments/{id}/start": {
+      "patch": {
+        "operationId": "AppointmentsController_start",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/api/appointments/{id}/complete": {
+      "patch": {
+        "operationId": "AppointmentsController_complete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/api/appointments/{id}/no-show": {
+      "patch": {
+        "operationId": "AppointmentsController_noShow",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/api/appointments/{id}/reschedule": {
+      "patch": {
+        "operationId": "AppointmentsController_reschedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
     "/api/appointments/{id}/cancel": {
       "patch": {
         "operationId": "AppointmentsController_cancel",
@@ -2001,6 +2196,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAppointmentDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": ""
@@ -9131,7 +9336,35 @@
       },
       "RegisterDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          },
+          "tenantSlug": {
+            "type": "string"
+          },
+          "inviteToken": {
+            "type": "string",
+            "description": "Token from a staff invite link. Exactly one of inviteToken / bootstrapToken."
+          },
+          "bootstrapToken": {
+            "type": "string",
+            "description": "One-shot token from POST /tenants (password-less create). Registers the first OWNER."
+          }
+        },
+        "required": [
+          "email",
+          "name",
+          "password",
+          "tenantSlug"
+        ]
       },
       "LoginDto": {
         "type": "object",
@@ -9192,15 +9425,39 @@
       },
       "LogoutDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        }
       },
       "ForgotPasswordDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ]
       },
       "ResetPasswordDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token from the reset email link"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
       },
       "CreateDelegationDto": {
         "type": "object",
@@ -9362,12 +9619,13 @@
         "properties": {
           "patientId": {
             "type": "string",
-            "description": "Patient id"
+            "description": "Patient id. Required unless appointmentId is given (then it must match)."
+          },
+          "appointmentId": {
+            "type": "string",
+            "description": "Open the consult from a booked slot: the appointment moves to IN_PROGRESS and completes with the consult."
           }
-        },
-        "required": [
-          "patientId"
-        ]
+        }
       },
       "UpdateConsultationDto": {
         "type": "object",
@@ -9650,6 +9908,47 @@
           "startsAt",
           "endsAt"
         ]
+      },
+      "NoShowSweepDto": {
+        "type": "object",
+        "properties": {
+          "graceMinutes": {
+            "type": "number",
+            "description": "Mark SCHEDULED appointments whose slot ended more than this many minutes ago. Defaults to APPT_NOSHOW_GRACE_MINUTES.",
+            "minimum": 0
+          }
+        }
+      },
+      "RescheduleAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "ISO 8601"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "ISO 8601"
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Move to another provider. Defaults to the current one."
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt"
+        ]
+      },
+      "CancelAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
       },
       "CreateAllergyDto": {
         "type": "object",

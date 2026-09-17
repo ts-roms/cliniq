@@ -121,6 +121,7 @@ literal values across services.
 | `SEMAPHORE_API_KEY` / `TWILIO_*` | as applicable |
 | `TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL` | from your TURN provider |
 | `APPT_REMINDERS_ENABLED` | `false` (set `true` only on one replica) |
+| `APPT_AUTO_NOSHOW_ENABLED` / `APPT_NOSHOW_GRACE_MINUTES` | `false` / `30` — auto-mark stale SCHEDULED slots NO_SHOW; same single-replica caveat |
 | `S3_BUCKET_PHI` / `S3_BUCKET_PUBLIC` | from AWS |
 | `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | from AWS |
 
