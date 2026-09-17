@@ -101,6 +101,8 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get patientConsent() { return this.client.patientConsent; }
   get aiBudget() { return this.client.aiBudget; }
   get appointment() { return this.client.appointment; }
+  get providerAvailability() { return this.client.providerAvailability; }
+  get providerTimeOff() { return this.client.providerTimeOff; }
   get vital() { return this.client.vital; }
   get allergy() { return this.client.allergy; }
   get medication() { return this.client.medication; }

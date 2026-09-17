@@ -2221,6 +2221,213 @@
         ]
       }
     },
+    "/api/providers": {
+      "get": {
+        "operationId": "AvailabilityController_listProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/providers/{providerId}/availability": {
+      "get": {
+        "operationId": "AvailabilityController_get",
+        "parameters": [
+          {
+            "name": "providerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/providers/{providerId}/availability/slots": {
+      "get": {
+        "operationId": "AvailabilityController_slots",
+        "parameters": [
+          {
+            "name": "providerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "Local calendar date, YYYY-MM-DD (tenant timezone)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "durationMinutes",
+            "required": false,
+            "in": "query",
+            "description": "Slot length; defaults to each range's slotMinutes",
+            "schema": {
+              "minimum": 5,
+              "maximum": 480,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/providers/{providerId}/availability/schedule": {
+      "put": {
+        "operationId": "AvailabilityController_setWeekly",
+        "parameters": [
+          {
+            "name": "providerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetWeeklyScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/providers/{providerId}/availability/time-off": {
+      "post": {
+        "operationId": "AvailabilityController_addTimeOff",
+        "parameters": [
+          {
+            "name": "providerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTimeOffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/providers/{providerId}/availability/time-off/{id}": {
+      "delete": {
+        "operationId": "AvailabilityController_removeTimeOff",
+        "parameters": [
+          {
+            "name": "providerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "availability"
+        ]
+      }
+    },
     "/api/patients/{patientId}/allergies": {
       "get": {
         "operationId": "ClinicalController_listAllergies",
@@ -9900,6 +10107,11 @@
           },
           "notes": {
             "type": "string"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "Book outside the provider's hours / during time off anyway (front-desk override; audited). Double-booking is never overridable.",
+            "default": false
           }
         },
         "required": [
@@ -9935,6 +10147,11 @@
           "providerId": {
             "type": "string",
             "description": "Move to another provider. Defaults to the current one."
+          },
+          "force": {
+            "type": "boolean",
+            "description": "Override availability rules (not double-booking).",
+            "default": false
           }
         },
         "required": [
@@ -9949,6 +10166,72 @@
             "type": "string"
           }
         }
+      },
+      "WeeklyRangeDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "0=Sunday … 6=Saturday"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "HH:mm 24h in the tenant timezone"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "HH:mm 24h, exclusive"
+          },
+          "slotMinutes": {
+            "type": "number",
+            "default": 30,
+            "minimum": 5,
+            "maximum": 480
+          }
+        },
+        "required": [
+          "weekday",
+          "startTime",
+          "endTime"
+        ]
+      },
+      "SetWeeklyScheduleDto": {
+        "type": "object",
+        "properties": {
+          "ranges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeeklyRangeDto"
+            }
+          }
+        },
+        "required": [
+          "ranges"
+        ]
+      },
+      "CreateTimeOffDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "ISO 8601"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "ISO 8601, exclusive"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt"
+        ]
       },
       "CreateAllergyDto": {
         "type": "object",

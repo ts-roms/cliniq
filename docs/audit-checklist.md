@@ -101,8 +101,8 @@ matters for context)
 - [ ] WebAuthn / passkeys (README "planned") — not started.
 - [ ] Tenant self-signup creates no sample data; plan calls for "sample data" on signup
   (`tenants.service.ts:75`).
-- [ ] Clinic settings: only `GET`/`PATCH /settings`. No branding upload (logo/colours),
-  no business-hours model — both are in the plan and the latter blocks scheduling below.
+- [ ] Clinic settings: no branding *upload* (logo/colours are URL/hex fields only).
+  Business hours exist (`settings.operatingHours`) and now feed scheduling.
 
 ### Patients (plan wk 5)
 - [ ] CSV import (name/DOB/phone/email) — 0 hits for `csv` in source.
@@ -112,8 +112,20 @@ matters for context)
   (no create/edit).
 
 ### Appointments (plan wk 6–7)
-- [ ] **Provider availability rules** (working hours, breaks, days off) — not modelled.
-  0 hits for `availability` / `workingHours`.
+- [x] **Provider availability rules.** `provider_availability` (weekly HH:mm ranges in
+  the tenant timezone; several per day = breaks) + `provider_time_off` (dated blocks).
+  Fallback: provider rules → clinic `settings.operatingHours` → unrestricted. Booking /
+  reschedule outside them → 422 with a reason; `force: true` overrides (audited); time
+  off that would cover live appointments → 409. `GET /providers`,
+  `GET/PUT /providers/:id/availability[/schedule]`, `…/time-off`, and
+  `GET …/availability/slots?date=` (free slots minus bookings + time off — what portal
+  self-booking will consume). Web: availability card on `/admin/settings`; the booking
+  dialog has a provider picker + free-slot chips + "book anyway" on a 422.
+  Engine is pure (`apps/api/src/availability/availability.engine.ts`, 12 unit cases incl.
+  a DST zone). Migration `20260917120000_provider_availability`.
+- [x] Fixed in passing: `GET/PATCH /tenants/me/settings` ran outside the tenant context
+  and the `tenants` table had no self-UPDATE policy — settings could neither be read
+  nor saved under `cliniq_app`. Now `withTenant` + `tenants_self_update` policy.
 - [x] **Reschedule** endpoint — `PATCH :id/reschedule` (see P0).
 - [x] **Slot conflict detection** — service overlap check + DB exclusion constraint
   (see P0). Note: the constraint will refuse to apply on a DB that already holds
@@ -226,8 +238,8 @@ Numbers from `find … -name '*.spec.*'`:
 - [ ] Follow `docs/e2e-testing-plan.md` (currently **untracked** in the main checkout —
   commit it). Its Phase 2 references P0-2 (throttler), P0-3 (ai-service secret),
   P0-6 (cookie auth) as prerequisites; P0-2 and P0-3 are now done, P0-6 is not.
-- [x] `ci.yml` api-integration job now also runs `nx run @org/api-e2e:e2e` (8 spec
-  files, 34 cases) after the smoke script. `smoke.mjs` was stale (feature gates,
+- [x] `ci.yml` api-integration job now also runs `nx run @org/api-e2e:e2e` (9 spec
+  files, 38 cases) after the smoke script. `smoke.mjs` was stale (feature gates,
   consent interceptor) and is fixed.
 - [ ] `lab.spec.ts` "clinic + lab pair" flaked once in 5 full-suite runs under
   parallel load (passes in isolation). Watch it in CI; consider `--runInBand`.

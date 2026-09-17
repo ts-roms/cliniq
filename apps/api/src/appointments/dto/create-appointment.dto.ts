@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDate,
   IsEnum,
   IsOptional,
@@ -47,6 +48,15 @@ export class CreateAppointmentDto {
   @IsString()
   @MaxLength(500)
   notes?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Book outside the provider's hours / during time off anyway (front-desk override; audited). Double-booking is never overridable.",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
 }
 
 export class AppointmentRangeDto {

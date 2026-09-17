@@ -4,6 +4,7 @@ import { BroadcastForm } from '@/features/notifications';
 import { SettingsForm, useTenantSettings } from '@/features/settings';
 import { DelegationsCard } from '@/features/delegations';
 import { MembersCard } from '@/features/members';
+import { AvailabilityCard } from '@/features/availability';
 
 export default function ClinicSettingsPage() {
   const { data, isLoading, error } = useTenantSettings();
@@ -27,6 +28,13 @@ export default function ClinicSettingsPage() {
       <section className="space-y-2 pt-4">
         <h2 className="text-lg font-semibold tracking-tight">Team</h2>
         <MembersCard />
+      </section>
+
+      <section className="space-y-2 pt-4">
+        <h2 className="text-lg font-semibold tracking-tight">
+          Provider availability
+        </h2>
+        <AvailabilityCard />
       </section>
 
       <section className="space-y-2 pt-4">

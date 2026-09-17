@@ -965,6 +965,8 @@ model User {
   consultations Consultation[] @relation("ConsultProvider")
   prescriptions Prescription[] @relation("RxProvider")
   appointments  Appointment[]  @relation("ApptProvider")
+  availability  ProviderAvailability[]
+  timeOff       ProviderTimeOff[]
   delegationsGranted  Delegation[] @relation("DelegationGranter")
   delegationsReceived Delegation[] @relation("DelegationGrantee")
 
@@ -1481,6 +1483,52 @@ model Appointment {
   @@index([tenantId, providerId, startsAt])
   @@index([tenantId, status, startsAt])
   @@map("appointments")
+}
+
+// ── Provider availability ────────────────────────────────────────
+// When a provider can be booked. Two layers:
+//   * ProviderAvailability — weekly recurring ranges in the TENANT's timezone
+//     (HH:mm). Several rows per weekday model breaks: 08:00–12:00 +
+//     13:00–17:00 leaves lunch unbookable without a separate "break" concept.
+//   * ProviderTimeOff — dated blocks (leave, conference, a half-day) that win
+//     over the weekly rules.
+// A provider with NO availability rows falls back to the tenant's
+// settings.operatingHours; with neither, booking is unrestricted (so tenants
+// that never touch this screen keep today's behaviour).
+model ProviderAvailability {
+  id          String @id @default(cuid())
+  tenantId    String
+  providerId  String
+  weekday     Int    // 0 = Sunday … 6 = Saturday
+  startTime   String // "HH:mm", tenant timezone
+  endTime     String // "HH:mm", exclusive
+  // Default appointment length used when listing free slots for this range.
+  slotMinutes Int    @default(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, providerId, weekday])
+  @@map("provider_availability")
+}
+
+model ProviderTimeOff {
+  id         String   @id @default(cuid())
+  tenantId   String
+  providerId String
+  startsAt   DateTime
+  endsAt     DateTime
+  reason     String?
+  createdByUserId String?
+
+  createdAt DateTime @default(now())
+
+  provider User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, providerId, startsAt])
+  @@map("provider_time_off")
 }
 
 // ── Patient queue ─────────────────────────────────────────────────

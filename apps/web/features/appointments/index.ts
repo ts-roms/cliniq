@@ -2,6 +2,7 @@ export { ScheduleDayPicker } from './components/schedule-day-picker';
 export { ScheduleTable } from './components/schedule-table';
 export { ScheduleEmpty } from './components/schedule-empty';
 export { NewAppointmentDialog } from './components/new-appointment-dialog';
+export { AvailabilityError } from './hooks/use-appointments';
 export {
   appointmentKeys,
   useAppointmentRange,

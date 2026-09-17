@@ -40,18 +40,52 @@ export function useAppointmentRange(
   });
 }
 
+/**
+ * Thrown when the api refuses a slot for availability reasons (422). Carries
+ * `overridable` so the form can offer "book anyway" (which re-sends with
+ * `force: true`). Double-booking (409) is a plain Error — never overridable.
+ */
+export class AvailabilityError extends Error {
+  constructor(
+    message: string,
+    public readonly reason: 'outside_hours' | 'time_off',
+    public readonly overridable: boolean,
+  ) {
+    super(message);
+    this.name = 'AvailabilityError';
+  }
+}
+
 export function useCreateAppointment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: CreateAppointmentOutput) => {
-      const { data, error } = await appointmentsControllerCreate({
+    mutationFn: async (
+      input: CreateAppointmentOutput & { force?: boolean },
+    ) => {
+      const { data, error, response } = await appointmentsControllerCreate({
         body: {
           ...input,
           startsAt: new Date(input.startsAt).toISOString(),
           endsAt: new Date(input.endsAt).toISOString(),
         },
       });
-      if (error || !data) throw new Error('Create failed');
+      if (error || !data) {
+        const e = error as
+          | {
+              message?: string;
+              reason?: 'outside_hours' | 'time_off';
+              overridable?: boolean;
+            }
+          | undefined;
+        if (response?.status === 422 && e?.reason) {
+          throw new AvailabilityError(
+            e.message ?? 'outside provider hours',
+            e.reason,
+            !!e.overridable,
+          );
+        }
+        throw new Error(messageOf(error, 'Create failed'));
+      }
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: appointmentKeys.all }),

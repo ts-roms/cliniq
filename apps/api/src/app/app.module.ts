@@ -25,6 +25,7 @@ import { MailerModule } from '../mailer/mailer.module.js';
 import { SmsModule } from '../sms/sms.module.js';
 import { HealthModule } from '../health/health.module.js';
 import { AppointmentsModule } from '../appointments/appointments.module.js';
+import { AvailabilityModule } from '../availability/availability.module.js';
 import { ClinicalModule } from '../clinical/clinical.module.js';
 import { DentalModule } from '../dental/dental.module.js';
 import { DelegationsModule } from '../delegations/delegations.module.js';
@@ -77,6 +78,7 @@ import { buildThrottlerOptions } from '../common/throttle.config.js';
     TranscriptsModule,
     FilesModule,
     AppointmentsModule,
+    AvailabilityModule,
     ClinicalModule,
     DentalModule,
     DelegationsModule,

@@ -6,6 +6,7 @@ import {
   NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -21,6 +22,7 @@ import { MailerService } from '../mailer/mailer.service.js';
 import { SmsService } from '../sms/sms.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { WebhooksService } from '../webhooks/webhooks.service.js';
+import { AvailabilityService } from '../availability/availability.service.js';
 import type {
   AppointmentRangeDto,
   CreateAppointmentDto,
@@ -55,6 +57,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     private readonly sms: SmsService,
     private readonly notif: NotificationsService,
     private readonly webhooks: WebhooksService,
+    private readonly availability: AvailabilityService,
     private readonly config: ConfigService,
   ) {
     this.reminderEnabled =
@@ -240,6 +243,13 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
         if (!patient)
           throw new NotFoundException(`Patient ${dto.patientId} not found`);
         await this.assertSlotFree(tx, dto.providerId, dto.startsAt, dto.endsAt);
+        await this.assertAvailable(
+          tx,
+          user.tenantId,
+          dto.providerId,
+          dto,
+          dto.force,
+        );
         return this.catchOverlap(() =>
           tx.appointment.create({
             data: {
@@ -424,6 +434,13 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           dto.endsAt,
           existing.id,
         );
+        await this.assertAvailable(
+          tx,
+          user.tenantId,
+          providerId,
+          dto,
+          dto.force,
+        );
         const updated = await this.catchOverlap(() =>
           tx.appointment.update({
             where: { id },
@@ -480,6 +497,38 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
   }
 
   // ── helpers ───────────────────────────────────────
+
+  /**
+   * Provider availability rules (weekly hours + time off). A 422 tells the
+   * client *why* so the front desk can decide to pass `force: true`; the
+   * override is visible in the audit log via the request body.
+   */
+  private async assertAvailable(
+    tx: PrismaClient,
+    tenantId: string,
+    providerId: string,
+    slot: { startsAt: Date; endsAt: Date },
+    force: boolean | undefined,
+  ) {
+    const check = await this.availability.checkSlot(
+      tx,
+      tenantId,
+      providerId,
+      slot,
+    );
+    if (check.ok) return;
+    if (force) {
+      this.logger.log(
+        `availability override (${check.reason}) for provider ${providerId}: ${check.detail}`,
+      );
+      return;
+    }
+    throw new UnprocessableEntityException({
+      message: check.detail,
+      reason: check.reason,
+      overridable: true,
+    });
+  }
 
   /** Service-level overlap check → friendly 409 before the DB constraint. */
   private async assertSlotFree(

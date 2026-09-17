@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDate,
   IsInt,
   IsOptional,
@@ -26,6 +27,14 @@ export class RescheduleAppointmentDto {
   @IsOptional()
   @IsString()
   providerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Override availability rules (not double-booking).',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
 }
 
 export class CancelAppointmentDto {
