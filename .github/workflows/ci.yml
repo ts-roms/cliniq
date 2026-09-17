@@ -91,7 +91,10 @@ jobs:
         env:
           PGPASSWORD: cliniq
         run: |
-          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+          # The rls_policies migration already creates the role as NOLOGIN, so
+          # CREATE-if-missing alone leaves it unable to log in — always ALTER.
+          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app; END IF; END \$\$;"
+          psql -h localhost -U cliniq -d cliniq_test -c "ALTER ROLE cliniq_app LOGIN PASSWORD 'cliniq_app';"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
@@ -174,7 +177,10 @@ jobs:
       - name: Provision cliniq_app role
         env: { PGPASSWORD: cliniq }
         run: |
-          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+          # The rls_policies migration already creates the role as NOLOGIN, so
+          # CREATE-if-missing alone leaves it unable to log in — always ALTER.
+          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app; END IF; END \$\$;"
+          psql -h localhost -U cliniq -d cliniq_test -c "ALTER ROLE cliniq_app LOGIN PASSWORD 'cliniq_app';"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
@@ -319,7 +325,10 @@ jobs:
       - name: Provision cliniq_app role
         env: { PGPASSWORD: cliniq }
         run: |
-          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app LOGIN PASSWORD 'cliniq_app'; END IF; END \$\$;"
+          # The rls_policies migration already creates the role as NOLOGIN, so
+          # CREATE-if-missing alone leaves it unable to log in — always ALTER.
+          psql -h localhost -U cliniq -d cliniq_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cliniq_app') THEN CREATE ROLE cliniq_app; END IF; END \$\$;"
+          psql -h localhost -U cliniq -d cliniq_test -c "ALTER ROLE cliniq_app LOGIN PASSWORD 'cliniq_app';"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
