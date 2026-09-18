@@ -383,13 +383,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       throw new Error(`PrismaService.withTenant: invalid userId "${userId}"`);
     }
     return this.client.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(
-        `SET LOCAL app.current_tenant = '${tenantId}'`,
-      );
+      // Both GUCs in ONE round trip (set_config(..., is_local=true) is
+      // SET LOCAL): every withTenant call used to spend two statements here
+      // before running any real query. Parameterised, so the isCuidLike
+      // guards above are belt-and-braces rather than the injection defence.
       // app.current_user collides with the reserved keyword `current_user`.
-      await tx.$executeRawUnsafe(
-        `SET LOCAL app.current_user_id = '${userId ?? ''}'`,
-      );
+      await tx.$queryRaw`SELECT set_config('app.current_tenant', ${tenantId}, true), set_config('app.current_user_id', ${userId ?? ''}, true)`;
       return fn(tx as unknown as PrismaClient);
     }, TX_OPTIONS);
   }
@@ -404,7 +403,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     fn: (tx: PrismaClient) => Promise<T>,
   ): Promise<T> {
     return this.client.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SET LOCAL app.platform_admin = '1'`);
+      await tx.$queryRaw`SELECT set_config('app.platform_admin', '1', true)`;
       return fn(tx as unknown as PrismaClient);
     }, TX_OPTIONS);
   }

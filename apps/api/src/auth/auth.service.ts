@@ -12,6 +12,7 @@ import {
   Role as DbRole,
   MemberStatus,
   TenantStatus,
+  type PrismaClient,
 } from '@org/db';
 import {
   hashPassword,
@@ -40,6 +41,21 @@ export interface ClientMeta {
   ip?: string;
   userAgent?: string;
 }
+
+/**
+ * The slice of a tenant row that rides inside the tokens. Callers that
+ * already loaded the tenant (login / refresh / register) pass it through so
+ * token issuance doesn't re-read it in a transaction of its own.
+ */
+const TENANT_SNAPSHOT = { kind: true, plan: true, labPlan: true } as const;
+type TenantSnapshot = {
+  kind: 'CLINIC' | 'LAB';
+  plan: string | null;
+  labPlan: string | null;
+} | null;
+
+/** Thrown inside the refresh write transaction to roll it back on a race. */
+class RefreshRaceError extends Error {}
 
 const DEFAULT_LOCKOUT_THRESHOLD = 5;
 const DEFAULT_LOCKOUT_MINUTES = 15;
@@ -113,10 +129,32 @@ export class AuthService {
     // Public route — runs without a tenant context. Wrap reads + writes
     // in `withPlatformContext` so the cliniq_app role can satisfy RLS
     // (the regular policies require `current_tenant_id()` to match,
-    // which is null at signup time).
-    const tenant = await this.prisma.withPlatformContext((tx) =>
-      tx.tenant.findUnique({ where: { slug: dto.tenantSlug } }),
-    );
+    // which is null at signup time). All the pre-hash reads share ONE
+    // transaction: each withPlatformContext call is an interactive
+    // transaction (BEGIN / set_config / query / COMMIT) holding a pooled
+    // connection, so one per query was the dominant cost of this route.
+    const email = dto.email.toLowerCase();
+    const { inviteToken, bootstrapToken } = dto;
+    const read = await this.prisma.withPlatformContext(async (tx) => {
+      const tenant = await tx.tenant.findUnique({
+        where: { slug: dto.tenantSlug },
+      });
+      if (!tenant) return { tenant: null };
+      const existing = await tx.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      const invite = inviteToken
+        ? await tx.tenantInvite.findUnique({
+            where: { tokenHash: hashToken(inviteToken) },
+          })
+        : null;
+      const memberCount = bootstrapToken
+        ? await tx.tenantUser.count({ where: { tenantId: tenant.id } })
+        : 0;
+      return { tenant, existing, invite, memberCount };
+    });
+    const tenant = read.tenant;
     if (!tenant) throw new UnauthorizedException('invalid tenant');
     if (
       tenant.status === TenantStatus.SUSPENDED ||
@@ -125,11 +163,7 @@ export class AuthService {
       throw new UnauthorizedException('tenant inactive');
     }
 
-    const email = dto.email.toLowerCase();
-    const existing = await this.prisma.withPlatformContext((tx) =>
-      tx.user.findUnique({ where: { email } }),
-    );
-    if (existing) {
+    if (read.existing) {
       // A user who already has an account can't be created twice. Multi-
       // tenant membership (accept an invite while signed in elsewhere) is
       // a follow-up — see docs/audit-checklist.md.
@@ -140,13 +174,8 @@ export class AuthService {
     // token fails fast without paying the bcrypt cost.
     let role: DbRole;
     let inviteId: string | null = null;
-    const { inviteToken, bootstrapToken } = dto;
     if (inviteToken) {
-      const invite = await this.prisma.withPlatformContext((tx) =>
-        tx.tenantInvite.findUnique({
-          where: { tokenHash: hashToken(inviteToken) },
-        }),
-      );
+      const invite = read.invite;
       if (
         !invite ||
         invite.tenantId !== tenant.id ||
@@ -181,10 +210,7 @@ export class AuthService {
           'bootstrap token does not match this signup',
         );
       }
-      const memberCount = await this.prisma.withPlatformContext((tx) =>
-        tx.tenantUser.count({ where: { tenantId: tenant.id } }),
-      );
-      if (memberCount > 0) {
+      if (read.memberCount > 0) {
         throw new ForbiddenException('this clinic already has an owner');
       }
       role = DbRole.OWNER;
@@ -194,7 +220,7 @@ export class AuthService {
 
     const passwordHash = await hashPassword(dto.password);
 
-    const { user, tenantUser } = await this.prisma.withPlatformContext(
+    const { user, tenantUser, issued } = await this.prisma.withPlatformContext(
       async (tx) => {
         const user = await tx.user.create({
           data: { email, name: dto.name, passwordHash },
@@ -219,22 +245,23 @@ export class AuthService {
             throw new ForbiddenException('invite has already been used');
           }
         }
-        return { user, tenantUser };
+        const issued = await this.issueTokensIn(
+          tx,
+          tenant,
+          user.id,
+          user.email,
+          tenant.id,
+          tenantUser.role as Role,
+          undefined,
+          meta,
+        );
+        return { user, tenantUser, issued };
       },
     );
-
     this.logger.log(
       `registered ${user.id} in tenant ${tenant.id} as ${role} via ${inviteId ? 'invite' : 'bootstrap'}`,
     );
-    const { body } = await this.issueTokens(
-      user.id,
-      user.email,
-      tenant.id,
-      tenantUser.role as Role,
-      undefined,
-      meta,
-    );
-    return body;
+    return issued.body;
   }
 
   // ────────────────────────────────────────────────────────────────
@@ -246,11 +273,18 @@ export class AuthService {
     // Login runs before any tenant context exists. Reads on `users` and
     // `tenant_users` need RLS bypass since the regular policies hide
     // rows that don't match `current_tenant_id()`.
+    // One read: user + active membership + the tenant snapshot the tokens
+    // need. bcrypt runs OUTSIDE any transaction so the ~250ms of CPU per
+    // login never holds a pooled connection.
     const user = await this.prisma.withPlatformContext((tx) =>
       tx.user.findUnique({
         where: { email },
         include: {
-          tenants: { where: { status: MemberStatus.ACTIVE }, take: 1 },
+          tenants: {
+            where: { status: MemberStatus.ACTIVE },
+            take: 1,
+            include: { tenant: { select: TENANT_SNAPSHOT } },
+          },
         },
       }),
     );
@@ -299,34 +333,26 @@ export class AuthService {
       }
     }
 
-    if (user.failedLoginCount > 0 || user.lockedUntil) {
-      await this.prisma.withPlatformContext((tx) =>
-        tx.user.update({
-          where: { id: user.id },
-          data: {
-            failedLoginCount: 0,
-            lockedUntil: null,
-            lastLogin: new Date(),
-          },
-        }),
+    // One write: lastLogin (+ lockout reset) and the new refresh session.
+    const { body } = await this.prisma.withPlatformContext(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data:
+          user.failedLoginCount > 0 || user.lockedUntil
+            ? { failedLoginCount: 0, lockedUntil: null, lastLogin: new Date() }
+            : { lastLogin: new Date() },
+      });
+      return this.issueTokensIn(
+        tx,
+        membership.tenant,
+        user.id,
+        user.email,
+        membership.tenantId,
+        membership.role as Role,
+        membership.patientId ?? undefined,
+        meta,
       );
-    } else {
-      await this.prisma.withPlatformContext((tx) =>
-        tx.user.update({
-          where: { id: user.id },
-          data: { lastLogin: new Date() },
-        }),
-      );
-    }
-
-    const { body } = await this.issueTokens(
-      user.id,
-      user.email,
-      membership.tenantId,
-      membership.role as Role,
-      membership.patientId ?? undefined,
-      meta,
-    );
+    });
     return body;
   }
 
@@ -459,9 +485,34 @@ export class AuthService {
       throw new UnauthorizedException('invalid refresh token');
     }
 
+    // One read for the whole chain: session -> user -> membership in the
+    // token's tenant -> tenant snapshot. The checks below run in the same
+    // order as before; only the round-trips changed.
     const session = await this.prisma.withPlatformContext((tx) =>
       tx.refreshSession.findUnique({
         where: { tokenHash: hashToken(dto.refreshToken) },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              deletedAt: true,
+              tenants: {
+                where: {
+                  tenantId: payload.tid,
+                  status: MemberStatus.ACTIVE,
+                },
+                take: 1,
+                select: {
+                  role: true,
+                  patientId: true,
+                  tenantId: true,
+                  tenant: { select: TENANT_SNAPSHOT },
+                },
+              },
+            },
+          },
+        },
       }),
     );
     if (
@@ -489,55 +540,46 @@ export class AuthService {
       throw new UnauthorizedException('invalid refresh token');
     }
 
-    const user = await this.prisma.withPlatformContext((tx) =>
-      tx.user.findUnique({
-        where: { id: payload.sub },
-        select: { id: true, email: true, deletedAt: true },
-      }),
-    );
+    const user = session.user;
     if (!user || user.deletedAt)
       throw new UnauthorizedException('invalid refresh token');
-
-    const membership = await this.prisma.withPlatformContext((tx) =>
-      tx.tenantUser.findFirst({
-        where: {
-          userId: user.id,
-          tenantId: payload.tid,
-          status: MemberStatus.ACTIVE,
-        },
-        select: { role: true, patientId: true, tenantId: true },
-      }),
-    );
+    const membership = user.tenants[0];
     if (!membership) throw new UnauthorizedException('invalid refresh token');
 
-    const issued = await this.issueTokens(
-      user.id,
-      user.email,
-      membership.tenantId,
-      membership.role as Role,
-      membership.patientId ?? undefined,
-      meta,
-    );
-
-    // Retire the old session only after the new one exists, and only if
-    // nobody else retired it in the meantime (the updateMany guard).
-    const rotated = await this.prisma.withPlatformContext((tx) =>
-      tx.refreshSession.updateMany({
-        where: { id: session.id, revokedAt: null },
-        data: {
-          revokedAt: new Date(),
-          replacedById: issued.sessionId,
-          lastUsedAt: new Date(),
-        },
-      }),
-    );
-    if (rotated.count !== 1) {
+    // Rotate + issue in ONE transaction: the updateMany guard retires the
+    // old session only if nobody else did; on a race the transaction rolls
+    // back so the loser leaves no orphan session behind.
+    let issued;
+    try {
+      issued = await this.prisma.withPlatformContext(async (tx) => {
+        const next = await this.issueTokensIn(
+          tx,
+          membership.tenant,
+          user.id,
+          user.email,
+          membership.tenantId,
+          membership.role as Role,
+          membership.patientId ?? undefined,
+          meta,
+        );
+        const rotated = await tx.refreshSession.updateMany({
+          where: { id: session.id, revokedAt: null },
+          data: {
+            revokedAt: new Date(),
+            replacedById: next.sessionId,
+            lastUsedAt: new Date(),
+          },
+        });
+        if (rotated.count !== 1) throw new RefreshRaceError();
+        return next;
+      });
+    } catch (err) {
+      if (!(err instanceof RefreshRaceError)) throw err;
       // Lost a race against a concurrent refresh with the same token — treat
       // exactly like a replay so the winner doesn't keep a stale sibling.
       await this.revokeAllSessions(session.userId, session.tenantId);
       throw new UnauthorizedException('invalid refresh token');
     }
-
     return issued.body;
   }
 
@@ -693,7 +735,48 @@ export class AuthService {
   // Token issue
   // ────────────────────────────────────────────────────────────────
 
+  /**
+   * Standalone token issuance for callers that don't already hold a
+   * transaction. Everything happens in one withPlatformContext (tenant
+   * snapshot + session row) instead of the two it used to take.
+   */
   private async issueTokens(
+    userId: string,
+    email: string,
+    tenantId: string,
+    role: Role,
+    patientId?: string,
+    meta: ClientMeta = {},
+  ) {
+    return this.prisma.withPlatformContext(async (tx) => {
+      // Snapshot tenant kind into the token so the web client knows which
+      // UI shell to render without an extra round-trip.
+      const tenant = await tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: TENANT_SNAPSHOT,
+      });
+      return this.issueTokensIn(
+        tx,
+        tenant,
+        userId,
+        email,
+        tenantId,
+        role,
+        patientId,
+        meta,
+      );
+    });
+  }
+
+  /**
+   * Sign the access token and create the refresh session row on an
+   * already-open platform-context transaction. The caller supplies the
+   * tenant snapshot it loaded alongside the user, so this adds exactly two
+   * statements (create + update) and no transaction of its own.
+   */
+  private async issueTokensIn(
+    tx: PrismaClient,
+    tenant: TenantSnapshot,
     userId: string,
     email: string,
     tenantId: string,
@@ -705,17 +788,6 @@ export class AuthService {
     const accessTtl = this.config.get<string>('JWT_EXPIRES_IN') ?? '15m';
     const refreshTtl =
       this.config.get<string>('REFRESH_TOKEN_EXPIRES_IN') ?? '7d';
-
-    // Snapshot tenant kind into the token so the web client knows which UI
-    // shell to render without an extra round-trip.
-    const tenant = await this.prisma.withPlatformContext((tx) =>
-      tx.tenant.findUnique({
-        where: { id: tenantId },
-        // `plan` / `labPlan` ride along so the web can render plan-gated UI
-        // (disabled nav items, upgrade badges) without an extra round-trip.
-        select: { kind: true, plan: true, labPlan: true },
-      }),
-    );
     const tk = tenant?.kind === 'LAB' ? 'LAB' : 'CLINIC';
 
     const access = await signJwt(
@@ -731,42 +803,38 @@ export class AuthService {
     );
 
     // Create the session row first so its id can ride inside the JWT; the
-    // tokenHash is filled in once we know the signed token. Both writes are
-    // in one transaction so a signing failure leaves no orphan row.
-    const { refresh, sessionId } = await this.prisma.withPlatformContext(
-      async (tx) => {
-        const session = await tx.refreshSession.create({
-          data: {
-            userId,
-            tenantId,
-            tokenHash: `pending:${generateOpaqueToken()}`,
-            expiresAt: new Date(Date.now() + parseDurationMs(refreshTtl)),
-            userAgent: meta.userAgent?.slice(0, 256),
-            ip: meta.ip?.slice(0, 64),
-          },
-        });
-        const refresh = await signJwt(
-          {
-            sub: userId,
-            tid: tenantId,
-            role,
-            tk,
-            sid: session.id,
-            ...(patientId ? { pid: patientId } : {}),
-          },
-          {
-            secret,
-            expiresIn: refreshTtl,
-            audience: JWT_AUDIENCES.TENANT_REFRESH,
-          },
-        );
-        await tx.refreshSession.update({
-          where: { id: session.id },
-          data: { tokenHash: hashToken(refresh) },
-        });
-        return { refresh, sessionId: session.id };
+    // tokenHash is filled in once we know the signed token. Both writes sit
+    // in the caller's transaction so a signing failure leaves no orphan row.
+    const session = await tx.refreshSession.create({
+      data: {
+        userId,
+        tenantId,
+        tokenHash: `pending:${generateOpaqueToken()}`,
+        expiresAt: new Date(Date.now() + parseDurationMs(refreshTtl)),
+        userAgent: meta.userAgent?.slice(0, 256),
+        ip: meta.ip?.slice(0, 64),
+      },
+    });
+    const refresh = await signJwt(
+      {
+        sub: userId,
+        tid: tenantId,
+        role,
+        tk,
+        sid: session.id,
+        ...(patientId ? { pid: patientId } : {}),
+      },
+      {
+        secret,
+        expiresIn: refreshTtl,
+        audience: JWT_AUDIENCES.TENANT_REFRESH,
       },
     );
+    await tx.refreshSession.update({
+      where: { id: session.id },
+      data: { tokenHash: hashToken(refresh) },
+    });
+    const sessionId = session.id;
 
     this.logger.log(
       `Issued tokens for user ${userId} in tenant ${tenantId} (kind=${tk})`,
