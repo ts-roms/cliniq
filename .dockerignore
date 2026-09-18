@@ -17,11 +17,19 @@
 **/.nx/cache
 **/.nx/workspace-data
 
-# Source-control + editor noise
+# Source-control + editor / agent noise. `.claude/worktrees/` in particular
+# holds full checkouts of the repo (with their own build output) and was
+# doubling the build context.
 .git
 .github
+.claude
 .vscode
 .idea
+.agents
+.codex
+.cursor
+.gemini
+.opencode
 **/*.log
 
 # Local dotenvs & secrets

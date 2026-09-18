@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:api", "type:app"],
+    "tags": [
+      "scope:api",
+      "type:app"
+    ],
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -92,6 +95,7 @@
     "@nestjs/swagger": "^11.0.0",
     "@org/ai-prompts": "workspace:*",
     "@org/auth": "workspace:*",
+    "@swc/helpers": "0.5.18",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "helmet": "^8.0.0",
