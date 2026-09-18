@@ -35,7 +35,7 @@ export class LocationsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.CLINIC_ADMIN)
   @Audit({
     action: 'location.create',
     entity: 'Location',
@@ -46,7 +46,7 @@ export class LocationsController {
   }
 
   @Patch(':id')
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.CLINIC_ADMIN)
   @Audit({
     action: 'location.update',
     entity: 'Location',
@@ -62,7 +62,7 @@ export class LocationsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.CLINIC_ADMIN)
   @Audit({
     action: 'location.delete',
     entity: 'Location',

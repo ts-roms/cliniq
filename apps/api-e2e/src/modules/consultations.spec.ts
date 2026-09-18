@@ -54,13 +54,23 @@ describe('@org/api-e2e consultations module', () => {
       const updated = await doctor.client.axios.patch(
         `/api/consultations/${id}`,
         {
-          chiefComplaint: 'Headache',
-          subjective: { onset: 'this morning', severity: 6 },
+          subjective: {
+            chiefComplaint: 'Headache',
+            onset: 'this morning',
+            severity: 6,
+          },
           objective: { vitals: { bp: '120/80' } },
-          assessment: [{ problem: 'Tension headache', icd10: 'G44.2' }],
-          plan: [
-            { problem: 'Tension headache', actions: ['paracetamol 500mg PO'] },
-          ],
+          assessment: {
+            problems: [{ problem: 'Tension headache', icd10: 'G44.2' }],
+          },
+          plan: {
+            items: [
+              {
+                problem: 'Tension headache',
+                actions: ['paracetamol 500mg PO'],
+              },
+            ],
+          },
         },
       );
       expect(updated.status).toBe(200);

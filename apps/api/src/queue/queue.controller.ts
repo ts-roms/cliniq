@@ -40,14 +40,14 @@ export class QueueController {
   constructor(private readonly queue: QueueService) {}
 
   @Get('queues')
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   listQueues(@CurrentUser() user: AuthenticatedUser) {
     return this.queue.listQueues(user);
   }
 
   @Post('queues')
   @HttpCode(HttpStatus.CREATED)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   @Audit({ action: 'queue.create', entity: 'Queue', entityIdFrom: 'result:id' })
   createQueue(
     @Body() dto: CreateQueueDto,
@@ -57,7 +57,7 @@ export class QueueController {
   }
 
   @Patch('queues/:id')
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   updateQueue(
     @Param('id') id: string,
     @Body() dto: UpdateQueueDto,
@@ -69,14 +69,14 @@ export class QueueController {
   /** Public display feed for the TV screen — same auth gate as everything
    *  else; mount on a kiosk/TV device with a long-lived staff token. */
   @Get('display')
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   display(@CurrentUser() user: AuthenticatedUser) {
     return this.queue.displayFeed(user);
   }
 
   @Post('tickets')
   @HttpCode(HttpStatus.CREATED)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   @Audit({
     action: 'queue.ticket.issue',
     entity: 'QueueTicket',
@@ -88,7 +88,7 @@ export class QueueController {
 
   @Post('queues/:id/call-next')
   @HttpCode(HttpStatus.OK)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   @Audit({
     action: 'queue.ticket.call_next',
     entity: 'Queue',
@@ -100,7 +100,7 @@ export class QueueController {
 
   @Post('tickets/:id/close')
   @HttpCode(HttpStatus.OK)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.QUEUE_MANAGE)
   @Audit({
     action: 'queue.ticket.close',
     entity: 'QueueTicket',

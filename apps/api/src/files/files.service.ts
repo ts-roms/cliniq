@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -44,9 +45,10 @@ export class FilesService {
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
     });
     this.bucketPhi =
-      this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
+      // `||`, not `??`: .env.example ships these as empty strings.
+      this.config.get<string>('S3_BUCKET_PHI') || 'cliniq-phi-dev';
     this.bucketPublic =
-      this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+      this.config.get<string>('S3_BUCKET_PUBLIC') || 'cliniq-public-dev';
   }
 
   /**
@@ -87,17 +89,30 @@ export class FilesService {
         headers['x-amz-server-side-encryption'] = 'aws:kms';
       }
 
-      const uploadUrl = await getSignedUrl(
-        this.s3,
-        new PutObjectCommand({
-          Bucket: bucket,
-          Key: key,
-          ContentType: dto.mimeType,
-          ContentLength: dto.sizeBytes,
-          ServerSideEncryption: isPhi ? 'aws:kms' : undefined,
-        }),
-        { expiresIn: this.presignTtlSec },
-      );
+      let uploadUrl: string;
+      try {
+        uploadUrl = await getSignedUrl(
+          this.s3,
+          new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: dto.mimeType,
+            ContentLength: dto.sizeBytes,
+            ServerSideEncryption: isPhi ? 'aws:kms' : undefined,
+          }),
+          { expiresIn: this.presignTtlSec },
+        );
+      } catch (err) {
+        // Signing is local, but the SDK still needs credentials to sign
+        // with. Without AWS_ACCESS_KEY_ID / a role this threw a raw
+        // CredentialsProviderError -> 500; say what is actually wrong.
+        if ((err as Error).name === 'CredentialsProviderError') {
+          throw new ServiceUnavailableException(
+            'file storage is not configured (no AWS credentials)',
+          );
+        }
+        throw err;
+      }
 
       this.logger.log(
         `presigned ${key} (${dto.sizeBytes}B, isPhi=${isPhi}) for user ${user.userId}`,

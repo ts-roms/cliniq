@@ -13,7 +13,7 @@ export class RetentionController {
 
   @Post('run-now')
   @HttpCode(HttpStatus.OK)
-  @Requires(Actions.TENANT_MANAGE)
+  @Requires(Actions.CLINIC_ADMIN)
   @Audit({ action: 'retention.purge', entity: 'System' })
   runNow() {
     return this.retention.run();

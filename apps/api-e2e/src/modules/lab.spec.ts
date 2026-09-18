@@ -71,7 +71,7 @@ describe('@org/api-e2e lab module', () => {
     it('LAB OWNER can create + list tags', async () => {
       const create = await lab.client.axios.post('/api/lab/tags', {
         name: `tag-${Date.now()}`,
-        color: '#FF0000',
+        color: 'FF0000',
       });
       expect([200, 201]).toContain(create.status);
 

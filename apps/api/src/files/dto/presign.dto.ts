@@ -8,6 +8,7 @@ import {
   Matches,
   Max,
   Min,
+  IsNotEmpty,
 } from 'class-validator';
 
 export enum FileCategoryDto {
@@ -63,5 +64,11 @@ export class PresignResponseDto {
 }
 
 export class ConfirmUploadDto {
-  @ApiProperty() fileId!: string;
+  // Needs a validator: the global ValidationPipe runs with whitelist +
+  // forbidNonWhitelisted, so an undecorated property is rejected with
+  // "property fileId should not exist" and every confirm was a 400.
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  fileId!: string;
 }

@@ -57,6 +57,13 @@ describe('@org/api-e2e prescriptions module', () => {
     it('OWNER can run precheck (no signing)', async () => {
       const { client } = await env.makeTenant();
       const patientId = await seedPatient(client, 'RX-PRECHECK');
+      // precheck runs the AI interaction screen, which the consents
+      // interceptor gates on AI_PROCESSING consent.
+      const consent = await client.axios.put(
+        `/api/patients/${patientId}/consents`,
+        { type: 'AI_PROCESSING', granted: true },
+      );
+      expect(consent.status).toBe(200);
 
       const res = await client.axios.post('/api/prescriptions/precheck', {
         patientId,

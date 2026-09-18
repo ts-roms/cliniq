@@ -152,20 +152,16 @@ export class TeleController {
   async pollSignals(
     @Param('id') id: string,
     @Query('since') since: string | undefined,
-    @Headers('authorization') authHeader: string | undefined,
     @Headers('x-tele-token') patientToken: string | undefined,
-    @CurrentUser() user: AuthenticatedUser | undefined,
   ) {
     const cursor = Number(since ?? 0);
     if (!Number.isFinite(cursor) || cursor < 0) {
       throw new BadRequestException('invalid since cursor');
     }
-    // The route is @Public so the JwtAuthGuard short-circuits, meaning
-    // CurrentUser is undefined here even when a Bearer is present. We treat
-    // patientToken as the only auth source on this endpoint; provider polling
-    // should fall through to the dedicated signaling-as-provider variant below.
-    void authHeader;
-    void user;
+    // The route is @Public so the JwtAuthGuard short-circuits and req.user
+    // is never set; @CurrentUser() here threw before the handler ran (500
+    // on every patient poll). X-Tele-Token is the only auth source on this
+    // endpoint; provider polling uses the signals/provider variant below.
     if (!patientToken) throw new BadRequestException('missing X-Tele-Token');
     return this.tele.listSignals(id, cursor, {
       kind: 'patient',

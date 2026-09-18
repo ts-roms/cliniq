@@ -16,6 +16,18 @@ describe('RBAC matrix', () => {
     expect(rolesThatCan(Actions.TENANT_MANAGE)).toEqual(['OWNER']);
   });
 
+  it('OWNER and ADMIN run clinic operations (locations, retention)', () => {
+    expect(rolesThatCan(Actions.CLINIC_ADMIN)).toEqual(['OWNER', 'ADMIN']);
+  });
+
+  it('OWNER, ADMIN and RECEPTIONIST run the queue; clinicians do not', () => {
+    expect(rolesThatCan(Actions.QUEUE_MANAGE)).toEqual([
+      'OWNER',
+      'ADMIN',
+      'RECEPTIONIST',
+    ]);
+  });
+
   it('PATIENT is read-only on its own record and nothing else', () => {
     expect(can(Roles.PATIENT, Actions.PATIENT_READ)).toBe(true);
     for (const action of Object.values(Actions)) {

@@ -11,7 +11,7 @@
  * ConsentsService.hasGranted at request time and throw 403 if the patient
  * hasn't granted that consent type.
  *
- * We use POST /api/consultations/:id/generate/soap as the canonical
+ * We use POST /api/consultations/:id/drafts/soap as the canonical
  * @RequiresConsent route — it's decorated with
  * @RequiresConsent(ConsentTypeDto.AI_PROCESSING, 'param:id-consultation').
  * Without AI_PROCESSING consent on the patient, the interceptor throws 403
@@ -153,7 +153,7 @@ describe('@org/api-e2e consents module', () => {
       // No AI_PROCESSING consent yet — interceptor must 403 before reaching
       // the service (so no Bedrock call is made).
       const draft = await doctor.client.axios.post(
-        `/api/consultations/${consultId}/generate/soap`,
+        `/api/consultations/${consultId}/drafts/soap`,
       );
       expect(draft.status).toBe(403);
       expect(String(draft.data.message ?? '')).toMatch(/AI_PROCESSING/i);
@@ -178,7 +178,7 @@ describe('@org/api-e2e consents module', () => {
       const consultId = consult.data.id as string;
 
       const draft = await doctor.client.axios.post(
-        `/api/consultations/${consultId}/generate/soap`,
+        `/api/consultations/${consultId}/drafts/soap`,
       );
       // The interceptor passes — the actual call may then fail because
       // Bedrock/ai-service isn't running in CI. We only assert "not 403 for
@@ -215,7 +215,7 @@ describe('@org/api-e2e consents module', () => {
       expect(withdraw.status).toBe(200);
 
       const draft = await doctor.client.axios.post(
-        `/api/consultations/${consultId}/generate/soap`,
+        `/api/consultations/${consultId}/drafts/soap`,
       );
       expect(draft.status).toBe(403);
     });

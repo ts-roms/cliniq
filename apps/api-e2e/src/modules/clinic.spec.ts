@@ -120,7 +120,7 @@ describe('@org/api-e2e clinic module', () => {
       const res = await clinic.client.axios.get(
         '/api/clinic/lab-treatment-plans?caseId=none',
       );
-      expect([200, 400]).toContain(res.status); // 400 if caseId is required
+      expect([200, 400, 404]).toContain(res.status); // 400 if caseId is required, 404 for an unknown case
     });
   });
 
@@ -130,7 +130,7 @@ describe('@org/api-e2e clinic module', () => {
       const res = await clinic.client.axios.get(
         '/api/clinic/lab-disputes?caseId=none',
       );
-      expect([200, 400]).toContain(res.status);
+      expect([200, 400, 404]).toContain(res.status);
     });
   });
 

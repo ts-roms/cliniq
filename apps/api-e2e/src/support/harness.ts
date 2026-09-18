@@ -167,6 +167,15 @@ export async function bootEnv(): Promise<E2EEnv> {
 
     const accessToken = regRes.data.accessToken as string;
     const refreshToken = regRes.data.refreshToken as string;
+    if (role === 'DOCTOR') {
+      // Prescriptions refuse to issue without a PRC license on the
+      // provider. There is no staff profile endpoint to set it through
+      // yet, so seed it the way the other harness fixtures are seeded.
+      await pg.query(
+        `UPDATE "users" SET "prcLicenseNumber" = $2, "prcLicenseExpiry" = NOW() + INTERVAL '1 year' WHERE "id" = $1`,
+        [userId, `PRC-E2E-${rand}`],
+      );
+    }
     const client: E2EClient = {
       accessToken,
       refreshToken,

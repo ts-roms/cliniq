@@ -44,11 +44,11 @@ describe('@org/api-e2e inventory module', () => {
       // Receive a batch — `qty` field; the DTO uses `qty` or `quantity` —
       // tolerate both shapes by sending what the controller expects.
       const recv = await client.axios.post(
-        `/api/inventory/items/${itemId}/batches`,
+        `/api/inventory/items/${itemId}/receive`,
         {
-          qty: 100,
+          receivedQty: 100,
           lotNumber: 'LOT-001',
-          expiresAt: new Date(
+          expiresOn: new Date(
             Date.now() + 365 * 24 * 60 * 60 * 1000,
           ).toISOString(),
           unitCostCentavos: 100,
@@ -62,7 +62,7 @@ describe('@org/api-e2e inventory module', () => {
       const disp = await client.axios.post(
         `/api/inventory/items/${itemId}/dispense`,
         {
-          qty: 5,
+          quantity: 5,
           reason: 'consult',
         },
       );

@@ -83,8 +83,21 @@ describe('@org/api-e2e labs module', () => {
       );
       expect(result.status).toBe(200);
 
-      const cancelled = await client.axios.patch(
+      // Every item now has a result, and a fully reported order cannot be
+      // cancelled — the api refuses with 400. Cancel a fresh order instead.
+      const refused = await client.axios.patch(
         `/api/lab-orders/${orderId}/cancel`,
+      );
+      expect(refused.status).toBe(400);
+
+      const pending = await client.axios.post('/api/lab-orders', {
+        patientId,
+        vendor: 'Hi-Precision',
+        items: [{ testCode: 'FBS', testName: 'Fasting blood sugar' }],
+      });
+      expect(pending.status).toBe(201);
+      const cancelled = await client.axios.patch(
+        `/api/lab-orders/${pending.data.id}/cancel`,
       );
       expect(cancelled.status).toBe(200);
     });

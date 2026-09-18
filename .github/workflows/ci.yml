@@ -162,6 +162,11 @@ jobs:
       # Lets auth-hardening.spec.ts complete the reset flow without an inbox.
       AUTH_EXPOSE_DEBUG_TOKENS: 'true'
       AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
+      # files/presign signs URLs locally, but the AWS SDK still needs
+      # credentials to sign with. Nothing here ever reaches S3 (see
+      # apps/api-e2e/src/modules/files.spec.ts), so dummy keys suffice.
+      AWS_ACCESS_KEY_ID: e2e-dummy
+      AWS_SECRET_ACCESS_KEY: e2e-dummy
 
     steps:
       - uses: actions/checkout@v7

@@ -52,7 +52,7 @@ describe('@org/api-e2e dsr module', () => {
       ).toBeTruthy();
 
       const resolved = await client.axios.patch(`/api/dsr/${id}/resolve`, {
-        status: 'COMPLETED',
+        status: 'RESOLVED',
         resolution: 'Record exported and sent via secure mail.',
       });
       expect(resolved.status).toBe(200);

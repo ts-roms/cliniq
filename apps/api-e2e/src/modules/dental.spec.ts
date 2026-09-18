@@ -33,14 +33,12 @@ const CHART_FIXTURE = {
     {
       toothCode: '11',
       status: 'PRESENT',
-      surfaces: [
-        { surface: 'OCCLUSAL', finding: 'CARIES', notes: 'small pit' },
-      ],
+      surfaces: [{ surface: 'O', finding: 'CARIES', notes: 'small pit' }],
     },
     {
       toothCode: '36',
       status: 'PRESENT',
-      surfaces: [{ surface: 'MESIAL', finding: 'FILLING' }],
+      surfaces: [{ surface: 'M', finding: 'RESTORATION_COMPOSITE' }],
     },
   ],
 };

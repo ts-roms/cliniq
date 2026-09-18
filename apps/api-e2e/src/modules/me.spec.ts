@@ -78,7 +78,9 @@ describe('@org/api-e2e me module', () => {
       const res = await patient.client.axios.get('/api/me/tele/active');
       expect(res.status).toBe(200);
       // No live tele session at signup time → null.
-      expect(res.data).toBeNull();
+      // Nest serialises a `null` return as an empty 200 body; axios reads
+      // that as ''. Either spelling means "no live session".
+      expect(res.data === null || res.data === '').toBe(true);
     });
   });
 

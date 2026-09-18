@@ -196,7 +196,7 @@ describe('@org/api-e2e ob module', () => {
 
       const us = await a.client.axios.post('/api/ob/ultrasound', {
         patientId: aPatientId,
-        kind: 'GENERAL',
+        kind: 'GENERAL_ABDOMINAL',
       });
       expect(us.status).toBe(201);
 

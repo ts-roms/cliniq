@@ -5,7 +5,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateLocationDto {
   @ApiProperty()
@@ -56,7 +56,9 @@ export class CreateLocationDto {
   isPrimary?: boolean;
 }
 
-export class UpdateLocationDto extends CreateLocationDto {
+// PartialType: a PATCH sends only the fields that change. Extending
+// CreateLocationDto directly made `name` mandatory on every update.
+export class UpdateLocationDto extends PartialType(CreateLocationDto) {
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()

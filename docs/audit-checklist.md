@@ -282,23 +282,28 @@ Numbers from `find … -name '*.spec.*'`:
     "Show password" toggle; the spec uses `getByRole('textbox', …)` now.
   - The remaining skip is `viewports.spec` "dialog opens and stays inside the
     viewport" on tablet-768, a deliberate `test.skip` in the spec.
-- [ ] **Quarantined e2e specs** — 19 wip module files (35 failing cases, 148
-      passing ones lost with them) are excluded in `apps/api-e2e/jest.config.cts`
-      (`QUARANTINED_SPECS`; run all with `E2E_INCLUDE_QUARANTINE=1`). Each is a
-      spec-vs-api mismatch, not a product bug found by the test:
-  - `queue`, `locations`, `retention`: assume ADMIN / RECEPTIONIST hold
-    `TENANT_MANAGE` (matrix says OWNER only) — decide the matrix, then fix one side.
-  - `files` (5), `transcripts` (1): presign needs S3 config → 500 in CI; needs a
-    stub or a skip-when-unconfigured guard.
-  - `dental` (5), `ob` (1), `labs`, `inventory`, `lab` (tags), `prescriptions` (2),
-    `consultations`, `dsr`: request payloads don't match the DTOs (400s).
-  - `consents` (2): expects the AI-draft route to 403 without consent but the
-    route 404s first (consult lookup order).
-  - `clinic` (2): expects 404 where the api returns 200 `[]`.
-  - `platform` (PATCH → 500), `me` (2), `tele` (3), `delegations` (1 scoped-action
-    case): assertion mismatches to walk individually.
-    `smoke.mjs` was stale (feature gates,
-    consent interceptor) and is fixed.
+- [x] **Quarantined e2e specs** — all 19 module files re-enabled (2026-09-18):
+      the api-e2e gate is now **49 files / 363 cases** (was 30 / 190). Of the 34
+      failures, 6 were api bugs and the rest spec-vs-api drift:
+  - api: `POST /files/confirm` rejected every request (`fileId` had no
+    class-validator decorator, so the whitelist stripped it); patient-side
+    `GET /tele/sessions/:id/signals` 500'd (`@CurrentUser` on a `@Public` route);
+    platform `PATCH /tenants/:id` 500'd (audit row with a tenantId inside
+    withPlatformContext violates `audit_logs` RLS); `PATCH /locations/:id`
+    required every create field (`UpdateLocationDto` now `PartialType`);
+    presign without AWS credentials is a 503 with a message instead of a 500;
+    a delegated (X-Acting-For) prescription now uses the delegator's PRC licence.
+  - RBAC matrix, decided: `TENANT_MANAGE` stays OWNER-only (settings.spec /
+    tenants.spec pin it). New `CLINIC_ADMIN` (OWNER + ADMIN: locations,
+    retention runs) and `QUEUE_MANAGE` (OWNER + ADMIN + RECEPTIONIST: the
+    front-desk queue) replace it on those controllers.
+  - specs: payload field names / enum values (dental surfaces, consultation
+    SOAP shape, dsr status, ultrasound kind, tag colour, inventory receive /
+    dispense), routes (`/drafts/soap`, `/items/:id/receive`), consent grant
+    before precheck, a fully reported lab order can't be cancelled, and the
+    harness now seeds a PRC licence for DOCTOR fixtures (there is no staff
+    profile endpoint to set one — worth adding). CI passes dummy AWS keys so
+    presign can sign; nothing reaches S3.
 - [ ] `lab.spec.ts` "clinic + lab pair" flaked once in 5 full-suite runs under
       parallel load (passes in isolation). Watch it in CI; consider `--runInBand`.
 - [ ] Prompt eval gate: `libs/ai-prompts/evals/*` exist and run against a stub, but no

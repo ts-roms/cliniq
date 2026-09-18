@@ -168,9 +168,13 @@ export class PlatformTenantsService {
           },
         });
 
-        await tx.auditLog.create({
+        // Platform events are system-level audits: inside withPlatformContext
+        // there is no current_tenant, so the audit_logs insert policy only
+        // admits tenantId NULL (the tenant is in entityId); createMany avoids
+        // the RETURNING that create() runs through the read policy.
+        await tx.auditLog.createMany({
           data: {
-            tenantId: id,
+            tenantId: null,
             userId: null,
             actorEmail: adminEmail,
             action: 'platform.tenant.update',
@@ -274,9 +278,10 @@ export class PlatformTenantsService {
         }
       }
 
-      await tx.auditLog.create({
+      // See update(): system-level audit, tenantId null, createMany.
+      await tx.auditLog.createMany({
         data: {
-          tenantId: tenant.id,
+          tenantId: null,
           userId: null,
           actorEmail: adminEmail,
           action: 'platform.tenant.create',

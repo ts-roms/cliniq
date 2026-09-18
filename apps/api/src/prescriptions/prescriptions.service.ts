@@ -41,12 +41,17 @@ export class PrescriptionsService {
   }
 
   async create(dto: CreatePrescriptionDto, user: AuthenticatedUser) {
+    // Under an X-Acting-For delegation the prescriber of record is the
+    // delegator (the doctor whose rx:sign authority is being exercised), so
+    // the licence check and the provider snapshot use them, not the actor.
+    // The audit log still records both identities.
+    const providerId = user.onBehalfOfUserId ?? user.userId;
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       // Provider must have an active PRC license to issue an Rx in PH.
       // Read inside the same RLS context as the rest of the writes — the
       // `users_visible_in_tenant` policy needs current_tenant set.
       const provider = await tx.user.findUnique({
-        where: { id: user.userId },
+        where: { id: providerId },
         select: {
           id: true,
           name: true,
@@ -174,7 +179,7 @@ export class PrescriptionsService {
         data: {
           tenantId: user.tenantId,
           patientId: patient.id,
-          providerId: user.userId,
+          providerId,
           consultationId: dto.consultationId ?? null,
           number,
           status: RxStatus.ISSUED,
