@@ -14,6 +14,7 @@ import {
   type TeleSignalKind,
   TeleSessionStatus,
   type PrismaClient,
+  type InputJsonValue,
 } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import { SmsService, type SmsResult } from '../sms/sms.service.js';
@@ -464,7 +465,14 @@ export class TeleService {
     payload: Record<string, unknown>,
   ) {
     return tx.teleSignal.create({
-      data: { tenantId, sessionId, seq, fromRole, kind, payload },
+      data: {
+        tenantId,
+        sessionId,
+        seq,
+        fromRole,
+        kind,
+        payload: payload as InputJsonValue,
+      },
     });
   }
 

@@ -11,6 +11,7 @@ import {
   ConsultStatus,
   AiSuggestionStatus,
   AiSuggestionKind,
+  type InputJsonValue,
 } from '@org/db';
 import {
   canTransition,
@@ -171,7 +172,18 @@ export class ConsultationsService {
           'Consultation is locked; create a revision instead',
         );
       }
-      return tx.consultation.update({ where: { id }, data: dto });
+      // SOAP sections are free-form JSON on the DTO; Prisma wants its
+      // InputJsonValue for the Json columns.
+      return tx.consultation.update({
+        where: { id },
+        data: {
+          ...dto,
+          subjective: dto.subjective as InputJsonValue | undefined,
+          objective: dto.objective as InputJsonValue | undefined,
+          assessment: dto.assessment as InputJsonValue | undefined,
+          plan: dto.plan as InputJsonValue | undefined,
+        },
+      });
     });
   }
 

@@ -4,3 +4,4 @@ export { PrismaModule } from './lib/prisma.module.js';
 export type { PrismaClient } from './generated/prisma/client.js';
 export * from './generated/prisma/models.js';
 export * from './generated/prisma/enums.js';
+export type { InputJsonValue } from './generated/prisma/internal/prismaNamespace.js';

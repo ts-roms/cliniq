@@ -5,7 +5,7 @@ import {
   type Page,
 } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import { provisionTenants, type ProvisionedSeed } from './provision';
 
 /**

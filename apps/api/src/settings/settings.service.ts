@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@org/db';
+import { PrismaService, type InputJsonValue } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type { UpdateSettingsDto } from './dto/settings.dto.js';
 
@@ -64,7 +64,7 @@ export class SettingsService {
 
       return tx.tenant.update({
         where: { id: user.tenantId },
-        data: { settings: next },
+        data: { settings: next as InputJsonValue },
         select: { settings: true },
       });
     });

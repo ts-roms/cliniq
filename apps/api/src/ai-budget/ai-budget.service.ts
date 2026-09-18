@@ -22,16 +22,18 @@ export interface BudgetUsage {
 const ALERT_THRESHOLDS = [0.5, 0.8, 1.0] as const;
 
 /**
- * Per-plan monthly AI budget in centavos. Mirrors the pricing tiers in
- * docs/06-pricing-business-model.md (Gold ₱100, Premium ₱500, Diamond
- * ₱1,500, Enterprise ₱5,000+). Override per-tenant by writing an `AiBudget`
- * row directly with a custom `budgetCentavos` (e.g. for over-purchased packs).
+ * Per-plan monthly AI budget in centavos, keyed by the `Plan` enum
+ * (STARTER / PRO / PREMIUM). docs/06-pricing-business-model.md names the
+ * tiers Gold ₱100 / Premium ₱500 / Diamond ₱1,500 (+ Enterprise ₱5,000,
+ * which has no enum value yet); this map used those names, so no plan ever
+ * matched and every tenant silently got AI_BUDGET_FALLBACK_CENTAVOS.
+ * Override per-tenant by writing an `AiBudget` row directly with a custom
+ * `budgetCentavos` (e.g. for over-purchased packs).
  */
 export const PLAN_BUDGETS_CENTAVOS: Record<Plan, number> = {
-  GOLD: 10_000,
-  PREMIUM: 50_000,
-  DIAMOND: 150_000,
-  ENTERPRISE: 500_000,
+  STARTER: 10_000,
+  PRO: 50_000,
+  PREMIUM: 150_000,
 };
 
 @Injectable()
@@ -63,6 +65,7 @@ export class AiBudgetService {
       }),
     );
     if (!tenant) return this.fallbackBudgetCentavos;
+    if (!tenant.plan) return this.fallbackBudgetCentavos;
     return PLAN_BUDGETS_CENTAVOS[tenant.plan] ?? this.fallbackBudgetCentavos;
   }
 

@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { DelegationStatus, MemberStatus, PrismaService, Role } from '@org/db';
@@ -11,8 +10,6 @@ import type { CreateDelegationDto } from './dto/delegation.dto.js';
 
 @Injectable()
 export class DelegationsService {
-  private readonly logger = new Logger(DelegationsService.name);
-
   constructor(private readonly prisma: PrismaService) {}
 
   /**

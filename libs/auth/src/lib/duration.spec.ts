@@ -1,5 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
-import { parseDurationMs } from './duration';
+import { parseDurationMs } from './duration.js';
 
 describe('parseDurationMs', () => {
   it('parses the jose-style shorthands the env uses', () => {

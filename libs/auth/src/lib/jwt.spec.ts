@@ -1,5 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
-import { JWT_AUDIENCES, signJwt, verifyJwt } from './jwt';
+import { JWT_AUDIENCES, signJwt, verifyJwt } from './jwt.js';
 
 const secret = 'test-secret-that-is-definitely-32-chars-long';
 const base = { sub: 'user_1', tid: 'tenant_1', role: 'DOCTOR' as const };

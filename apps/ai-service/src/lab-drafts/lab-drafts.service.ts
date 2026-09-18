@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   LAB_TREATMENT_PLAN_V1,
   renderLabTreatmentPlanUserMessage,
@@ -11,8 +11,6 @@ import type {
 
 @Injectable()
 export class LabDraftsService {
-  private readonly logger = new Logger(LabDraftsService.name);
-
   constructor(private readonly bedrock: BedrockService) {}
 
   async draftTreatmentPlan(

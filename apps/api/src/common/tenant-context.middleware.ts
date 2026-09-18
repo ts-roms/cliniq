@@ -1,4 +1,4 @@
-import { Injectable, Logger, type NestMiddleware } from '@nestjs/common';
+import { Injectable, type NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { verifyJwt } from '@org/auth';
 import { PrismaService } from '@org/db';
@@ -20,7 +20,6 @@ import type { Request, Response, NextFunction } from 'express';
  */
 @Injectable()
 export class TenantContextMiddleware implements NestMiddleware {
-  private readonly logger = new Logger(TenantContextMiddleware.name);
   private readonly rootDomain: string;
 
   constructor(

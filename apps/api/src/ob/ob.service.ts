@@ -1,14 +1,13 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
-import { ObPregnancyStatus, PrismaService, UltrasoundKind } from '@org/db';
+import { ObPregnancyStatus, PrismaService } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type {
   CreateObVisitDto,
@@ -20,7 +19,6 @@ import type {
 
 @Injectable()
 export class ObService {
-  private readonly logger = new Logger(ObService.name);
   private readonly s3: S3Client;
   private readonly bucket: string;
   private readonly presignTtlSec = 600;

@@ -6,10 +6,11 @@ export interface AuditMeta {
   /** Logical entity type for indexing, e.g. "Patient". Optional. */
   entity?: string;
   /**
-   * How to extract the entity id from the request/response. Default tries
+   * How to extract the entity id from the request/response. `param:<name>`
+   * reads that route param (`param:id`, `param:caseId`, …). Default tries
    * `req.params.id` first, then `result.id`.
    */
-  entityIdFrom?: 'param:id' | 'param:sid' | 'result:id' | 'body:id';
+  entityIdFrom?: `param:${string}` | 'result:id' | 'body:id';
 }
 
 export const AUDIT_META_KEY = 'audit';

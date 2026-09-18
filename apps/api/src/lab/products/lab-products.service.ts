@@ -5,7 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { LabProductPricingMode, PrismaService } from '@org/db';
+import {
+  LabProductPricingMode,
+  PrismaService,
+  type InputJsonValue,
+} from '@org/db';
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
 import type {
   CreateLabCategoryDto,
@@ -144,7 +148,9 @@ export class LabProductsService {
             defaultPrice: dto.defaultPrice ?? null,
             currency: dto.currency ?? 'PHP',
             pricingMode: dto.pricingMode ?? LabProductPricingMode.FIXED,
-            formSchema: dto.formSchema ?? undefined,
+            formSchema: (dto.formSchema ?? undefined) as
+              | InputJsonValue
+              | undefined,
             phases: dto.phases ?? [],
             tags: dto.tags ?? [],
           },
@@ -193,7 +199,7 @@ export class LabProductsService {
           formSchema:
             dto.formSchema === undefined
               ? undefined
-              : (dto.formSchema ?? undefined),
+              : ((dto.formSchema ?? undefined) as InputJsonValue | undefined),
           phases: dto.phases ?? existing.phases,
           tags: dto.tags ?? existing.tags,
           isActive: dto.isActive ?? existing.isActive,

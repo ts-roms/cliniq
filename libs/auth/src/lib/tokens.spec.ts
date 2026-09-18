@@ -1,5 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
-import { generateOpaqueToken, hashToken, secretsEqual } from './tokens';
+import { generateOpaqueToken, hashToken, secretsEqual } from './tokens.js';
 
 describe('opaque tokens', () => {
   it('generates url-safe, high-entropy, unique tokens', () => {

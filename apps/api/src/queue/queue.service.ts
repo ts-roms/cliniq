@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService, QueueKind, QueueTicketStatus } from '@org/db';
@@ -14,8 +13,6 @@ import type {
 
 @Injectable()
 export class QueueService {
-  private readonly logger = new Logger(QueueService.name);
-
   constructor(private readonly prisma: PrismaService) {}
 
   // ── Queues ────────────────────────────────────────────────

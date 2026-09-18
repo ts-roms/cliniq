@@ -1,5 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
-import { Actions, Roles, can, rolesThatCan } from './roles';
+import { Actions, Roles, can, rolesThatCan } from './roles.js';
 
 describe('RBAC matrix', () => {
   it('only OWNER and ADMIN can invite or manage staff', () => {

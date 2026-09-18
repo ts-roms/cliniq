@@ -20,6 +20,7 @@ import {
   LabCaseUrgency,
   LabProductPricingMode,
   PrismaService,
+  type InputJsonValue,
 } from '@org/db';
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
 import { LabClinicLinksService } from '../clinic-links/lab-clinic-links.service.js';
@@ -123,7 +124,7 @@ export class LabCasesService {
           status: LabCaseStatus.DRAFT,
           urgency: dto.urgency ?? LabCaseUrgency.STANDARD,
           dueAt: dto.dueAt ? new Date(dto.dueAt) : null,
-          formData: dto.formData ?? undefined,
+          formData: (dto.formData ?? undefined) as InputJsonValue | undefined,
           patientLabel: dto.patientLabel ?? null,
           doctorLabel: dto.doctorLabel ?? null,
           deliveryCenter: dto.deliveryCenter ?? null,
@@ -898,7 +899,9 @@ export class LabCasesService {
             ? null
             : new Date(dto.dueAt),
       formData:
-        dto.formData === undefined ? undefined : (dto.formData ?? undefined),
+        dto.formData === undefined
+          ? undefined
+          : ((dto.formData ?? undefined) as InputJsonValue | undefined),
       patientLabel:
         dto.patientLabel === undefined
           ? existing.patientLabel

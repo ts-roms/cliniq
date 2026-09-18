@@ -1,4 +1,3 @@
-import { describe, expect, it } from '@jest/globals';
 import { AppointmentStatus } from '@org/db';
 import {
   LIVE_STATUSES,

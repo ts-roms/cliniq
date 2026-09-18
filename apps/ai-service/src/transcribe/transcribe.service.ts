@@ -5,6 +5,7 @@ import {
   StartTranscriptionJobCommand,
   TranscribeClient,
   type LanguageCode,
+  type MediaFormat,
 } from '@aws-sdk/client-transcribe';
 import { randomUUID } from 'node:crypto';
 
@@ -148,10 +149,10 @@ export class TranscribeService {
     return body.results?.transcripts?.[0]?.transcript ?? '';
   }
 
-  private formatFor(mimeType: string, key: string): string {
+  private formatFor(mimeType: string, key: string): MediaFormat {
     // AWS Transcribe MediaFormat: 'mp3' | 'mp4' | 'wav' | 'flac' | 'ogg' |
     // 'amr' | 'webm' | 'm4a'. Derive from mime first, fall back to extension.
-    const fromMime: Record<string, string> = {
+    const fromMime: Record<string, MediaFormat> = {
       'audio/mpeg': 'mp3',
       'audio/mp3': 'mp3',
       'audio/mp4': 'mp4',
@@ -170,7 +171,7 @@ export class TranscribeService {
     return ['mp3', 'mp4', 'wav', 'flac', 'ogg', 'amr', 'webm', 'm4a'].includes(
       ext ?? '',
     )
-      ? (ext as string)
+      ? (ext as MediaFormat)
       : 'mp3';
   }
 

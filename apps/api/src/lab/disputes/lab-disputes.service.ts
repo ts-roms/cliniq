@@ -157,10 +157,10 @@ export class LabDisputesService {
    */
   async close(
     id: string,
-    status:
-      | LabCaseDisputeStatus.RESOLVED
-      | LabCaseDisputeStatus.REJECTED
-      | LabCaseDisputeStatus.WITHDRAWN,
+    status: Extract<
+      LabCaseDisputeStatus,
+      'RESOLVED' | 'REJECTED' | 'WITHDRAWN'
+    >,
     notes: string | null,
     user: AuthenticatedUser,
   ) {

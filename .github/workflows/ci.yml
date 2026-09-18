@@ -107,6 +107,11 @@ jobs:
 
       - name: Lint (affected)
         run: pnpm exec nx affected -t lint --parallel=3
+      # tsc --build over the project references. The bundlers (webpack/swc,
+      # Turbopack) do not type-check, so without this step type errors only
+      # surface when someone runs tsc by hand.
+      - name: Typecheck (affected)
+        run: pnpm exec nx affected -t typecheck --parallel=3
 
       - name: Test (affected, includes RLS leak test)
         run: pnpm exec nx affected -t test --parallel=3

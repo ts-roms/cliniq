@@ -79,7 +79,8 @@ export class BedrockService {
         ?.map((block) => block.text ?? '')
         .join('') ?? '';
 
-    const usage = response.usage ?? {};
+    const usage: Partial<NonNullable<typeof response.usage>> =
+      response.usage ?? {};
 
     this.logger.log(
       `converse model=${modelId} prompt=${input.systemPromptId} ` +

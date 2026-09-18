@@ -77,23 +77,32 @@ export class AuditInterceptor implements NestInterceptor {
 
 function resolveEntityId(
   meta: AuditMeta,
-  req: Request & {
-    params?: Record<string, string>;
-    body?: Record<string, unknown>;
+  // Structural on purpose: express's Request params type (ParamsDictionary)
+  // is not assignable to a plain Record, and only these two fields are read.
+  req: {
+    params?: Record<string, string | string[] | undefined>;
+    body?: unknown;
   },
   result: unknown,
 ): string | null {
+  // Any `param:<name>` reads that route param. This used to know only
+  // `param:id` / `param:sid`; the 14 controllers passing `param:caseId`,
+  // `param:fileId`, … silently fell through to the default and logged the
+  // wrong entity id.
+  if (meta.entityIdFrom?.startsWith('param:')) {
+    const v = req.params?.[meta.entityIdFrom.slice('param:'.length)];
+    return (Array.isArray(v) ? v[0] : v) ?? null;
+  }
   switch (meta.entityIdFrom) {
-    case 'param:id':
-      return req.params?.id ?? null;
-    case 'param:sid':
-      return req.params?.sid ?? null;
     case 'body:id':
-      return (req.body?.id as string) ?? null;
+      return ((req.body as { id?: unknown } | undefined)?.id as string) ?? null;
     case 'result:id':
       return getResultId(result);
     default:
-      return req.params?.id ?? getResultId(result);
+      return (
+        (Array.isArray(req.params?.id) ? req.params.id[0] : req.params?.id) ??
+        getResultId(result)
+      );
   }
 }
 

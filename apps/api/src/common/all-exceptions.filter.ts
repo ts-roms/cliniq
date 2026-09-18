@@ -20,7 +20,7 @@ function isPrismaKnownError(e: unknown): e is PrismaCodedError {
   return (
     e instanceof Error &&
     typeof (e as { code?: unknown }).code === 'string' &&
-    (e as { code: string }).code.startsWith('P') &&
+    (e as unknown as { code: string }).code.startsWith('P') &&
     e.name === 'PrismaClientKnownRequestError'
   );
 }

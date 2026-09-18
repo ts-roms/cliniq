@@ -26,7 +26,6 @@ import { defineConfig, devices } from '@playwright/test';
 // here causes cross-origin login fetches to fail silently and login never
 // redirects → 20s waitForURL timeout in global-setup.
 const BASE_URL = process.env.WEB_E2E_BASE_URL ?? 'http://localhost:4000';
-const API_URL = process.env.API_E2E_URL ?? 'http://localhost:4005';
 const isCI = !!process.env.CI;
 
 const STORAGE = {

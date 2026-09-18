@@ -96,7 +96,7 @@ export class MeService {
         }),
         tx.vital.findMany({
           where: { patientId },
-          orderBy: { recordedAt: 'desc' },
+          orderBy: { measuredAt: 'desc' },
           take: 10,
         }),
         tx.prescription.findMany({

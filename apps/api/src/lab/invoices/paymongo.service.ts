@@ -20,7 +20,7 @@ export class PaymongoService {
   private readonly webhookSecret: string | null;
   private readonly baseUrl = 'https://api.paymongo.com/v1';
 
-  constructor(private readonly config: ConfigService) {
+  constructor(config: ConfigService) {
     this.secretKey = config.get<string>('PAYMONGO_SECRET_KEY') ?? null;
     this.webhookSecret = config.get<string>('PAYMONGO_WEBHOOK_SECRET') ?? null;
   }
