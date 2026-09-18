@@ -25,11 +25,14 @@ export function FormField({
   // Net effect: <Label htmlFor=...> is always paired with the input,
   // unlocking getByLabel() in tests AND screen-reader association.
   const autoId = useId();
-  const child = Children.only(children);
+  // Only a lone element child gets the id wiring. Children.only() here
+  // threw for any FormField wrapping a group (e.g. the broadcast form's
+  // recipient chips + hint), which crashed /admin/settings client-side.
+  const child = Children.count(children) === 1 ? Children.only(children) : null;
   let resolvedHtmlFor = htmlFor;
-  let mappedChild: React.ReactNode = child;
+  let mappedChild: React.ReactNode = child ?? children;
 
-  if (!resolvedHtmlFor && isValidElement(child)) {
+  if (!resolvedHtmlFor && child !== null && isValidElement(child)) {
     const props = (child as ReactElement<{ id?: string }>).props;
     if (props?.id) {
       resolvedHtmlFor = props.id;

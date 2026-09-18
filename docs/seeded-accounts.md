@@ -24,7 +24,7 @@ Operator-side admins managing the SaaS itself. Stored in the `platform_admins` t
 
 ### Tenant: `demo`
 
-Tenant slug `demo` (Demo Clinic, plan `STARTER`, status `TRIAL`, 30-day trial). Wiped and recreated on every seed run via `Tenant` cascade.
+Tenant slug `demo` (Demo Clinic, plan `PREMIUM` so every gated module is reachable, status `TRIAL`, 30-day trial). Wiped and recreated on every seed run via `Tenant` cascade.
 
 #### Staff
 

@@ -136,7 +136,9 @@ async function main() {
     data: {
       slug: TENANT_SLUG,
       name: 'Demo Clinic',
-      plan: Plan.STARTER,
+      // PREMIUM so every plan-gated module (inventory, HMO claims, queueing,
+      // tele, AI, OB…) is reachable in the demo clinic.
+      plan: Plan.PREMIUM,
       status: TenantStatus.TRIAL,
       trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
