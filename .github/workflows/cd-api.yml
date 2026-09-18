@@ -38,17 +38,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: ${{ github.event.inputs.environment || 'dev' }}
+    env:
+      # `secrets` is not usable in a job-level `if`, so expose it as an env flag
+      # and gate every AWS step on it: until infra/bootstrap has run and the
+      # AWS_DEPLOY_ROLE_ARN secret is set, the job still builds but skips deploy.
+      AWS_CONFIGURED: ${{ secrets.AWS_DEPLOY_ROLE_ARN != '' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
-          version: '10'
+          version: '11'
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install
@@ -60,17 +65,24 @@ jobs:
       - name: Build api artifact
         run: pnpm exec nx run @org/api:build
 
+      - name: Deploy skipped (AWS not configured)
+        if: env.AWS_CONFIGURED != 'true'
+        run: echo "::warning::AWS_DEPLOY_ROLE_ARN secret is not set - built OK but skipping ECR push/ECS deploy. See infra/bootstrap/README.md."
+
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        if: env.AWS_CONFIGURED == 'true'
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
+        if: env.AWS_CONFIGURED == 'true'
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & push image
+        if: env.AWS_CONFIGURED == 'true'
         id: build
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
@@ -83,11 +95,13 @@ jobs:
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
       - name: Run Prisma migrations against target env
+        if: env.AWS_CONFIGURED == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm --dir libs/db exec prisma migrate deploy
 
       - name: Render new ECS task definition
+        if: env.AWS_CONFIGURED == 'true'
         id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -96,6 +110,7 @@ jobs:
           image: ${{ steps.build.outputs.image }}
 
       - name: Deploy to ECS
+        if: env.AWS_CONFIGURED == 'true'
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render.outputs.task-definition }}
