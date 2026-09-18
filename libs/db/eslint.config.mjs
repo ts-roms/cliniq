@@ -12,7 +12,10 @@ export default [
           // Runtime deps of the migrate/api images (`prisma migrate deploy`
           // on pre-deploy) imported only from prisma.config.ts, which lives
           // outside the lib's build entry so the rule cannot see the usage.
-          ignoredDependencies: ['prisma', 'dotenv'],
+          // @prisma/client is imported by the generated client under
+          // src/generated (gitignored, so invisible to the rule) and compiled
+          // into dist; it must be a real dependency for `pnpm deploy` images.
+          ignoredDependencies: ['prisma', 'dotenv', '@prisma/client'],
         },
       ],
     },

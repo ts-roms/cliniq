@@ -2,6 +2,9 @@
   "name": "@org/shared-types",
   "version": "0.0.1",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "nx": {
     "tags": [
       "scope:shared",

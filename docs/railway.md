@@ -207,10 +207,15 @@ time you merge a PR with new files in `libs/db/prisma/migrations/`.
 > `deploy` block in [`apps/api/railway.json`](../apps/api/railway.json):
 >
 > ```json
-> "preDeployCommand": "cd /workspace/libs/db && pnpm exec prisma migrate deploy"
+> "preDeployCommand": "cd /app/node_modules/@org/db && ./node_modules/.bin/prisma migrate deploy"
 > ```
 >
-> Then debug whatever was making it fail silently.
+> Then debug whatever was making it fail silently. Known blocker: the api
+> image runs as the unprivileged `nestjs` user and its `node_modules` is
+> root-owned, while `prisma migrate` wants to download the schema engine into
+> `node_modules/@prisma/engines` on first run — so it fails with "Can't write
+> to …/@prisma/engines". The `docker/migrate.Dockerfile` image (runs as root,
+> ships only libs/db) is the supported way to apply migrations.
 
 ### Seed data
 
@@ -219,7 +224,7 @@ The catalog seed (`libs/db/prisma/seed/index.ts`) runs via
 **dev-only** — don't run them on prod.
 
 ```bash
-railway run --service api sh -c "cd /workspace/libs/db && pnpm exec prisma db seed"
+railway run --service api sh -c "cd /app/node_modules/@org/db && ./node_modules/.bin/prisma db seed"
 ```
 
 ### Bootstrap the platform admin (superadmin)

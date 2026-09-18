@@ -6,7 +6,7 @@ FROM node:22-alpine AS base
 # Pinned: unpinned corepack resolves the latest pnpm (11.x), which rejects the
 # pnpm 10 `onlyBuiltDependencies` config and fails install. Keep in step with
 # PNPM_VERSION in .github/workflows/ci.yml.
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@11 --activate
 # pnpm's content-addressable store lives under $PNPM_HOME/store; the install
 # below mounts a BuildKit cache there so packages are downloaded once per
 # machine and shared by every image build, not re-fetched on each one.
@@ -44,68 +44,36 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts \
  || pnpm install --no-frozen-lockfile --ignore-scripts
 
-# ── prod-deps ─────────────────────────────────────
-# Runtime images ship this tree, not the dev one: a fresh --prod install
-# drops the ~85 root devDependencies (nx, jest, playwright, typescript,
-# eslint, storybook, …) that made node_modules 1.9 GB / 123k files and
-# turned every COPY / export / unpack of it into minutes. Runtime-only CLIs
-# the images still need (prisma, dotenv for prisma.config.ts) live in
-# libs/db `dependencies` for exactly this reason. It starts from `base`
-# (not `deps`) so pnpm never has to purge an existing dev tree; it runs in
-# parallel with `deps`, sharing the store cache mount, so anything one of
-# them has already fetched the other reuses.
-FROM base AS prod-deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
-COPY apps/api/package.json apps/api/
-COPY apps/api-e2e/package.json apps/api-e2e/
-COPY apps/web/package.json apps/web/
-COPY apps/web-e2e/package.json apps/web-e2e/
-COPY apps/mobile/package.json apps/mobile/
-COPY apps/ai-service/package.json apps/ai-service/
-COPY apps/ai-service-e2e/package.json apps/ai-service-e2e/
-COPY libs/db/package.json libs/db/
-COPY libs/auth/package.json libs/auth/
-COPY libs/shared-types/package.json libs/shared-types/
-COPY libs/ui/package.json libs/ui/
-COPY libs/ai-prompts/package.json libs/ai-prompts/
-COPY libs/api-client/package.json libs/api-client/
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --prod --frozen-lockfile --ignore-scripts \
- || pnpm install --prod --no-frozen-lockfile --ignore-scripts
-
 FROM deps AS build
 COPY . .
 RUN pnpm exec nx sync \
  && pnpm exec nx run @org/ai-service:build
 
+# ── deploy ────────────────────────────────────────
+# See apps/api/Dockerfile for the rationale: `pnpm deploy` writes this
+# app's `files` (dist) plus exactly its production dependency graph, with
+# the workspace libs it declares copied in as injected packages. A plain
+# `pnpm install --prod` always installs the root's dependencies too (the
+# web/mobile stack), which is what made this image 2.5 GB. Runtime deps
+# must therefore be declared in apps/ai-service/package.json, not the root.
+FROM build AS deploy
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm --filter=@org/ai-service deploy --prod --frozen-lockfile --ignore-scripts \
+      --config.inject-workspace-packages=true /deploy
+
+# ── runner ────────────────────────────────────────
 FROM node:22-alpine AS runner
 RUN apk add --no-cache wget tini \
  && addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001 -G nodejs
-WORKDIR /workspace
+WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4100
 
-# Same webpack-node-externals pattern as the api — runtime needs the full
-# workspace skeleton + workspace libs + node_modules.
-COPY --from=build --chown=nestjs:nodejs /workspace/package.json /workspace/pnpm-lock.yaml /workspace/pnpm-workspace.yaml /workspace/nx.json ./
-# node_modules (prod-only tree, see the prod-deps stage) + libs are read-only
-# at runtime, so they're copied root-owned: `--chown` forces BuildKit to
-# rewrite ownership file-by-file across the whole pnpm tree, which took
-# ~10 min per image on Docker Desktop.
-COPY --from=prod-deps /workspace/node_modules ./node_modules
-COPY --from=build /workspace/libs/auth ./libs/auth
-COPY --from=build /workspace/libs/ai-prompts ./libs/ai-prompts
-COPY --from=build /workspace/libs/shared-types ./libs/shared-types
-COPY --from=prod-deps /workspace/libs/auth/node_modules ./libs/auth/node_modules
-COPY --from=prod-deps /workspace/libs/ai-prompts/node_modules ./libs/ai-prompts/node_modules
-COPY --from=prod-deps /workspace/libs/shared-types/node_modules ./libs/shared-types/node_modules
-COPY --from=build --chown=nestjs:nodejs /workspace/apps/ai-service/dist ./apps/ai-service/dist
-COPY --from=build --chown=nestjs:nodejs /workspace/apps/ai-service/package.json ./apps/ai-service/
-# The service's own deps (e.g. @swc/helpers for the swc-compiled bundle) are
-# linked here by pnpm, not at the workspace root.
-COPY --from=prod-deps /workspace/apps/ai-service/node_modules ./apps/ai-service/node_modules
-
-WORKDIR /workspace/apps/ai-service
+# node_modules is read-only at runtime, so it is copied root-owned (see
+# apps/api/Dockerfile for why --chown is avoided on the pnpm tree).
+COPY --from=deploy /deploy/node_modules ./node_modules
+COPY --from=deploy --chown=nestjs:nodejs /deploy/package.json ./
+COPY --from=deploy --chown=nestjs:nodejs /deploy/dist ./dist
 
 USER nestjs
 

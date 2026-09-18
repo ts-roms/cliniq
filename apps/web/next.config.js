@@ -1,5 +1,6 @@
 //@ts-check
 
+const path = require('node:path');
 const { PHASE_PRODUCTION_SERVER } = require('next/constants');
 
 /**
@@ -11,6 +12,19 @@ const nextConfig = {
   // component level are preserved and the .js → .ts extension trick works
   // under nodenext / ESM.
   transpilePackages: ['@org/ui', '@org/api-client', '@org/auth'],
+
+  // Docker builds only (apps/web/Dockerfile sets NEXT_OUTPUT_STANDALONE=1):
+  // emit .next/standalone, a self-contained server with just the traced
+  // files it needs, so the image ships that instead of the whole workspace
+  // node_modules. outputFileTracingRoot points at the monorepo root so the
+  // workspace libs and hoisted packages are traced. Off elsewhere because
+  // `next start` (local, web-e2e in CI) is not meant for standalone output.
+  ...(process.env.NEXT_OUTPUT_STANDALONE === '1'
+    ? {
+        output: 'standalone',
+        outputFileTracingRoot: path.join(__dirname, '../../'),
+      }
+    : {}),
 
   // Workspace libs use ESM-style `from './foo.js'` imports that point at .ts
   // sources (the nodenext convention). Tell Turbopack to fall back to .ts.

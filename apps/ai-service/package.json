@@ -2,6 +2,9 @@
   "name": "@org/ai-service",
   "version": "0.0.1",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "nx": {
     "tags": [
       "scope:api",
@@ -88,6 +91,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "*",
+    "@aws-sdk/client-transcribe": "^3.1041.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

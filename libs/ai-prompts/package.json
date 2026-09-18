@@ -2,6 +2,9 @@
   "name": "@org/ai-prompts",
   "version": "0.0.1",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "nx": {
     "tags": [
       "scope:shared",
