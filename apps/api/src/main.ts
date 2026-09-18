@@ -41,7 +41,7 @@ async function bootstrap() {
     origin: (
       process.env.CORS_ORIGINS ??
       [
-        'http://localhost:3000', // web (Next.js)
+        'http://localhost:4000', // web (Next.js)
         'http://localhost:4200', // legacy nx default
         'http://localhost:4300',
         'http://localhost:8081', // Expo web (default Metro web port)
@@ -70,7 +70,7 @@ async function bootstrap() {
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'jwt',
     )
-    .addServer(process.env.PUBLIC_API_URL ?? 'http://localhost:4000')
+    .addServer(process.env.PUBLIC_API_URL ?? 'http://localhost:4005')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
@@ -88,7 +88,7 @@ async function bootstrap() {
     process.exit(0);
   }
 
-  const port = Number(process.env.PORT) || 4000;
+  const port = Number(process.env.PORT) || 4005;
   await app.listen(port);
   Logger.log(`API running on http://localhost:${port}/api`, 'Bootstrap');
   Logger.log(`Swagger UI at http://localhost:${port}/api/docs`, 'Bootstrap');

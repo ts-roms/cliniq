@@ -47,7 +47,7 @@ cp .env.example .env
 | --------------------- | ---------------------------------------------------------------------- |
 | `DATABASE_URL`        | Local Postgres connection string                                       |
 | `JWT_SECRET`          | Random 32+ char string, any value for dev                              |
-| `NEXT_PUBLIC_API_URL` | URL the **web** browser hits (default `http://localhost:4000`)         |
+| `NEXT_PUBLIC_API_URL` | URL the **web** browser hits (default `http://localhost:4005`)         |
 | `EXPO_PUBLIC_API_URL` | URL the **mobile** device hits — needs your LAN IP, see Mobile section |
 
 ---
@@ -64,14 +64,14 @@ docker compose up -d --build
 
 # Verify everything is healthy
 docker compose ps
-curl http://localhost:4000/api/health
+curl http://localhost:4005/api/health
 ```
 
 URLs:
 
-- `http://localhost:3000` — web (Next.js)
-- `http://localhost:4000/api` — api (Swagger UI at `/api/docs`)
-- `http://localhost:4100/ai` — ai-service
+- `http://localhost:4000` — web (Next.js)
+- `http://localhost:4005/api` — api (Swagger UI at `/api/docs`)
+- `http://localhost:4300/ai` — ai-service
 
 Common docker commands:
 
@@ -89,9 +89,9 @@ docker compose down -v              # stop + wipe data
 pnpm --dir libs/db exec prisma migrate deploy
 
 # 2. Run each app in a separate terminal
-pnpm nx serve @org/api          # http://localhost:4000/api
-pnpm nx serve @org/ai-service   # http://localhost:4100
-pnpm nx dev   @org/web          # http://localhost:3000
+pnpm nx serve @org/api          # http://localhost:4005/api
+pnpm nx serve @org/ai-service   # http://localhost:4300
+pnpm nx dev   @org/web          # http://localhost:4000
 ```
 
 > **First-time gotcha:** if Prisma reports a stale generated client, run
@@ -130,7 +130,7 @@ The web app is already running if you took the Docker path. For native:
 pnpm nx dev @org/web
 ```
 
-Open `http://localhost:3000`. The web reads `NEXT_PUBLIC_API_URL` at
+Open `http://localhost:4000`. The web reads `NEXT_PUBLIC_API_URL` at
 **build time** (Next.js bakes public env into the bundle), so if you
 change the api URL you must restart `nx dev`.
 
@@ -212,10 +212,10 @@ ipconfig | findstr /R /C:"IPv4 Address"   # pick the one for your active adapter
 You'll get something like `192.168.1.42`. Set it in the repo-root `.env`:
 
 ```env
-EXPO_PUBLIC_API_URL=http://192.168.1.42:4000
+EXPO_PUBLIC_API_URL=http://192.168.1.42:4005
 ```
 
-> **Why not use `EXPO_PUBLIC_API_URL=http://localhost:4000`?** That works
+> **Why not use `EXPO_PUBLIC_API_URL=http://localhost:4005`?** That works
 > only when you run the Expo _web_ target in the same browser as the api.
 > On phones/emulators, `localhost` is the device's own loopback.
 
@@ -235,19 +235,19 @@ reach your laptop. Three options:
 2. **Tunnel mode (works through any network — even cafe Wi-Fi or
    corporate networks that block client-to-client):** see step 5.3.
 3. **Cable + adb (Android only):** plug the phone in, run
-   `adb reverse tcp:4000 tcp:4000` so `EXPO_PUBLIC_API_URL=http://localhost:4000`
+   `adb reverse tcp:4005 tcp:4005` so `EXPO_PUBLIC_API_URL=http://localhost:4005`
    works from the device.
 
 Verify the api is actually reachable from the device's perspective.
 From your laptop:
 
 ```bash
-curl http://192.168.1.42:4000/api/health     # use your real LAN IP
+curl http://192.168.1.42:4005/api/health     # use your real LAN IP
 ```
 
 If that returns `{"status":"ok"}` from the laptop but the phone can't
 reach it, it's a firewall (macOS Application Firewall, Windows Defender,
-or your router's AP isolation). Allow inbound TCP 4000.
+or your router's AP isolation). Allow inbound TCP 4005.
 
 ### 5.3 Start Metro
 
@@ -334,7 +334,7 @@ First run installs `@expo/ngrok` (Metro will prompt to confirm).
 > **Note:** tunnel mode only solves Metro reachability — it does **not**
 > tunnel your api server. The phone still hits `EXPO_PUBLIC_API_URL`
 > directly, so if the api is on `localhost` you'll need a separate
-> tunnel for it (e.g. `cloudflared tunnel --url http://localhost:4000`)
+> tunnel for it (e.g. `cloudflared tunnel --url http://localhost:4005`)
 > and update `EXPO_PUBLIC_API_URL` to that URL.
 
 ### 5.5 Native dev-client builds (skip Expo Go)
@@ -403,11 +403,11 @@ Either:
 
 1. `EXPO_PUBLIC_API_URL` still points at `localhost` instead of your LAN IP, **or**
 2. Your phone and laptop are on different Wi-Fi networks, **or**
-3. macOS/Windows firewall is blocking inbound port 4000.
+3. macOS/Windows firewall is blocking inbound port 4005.
 
 ```bash
 # Quick check — from your laptop:
-curl http://192.168.1.42:4000/api/health    # ← use your real LAN IP
+curl http://192.168.1.42:4005/api/health    # ← use your real LAN IP
 # Should return {"status":"ok",...}. If this fails, the api isn't bound
 # to 0.0.0.0; restart it with HOST=0.0.0.0 if needed.
 ```

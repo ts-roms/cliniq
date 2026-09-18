@@ -21,7 +21,7 @@ import { clearPlatformSession } from '../session';
 
 const BASE_URL =
   (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
-  'http://localhost:4000';
+  'http://localhost:4005';
 
 export const platformClient = createClient(
   createConfig({

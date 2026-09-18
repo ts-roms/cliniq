@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
 
 /**
  * Fetches the invoice PDF as a Blob and opens it in a new tab. Hand-rolled

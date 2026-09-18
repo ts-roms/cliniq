@@ -265,7 +265,7 @@ export function useWebRtcRoom({
       setPendingConsent(false);
       void send('CONSENT_RESPONSE', { granted });
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+        const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
         await fetch(`${base}/api/tele/sessions/${sessionId}/recording-consent`, {
           method: 'POST',
           headers: {

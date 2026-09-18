@@ -30,7 +30,7 @@ const STATUS_TONE: Record<string, string> = {
   CANCELLED: 'text-zinc-500',
 };
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4005';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString();

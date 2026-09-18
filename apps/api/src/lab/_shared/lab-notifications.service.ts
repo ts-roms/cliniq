@@ -106,7 +106,7 @@ export class LabNotificationsService {
   }
 
   webUrl(path: string): string {
-    const base = this.config.get<string>('WEB_URL') ?? 'http://localhost:3000';
+    const base = this.config.get<string>('WEB_URL') ?? 'http://localhost:4000';
     return `${base.replace(/\/+$/u, '')}${path.startsWith('/') ? path : `/${path}`}`;
   }
 }

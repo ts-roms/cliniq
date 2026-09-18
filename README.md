@@ -12,9 +12,9 @@ Planning docs live in [`../docs/`](../docs/). This is the implementation monorep
 cliniq/
 ├── apps/
 │   ├── web/             Next.js 15 — clinic app + patient portal (React 19)
-│   ├── api/             NestJS 11 — core REST API (port 4000)
+│   ├── api/             NestJS 11 — core REST API (port 4005)
 │   ├── api-e2e/         E2E tests for api
-│   ├── ai-service/      NestJS 11 — Bedrock proxy (port 4100)
+│   ├── ai-service/      NestJS 11 — Bedrock proxy (port 4300)
 │   ├── ai-service-e2e/  E2E tests for ai-service
 │   └── mobile/          Expo 54 + React Native + NativeWind v4 (shares design tokens)
 ├── libs/
@@ -64,14 +64,14 @@ runs every Prisma migration, then starts the api + ai-service + web.
 cp .env.example .env
 # edit .env — at minimum set JWT_SECRET to a 32+ char string
 # (if you had an older .env from a previous version, copy the new
-# .env.example over it — NEXT_PUBLIC_API_URL must point at port 4000)
+# .env.example over it — NEXT_PUBLIC_API_URL must point at port 4005)
 
 pnpm docker:up      # docker compose up -d --build
 
 # Browse:
-#   http://localhost:3000      web (Next.js)
-#   http://localhost:4000/api  api (NestJS) — health: /api/health
-#   http://localhost:4100/ai   ai-service (Bedrock proxy, stub-fallback)
+#   http://localhost:4000      web (Next.js)
+#   http://localhost:4005/api  api (NestJS) — health: /api/health
+#   http://localhost:4300/ai   ai-service (Bedrock proxy, stub-fallback)
 ```
 
 #### Docker scripts
@@ -101,7 +101,7 @@ pnpm docker:up      # docker compose up -d --build
 
 ```bash
 pnpm docker:up:web        # postgres → migrate → api → web
-open http://localhost:3000
+open http://localhost:4000
 ```
 
 Rebuild web alone after a UI change (nothing else restarts):
@@ -120,9 +120,9 @@ Each is overridable in `.env`:
 
 | Variable        | Default | Service    |
 | --------------- | ------- | ---------- |
-| `WEB_PORT`      | `3000`  | web        |
-| `API_PORT`      | `4000`  | api        |
-| `AI_PORT`       | `4100`  | ai-service |
+| `WEB_PORT`      | `4000`  | web        |
+| `API_PORT`      | `4005`  | api        |
+| `AI_PORT`       | `4300`  | ai-service |
 | `POSTGRES_PORT` | `5432`  | postgres   |
 
 The `migrate` service is a one-shot — it blocks `api`/`web` boot via
@@ -132,7 +132,7 @@ no-ops once everything's applied.
 
 The mobile app (Expo) is **not** in the compose stack — run it on your host
 with `pnpm dev:mobile` and point `EXPO_PUBLIC_API_URL` at
-`http://<your-LAN-ip>:4000`.
+`http://<your-LAN-ip>:4005`.
 
 ### Option B — Native dev (fastest hot-reload)
 
@@ -152,24 +152,24 @@ project name. To run them individually (separate terminals, cleaner logs):
 
 | Script            | Runs                       | URL                       |
 | ----------------- | -------------------------- | ------------------------- |
-| `pnpm dev:web`    | `nx dev @org/web`          | http://localhost:3000     |
-| `pnpm dev:api`    | `nx serve @org/api`        | http://localhost:4000/api |
-| `pnpm dev:ai`     | `nx serve @org/ai-service` | http://localhost:4100     |
+| `pnpm dev:web`    | `nx dev @org/web`          | http://localhost:4000     |
+| `pnpm dev:api`    | `nx serve @org/api`        | http://localhost:4005/api |
+| `pnpm dev:ai`     | `nx serve @org/ai-service` | http://localhost:4300     |
 | `pnpm dev:mobile` | `nx start @org/mobile`     | Expo dev menu             |
 
 #### Running only the web app natively
 
-`pnpm dev:web` starts Next.js on :3000, but the app talks to the api for
+`pnpm dev:web` starts Next.js on :4000, but the app talks to the api for
 everything — so pair it with either a native api (`pnpm dev:api`) or the
 dockerised one (`pnpm docker:up`, which also brings up postgres). Point the
 web app at whichever you chose via `NEXT_PUBLIC_API_URL` in `.env`
-(defaults to `http://localhost:4000`).
+(defaults to `http://localhost:4005`).
 
 Production-mode check of the web app without Docker:
 
 ```bash
 pnpm build:web      # nx build @org/web
-pnpm start:web      # nx start @org/web — serves the built output on :3000
+pnpm start:web      # nx start @org/web — serves the built output on :4000
 ```
 
 ### Database scripts
@@ -209,9 +209,9 @@ Three suites live in the workspace, each owned by a sibling `*-e2e` project:
 
 | Suite                 | Runner           | Project                             | Targets                                                     |
 | --------------------- | ---------------- | ----------------------------------- | ----------------------------------------------------------- |
-| `@org/api-e2e`        | Jest + supertest | api on :4000                        | tenant isolation, RBAC, queue, OB, lab, feature gates       |
-| `@org/ai-service-e2e` | Jest             | ai-service on :4100                 | Bedrock proxy contract                                      |
-| `@org/web-e2e`        | Playwright       | web on :3000 (driving api on :4000) | clinic / portal / lab / platform shells + responsive + a11y |
+| `@org/api-e2e`        | Jest + supertest | api on :4005                        | tenant isolation, RBAC, queue, OB, lab, feature gates       |
+| `@org/ai-service-e2e` | Jest             | ai-service on :4300                 | Bedrock proxy contract                                      |
+| `@org/web-e2e`        | Playwright       | web on :4000 (driving api on :4005) | clinic / portal / lab / platform shells + responsive + a11y |
 
 ### Prereqs
 
@@ -265,9 +265,9 @@ HTML report lands at `apps/web-e2e/playwright-report/` — open `index.html` (or
 
 | Variable           | Used by                                                                    | Default                 |
 | ------------------ | -------------------------------------------------------------------------- | ----------------------- |
-| `API_E2E_URL`      | api-e2e wait-for-port + web-e2e provisioner                                | `http://127.0.0.1:4000` |
-| `WEB_E2E_BASE_URL` | web-e2e Playwright base URL                                                | `http://127.0.0.1:3000` |
-| `HOST` / `PORT`    | api-e2e + ai-service-e2e port wait (alternative to `API_E2E_URL`)          | `localhost` / `4000`    |
+| `API_E2E_URL`      | api-e2e wait-for-port + web-e2e provisioner                                | `http://127.0.0.1:4005` |
+| `WEB_E2E_BASE_URL` | web-e2e Playwright base URL                                                | `http://127.0.0.1:4000` |
+| `HOST` / `PORT`    | api-e2e + ai-service-e2e port wait (alternative to `API_E2E_URL`)          | `localhost` / `4005`    |
 | `CI`               | web-e2e (forces `forbidOnly`, 2 retries, 2 workers, html+github reporters) | unset                   |
 
 ### Tips
@@ -347,26 +347,26 @@ Apps `web` and `marketing` extend the preset and `@import` `globals.css`. Add ne
 
 ```bash
 # Bootstrap the first owner (public route on TenantsController)
-curl -X POST http://localhost:4000/api/tenants \
+curl -X POST http://localhost:4005/api/tenants \
   -H 'content-type: application/json' \
   -d '{"slug":"acme","name":"Acme Clinic","ownerEmail":"doc@acme.ph","ownerName":"Dr. Cruz"}'
 
 # Login (returns access + refresh tokens; 5 bad passwords lock the account for 15 min)
-curl -X POST http://localhost:4000/api/auth/login \
+curl -X POST http://localhost:4005/api/auth/login \
   -H 'content-type: application/json' \
   -d '{"email":"doc@acme.ph","password":"hunter2hunter2"}'
 
 # Use the token on protected routes
-curl http://localhost:4000/api/auth/me -H "Authorization: Bearer <token>"
+curl http://localhost:4005/api/auth/me -H "Authorization: Bearer <token>"
 
 # Add staff — registration is invite-only. The response includes inviteUrl;
 # the invitee opens it (/signup?invite=…) or POSTs /auth/register with inviteToken.
-curl -X POST http://localhost:4000/api/members/invites \
+curl -X POST http://localhost:4005/api/members/invites \
   -H "Authorization: Bearer <token>" -H 'content-type: application/json' \
   -d '{"email":"nurse@acme.ph","role":"NURSE"}'
 
 # Sign out (revokes the refresh session); /auth/logout-all for every device
-curl -X POST http://localhost:4000/api/auth/logout \
+curl -X POST http://localhost:4005/api/auth/logout \
   -H "Authorization: Bearer <token>" -H 'content-type: application/json' \
   -d '{"refreshToken":"<refresh>"}'
 ```

@@ -33,7 +33,7 @@ import { useT } from '../shared/i18n';
 // Configure the API client once at module load. process.env on RN is statically
 // inlined at build time by Expo when prefixed with EXPO_PUBLIC_.
 client.setConfig({
-  baseUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000',
+  baseUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4005',
 });
 configureAuth(() => getSession()?.accessToken ?? null);
 configureAutoRefresh({

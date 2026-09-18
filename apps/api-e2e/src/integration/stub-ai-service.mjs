@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Tiny stub of ai-service for CI. Listens on :4100, answers /ai/drafts/soap
+// Tiny stub of ai-service for CI. Listens on :4300, answers /ai/drafts/soap
 // with a canned draft so the api → ai-service path can be exercised without
 // invoking Bedrock or carrying AWS credentials in CI.
 
 import { createServer } from 'node:http';
 
-const PORT = Number(process.env.AI_STUB_PORT) || 4100;
+const PORT = Number(process.env.AI_STUB_PORT) || 4300;
 
 const server = createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/ai/drafts/soap') {

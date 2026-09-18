@@ -4,7 +4,7 @@
 // Used by CI's `api-integration` job:
 //   1. Builds the api
 //   2. Boots the bundled binary against a fresh Postgres
-//   3. Boots the stub-ai-service on :4100
+//   3. Boots the stub-ai-service on :4300
 //   4. Runs this script — must exit 0
 //
 // Tests the golden path: health → register tenant → register user → login →
@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import pg from 'pg';
 
-const API = process.env.API_URL ?? 'http://localhost:4000';
+const API = process.env.API_URL ?? 'http://localhost:4005';
 const DATABASE_URL = process.env.DATABASE_URL;
 const slug = `pilot-${Date.now()}`;
 const userEmail = `user-${Date.now()}@cliniq.test`;

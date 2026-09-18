@@ -76,7 +76,7 @@ export default function QueuePage() {
       // from localStorage (was XSS-readable). TODO: migrate this to the
       // generated api-client (queueControllerDisplay) for type safety.
       const res = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'}/api/queue/display`,
+        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4005'}/api/queue/display`,
         { credentials: 'include' },
       );
       if (!res.ok) throw new Error(`feed ${res.status}`);

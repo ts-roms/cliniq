@@ -14,7 +14,7 @@
  *   const doctor = await env.makeDoctor(tenant);
  *   const res = await doctor.client.axios.get('/api/patients');
  *
- * Run with the api up on http://localhost:4000:
+ * Run with the api up on http://localhost:4005:
  *   pnpm nx serve @org/api
  *   pnpm nx run @org/api-e2e:e2e
  */
@@ -23,7 +23,7 @@ import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { Client as PgClient } from 'pg';
 
-const API_URL = process.env['API_E2E_URL'] ?? 'http://localhost:4000';
+const API_URL = process.env['API_E2E_URL'] ?? 'http://localhost:4005';
 const DATABASE_URL =
   process.env['DATABASE_URL'] ??
   'postgresql://cliniq:cliniq@localhost:5432/cliniq_test?schema=public';

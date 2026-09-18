@@ -23,7 +23,7 @@
   ],
   "origins": [
     {
-      "origin": "http://localhost:3000",
+      "origin": "http://localhost:4000",
       "localStorage": [
         {
           "name": "cliniq.platform-session",

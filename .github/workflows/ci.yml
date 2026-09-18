@@ -144,8 +144,8 @@ jobs:
       DATABASE_URL_APP: postgresql://cliniq_app:cliniq_app@localhost:5432/cliniq_test?schema=public
       JWT_SECRET: integration-test-secret-must-be-32-chars-long-yes-it-is
       NODE_ENV: production
-      PORT: '4000'
-      CORS_ORIGINS: http://localhost:3000
+      PORT: '4005'
+      CORS_ORIGINS: http://localhost:4000
       # The e2e suite hammers the credential endpoints from one ip; the
       # default 10/min auth bucket would 429 it. Keep throttling ON (so the
       # guard is exercised) but with a ceiling the suite can't reach.
@@ -199,19 +199,19 @@ jobs:
       - name: Boot api in background
         env:
           DATABASE_URL: ${{ env.DATABASE_URL_APP }}
-          AI_SERVICE_URL: http://localhost:4100
+          AI_SERVICE_URL: http://localhost:4300
         run: |
           node apps/api/dist/main.js > api.log 2>&1 &
           echo $! > api.pid
 
       - name: Run smoke
         env:
-          API_URL: http://localhost:4000
+          API_URL: http://localhost:4005
         run: node apps/api-e2e/src/integration/smoke.mjs
 
       - name: Run api e2e suite (Jest, real HTTP + RLS)
         env:
-          API_E2E_URL: http://localhost:4000
+          API_E2E_URL: http://localhost:4005
         run: pnpm exec nx run @org/api-e2e:e2e --skip-nx-cache
 
       - name: Stop services
@@ -291,13 +291,13 @@ jobs:
       DATABASE_URL_APP: postgresql://cliniq_app:cliniq_app@localhost:5432/cliniq_test?schema=public
       JWT_SECRET: webe2e-secret-must-be-32-chars-long-yes-it-is
       NODE_ENV: production
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:4000
       COOKIE_SAMESITE: lax
       THROTTLE_AUTH_LIMIT: '1000'
       THROTTLE_LIMIT: '5000'
       AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
-      WEB_E2E_BASE_URL: http://localhost:3000
-      API_E2E_URL: http://localhost:4000
+      WEB_E2E_BASE_URL: http://localhost:4000
+      API_E2E_URL: http://localhost:4005
       PW_NO_WEBSERVERS: '1' # we boot api + web ourselves below
 
     steps:
@@ -344,7 +344,7 @@ jobs:
 
       - name: Build web (production)
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_PUBLIC_API_URL: http://localhost:4005
         run: pnpm exec nx run @org/web:build
 
       # The api must run as the RLS role: PrismaService refuses to boot as a
@@ -353,34 +353,34 @@ jobs:
       - name: Boot api in background
         env:
           DATABASE_URL: ${{ env.DATABASE_URL_APP }}
-          PORT: '4000'
+          PORT: '4005'
         run: |
           node apps/api/dist/main.js > api.log 2>&1 &
           echo $! > api.pid
 
       - name: Boot web in background
         env:
-          PORT: '3000'
-          NEXT_PUBLIC_API_URL: http://localhost:4000
+          PORT: '4000'
+          NEXT_PUBLIC_API_URL: http://localhost:4005
           HOSTNAME: '0.0.0.0'
         run: |
           # `next start` runs the production server. We launch from the web
           # app's directory so the build output is found correctly.
-          (cd apps/web && pnpm exec next start -p 3000 > ../../web.log 2>&1) &
+          (cd apps/web && pnpm exec next start -p 4000 > ../../web.log 2>&1) &
           echo $! > web.pid
 
       - name: Wait for api
         run: |
           for i in {1..40}; do
-            if curl -fsS http://localhost:4000/api/health >/dev/null 2>&1; then break; fi
+            if curl -fsS http://localhost:4005/api/health >/dev/null 2>&1; then break; fi
             sleep 2
           done
-          curl -fsS http://localhost:4000/api/health
+          curl -fsS http://localhost:4005/api/health
 
       - name: Wait for web
         run: |
           for i in {1..60}; do
-            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then break; fi
+            if curl -fsS http://localhost:4000/ >/dev/null 2>&1; then break; fi
             sleep 2
           done
 

@@ -36,7 +36,7 @@ export class AiClientService {
 
   constructor(private readonly config: ConfigService) {
     this.baseUrl =
-      this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4100';
+      this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:4300';
     this.timeoutMs = Number(
       this.config.get<string>('AI_SERVICE_TIMEOUT_MS') ?? 15_000,
     );

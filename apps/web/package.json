@@ -3,7 +3,28 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:web", "type:app"]
+    "tags": [
+      "scope:web",
+      "type:app"
+    ],
+    "targets": {
+      "dev": {
+        "options": {
+          "args": [
+            "--port",
+            "4000"
+          ]
+        }
+      },
+      "start": {
+        "options": {
+          "args": [
+            "--port",
+            "4000"
+          ]
+        }
+      }
+    }
   },
   "dependencies": {
     "@hookform/resolvers": "*",

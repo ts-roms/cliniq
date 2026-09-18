@@ -25,8 +25,8 @@ import { defineConfig, devices } from '@playwright/test';
 // CORS allowlist and the web's NEXT_PUBLIC_API_URL are built with. A mismatch
 // here causes cross-origin login fetches to fail silently and login never
 // redirects → 20s waitForURL timeout in global-setup.
-const BASE_URL = process.env.WEB_E2E_BASE_URL ?? 'http://localhost:3000';
-const API_URL = process.env.API_E2E_URL ?? 'http://localhost:4000';
+const BASE_URL = process.env.WEB_E2E_BASE_URL ?? 'http://localhost:4000';
+const API_URL = process.env.API_E2E_URL ?? 'http://localhost:4005';
 const isCI = !!process.env.CI;
 
 const STORAGE = {
@@ -63,7 +63,7 @@ export default defineConfig({
       // Help the api correlate logs with the test that produced them.
       'x-cliniq-test': 'web-e2e',
     },
-    // Cookies are httpOnly + cross-origin (web on :3000, api on :4000);
+    // Cookies are httpOnly + cross-origin (web on :4000, api on :4005);
     // Playwright handles credentials automatically so nothing extra here.
   },
 

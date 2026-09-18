@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { calendarsControllerIssueToken } from '@org/api-client';
 import { loadSession } from '@/features/auth/session';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
 
 export interface FeedTokenResponse {
   providerId: string;

@@ -66,7 +66,7 @@ These default to "feature is off" rather than crashing. Set in Railway:
 | Var                       | Effect when missing                                                     |
 | ------------------------- | ----------------------------------------------------------------------- |
 | `RESEND_API_KEY`          | Email notifications log only — no invoices/cases/plans emailed          |
-| `WEB_URL`                 | Email links point at `localhost:3000` instead of prod                   |
+| `WEB_URL`                 | Email links point at `localhost:4000` instead of prod                   |
 | `AI_SERVICE_URL`          | "AI draft" button on treatment plans throws 502                         |
 | `PAYMONGO_SECRET_KEY`     | "PayMongo link" button throws a friendly error; manual links still work |
 | `PAYMONGO_WEBHOOK_SECRET` | Webhook endpoint rejects all events (signature can't be verified)       |

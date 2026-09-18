@@ -21,7 +21,7 @@
 ## Prerequisites
 
 - Node 22 + pnpm 10 + `pnpm install` once.
-- A running api on port 4000 — either the local one or a staging deploy.
+- A running api on port 4005 — either the local one or a staging deploy.
 
 ## Running locally
 
@@ -37,8 +37,8 @@ THROTTLE_AUTH_LIMIT=1000 AUTH_EXPOSE_DEBUG_TOKENS=true pnpm nx serve @org/api
 pnpm nx run @org/api-e2e:e2e
 ```
 
-The suite waits for `http://localhost:4000` to be reachable before it
-starts. If port 4000 is closed it bails immediately with a clear hint
+The suite waits for `http://localhost:4005` to be reachable before it
+starts. If port 4005 is closed it bails immediately with a clear hint
 about starting the api.
 
 ## Running against a deployed environment
@@ -108,7 +108,7 @@ helpers — those are bug candidates.
 
 `API_E2E_URL` doesn't have a scheme. Use `http://` or `https://` — the
 URL parser bails silently otherwise and falls through to default
-localhost:4000.
+localhost:4005.
 
 ### Tests pass locally but fail on Railway
 

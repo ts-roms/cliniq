@@ -41,7 +41,7 @@ export default function QueueDisplayPage() {
       // when staff opens the queue page on the same machine; no JS token
       // handling required.
       const res = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000'}/api/queue/display`,
+        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4005'}/api/queue/display`,
         { credentials: 'include' },
       );
       if (!res.ok) throw new Error(`feed ${res.status}`);

@@ -22,7 +22,7 @@ async function bootstrap() {
 
   app.use(helmet());
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? 'http://localhost:4000').split(','),
+    origin: (process.env.CORS_ORIGINS ?? 'http://localhost:4005').split(','),
     credentials: true,
   });
 
@@ -48,7 +48,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('ai/docs', app, document);
 
-  const port = Number(process.env.PORT) || 4100;
+  const port = Number(process.env.PORT) || 4300;
   await app.listen(port);
   Logger.log(`AI service running on http://localhost:${port}/ai`, 'Bootstrap');
   Logger.log(`Swagger UI at http://localhost:${port}/ai/docs`, 'Bootstrap');
