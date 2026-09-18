@@ -1,16 +1,19 @@
 name: CD — api
 
+# AWS deploys are paused: the project currently runs locally + GitHub only
+# (no AWS access yet). Only manual dispatch is enabled; restore the commented
+# trigger below once infra/bootstrap has run and AWS_DEPLOY_ROLE_ARN is set.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/api/**'
-      - 'libs/db/**'
-      - 'libs/auth/**'
-      - 'libs/shared-types/**'
-      - 'pnpm-lock.yaml'
-      - 'apps/api/Dockerfile'
-      - '.github/workflows/cd-api.yml'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'apps/api/**'
+  #     - 'libs/db/**'
+  #     - 'libs/auth/**'
+  #     - 'libs/shared-types/**'
+  #     - 'pnpm-lock.yaml'
+  #     - 'apps/api/Dockerfile'
+  #     - '.github/workflows/cd-api.yml'
   workflow_dispatch:
     inputs:
       environment:

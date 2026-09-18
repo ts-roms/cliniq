@@ -1,10 +1,13 @@
 name: Terraform
 
+# AWS deploys are paused: the project currently runs locally + GitHub only
+# (no AWS access yet). Only manual dispatch is enabled; restore the commented
+# trigger below once infra/bootstrap has run and AWS_DEPLOY_ROLE_ARN is set.
 on:
-  pull_request:
-    paths:
-      - 'infra/terraform/**'
-      - '.github/workflows/terraform.yml'
+  # pull_request:
+  #   paths:
+  #     - 'infra/terraform/**'
+  #     - '.github/workflows/terraform.yml'
   workflow_dispatch:
     inputs:
       environment:
