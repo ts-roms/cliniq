@@ -9,7 +9,7 @@ import {
   client,
 } from '@org/api-client';
 import { useState, type ReactNode } from 'react';
-import { clearSession } from '@/features/auth';
+import { clearSession } from '@/features/auth/session';
 import { getActingAs } from '@/features/delegations/acting-as';
 
 // Configure the API client once at module load (runs in browser only because

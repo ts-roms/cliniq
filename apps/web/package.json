@@ -2,6 +2,9 @@
   "name": "@org/web",
   "version": "0.0.1",
   "private": true,
+  "sideEffects": [
+    "*.css"
+  ],
   "nx": {
     "tags": [
       "scope:web",
