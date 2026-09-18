@@ -68,4 +68,29 @@ test.describe('@web clinic schedule', () => {
     await page.getByRole('button', { name: 'Today' }).click();
     await expect(trigger).toHaveText(start ?? '');
   });
+
+  test('new-appointment dialog: calendar date + time fields', async ({
+    page,
+  }) => {
+    await page.goto('/schedule');
+    await page.getByRole('button', { name: 'New appointment' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    // Date defaults to the schedule's day; pick the 20th from the calendar.
+    const date = dialog.getByLabel('Date');
+    await expect(date).toHaveText(/\d{4}/);
+    await date.click();
+    const grid = page.getByRole('grid');
+    await expect(grid).toBeVisible();
+    await grid.getByRole('button', { name: / 20th, / }).click();
+    await expect(grid).toBeHidden();
+    await expect(date).toHaveText(/ 20, /);
+
+    // Ends before Starts is refused client-side.
+    await dialog.getByLabel('Starts').fill('09:00');
+    await dialog.getByLabel('Ends').fill('08:30');
+    await dialog.getByRole('button', { name: 'Schedule' }).click();
+    await expect(dialog.getByText('must be after start')).toBeVisible();
+  });
 });

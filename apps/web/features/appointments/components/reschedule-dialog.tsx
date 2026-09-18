@@ -12,17 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Input,
 } from '@org/ui';
-import { FormField } from '@/shared/components/forms/form-field';
 import {
   rescheduleSchema,
   type Appointment,
   type RescheduleInput,
 } from '../schemas/appointment';
 import { useRescheduleAppointment } from '../hooks/use-appointments';
+import { AppointmentWhenFields } from './appointment-when-fields';
 
-/** ISO → the `YYYY-MM-DDTHH:mm` a datetime-local input wants, in local time. */
+/** ISO → `YYYY-MM-DDTHH:mm` in local time (what the when-fields edit). */
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -33,8 +32,9 @@ export function RescheduleDialog({ appt }: { appt: Appointment }) {
   const [open, setOpen] = useState(false);
   const reschedule = useRescheduleAppointment();
   const {
-    register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<RescheduleInput>({
     resolver: zodResolver(rescheduleSchema),
@@ -69,12 +69,17 @@ export function RescheduleDialog({ appt }: { appt: Appointment }) {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
-          <FormField label="Starts" error={errors.startsAt?.message}>
-            <Input type="datetime-local" {...register('startsAt')} />
-          </FormField>
-          <FormField label="Ends" error={errors.endsAt?.message}>
-            <Input type="datetime-local" {...register('endsAt')} />
-          </FormField>
+          <AppointmentWhenFields
+            value={{ startsAt: watch('startsAt'), endsAt: watch('endsAt') }}
+            onChange={(next) => {
+              setValue('startsAt', next.startsAt, { shouldValidate: true });
+              setValue('endsAt', next.endsAt, { shouldValidate: true });
+            }}
+            errors={{
+              startsAt: errors.startsAt?.message,
+              endsAt: errors.endsAt?.message,
+            }}
+          />
           {reschedule.error && (
             <p className="text-sm text-destructive">
               {(reschedule.error as Error).message}
