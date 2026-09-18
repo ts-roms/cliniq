@@ -202,6 +202,7 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
         <CardTitle>Odontogram</CardTitle>
         <div className="flex items-center gap-2">
           <Select
+            aria-label="Dentition"
             value={dentition}
             onChange={(e) => changeDentition(e.target.value as Dentition)}
             disabled={!editing}
@@ -261,6 +262,7 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
                   </label>
                   {editing ? (
                     <Select
+                      aria-label="Tooth status"
                       value={selectedTooth.status}
                       onChange={(e) =>
                         updateTooth(selected!, {
@@ -411,6 +413,7 @@ function AddFindingForm({
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <Select
+        aria-label="Tooth surface"
         value={surface}
         onChange={(e) => setSurface(e.target.value as ToothSurface)}
         className="h-7 text-xs"
@@ -422,6 +425,7 @@ function AddFindingForm({
         ))}
       </Select>
       <Select
+        aria-label="Finding"
         value={finding}
         onChange={(e) => setFinding(e.target.value as SurfaceFinding)}
         className="h-7 text-xs"

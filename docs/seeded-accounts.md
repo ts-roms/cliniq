@@ -4,11 +4,11 @@ All seeded accounts share the same password: **`P@ssw0rd123`**
 
 Three seed scripts exist:
 
-| Command                    | Script                                                                          | What it creates                                 |
-| -------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `pnpm db:seed`             | [tools/scripts/seed-dev.ts](../tools/scripts/seed-dev.ts)                       | Platform admin + `demo` clinic tenant           |
-| `pnpm seed:demo-lab`       | [tools/scripts/seed-demo-lab.ts](../tools/scripts/seed-demo-lab.ts)             | `demo-lab` + `demo-clinic` linked tenant pair   |
-| `pnpm seed:platform-admin` | [tools/scripts/seed-platform-admin.ts](../tools/scripts/seed-platform-admin.ts) | One platform admin from env vars (prod-safe)    |
+| Command                    | Script                                                                          | What it creates                               |
+| -------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- |
+| `pnpm db:seed`             | [tools/scripts/seed-dev.ts](../tools/scripts/seed-dev.ts)                       | Platform admin + `demo` clinic tenant         |
+| `pnpm seed:demo-lab`       | [tools/scripts/seed-demo-lab.ts](../tools/scripts/seed-demo-lab.ts)             | `demo-lab` + `demo-clinic` linked tenant pair |
+| `pnpm seed:platform-admin` | [tools/scripts/seed-platform-admin.ts](../tools/scripts/seed-platform-admin.ts) | One platform admin from env vars (prod-safe)  |
 
 ## `pnpm db:seed` — dev fixtures
 
@@ -48,10 +48,10 @@ Tenant slug `demo` (Demo Clinic, plan `STARTER`, status `TRIAL`, 30-day trial). 
 
 Opt-in; not part of `pnpm db:seed`. Creates a LAB tenant and a CLINIC tenant with an active `LabClinicLink` between them, plus a product catalog (3 categories, 4 products), materials with lots, 8 lab cases in mixed statuses (`SUBMITTED` → `DELIVERED`), and invoices in `PAID` / `ISSUED` / `DRAFT` states. Both tenants are wiped and recreated on every run.
 
-| Slug          | Name                       | Kind     | Plan                        | Status   |
-| ------------- | -------------------------- | -------- | --------------------------- | -------- |
+| Slug          | Name                       | Kind     | Plan                         | Status   |
+| ------------- | -------------------------- | -------- | ---------------------------- | -------- |
 | `demo-lab`    | Cebu Dental Lab (demo)     | `LAB`    | `LAB_PREMIUM` (full-service) | `ACTIVE` |
-| `demo-clinic` | Manila Smile Clinic (demo) | `CLINIC` | `PRO`                       | `ACTIVE` |
+| `demo-clinic` | Manila Smile Clinic (demo) | `CLINIC` | `PRO`                        | `ACTIVE` |
 
 | Email                     | Name         | Tenant        | Role    |
 | ------------------------- | ------------ | ------------- | ------- |

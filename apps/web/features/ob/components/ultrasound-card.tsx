@@ -218,6 +218,7 @@ function NewReportForm({
     >
       <div className="grid gap-2 md:grid-cols-2">
         <Select
+          aria-label="Ultrasound type"
           value={kind}
           onChange={(e) => setKind(e.target.value as UltrasoundKind)}
         >
