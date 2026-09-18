@@ -17,6 +17,7 @@ const PLATFORM_ACCESS_COOKIE = 'cliniq.platform.access';
 const PROTECTED_PREFIXES: ReadonlyArray<readonly [string, string, string]> = [
   // [prefix, required cookie, redirect-to-on-miss]
   ['/dashboard', ACCESS_COOKIE, '/login'],
+  ['/profile', ACCESS_COOKIE, '/login'],
   ['/patients', ACCESS_COOKIE, '/login'],
   ['/consultations', ACCESS_COOKIE, '/login'],
   ['/schedule', ACCESS_COOKIE, '/login'],

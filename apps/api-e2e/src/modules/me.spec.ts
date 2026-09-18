@@ -84,6 +84,109 @@ describe('@org/api-e2e me module', () => {
     });
   });
 
+  describe('staff profile (/api/me/staff-profile)', () => {
+    it('DOCTOR can read and update their own name + PRC licence', async () => {
+      const { tenant } = await env.makeTenant();
+      const doctor = await env.makeDoctor(tenant);
+
+      const before = await doctor.client.axios.get('/api/me/staff-profile');
+      expect(before.status).toBe(200);
+      expect(before.data.email).toBe(doctor.email);
+      expect(before.data.role).toBe('DOCTOR');
+      // makeDoctor already set a licence through this endpoint.
+      expect(before.data.prcLicenseNumber).toMatch(/^\d{4,10}$/);
+
+      const updated = await doctor.client.axios.patch('/api/me/staff-profile', {
+        name: 'Dr. E2E Renamed',
+        prcLicenseNumber: '7654321',
+        prcLicenseExpiry: '2030-01-31',
+        prcSpecialty: 'Pediatrics',
+      });
+      expect(updated.status).toBe(200);
+      expect(updated.data.name).toBe('Dr. E2E Renamed');
+      expect(updated.data.prcLicenseNumber).toBe('7654321');
+      expect(updated.data.prcLicenseExpiry).toContain('2030-01-31');
+      expect(updated.data.prcSpecialty).toBe('Pediatrics');
+
+      // null clears an optional field; the number stays.
+      const cleared = await doctor.client.axios.patch('/api/me/staff-profile', {
+        prcSpecialty: null,
+      });
+      expect(cleared.status).toBe(200);
+      expect(cleared.data.prcSpecialty).toBeNull();
+      expect(cleared.data.prcLicenseNumber).toBe('7654321');
+    });
+
+    it('rejects a malformed licence number (400) and unknown fields', async () => {
+      const { tenant } = await env.makeTenant();
+      const doctor = await env.makeDoctor(tenant);
+      const bad = await doctor.client.axios.patch('/api/me/staff-profile', {
+        prcLicenseNumber: 'PRC-ABC',
+      });
+      expect(bad.status).toBe(400);
+      const unknown = await doctor.client.axios.patch('/api/me/staff-profile', {
+        email: 'cannot@change.local',
+      });
+      expect(unknown.status).toBe(400);
+    });
+
+    it('a licence set here unblocks prescribing', async () => {
+      const { tenant, client } = await env.makeTenant();
+      const doctor = await env.makeDoctor(tenant);
+      // Remove the licence, confirm the api refuses, restore it, confirm it issues.
+      const off = await doctor.client.axios.patch('/api/me/staff-profile', {
+        prcLicenseNumber: null,
+      });
+      expect(off.status).toBe(200);
+      const patient = await client.axios.post('/api/patients', {
+        mrn: 'PROFILE-RX',
+        firstName: 'Profile',
+        lastName: 'Test',
+        dateOfBirth: '1990-01-01',
+        sex: 'FEMALE',
+      });
+      expect(patient.status).toBe(201);
+      const rx = {
+        patientId: patient.data.id as string,
+        items: [
+          {
+            drugName: 'Paracetamol',
+            dose: '500mg',
+            frequency: 'BID',
+            durationDays: 3,
+          },
+        ],
+      };
+      const refused = await doctor.client.axios.post('/api/prescriptions', rx);
+      expect(refused.status).toBe(400);
+      expect(String(refused.data.message)).toMatch(/PRC license/i);
+      const on = await doctor.client.axios.patch('/api/me/staff-profile', {
+        prcLicenseNumber: '2468135',
+      });
+      expect(on.status).toBe(200);
+      const issued = await doctor.client.axios.post('/api/prescriptions', rx);
+      expect(issued.status).toBe(201);
+      expect(issued.data.providerLicense).toBe('2468135');
+    });
+
+    it('PATIENT is refused (403) and anonymous is 401', async () => {
+      const { tenant } = await env.makeTenant();
+      const patient = await env.makePatient(tenant);
+      const res = await patient.client.axios.get('/api/me/staff-profile');
+      expect(res.status).toBe(403);
+      const upd = await patient.client.axios.patch('/api/me/staff-profile', {
+        name: 'Patient Trying',
+      });
+      expect(upd.status).toBe(403);
+      const axiosBare = (await import('axios')).default.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
+      const anon = await axiosBare.get('/api/me/staff-profile');
+      expect(anon.status).toBe(401);
+    });
+  });
+
   describe('RBAC denial', () => {
     it.each(['OWNER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] as const)(
       '%s (staff, no patientId on JWT) → 403 on /api/me/profile',

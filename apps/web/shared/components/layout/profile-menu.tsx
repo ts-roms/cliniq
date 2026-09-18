@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, Globe, LogOut } from 'lucide-react';
+import { ChevronDown, Globe, LogOut, UserCircle } from 'lucide-react';
 import { type Session } from '@/features/auth/session';
 import { useLogout } from '@/features/auth/hooks/use-logout';
 import { languages, setLang, useLang, useT, type Lang } from '@/shared/i18n';
@@ -110,6 +110,23 @@ export function ProfileMenu({ session }: { session: Session }) {
             </div>
           </div>
 
+          {session.user.role !== 'PATIENT' && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                router.push('/profile');
+              }}
+              className="flex w-full items-center gap-2 border-b px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted"
+            >
+              <UserCircle
+                className="h-4 w-4 text-muted-foreground"
+                aria-hidden
+              />
+              {t('nav.profile')}
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

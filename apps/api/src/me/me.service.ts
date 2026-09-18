@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService, TeleSessionStatus } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
+import type { UpdateStaffProfileDto } from './dto/staff-profile.dto.js';
 import { BillingService } from '../billing/billing.service.js';
 
 /**
@@ -30,6 +31,80 @@ export class MeService {
       throw new ForbiddenException('portal endpoint — caller is not a patient');
     }
     return user.patientId;
+  }
+
+  // ── Staff profile ──────────────────────────────────────────────
+  // The one part of /me that is for staff, not the portal: a clinician's
+  // own account row (name + PRC licence). Self-scoped by JWT `sub`; the
+  // acting-as delegation never applies here (a delegate must not edit
+  // the delegator's licence), hence the explicit onBehalfOfUserId check.
+
+  private static readonly STAFF_PROFILE_SELECT = {
+    id: true,
+    email: true,
+    name: true,
+    prcLicenseNumber: true,
+    prcLicenseExpiry: true,
+    prcSpecialty: true,
+  } as const;
+
+  private requireStaff(user: AuthenticatedUser): string {
+    if (user.role === 'PATIENT' || user.patientId) {
+      throw new ForbiddenException('staff endpoint — caller is a patient');
+    }
+    if (user.onBehalfOfUserId) {
+      throw new ForbiddenException(
+        'profile cannot be read or edited while acting on behalf of someone',
+      );
+    }
+    return user.userId;
+  }
+
+  async staffProfile(user: AuthenticatedUser) {
+    const userId = this.requireStaff(user);
+    // users has no tenant-scoped UPDATE policy (the auth service edits it
+    // under the platform context too); the row is pinned to the JWT's own
+    // id, so the platform context adds no reach.
+    const row = await this.prisma.withPlatformContext((tx) =>
+      tx.user.findUnique({
+        where: { id: userId },
+        select: MeService.STAFF_PROFILE_SELECT,
+      }),
+    );
+    if (!row) throw new NotFoundException('user not found');
+    return { ...row, role: user.role, tenantId: user.tenantId };
+  }
+
+  async updateStaffProfile(
+    dto: UpdateStaffProfileDto,
+    user: AuthenticatedUser,
+  ) {
+    const userId = this.requireStaff(user);
+    const data: {
+      name?: string;
+      prcLicenseNumber?: string | null;
+      prcLicenseExpiry?: Date | null;
+      prcSpecialty?: string | null;
+    } = {};
+    if (dto.name !== undefined) data.name = dto.name.trim();
+    if (dto.prcLicenseNumber !== undefined) {
+      data.prcLicenseNumber = dto.prcLicenseNumber;
+    }
+    if (dto.prcLicenseExpiry !== undefined) {
+      data.prcLicenseExpiry =
+        dto.prcLicenseExpiry === null ? null : new Date(dto.prcLicenseExpiry);
+    }
+    if (dto.prcSpecialty !== undefined) {
+      data.prcSpecialty = dto.prcSpecialty?.trim() || null;
+    }
+    const row = await this.prisma.withPlatformContext((tx) =>
+      tx.user.update({
+        where: { id: userId },
+        data,
+        select: MeService.STAFF_PROFILE_SELECT,
+      }),
+    );
+    return { ...row, role: user.role, tenantId: user.tenantId };
   }
 
   async profile(user: AuthenticatedUser) {

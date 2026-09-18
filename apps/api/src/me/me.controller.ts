@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Actions } from '@org/auth';
@@ -8,6 +8,8 @@ import {
   type AuthenticatedUser,
 } from '../auth/decorators/current-user.decorator.js';
 import { MeService } from './me.service.js';
+import { UpdateStaffProfileDto } from './dto/staff-profile.dto.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 /**
  * Patient portal endpoints. All routes are self-scoped: the patient id is
@@ -27,6 +29,30 @@ export class MeController {
   @Requires(Actions.PATIENT_READ)
   profile(@CurrentUser() user: AuthenticatedUser) {
     return this.me.profile(user);
+  }
+
+  // ── Staff (non-portal): own account + PRC licence ─────────────
+  // PATIENT_READ is held by every role, so it is just the "signed in"
+  // gate; MeService.requireStaff does the actual staff-vs-patient check.
+
+  @Get('staff-profile')
+  @Requires(Actions.PATIENT_READ)
+  staffProfile(@CurrentUser() user: AuthenticatedUser) {
+    return this.me.staffProfile(user);
+  }
+
+  @Patch('staff-profile')
+  @Requires(Actions.PATIENT_READ)
+  @Audit({
+    action: 'me.staffProfile.update',
+    entity: 'User',
+    entityIdFrom: 'result:id',
+  })
+  updateStaffProfile(
+    @Body() dto: UpdateStaffProfileDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.me.updateStaffProfile(dto, user);
   }
 
   @Get('appointments')

@@ -62,7 +62,7 @@ export class PrescriptionsService {
       });
       if (!provider?.prcLicenseNumber) {
         throw new BadRequestException(
-          'Cannot issue prescription: PRC license number missing on your profile. Settings → My profile.',
+          'Cannot issue prescription: PRC license number missing on your profile. Open the profile menu → My profile to add it.',
         );
       }
       if (
@@ -70,7 +70,7 @@ export class PrescriptionsService {
         provider.prcLicenseExpiry.getTime() < Date.now()
       ) {
         throw new BadRequestException(
-          'Cannot issue prescription: PRC license has expired. Update your profile.',
+          'Cannot issue prescription: PRC license has expired. Update it under profile menu → My profile.',
         );
       }
 

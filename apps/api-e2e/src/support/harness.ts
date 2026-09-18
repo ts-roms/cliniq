@@ -167,15 +167,6 @@ export async function bootEnv(): Promise<E2EEnv> {
 
     const accessToken = regRes.data.accessToken as string;
     const refreshToken = regRes.data.refreshToken as string;
-    if (role === 'DOCTOR') {
-      // Prescriptions refuse to issue without a PRC license on the
-      // provider. There is no staff profile endpoint to set it through
-      // yet, so seed it the way the other harness fixtures are seeded.
-      await pg.query(
-        `UPDATE "users" SET "prcLicenseNumber" = $2, "prcLicenseExpiry" = NOW() + INTERVAL '1 year' WHERE "id" = $1`,
-        [userId, `PRC-E2E-${rand}`],
-      );
-    }
     const client: E2EClient = {
       accessToken,
       refreshToken,
@@ -186,6 +177,21 @@ export async function bootEnv(): Promise<E2EEnv> {
         timeout: 20_000,
       }),
     };
+    if (role === 'DOCTOR') {
+      // Prescriptions refuse to issue without a PRC licence on the
+      // provider; set one the way a real doctor does, via their profile.
+      const prof = await client.axios.patch('/api/me/staff-profile', {
+        prcLicenseNumber: String(1000000 + Math.floor(Math.random() * 8999999)),
+        prcLicenseExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10),
+      });
+      if (prof.status !== 200) {
+        throw new Error(
+          `doctor profile setup failed: ${prof.status} ${JSON.stringify(prof.data).slice(0, 200)}`,
+        );
+      }
+    }
     return { userId, email, role, tenantId, client };
   }
 

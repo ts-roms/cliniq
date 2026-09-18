@@ -4369,6 +4369,48 @@
         "tags": ["me"]
       }
     },
+    "/api/me/staff-profile": {
+      "get": {
+        "operationId": "MeController_staffProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["me"]
+      },
+      "patch": {
+        "operationId": "MeController_updateStaffProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStaffProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["me"]
+      }
+    },
     "/api/me/appointments": {
       "get": {
         "operationId": "MeController_appointments",
@@ -9841,8 +9883,7 @@
           "active": {
             "type": "boolean"
           }
-        },
-        "required": ["name"]
+        }
       },
       "CreateServiceDto": {
         "type": "object",
@@ -10448,6 +10489,32 @@
           "extras": {
             "type": "object",
             "description": "Free-form key/value extension; merged shallowly"
+          }
+        }
+      },
+      "UpdateStaffProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Dr. Juana Cruz"
+          },
+          "prcLicenseNumber": {
+            "type": "string",
+            "description": "PRC licence number (digits, 4-10). null clears it.",
+            "example": "0123456",
+            "nullable": true
+          },
+          "prcLicenseExpiry": {
+            "type": "string",
+            "description": "PRC licence expiry (ISO date). null clears it.",
+            "example": "2028-12-31",
+            "nullable": true
+          },
+          "prcSpecialty": {
+            "type": "string",
+            "example": "General Medicine",
+            "nullable": true
           }
         }
       },
