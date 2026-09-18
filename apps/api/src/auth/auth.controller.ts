@@ -199,7 +199,14 @@ export class AuthController {
       | 'none';
     return {
       httpOnly: true,
-      secure: isProd || sameSite === 'none',
+      // Secure by default in production. COOKIE_SECURE=false opts out for a
+      // production build served over plain http (e.g. the web-e2e CI job):
+      // Chromium/Firefox treat http://localhost as a secure context and still
+      // send Secure cookies there, WebKit does not, so every authed page
+      // bounced to /login on WebKit only. SameSite=None always requires Secure.
+      secure:
+        sameSite === 'none' ||
+        (this.config.get<string>('COOKIE_SECURE') ?? String(isProd)) === 'true',
       sameSite,
       path: '/',
       ...(cookieDomain ? { domain: cookieDomain } : {}),

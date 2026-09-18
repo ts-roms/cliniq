@@ -14,7 +14,11 @@
     --popover-foreground: 222.2 84% 4.9%;
 
     /* ClinIQ brand: medical green */
-    --primary: 158 64% 40%;
+    /* Brand green, darkened from 40% to 29% lightness so white text on it
+       (5.3:1) and the colour on its own 10% tint (4.7:1) both clear WCAG AA
+       4.5:1 — at 40% (#25a777) they were 3.05:1 / 2.75:1, the only axe
+       'serious' finding on every page. Dark mode keeps its own value. */
+    --primary: 158 64% 29%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;

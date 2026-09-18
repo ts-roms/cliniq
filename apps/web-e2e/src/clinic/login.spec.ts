@@ -6,7 +6,9 @@ test.describe('@web /login', () => {
     await page.goto('/login');
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(
+      page.getByRole('textbox', { name: /password/i }),
+    ).toBeVisible();
     await expect(
       page.getByRole('button', { name: /sign in|log in/i }),
     ).toBeVisible();
@@ -15,7 +17,9 @@ test.describe('@web /login', () => {
   test('rejects bad credentials', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('nobody@e2e.local');
-    await page.getByLabel(/password/i).fill('not-the-real-password');
+    await page
+      .getByRole('textbox', { name: /password/i })
+      .fill('not-the-real-password');
     await page.getByRole('button', { name: /sign in|log in/i }).click();
 
     // We never want to land in the authed shell on bad creds.
@@ -31,7 +35,9 @@ test.describe('@web /login', () => {
     const seed = loadSeed();
     await page.goto('/login');
     await page.getByLabel(/email/i).fill(seed.clinic.owner.email);
-    await page.getByLabel(/password/i).fill(seed.clinic.owner.password);
+    await page
+      .getByRole('textbox', { name: /password/i })
+      .fill(seed.clinic.owner.password);
     await page.getByRole('button', { name: /sign in|log in/i }).click();
     await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
   });

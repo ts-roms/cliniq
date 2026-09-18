@@ -270,10 +270,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: affected
-    # The Playwright suite landed with the May-2026 wip and has not yet been
-    # run green end-to-end in CI. Keep it visible but non-blocking until it
-    # is; flip this off once a run passes (docs/audit-checklist.md P3).
-    continue-on-error: true
 
     services:
       postgres:
@@ -296,6 +292,9 @@ jobs:
       NODE_ENV: production
       CORS_ORIGINS: http://localhost:4000
       COOKIE_SAMESITE: lax
+      # Production build over plain http: WebKit will not send Secure cookies
+      # on http://localhost (Chromium/Firefox do), so opt out for this job only.
+      COOKIE_SECURE: 'false'
       THROTTLE_AUTH_LIMIT: '1000'
       THROTTLE_LIMIT: '5000'
       AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret

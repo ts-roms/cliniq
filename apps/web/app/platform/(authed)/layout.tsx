@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlatformNav, usePlatformSession } from '@/features/platform';
 
@@ -12,9 +12,19 @@ export default function PlatformAuthedLayout({
   const session = usePlatformSession();
   const router = useRouter();
 
+  // usePlatformSession is a useSyncExternalStore whose *server* snapshot is
+  // null, so the very first client render always sees null before the store
+  // is read from localStorage. Redirecting on that render sent signed-in
+  // admins to /platform/login a beat after the page had already mounted
+  // (the tenants table rendered, fetched, then got torn down). Same guard
+  // as useRequiredSession on the clinic side: only trust null once hydrated.
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    if (session === null) router.replace('/platform/login');
-  }, [session, router]);
+    setHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (hydrated && session === null) router.replace('/platform/login');
+  }, [hydrated, session, router]);
 
   if (!session) {
     // Avoid a flash of authed UI before the redirect lands.

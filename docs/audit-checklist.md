@@ -261,22 +261,27 @@ Numbers from `find … -name '*.spec.*'`:
       script: **30 spec files / 190 cases** gate the PR (9 original + 21 wip module
       files that pass). The `web-e2e` Playwright job runs with `continue-on-error`
       until it has passed once.
-- [ ] **Playwright suite status** (first run past global setup, 2026-09-17, PR #4):
-      **64 passed / 27 failed / 1 skipped** across chromium, firefox, webkit,
-      tablet-768 and the a11y project. Failure families, all spec-vs-ui or
-      ui bugs — none block the api gate:
-  - `login.spec` ×3 (chromium-public): `getByLabel(/password/i)` now matches
-    both the input and the new "Show password" toggle (`aria-label`) — strict
-    mode violation; use `getByRole('textbox', { name: 'Password' })`.
-  - `webkit-clinic` ×12: every authed page bounces to `/login?next=…` on
-    WebKit only (chromium/firefox pass). The `cliniq.access` cookie isn't
-    being sent back by WebKit on `http://localhost` — check the cookie
-    attributes (`Secure`/`SameSite`) the api sets in `NODE_ENV=production`.
-  - `tablet-768` ×7: sidebar/primary controls not visible at 768px.
-  - `a11y` ×5: axe `color-contrast` (serious) on login, dashboard, patients,
-    queue, patient detail.
-  - `lab.spec` stats charts not visible; `platform.spec` tenant-detail click
-    times out.
+- [x] **Playwright suite status**: **93 passed / 0 failed / 1 skipped** (2026-09-18)
+      across chromium, firefox, webkit, the 4 viewports and the a11y project; the
+      `web-e2e` job now gates CI (`continue-on-error` removed). The 27 failures from
+      the first run (2026-09-17, PR #4) were four root causes, none of them
+      product logic:
+  - `webkit-clinic` ×12 + `tablet-768` ×7 (iPad = WebKit): the api sets `Secure`
+    cookies whenever `NODE_ENV=production`; Chromium/Firefox still send them on
+    `http://localhost`, WebKit does not, so every authed page bounced to
+    `/login?next=…`. New `COOKIE_SECURE` override (default unchanged), set to
+    `false` in the web-e2e job only.
+  - `a11y` ×5: every axe `color-contrast` finding was the one brand primary
+    `hsl(158 64% 40%)` (#25a777, 3.05:1 with white). Light-mode `--primary` is
+    now 29% lightness (5.3:1 / 4.7:1 on its 10% tint).
+  - `platform.spec` ×1: the `(authed)` platform layout redirected on the first
+    client render, where `useSyncExternalStore`'s server snapshot is always
+    `null` — the tenants table mounted, fetched, then got torn down ("element
+    detached"). Same `hydrated` guard as `useRequiredSession` on the clinic side.
+  - `login.spec` ×3: `getByLabel(/password/i)` matched the input and the
+    "Show password" toggle; the spec uses `getByRole('textbox', …)` now.
+  - The remaining skip is `viewports.spec` "dialog opens and stays inside the
+    viewport" on tablet-768, a deliberate `test.skip` in the spec.
 - [ ] **Quarantined e2e specs** — 19 wip module files (35 failing cases, 148
       passing ones lost with them) are excluded in `apps/api-e2e/jest.config.cts`
       (`QUARANTINED_SPECS`; run all with `E2E_INCLUDE_QUARANTINE=1`). Each is a

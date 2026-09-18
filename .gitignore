@@ -105,3 +105,6 @@ cache/
 
 
 storybook-static
+# Playwright storage states (cookies + localStorage) — written by
+# apps/web-e2e/src/fixtures/global-setup.ts on every run; never commit.
+apps/web-e2e/storage/
