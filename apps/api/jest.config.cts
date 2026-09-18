@@ -14,8 +14,16 @@ module.exports = {
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {
-    '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig],
+    '^.+\.[tj]s$': ['@swc/jest', swcJestConfig],
+    // Prisma 7's client engine loads its WASM query compiler via
+    // `await import('@prisma/client/runtime/*.mjs')`. Under Jest's CJS
+    // runtime that becomes a require() of an ESM file, so let swc transform
+    // those .mjs files too (everything else in node_modules stays ignored).
+    '^.+\.mjs$': ['@swc/jest', swcJestConfig],
   },
-  moduleFileExtensions: ['ts', 'js', 'html'],
+  transformIgnorePatterns: [
+    '[\\/]node_modules[\\/](?!.*@prisma[\\/]client[\\/]runtime[\\/])',
+  ],
+  moduleFileExtensions: ['ts', 'js', 'mjs', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
 };

@@ -35,38 +35,46 @@ DESCRIBE('RLS — cross-tenant isolation', () => {
       );
     }
 
+    // Connect as cliniq_app (PrismaService refuses superusers) and seed through
+    // the same RLS-aware helpers the app uses: tenants need the platform-admin
+    // context (tenants_platform_insert), the patient needs tenant A's context
+    // (patients_isolation). Seeding on a bare connection is rejected by RLS.
     process.env['DATABASE_URL'] = APP_URL!;
     svc = new PrismaService();
     await svc.onModuleInit();
 
-    // Seed two tenants and a patient in tenant A. Use admin connection
-    // (raw query bypassing the app service) — RLS only applies to cliniq_app role.
-    tenantA = await svc.tenant.create({
-      data: { slug: `rls-a-${Date.now()}`, name: 'Tenant A' },
-    });
-    tenantB = await svc.tenant.create({
-      data: { slug: `rls-b-${Date.now()}`, name: 'Tenant B' },
-    });
-    patientA = await svc.patient.create({
-      data: {
-        tenantId: tenantA.id,
-        mrn: 'MRN-1',
-        firstName: 'Juan',
-        lastName: 'Dela Cruz',
-        dateOfBirth: new Date('1990-01-01'),
-        sex: 'MALE',
-      },
-    });
+    [tenantA, tenantB] = await svc.withPlatformContext(async (tx) => [
+      await tx.tenant.create({
+        data: { slug: `rls-a-${Date.now()}`, name: 'Tenant A' },
+      }),
+      await tx.tenant.create({
+        data: { slug: `rls-b-${Date.now()}`, name: 'Tenant B' },
+      }),
+    ]);
+    patientA = await svc.withTenant(tenantA.id, null, (tx) =>
+      tx.patient.create({
+        data: {
+          tenantId: tenantA.id,
+          mrn: 'MRN-1',
+          firstName: 'Juan',
+          lastName: 'Dela Cruz',
+          dateOfBirth: new Date('1990-01-01'),
+          sex: 'MALE',
+        },
+      }),
+    );
   });
 
   afterAll(async () => {
     if (svc) {
-      await svc.patient.deleteMany({
-        where: { tenantId: { in: [tenantA.id, tenantB.id] } },
-      });
-      await svc.tenant.deleteMany({
-        where: { id: { in: [tenantA.id, tenantB.id] } },
-      });
+      await svc.withTenant(tenantA.id, null, (tx) =>
+        tx.patient.deleteMany({ where: { tenantId: tenantA.id } }),
+      );
+      await svc.withPlatformContext((tx) =>
+        tx.tenant.deleteMany({
+          where: { id: { in: [tenantA.id, tenantB.id] } },
+        }),
+      );
       await svc.onModuleDestroy();
     }
   });
