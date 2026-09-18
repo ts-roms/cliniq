@@ -179,6 +179,7 @@
     "pdfkit": "^0.18.0",
     "pg": "^8.20.0",
     "react": "^19.1.0",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.74.0",
     "react-native": "0.81.5",
