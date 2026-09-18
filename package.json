@@ -196,16 +196,5 @@
     "tailwind-merge": "^3.5.0",
     "zod": "^4.4.1",
     "@aws-sdk/client-transcribe": "^3.1041.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "esbuild",
-      "@swc/core",
-      "core-js",
-      "sharp"
-    ]
   }
 }
