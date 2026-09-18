@@ -10,9 +10,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "App"
-        ]
+        "tags": ["App"]
       }
     },
     "/api/ai-budget": {
@@ -29,9 +27,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ai-budget"
-        ]
+        "tags": ["ai-budget"]
       }
     },
     "/api/audit": {
@@ -124,9 +120,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "audit"
-        ]
+        "tags": ["audit"]
       }
     },
     "/api/notifications/push-tokens": {
@@ -153,9 +147,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/notifications/push-tokens/unregister": {
@@ -182,9 +174,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/notifications": {
@@ -210,9 +200,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/notifications/unread-count": {
@@ -229,9 +217,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/notifications/{id}/read": {
@@ -257,9 +243,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/notifications/read-all": {
@@ -276,9 +260,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/notifications/broadcast": {
@@ -305,9 +287,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "notifications"
-        ]
+        "tags": ["notifications"]
       }
     },
     "/api/auth/register": {
@@ -329,9 +309,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/login": {
@@ -353,9 +331,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/refresh": {
@@ -377,9 +353,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/patient-register": {
@@ -401,9 +375,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/logout": {
@@ -426,9 +398,7 @@
           }
         },
         "summary": "Logout — revokes the refresh session and clears the cookies",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/logout-all": {
@@ -440,9 +410,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/forgot-password": {
@@ -464,9 +432,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/reset-password": {
@@ -488,9 +454,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/auth/me": {
@@ -502,9 +466,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/delegations": {
@@ -531,9 +493,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "delegations"
-        ]
+        "tags": ["delegations"]
       }
     },
     "/api/delegations/granted": {
@@ -550,9 +510,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "delegations"
-        ]
+        "tags": ["delegations"]
       }
     },
     "/api/delegations/received-active": {
@@ -569,9 +527,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "delegations"
-        ]
+        "tags": ["delegations"]
       }
     },
     "/api/delegations/eligible-delegatees": {
@@ -588,9 +544,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "delegations"
-        ]
+        "tags": ["delegations"]
       }
     },
     "/api/delegations/{id}/revoke": {
@@ -616,9 +570,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "delegations"
-        ]
+        "tags": ["delegations"]
       }
     },
     "/api/mfa/status": {
@@ -635,9 +587,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "mfa"
-        ]
+        "tags": ["mfa"]
       }
     },
     "/api/mfa/setup": {
@@ -654,9 +604,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "mfa"
-        ]
+        "tags": ["mfa"]
       }
     },
     "/api/mfa/verify": {
@@ -683,9 +631,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "mfa"
-        ]
+        "tags": ["mfa"]
       }
     },
     "/api/mfa/disable": {
@@ -712,9 +658,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "mfa"
-        ]
+        "tags": ["mfa"]
       }
     },
     "/api/members/invites/preview": {
@@ -740,9 +684,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members/invites": {
@@ -759,9 +701,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       },
       "post": {
         "operationId": "MembersController_createInvite",
@@ -786,9 +726,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members/invites/{id}/resend": {
@@ -814,9 +752,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members/invites/{id}": {
@@ -842,9 +778,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members": {
@@ -861,9 +795,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members/{id}/role": {
@@ -899,9 +831,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members/{id}/status": {
@@ -937,9 +867,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/members/{id}": {
@@ -965,9 +893,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "members"
-        ]
+        "tags": ["members"]
       }
     },
     "/api/tenants": {
@@ -989,9 +915,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Tenants"
-        ]
+        "tags": ["Tenants"]
       },
       "get": {
         "operationId": "TenantsController_list",
@@ -1001,9 +925,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Tenants"
-        ]
+        "tags": ["Tenants"]
       }
     },
     "/api/tenants/{slug}": {
@@ -1024,9 +946,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Tenants"
-        ]
+        "tags": ["Tenants"]
       }
     },
     "/api/patients": {
@@ -1053,9 +973,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "patients"
-        ]
+        "tags": ["patients"]
       },
       "get": {
         "operationId": "PatientsController_list",
@@ -1101,9 +1019,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "patients"
-        ]
+        "tags": ["patients"]
       }
     },
     "/api/patients/{id}": {
@@ -1129,9 +1045,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "patients"
-        ]
+        "tags": ["patients"]
       },
       "patch": {
         "operationId": "PatientsController_update",
@@ -1165,9 +1079,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "patients"
-        ]
+        "tags": ["patients"]
       },
       "delete": {
         "operationId": "PatientsController_remove",
@@ -1191,9 +1103,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "patients"
-        ]
+        "tags": ["patients"]
       }
     },
     "/api/patients/{id}/export": {
@@ -1213,10 +1123,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": [
-                "json",
-                "pdf"
-              ],
+              "enum": ["json", "pdf"],
               "type": "string"
             }
           }
@@ -1231,9 +1138,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "patients"
-        ]
+        "tags": ["patients"]
       }
     },
     "/api/patients/{patientId}/consents": {
@@ -1259,9 +1164,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consents"
-        ]
+        "tags": ["consents"]
       },
       "put": {
         "operationId": "ConsentsController_set",
@@ -1295,9 +1198,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consents"
-        ]
+        "tags": ["consents"]
       }
     },
     "/api/consultations": {
@@ -1324,9 +1225,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       },
       "get": {
         "operationId": "ConsultationsController_list",
@@ -1350,9 +1249,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/consultations/{id}": {
@@ -1378,9 +1275,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       },
       "patch": {
         "operationId": "ConsultationsController_update",
@@ -1414,9 +1309,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/consultations/{id}/complete": {
@@ -1442,9 +1335,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/consultations/{id}/drafts/dermatology": {
@@ -1480,9 +1371,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/consultations/{id}/drafts/soap": {
@@ -1518,9 +1407,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/consultations/{id}/suggestions": {
@@ -1546,9 +1433,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/consultations/{id}/suggestions/{sid}": {
@@ -1592,9 +1477,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "consultations"
-        ]
+        "tags": ["consultations"]
       }
     },
     "/api/files/presign": {
@@ -1621,9 +1504,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "files"
-        ]
+        "tags": ["files"]
       }
     },
     "/api/files/confirm": {
@@ -1650,9 +1531,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "files"
-        ]
+        "tags": ["files"]
       }
     },
     "/api/icd-codes/search": {
@@ -1678,9 +1557,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "icd-codes"
-        ]
+        "tags": ["icd-codes"]
       }
     },
     "/api/prescriptions/precheck": {
@@ -1707,9 +1584,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "prescriptions"
-        ]
+        "tags": ["prescriptions"]
       }
     },
     "/api/prescriptions": {
@@ -1736,9 +1611,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "prescriptions"
-        ]
+        "tags": ["prescriptions"]
       },
       "get": {
         "operationId": "PrescriptionsController_list",
@@ -1762,9 +1635,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "prescriptions"
-        ]
+        "tags": ["prescriptions"]
       }
     },
     "/api/prescriptions/{id}": {
@@ -1790,9 +1661,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "prescriptions"
-        ]
+        "tags": ["prescriptions"]
       }
     },
     "/api/prescriptions/{id}/pdf": {
@@ -1818,9 +1687,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "prescriptions"
-        ]
+        "tags": ["prescriptions"]
       }
     },
     "/api/prescriptions/{id}/cancel": {
@@ -1846,9 +1713,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "prescriptions"
-        ]
+        "tags": ["prescriptions"]
       }
     },
     "/api/transcripts": {
@@ -1875,9 +1740,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "transcripts"
-        ]
+        "tags": ["transcripts"]
       }
     },
     "/api/appointments": {
@@ -1904,9 +1767,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       },
       "get": {
         "operationId": "AppointmentsController_list",
@@ -1972,9 +1833,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/no-show-sweep": {
@@ -2001,9 +1860,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}": {
@@ -2029,9 +1886,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}/check-in": {
@@ -2057,9 +1912,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}/start": {
@@ -2085,9 +1938,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}/complete": {
@@ -2113,9 +1964,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}/no-show": {
@@ -2141,9 +1990,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}/reschedule": {
@@ -2179,9 +2026,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/appointments/{id}/cancel": {
@@ -2217,9 +2062,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "appointments"
-        ]
+        "tags": ["appointments"]
       }
     },
     "/api/providers": {
@@ -2236,9 +2079,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "availability"
-        ]
+        "tags": ["availability"]
       }
     },
     "/api/providers/{providerId}/availability": {
@@ -2264,9 +2105,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "availability"
-        ]
+        "tags": ["availability"]
       }
     },
     "/api/providers/{providerId}/availability/slots": {
@@ -2312,9 +2151,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "availability"
-        ]
+        "tags": ["availability"]
       }
     },
     "/api/providers/{providerId}/availability/schedule": {
@@ -2350,9 +2187,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "availability"
-        ]
+        "tags": ["availability"]
       }
     },
     "/api/providers/{providerId}/availability/time-off": {
@@ -2388,9 +2223,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "availability"
-        ]
+        "tags": ["availability"]
       }
     },
     "/api/providers/{providerId}/availability/time-off/{id}": {
@@ -2424,9 +2257,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "availability"
-        ]
+        "tags": ["availability"]
       }
     },
     "/api/patients/{patientId}/allergies": {
@@ -2452,9 +2283,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       },
       "post": {
         "operationId": "ClinicalController_addAllergy",
@@ -2488,9 +2317,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       }
     },
     "/api/patients/{patientId}/allergies/{id}": {
@@ -2524,9 +2351,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       }
     },
     "/api/patients/{patientId}/medications": {
@@ -2552,9 +2377,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       },
       "post": {
         "operationId": "ClinicalController_addMed",
@@ -2588,9 +2411,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       }
     },
     "/api/patients/{patientId}/conditions": {
@@ -2616,9 +2437,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       },
       "post": {
         "operationId": "ClinicalController_addCondition",
@@ -2652,9 +2471,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       }
     },
     "/api/patients/{patientId}/vitals": {
@@ -2680,9 +2497,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       },
       "post": {
         "operationId": "ClinicalController_addVital",
@@ -2716,9 +2531,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinical"
-        ]
+        "tags": ["clinical"]
       }
     },
     "/api/patients/{patientId}/dental-chart": {
@@ -2744,9 +2557,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dental"
-        ]
+        "tags": ["dental"]
       },
       "post": {
         "operationId": "DentalController_upsert",
@@ -2780,9 +2591,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dental"
-        ]
+        "tags": ["dental"]
       }
     },
     "/api/patients/{patientId}/dental-charts": {
@@ -2808,9 +2617,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dental"
-        ]
+        "tags": ["dental"]
       }
     },
     "/api/dental-charts/{id}": {
@@ -2836,9 +2643,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dental"
-        ]
+        "tags": ["dental"]
       },
       "delete": {
         "operationId": "DentalController_remove",
@@ -2862,9 +2667,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dental"
-        ]
+        "tags": ["dental"]
       }
     },
     "/api/drugs/search": {
@@ -2890,9 +2693,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "drugs"
-        ]
+        "tags": ["drugs"]
       }
     },
     "/api/locations": {
@@ -2909,9 +2710,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "locations"
-        ]
+        "tags": ["locations"]
       },
       "post": {
         "operationId": "LocationsController_create",
@@ -2936,9 +2735,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "locations"
-        ]
+        "tags": ["locations"]
       }
     },
     "/api/locations/{id}": {
@@ -2974,9 +2771,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "locations"
-        ]
+        "tags": ["locations"]
       },
       "delete": {
         "operationId": "LocationsController_remove",
@@ -3000,9 +2795,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "locations"
-        ]
+        "tags": ["locations"]
       }
     },
     "/api/retention/run-now": {
@@ -3019,9 +2812,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "retention"
-        ]
+        "tags": ["retention"]
       }
     },
     "/api/services": {
@@ -3038,9 +2829,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       },
       "post": {
         "operationId": "BillingController_createService",
@@ -3065,9 +2854,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       }
     },
     "/api/invoices": {
@@ -3093,9 +2880,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       },
       "post": {
         "operationId": "BillingController_createInvoice",
@@ -3120,9 +2905,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       }
     },
     "/api/invoices/{id}/pdf": {
@@ -3148,9 +2931,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       }
     },
     "/api/invoices/{id}/payments": {
@@ -3186,9 +2967,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "billing"
-        ]
+        "tags": ["billing"]
       }
     },
     "/api/dsr": {
@@ -3215,9 +2994,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dsr"
-        ]
+        "tags": ["dsr"]
       },
       "get": {
         "operationId": "DsrController_list",
@@ -3232,9 +3009,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dsr"
-        ]
+        "tags": ["dsr"]
       }
     },
     "/api/dsr/{id}/resolve": {
@@ -3270,9 +3045,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "dsr"
-        ]
+        "tags": ["dsr"]
       }
     },
     "/api/reports/overview": {
@@ -3289,9 +3062,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "reports"
-        ]
+        "tags": ["reports"]
       }
     },
     "/api/reports/revenue": {
@@ -3329,9 +3100,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "reports"
-        ]
+        "tags": ["reports"]
       }
     },
     "/api/reports/top-services": {
@@ -3380,9 +3149,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "reports"
-        ]
+        "tags": ["reports"]
       }
     },
     "/api/reports/no-shows": {
@@ -3420,9 +3187,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "reports"
-        ]
+        "tags": ["reports"]
       }
     },
     "/api/inventory/items": {
@@ -3439,9 +3204,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       },
       "post": {
         "operationId": "InventoryController_create",
@@ -3466,9 +3229,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/inventory/items/{id}": {
@@ -3494,9 +3255,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       },
       "patch": {
         "operationId": "InventoryController_update",
@@ -3530,9 +3289,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/inventory/items/{id}/receive": {
@@ -3568,9 +3325,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/inventory/items/{id}/dispense": {
@@ -3606,9 +3361,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/inventory/items/{id}/adjust": {
@@ -3644,9 +3397,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/inventory/reports/low-stock": {
@@ -3663,9 +3414,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/inventory/reports/expiring": {
@@ -3682,9 +3431,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "inventory"
-        ]
+        "tags": ["inventory"]
       }
     },
     "/api/hmo/providers": {
@@ -3701,9 +3448,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       },
       "post": {
         "operationId": "HmoController_createProvider",
@@ -3728,9 +3473,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/hmo/providers/{id}": {
@@ -3766,9 +3509,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/patients/{patientId}/hmo-memberships": {
@@ -3794,9 +3535,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       },
       "post": {
         "operationId": "HmoController_addMembership",
@@ -3830,9 +3569,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/hmo/claims": {
@@ -3849,9 +3586,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/invoices/{id}/hmo-claims": {
@@ -3887,9 +3622,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/hmo/claims/{id}": {
@@ -3925,9 +3658,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/hmo/claims/{id}/payments": {
@@ -3963,9 +3694,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "hmo"
-        ]
+        "tags": ["hmo"]
       }
     },
     "/api/patients/{patientId}/lab-orders": {
@@ -3991,9 +3720,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       }
     },
     "/api/consultations/{id}/lab-orders": {
@@ -4019,9 +3746,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       }
     },
     "/api/lab-orders/{id}": {
@@ -4047,9 +3772,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       },
       "patch": {
         "operationId": "LabsController_update",
@@ -4083,9 +3806,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       }
     },
     "/api/lab-orders": {
@@ -4112,9 +3833,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       }
     },
     "/api/lab-orders/{id}/cancel": {
@@ -4140,9 +3859,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       }
     },
     "/api/lab-orders/{id}/items/{itemId}": {
@@ -4186,9 +3903,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "labs"
-        ]
+        "tags": ["labs"]
       }
     },
     "/api/tele/sessions": {
@@ -4215,9 +3930,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/sessions/{id}": {
@@ -4243,9 +3956,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/sessions/{id}/end": {
@@ -4271,9 +3982,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/sessions/{id}/notify-sms": {
@@ -4299,9 +4008,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/join": {
@@ -4328,9 +4035,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/sessions/{id}/recording-consent": {
@@ -4364,9 +4069,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/ice": {
@@ -4383,9 +4086,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/sessions/{id}/signals": {
@@ -4427,9 +4128,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       },
       "post": {
         "operationId": "TeleController_postSignalPatient",
@@ -4471,9 +4170,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tele/sessions/{id}/signals/provider": {
@@ -4507,9 +4204,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       },
       "post": {
         "operationId": "TeleController_postSignalProvider",
@@ -4543,9 +4238,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "tele"
-        ]
+        "tags": ["tele"]
       }
     },
     "/api/tenants/me/settings": {
@@ -4562,9 +4255,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "settings"
-        ]
+        "tags": ["settings"]
       },
       "patch": {
         "operationId": "SettingsController_update",
@@ -4589,9 +4280,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "settings"
-        ]
+        "tags": ["settings"]
       }
     },
     "/api/calendars/providers/{id}/feed-token": {
@@ -4617,9 +4306,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "calendars"
-        ]
+        "tags": ["calendars"]
       }
     },
     "/api/calendars/providers/{tenantId}/{id}.ics": {
@@ -4662,9 +4349,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "calendars"
-        ]
+        "tags": ["calendars"]
       }
     },
     "/api/me/profile": {
@@ -4681,9 +4366,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "me"
-        ]
+        "tags": ["me"]
       }
     },
     "/api/me/appointments": {
@@ -4700,9 +4383,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "me"
-        ]
+        "tags": ["me"]
       }
     },
     "/api/me/invoices": {
@@ -4719,9 +4400,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "me"
-        ]
+        "tags": ["me"]
       }
     },
     "/api/me/records": {
@@ -4738,9 +4417,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "me"
-        ]
+        "tags": ["me"]
       }
     },
     "/api/me/tele/active": {
@@ -4757,9 +4434,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "me"
-        ]
+        "tags": ["me"]
       }
     },
     "/api/me/invoices/{id}/pdf": {
@@ -4785,9 +4460,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "me"
-        ]
+        "tags": ["me"]
       }
     },
     "/api/health": {
@@ -4799,9 +4472,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/api/health/lab-readiness": {
@@ -4813,9 +4484,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/api/platform/auth/login": {
@@ -4837,9 +4506,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "platform-auth"
-        ]
+        "tags": ["platform-auth"]
       }
     },
     "/api/platform/auth/refresh": {
@@ -4861,9 +4528,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "platform-auth"
-        ]
+        "tags": ["platform-auth"]
       }
     },
     "/api/platform/auth/logout": {
@@ -4876,9 +4541,7 @@
           }
         },
         "summary": "Platform logout — clears the platform session cookies",
-        "tags": [
-          "platform-auth"
-        ]
+        "tags": ["platform-auth"]
       }
     },
     "/api/platform/auth/me": {
@@ -4895,9 +4558,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "platform-auth"
-        ]
+        "tags": ["platform-auth"]
       }
     },
     "/api/platform/tenants/catalog": {
@@ -4914,9 +4575,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "platform-tenants"
-        ]
+        "tags": ["platform-tenants"]
       }
     },
     "/api/platform/tenants": {
@@ -4974,9 +4633,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "platform-tenants"
-        ]
+        "tags": ["platform-tenants"]
       },
       "post": {
         "operationId": "PlatformTenantsController_create",
@@ -5001,9 +4658,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "platform-tenants"
-        ]
+        "tags": ["platform-tenants"]
       }
     },
     "/api/platform/tenants/{id}": {
@@ -5029,9 +4684,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "platform-tenants"
-        ]
+        "tags": ["platform-tenants"]
       },
       "patch": {
         "operationId": "PlatformTenantsController_update",
@@ -5065,9 +4718,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "platform-tenants"
-        ]
+        "tags": ["platform-tenants"]
       }
     },
     "/api/lab/clinic-links/invite": {
@@ -5094,9 +4745,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-clinic-links"
-        ]
+        "tags": ["lab-clinic-links"]
       }
     },
     "/api/lab/clinic-links": {
@@ -5113,9 +4762,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-clinic-links"
-        ]
+        "tags": ["lab-clinic-links"]
       }
     },
     "/api/lab/clinic-links/{id}": {
@@ -5141,9 +4788,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-clinic-links"
-        ]
+        "tags": ["lab-clinic-links"]
       }
     },
     "/api/lab/clinic-links/{id}/suspend": {
@@ -5169,9 +4814,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-clinic-links"
-        ]
+        "tags": ["lab-clinic-links"]
       }
     },
     "/api/lab/clinic-links/{id}/reactivate": {
@@ -5197,9 +4840,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-clinic-links"
-        ]
+        "tags": ["lab-clinic-links"]
       }
     },
     "/api/lab/categories": {
@@ -5216,9 +4857,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       },
       "post": {
         "operationId": "LabProductsController_createCategory",
@@ -5243,9 +4882,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       }
     },
     "/api/lab/categories/{id}": {
@@ -5281,9 +4918,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       },
       "delete": {
         "operationId": "LabProductsController_removeCategory",
@@ -5307,9 +4942,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       }
     },
     "/api/lab/products": {
@@ -5343,9 +4976,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       },
       "post": {
         "operationId": "LabProductsController_createProduct",
@@ -5370,9 +5001,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       }
     },
     "/api/lab/products/{id}": {
@@ -5398,9 +5027,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       },
       "patch": {
         "operationId": "LabProductsController_updateProduct",
@@ -5434,9 +5061,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       },
       "delete": {
         "operationId": "LabProductsController_removeProduct",
@@ -5460,9 +5085,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       }
     },
     "/api/lab/products/{id}/clone": {
@@ -5488,9 +5111,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-products"
-        ]
+        "tags": ["lab-products"]
       }
     },
     "/api/lab/cases": {
@@ -5546,9 +5167,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}": {
@@ -5574,9 +5193,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       },
       "patch": {
         "operationId": "LabCasesController_update",
@@ -5610,9 +5227,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/transitions": {
@@ -5648,9 +5263,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/files/presign": {
@@ -5686,9 +5299,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/files/{fileId}/confirm": {
@@ -5722,9 +5333,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/files/{fileId}": {
@@ -5758,9 +5367,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/phases": {
@@ -5786,9 +5393,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/phases/advance": {
@@ -5824,9 +5429,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/notes": {
@@ -5852,9 +5455,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       },
       "post": {
         "operationId": "LabCasesController_createNote",
@@ -5888,9 +5489,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/notes/{noteId}": {
@@ -5934,9 +5533,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       },
       "delete": {
         "operationId": "LabCasesController_deleteNote",
@@ -5968,9 +5565,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/messages": {
@@ -5996,9 +5591,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       },
       "post": {
         "operationId": "LabCasesController_createMessage",
@@ -6032,9 +5625,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/messages/{messageId}": {
@@ -6068,9 +5659,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/shipment": {
@@ -6096,9 +5685,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       },
       "post": {
         "operationId": "LabCasesController_upsertShipment",
@@ -6132,9 +5719,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/cases/{id}/shipment/delivered": {
@@ -6160,9 +5745,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-cases"
-        ]
+        "tags": ["lab-cases"]
       }
     },
     "/api/lab/tags": {
@@ -6179,9 +5762,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       },
       "post": {
         "operationId": "LabTagsController_create",
@@ -6206,9 +5787,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       }
     },
     "/api/lab/tags/{id}": {
@@ -6244,9 +5823,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       },
       "delete": {
         "operationId": "LabTagsController_remove",
@@ -6270,9 +5847,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       }
     },
     "/api/lab/cases/{caseId}/tags": {
@@ -6298,9 +5873,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       },
       "post": {
         "operationId": "LabTagsController_assign",
@@ -6334,9 +5907,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       }
     },
     "/api/lab/cases/{caseId}/tags/{tagId}": {
@@ -6370,9 +5941,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-tags"
-        ]
+        "tags": ["lab-tags"]
       }
     },
     "/api/lab/materials": {
@@ -6389,9 +5958,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       },
       "post": {
         "operationId": "LabMaterialsController_create",
@@ -6416,9 +5983,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       }
     },
     "/api/lab/materials/{id}": {
@@ -6454,9 +6019,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       },
       "delete": {
         "operationId": "LabMaterialsController_remove",
@@ -6480,9 +6043,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       }
     },
     "/api/lab/materials/{id}/lots": {
@@ -6508,9 +6069,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       },
       "post": {
         "operationId": "LabMaterialsController_createLot",
@@ -6544,9 +6103,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       }
     },
     "/api/lab/lots/{lotId}": {
@@ -6582,9 +6139,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       },
       "delete": {
         "operationId": "LabMaterialsController_removeLot",
@@ -6608,9 +6163,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       }
     },
     "/api/lab/cases/{caseId}/material-usages": {
@@ -6636,9 +6189,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       },
       "post": {
         "operationId": "LabMaterialsController_recordUsage",
@@ -6672,9 +6223,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       }
     },
     "/api/lab/cases/{caseId}/material-usages/{usageId}": {
@@ -6708,9 +6257,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-materials"
-        ]
+        "tags": ["lab-materials"]
       }
     },
     "/api/lab/conformity-templates": {
@@ -6727,9 +6274,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       },
       "post": {
         "operationId": "LabComplianceController_createConformity",
@@ -6754,9 +6299,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/lab/conformity-templates/{id}": {
@@ -6792,9 +6335,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       },
       "delete": {
         "operationId": "LabComplianceController_removeConformity",
@@ -6818,9 +6359,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/lab/consent-templates": {
@@ -6837,9 +6376,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       },
       "post": {
         "operationId": "LabComplianceController_createConsent",
@@ -6864,9 +6401,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/lab/consent-templates/{id}": {
@@ -6902,9 +6437,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       },
       "delete": {
         "operationId": "LabComplianceController_removeConsent",
@@ -6928,9 +6461,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/clinic/consent-templates": {
@@ -6947,9 +6478,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/lab/cases/{caseId}/signatures": {
@@ -6975,9 +6504,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       },
       "post": {
         "operationId": "LabComplianceController_captureFromLab",
@@ -7011,9 +6538,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/clinic/lab-cases/{caseId}/signatures": {
@@ -7039,9 +6564,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       },
       "post": {
         "operationId": "LabComplianceController_captureFromClinic",
@@ -7075,9 +6598,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/lab/cases/{caseId}/conformity-pdf": {
@@ -7111,9 +6632,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-compliance"
-        ]
+        "tags": ["lab-compliance"]
       }
     },
     "/api/lab/invoices": {
@@ -7169,9 +6688,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       },
       "post": {
         "operationId": "LabInvoicesController_create",
@@ -7196,9 +6713,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}": {
@@ -7224,9 +6739,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       },
       "patch": {
         "operationId": "LabInvoicesController_update",
@@ -7260,9 +6773,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/generate-from-cases": {
@@ -7289,9 +6800,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/sweep": {
@@ -7317,9 +6826,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/items": {
@@ -7355,9 +6862,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/items/{itemId}": {
@@ -7401,9 +6906,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       },
       "delete": {
         "operationId": "LabInvoicesController_deleteItem",
@@ -7435,9 +6938,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/issue": {
@@ -7463,9 +6964,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/payments": {
@@ -7501,9 +7000,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/void": {
@@ -7529,9 +7026,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/pdf": {
@@ -7557,9 +7052,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/payment-links": {
@@ -7595,9 +7088,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/lab/invoices/{id}/payment-links/{linkId}": {
@@ -7631,9 +7122,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-invoices"
-        ]
+        "tags": ["lab-invoices"]
       }
     },
     "/api/webhooks/paymongo": {
@@ -7654,9 +7143,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "webhooks"
-        ]
+        "tags": ["webhooks"]
       }
     },
     "/api/lab/stats": {
@@ -7673,9 +7160,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-stats"
-        ]
+        "tags": ["lab-stats"]
       }
     },
     "/api/lab/treatment-plans": {
@@ -7701,9 +7186,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       },
       "post": {
         "operationId": "LabTreatmentPlansController_create",
@@ -7728,9 +7211,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       }
     },
     "/api/lab/treatment-plans/{id}": {
@@ -7756,9 +7237,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       },
       "patch": {
         "operationId": "LabTreatmentPlansController_update",
@@ -7792,9 +7271,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       }
     },
     "/api/lab/treatment-plans/{id}/propose": {
@@ -7820,9 +7297,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       }
     },
     "/api/lab/treatment-plans/{id}/files/presign": {
@@ -7858,9 +7333,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       }
     },
     "/api/lab/treatment-plans/{id}/files/{fileId}": {
@@ -7894,9 +7367,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       }
     },
     "/api/lab/treatment-plans/draft-summary": {
@@ -7922,9 +7393,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-treatment-plans"
-        ]
+        "tags": ["lab-treatment-plans"]
       }
     },
     "/api/lab/disputes": {
@@ -7950,9 +7419,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-disputes"
-        ]
+        "tags": ["lab-disputes"]
       },
       "post": {
         "operationId": "LabDisputesController_open",
@@ -7977,9 +7444,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-disputes"
-        ]
+        "tags": ["lab-disputes"]
       }
     },
     "/api/lab/disputes/{id}": {
@@ -8005,9 +7470,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-disputes"
-        ]
+        "tags": ["lab-disputes"]
       }
     },
     "/api/lab/disputes/{id}/messages": {
@@ -8043,9 +7506,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-disputes"
-        ]
+        "tags": ["lab-disputes"]
       }
     },
     "/api/lab/disputes/{id}/close": {
@@ -8081,9 +7542,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "lab-disputes"
-        ]
+        "tags": ["lab-disputes"]
       }
     },
     "/api/clinic/lab-invitations": {
@@ -8100,9 +7559,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invitations"
-        ]
+        "tags": ["clinic-lab-invitations"]
       }
     },
     "/api/clinic/lab-invitations/{id}/accept": {
@@ -8128,9 +7585,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invitations"
-        ]
+        "tags": ["clinic-lab-invitations"]
       }
     },
     "/api/clinic/lab-invitations/{id}/reject": {
@@ -8156,9 +7611,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invitations"
-        ]
+        "tags": ["clinic-lab-invitations"]
       }
     },
     "/api/clinic/lab-invitations/{id}/suspend": {
@@ -8184,9 +7637,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invitations"
-        ]
+        "tags": ["clinic-lab-invitations"]
       }
     },
     "/api/clinic/lab-invitations/{id}/reactivate": {
@@ -8212,9 +7663,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invitations"
-        ]
+        "tags": ["clinic-lab-invitations"]
       }
     },
     "/api/clinic/lab-cases": {
@@ -8241,9 +7690,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       },
       "get": {
         "operationId": "ClinicLabCasesController_list",
@@ -8297,9 +7744,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}": {
@@ -8325,9 +7770,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       },
       "patch": {
         "operationId": "ClinicLabCasesController_update",
@@ -8361,9 +7804,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/transitions": {
@@ -8399,9 +7840,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/files/presign": {
@@ -8437,9 +7876,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/files/{fileId}/confirm": {
@@ -8473,9 +7910,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/files/{fileId}": {
@@ -8509,9 +7944,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/phases": {
@@ -8537,9 +7970,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/messages": {
@@ -8565,9 +7996,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       },
       "post": {
         "operationId": "ClinicLabCasesController_createMessage",
@@ -8601,9 +8030,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/messages/{messageId}": {
@@ -8637,9 +8064,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/shipment": {
@@ -8665,9 +8090,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-cases/{id}/shipment/delivered": {
@@ -8693,9 +8116,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-cases"
-        ]
+        "tags": ["clinic-lab-cases"]
       }
     },
     "/api/clinic/lab-invoices": {
@@ -8751,9 +8172,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invoices"
-        ]
+        "tags": ["clinic-lab-invoices"]
       }
     },
     "/api/clinic/lab-invoices/{id}": {
@@ -8779,9 +8198,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invoices"
-        ]
+        "tags": ["clinic-lab-invoices"]
       }
     },
     "/api/clinic/lab-invoices/{id}/pdf": {
@@ -8807,9 +8224,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-invoices"
-        ]
+        "tags": ["clinic-lab-invoices"]
       }
     },
     "/api/clinic/lab-treatment-plans": {
@@ -8835,9 +8250,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-treatment-plans"
-        ]
+        "tags": ["clinic-lab-treatment-plans"]
       }
     },
     "/api/clinic/lab-treatment-plans/{id}": {
@@ -8863,9 +8276,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-treatment-plans"
-        ]
+        "tags": ["clinic-lab-treatment-plans"]
       }
     },
     "/api/clinic/lab-treatment-plans/{id}/decisions": {
@@ -8901,9 +8312,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-treatment-plans"
-        ]
+        "tags": ["clinic-lab-treatment-plans"]
       }
     },
     "/api/clinic/lab-disputes": {
@@ -8929,9 +8338,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-disputes"
-        ]
+        "tags": ["clinic-lab-disputes"]
       },
       "post": {
         "operationId": "ClinicLabDisputesController_open",
@@ -8956,9 +8363,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-disputes"
-        ]
+        "tags": ["clinic-lab-disputes"]
       }
     },
     "/api/clinic/lab-disputes/{id}": {
@@ -8984,9 +8389,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-disputes"
-        ]
+        "tags": ["clinic-lab-disputes"]
       }
     },
     "/api/clinic/lab-disputes/{id}/messages": {
@@ -9022,9 +8425,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-disputes"
-        ]
+        "tags": ["clinic-lab-disputes"]
       }
     },
     "/api/clinic/lab-disputes/{id}/close": {
@@ -9060,9 +8461,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "clinic-lab-disputes"
-        ]
+        "tags": ["clinic-lab-disputes"]
       }
     },
     "/api/queue/queues": {
@@ -9079,9 +8478,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       },
       "post": {
         "operationId": "QueueController_createQueue",
@@ -9106,9 +8503,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       }
     },
     "/api/queue/queues/{id}": {
@@ -9144,9 +8539,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       }
     },
     "/api/queue/display": {
@@ -9163,9 +8556,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       }
     },
     "/api/queue/tickets": {
@@ -9192,9 +8583,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       }
     },
     "/api/queue/queues/{id}/call-next": {
@@ -9220,9 +8609,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       }
     },
     "/api/queue/tickets/{id}/close": {
@@ -9258,9 +8645,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "queue"
-        ]
+        "tags": ["queue"]
       }
     },
     "/api/ob/pregnancies": {
@@ -9286,9 +8671,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       },
       "post": {
         "operationId": "ObController_create",
@@ -9313,9 +8696,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     },
     "/api/ob/pregnancies/{id}": {
@@ -9351,9 +8732,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     },
     "/api/ob/visits": {
@@ -9380,9 +8759,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     },
     "/api/ob/ultrasound": {
@@ -9408,9 +8785,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       },
       "post": {
         "operationId": "ObController_createUltrasound",
@@ -9435,9 +8810,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     },
     "/api/ob/ultrasound/{id}": {
@@ -9463,9 +8836,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     },
     "/api/ob/ultrasound/{id}/files/presign": {
@@ -9501,9 +8872,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     },
     "/api/ob/ultrasound/{id}/files/{fileId}": {
@@ -9537,9 +8906,7 @@
             "jwt": []
           }
         ],
-        "tags": [
-          "ob"
-        ]
+        "tags": ["ob"]
       }
     }
   },
@@ -9579,19 +8946,10 @@
           },
           "platform": {
             "type": "string",
-            "enum": [
-              "ios",
-              "android",
-              "web",
-              "unknown"
-            ]
+            "enum": ["ios", "android", "web", "unknown"]
           }
         },
-        "required": [
-          "deviceId",
-          "token",
-          "platform"
-        ]
+        "required": ["deviceId", "token", "platform"]
       },
       "UnregisterPushTokenDto": {
         "type": "object",
@@ -9602,9 +8960,7 @@
             "maxLength": 200
           }
         },
-        "required": [
-          "deviceId"
-        ]
+        "required": ["deviceId"]
       },
       "BroadcastDto": {
         "type": "object",
@@ -9620,11 +8976,7 @@
           },
           "severity": {
             "type": "string",
-            "enum": [
-              "INFO",
-              "WARNING",
-              "CRITICAL"
-            ],
+            "enum": ["INFO", "WARNING", "CRITICAL"],
             "default": "INFO"
           },
           "roles": {
@@ -9647,9 +8999,7 @@
             "description": "Optional in-app link, e.g. /admin/dsr"
           }
         },
-        "required": [
-          "title"
-        ]
+        "required": ["title"]
       },
       "RegisterDto": {
         "type": "object",
@@ -9676,12 +9026,7 @@
             "description": "One-shot token from POST /tenants (password-less create). Registers the first OWNER."
           }
         },
-        "required": [
-          "email",
-          "name",
-          "password",
-          "tenantSlug"
-        ]
+        "required": ["email", "name", "password", "tenantSlug"]
       },
       "LoginDto": {
         "type": "object",
@@ -9697,10 +9042,7 @@
             "description": "6-digit TOTP code or hex backup code"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "RefreshTokenDto": {
         "type": "object",
@@ -9730,12 +9072,7 @@
             "minLength": 8
           }
         },
-        "required": [
-          "tenantSlug",
-          "mrn",
-          "email",
-          "password"
-        ]
+        "required": ["tenantSlug", "mrn", "email", "password"]
       },
       "LogoutDto": {
         "type": "object",
@@ -9752,9 +9089,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email"
-        ]
+        "required": ["email"]
       },
       "ResetPasswordDto": {
         "type": "object",
@@ -9768,10 +9103,7 @@
             "minLength": 8
           }
         },
-        "required": [
-          "token",
-          "password"
-        ]
+        "required": ["token", "password"]
       },
       "CreateDelegationDto": {
         "type": "object",
@@ -9801,11 +9133,7 @@
             }
           }
         },
-        "required": [
-          "delegateeId",
-          "startsAt",
-          "endsAt"
-        ]
+        "required": ["delegateeId", "startsAt", "endsAt"]
       },
       "VerifyTotpDto": {
         "type": "object",
@@ -9815,9 +9143,7 @@
             "description": "6-digit TOTP code from authenticator app"
           }
         },
-        "required": [
-          "code"
-        ]
+        "required": ["code"]
       },
       "DisableMfaDto": {
         "type": "object",
@@ -9827,9 +9153,7 @@
             "description": "Current TOTP code (proves possession before disabling)"
           }
         },
-        "required": [
-          "code"
-        ]
+        "required": ["code"]
       },
       "CreateInviteDto": {
         "type": "object",
@@ -9839,52 +9163,30 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "OWNER",
-              "ADMIN",
-              "DOCTOR",
-              "NURSE",
-              "RECEPTIONIST"
-            ]
+            "enum": ["OWNER", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"]
           }
         },
-        "required": [
-          "email",
-          "role"
-        ]
+        "required": ["email", "role"]
       },
       "ChangeRoleDto": {
         "type": "object",
         "properties": {
           "role": {
             "type": "string",
-            "enum": [
-              "OWNER",
-              "ADMIN",
-              "DOCTOR",
-              "NURSE",
-              "RECEPTIONIST"
-            ]
+            "enum": ["OWNER", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"]
           }
         },
-        "required": [
-          "role"
-        ]
+        "required": ["role"]
       },
       "ChangeStatusDto": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "ACTIVE",
-              "SUSPENDED"
-            ]
+            "enum": ["ACTIVE", "SUSPENDED"]
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "CreateTenantDto": {
         "type": "object",
@@ -9923,10 +9225,7 @@
             "default": "v1"
           }
         },
-        "required": [
-          "type",
-          "granted"
-        ]
+        "required": ["type", "granted"]
       },
       "StartConsultationDto": {
         "type": "object",
@@ -9984,9 +9283,7 @@
             "description": "Patient-reported complaint for context"
           }
         },
-        "required": [
-          "fileIds"
-        ]
+        "required": ["fileIds"]
       },
       "GenerateSoapDto": {
         "type": "object",
@@ -9996,20 +9293,14 @@
             "description": "Raw transcript (audio STT or typed)"
           }
         },
-        "required": [
-          "transcript"
-        ]
+        "required": ["transcript"]
       },
       "DecideAiSuggestionDto": {
         "type": "object",
         "properties": {
           "decision": {
             "type": "string",
-            "enum": [
-              "ACCEPT",
-              "EDIT_ACCEPT",
-              "REJECT"
-            ]
+            "enum": ["ACCEPT", "EDIT_ACCEPT", "REJECT"]
           },
           "editedContent": {
             "type": "object",
@@ -10020,9 +9311,7 @@
             "description": "Edit distance vs original draft"
           }
         },
-        "required": [
-          "decision"
-        ]
+        "required": ["decision"]
       },
       "PresignRequestDto": {
         "type": "object",
@@ -10059,12 +9348,7 @@
             "description": "Mark as PHI. Defaults true for clinical categories."
           }
         },
-        "required": [
-          "category",
-          "filename",
-          "mimeType",
-          "sizeBytes"
-        ]
+        "required": ["category", "filename", "mimeType", "sizeBytes"]
       },
       "ConfirmUploadDto": {
         "type": "object",
@@ -10073,9 +9357,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "fileId"
-        ]
+        "required": ["fileId"]
       },
       "PrescriptionItemInputDto": {
         "type": "object",
@@ -10118,11 +9400,7 @@
             "default": 0
           }
         },
-        "required": [
-          "drugName",
-          "dose",
-          "frequency"
-        ]
+        "required": ["drugName", "dose", "frequency"]
       },
       "CreatePrescriptionDto": {
         "type": "object",
@@ -10163,10 +9441,7 @@
             "default": false
           }
         },
-        "required": [
-          "patientId",
-          "items"
-        ]
+        "required": ["patientId", "items"]
       },
       "TranscribeFileDto": {
         "type": "object",
@@ -10176,9 +9451,7 @@
             "description": "fileId returned by POST /api/files/presign"
           }
         },
-        "required": [
-          "fileId"
-        ]
+        "required": ["fileId"]
       },
       "CreateAppointmentDto": {
         "type": "object",
@@ -10201,12 +9474,7 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "CONSULT",
-              "FOLLOWUP",
-              "PROCEDURE",
-              "TELEMED"
-            ],
+            "enum": ["CONSULT", "FOLLOWUP", "PROCEDURE", "TELEMED"],
             "default": "CONSULT"
           },
           "reason": {
@@ -10221,12 +9489,7 @@
             "default": false
           }
         },
-        "required": [
-          "patientId",
-          "providerId",
-          "startsAt",
-          "endsAt"
-        ]
+        "required": ["patientId", "providerId", "startsAt", "endsAt"]
       },
       "NoShowSweepDto": {
         "type": "object",
@@ -10261,10 +9524,7 @@
             "default": false
           }
         },
-        "required": [
-          "startsAt",
-          "endsAt"
-        ]
+        "required": ["startsAt", "endsAt"]
       },
       "CancelAppointmentDto": {
         "type": "object",
@@ -10298,11 +9558,7 @@
             "maximum": 480
           }
         },
-        "required": [
-          "weekday",
-          "startTime",
-          "endTime"
-        ]
+        "required": ["weekday", "startTime", "endTime"]
       },
       "SetWeeklyScheduleDto": {
         "type": "object",
@@ -10314,9 +9570,7 @@
             }
           }
         },
-        "required": [
-          "ranges"
-        ]
+        "required": ["ranges"]
       },
       "CreateTimeOffDto": {
         "type": "object",
@@ -10335,10 +9589,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "startsAt",
-          "endsAt"
-        ]
+        "required": ["startsAt", "endsAt"]
       },
       "CreateAllergyDto": {
         "type": "object",
@@ -10348,31 +9599,17 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "DRUG",
-              "FOOD",
-              "ENVIRONMENTAL",
-              "OTHER"
-            ]
+            "enum": ["DRUG", "FOOD", "ENVIRONMENTAL", "OTHER"]
           },
           "severity": {
             "type": "string",
-            "enum": [
-              "MILD",
-              "MODERATE",
-              "SEVERE",
-              "LIFE_THREATENING"
-            ]
+            "enum": ["MILD", "MODERATE", "SEVERE", "LIFE_THREATENING"]
           },
           "reaction": {
             "type": "string"
           }
         },
-        "required": [
-          "substance",
-          "type",
-          "severity"
-        ]
+        "required": ["substance", "type", "severity"]
       },
       "CreateMedicationDto": {
         "type": "object",
@@ -10396,19 +9633,13 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "ACTIVE",
-              "STOPPED",
-              "COMPLETED"
-            ]
+            "enum": ["ACTIVE", "STOPPED", "COMPLETED"]
           },
           "notes": {
             "type": "string"
           }
         },
-        "required": [
-          "drugName"
-        ]
+        "required": ["drugName"]
       },
       "CreateConditionDto": {
         "type": "object",
@@ -10421,11 +9652,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "ACTIVE",
-              "RESOLVED",
-              "CHRONIC"
-            ]
+            "enum": ["ACTIVE", "RESOLVED", "CHRONIC"]
           },
           "diagnosedOn": {
             "format": "date-time",
@@ -10435,9 +9662,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CreateVitalDto": {
         "type": "object",
@@ -10479,13 +9704,7 @@
         "properties": {
           "surface": {
             "type": "string",
-            "enum": [
-              "M",
-              "O",
-              "D",
-              "B",
-              "L"
-            ]
+            "enum": ["M", "O", "D", "B", "L"]
           },
           "finding": {
             "type": "string",
@@ -10502,10 +9721,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "surface",
-          "finding"
-        ]
+        "required": ["surface", "finding"]
       },
       "ToothEntryDto": {
         "type": "object",
@@ -10539,20 +9755,14 @@
             }
           }
         },
-        "required": [
-          "toothCode"
-        ]
+        "required": ["toothCode"]
       },
       "UpsertDentalChartDto": {
         "type": "object",
         "properties": {
           "dentition": {
             "type": "string",
-            "enum": [
-              "ADULT",
-              "DECIDUOUS",
-              "MIXED"
-            ],
+            "enum": ["ADULT", "DECIDUOUS", "MIXED"],
             "default": "ADULT"
           },
           "notes": {
@@ -10569,9 +9779,7 @@
             }
           }
         },
-        "required": [
-          "teeth"
-        ]
+        "required": ["teeth"]
       },
       "CreateLocationDto": {
         "type": "object",
@@ -10601,9 +9809,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateLocationDto": {
         "type": "object",
@@ -10636,9 +9842,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CreateServiceDto": {
         "type": "object",
@@ -10657,10 +9861,7 @@
             "description": "Price in centavos"
           }
         },
-        "required": [
-          "name",
-          "priceCentavos"
-        ]
+        "required": ["name", "priceCentavos"]
       },
       "InvoiceItemInputDto": {
         "type": "object",
@@ -10680,11 +9881,7 @@
             "description": "Unit price in centavos"
           }
         },
-        "required": [
-          "description",
-          "quantity",
-          "unitPriceCentavos"
-        ]
+        "required": ["description", "quantity", "unitPriceCentavos"]
       },
       "CreateInvoiceDto": {
         "type": "object",
@@ -10710,10 +9907,7 @@
             }
           }
         },
-        "required": [
-          "patientId",
-          "items"
-        ]
+        "required": ["patientId", "items"]
       },
       "RecordPaymentDto": {
         "type": "object",
@@ -10740,10 +9934,7 @@
             "description": "Gateway / OR reference"
           }
         },
-        "required": [
-          "amountCentavos",
-          "method"
-        ]
+        "required": ["amountCentavos", "method"]
       },
       "FileDsrDto": {
         "type": "object",
@@ -10765,30 +9956,20 @@
             "type": "string"
           }
         },
-        "required": [
-          "patientId",
-          "type"
-        ]
+        "required": ["patientId", "type"]
       },
       "ResolveDsrDto": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "OPEN",
-              "IN_PROGRESS",
-              "RESOLVED",
-              "REJECTED"
-            ]
+            "enum": ["OPEN", "IN_PROGRESS", "RESOLVED", "REJECTED"]
           },
           "resolution": {
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "CreateItemDto": {
         "type": "object",
@@ -10821,10 +10002,7 @@
             "default": false
           }
         },
-        "required": [
-          "sku",
-          "name"
-        ]
+        "required": ["sku", "name"]
       },
       "UpdateItemDto": {
         "type": "object",
@@ -10878,9 +10056,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "receivedQty"
-        ]
+        "required": ["receivedQty"]
       },
       "DispenseStockDto": {
         "type": "object",
@@ -10896,9 +10072,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "quantity"
-        ]
+        "required": ["quantity"]
       },
       "AdjustStockDto": {
         "type": "object",
@@ -10915,9 +10089,7 @@
             "description": "Specific batch to adjust; defaults to FEFO order"
           }
         },
-        "required": [
-          "delta"
-        ]
+        "required": ["delta"]
       },
       "CreateHmoProviderDto": {
         "type": "object",
@@ -10935,9 +10107,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateProviderDto": {
         "type": "object",
@@ -10977,10 +10147,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "providerId",
-          "memberId"
-        ]
+        "required": ["providerId", "memberId"]
       },
       "FileClaimDto": {
         "type": "object",
@@ -10996,10 +10163,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "membershipId",
-          "claimedCentavos"
-        ]
+        "required": ["membershipId", "claimedCentavos"]
       },
       "HmoClaimStatus": {
         "type": "string",
@@ -11054,9 +10218,7 @@
             "description": "HMO payment reference (PRA, voucher #)"
           }
         },
-        "required": [
-          "amountCentavos"
-        ]
+        "required": ["amountCentavos"]
       },
       "LabOrderItemInputDto": {
         "type": "object",
@@ -11080,9 +10242,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "testName"
-        ]
+        "required": ["testName"]
       },
       "CreateLabOrderDto": {
         "type": "object",
@@ -11109,10 +10269,7 @@
             }
           }
         },
-        "required": [
-          "patientId",
-          "items"
-        ]
+        "required": ["patientId", "items"]
       },
       "UpdateLabOrderDto": {
         "type": "object",
@@ -11170,9 +10327,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "resultValue"
-        ]
+        "required": ["resultValue"]
       },
       "CreateSessionDto": {
         "type": "object",
@@ -11187,9 +10342,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "patientId"
-        ]
+        "required": ["patientId"]
       },
       "JoinSessionDto": {
         "type": "object",
@@ -11199,9 +10352,7 @@
             "description": "joinToken from session create response"
           }
         },
-        "required": [
-          "joinToken"
-        ]
+        "required": ["joinToken"]
       },
       "PostSignalDto": {
         "type": "object",
@@ -11224,10 +10375,7 @@
             "description": "Opaque signaling payload (SDP, ICE candidate, chat text)"
           }
         },
-        "required": [
-          "kind",
-          "payload"
-        ]
+        "required": ["kind", "payload"]
       },
       "BrandingDto": {
         "type": "object",
@@ -11265,11 +10413,7 @@
             "default": false
           }
         },
-        "required": [
-          "weekday",
-          "open",
-          "close"
-        ]
+        "required": ["weekday", "open", "close"]
       },
       "UpdateSettingsDto": {
         "type": "object",
@@ -11323,10 +10467,7 @@
             "description": "TOTP code if MFA is enrolled"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "PlatformRefreshDto": {
         "type": "object",
@@ -11338,21 +10479,11 @@
       },
       "TenantStatus": {
         "type": "string",
-        "enum": [
-          "TRIAL",
-          "ACTIVE",
-          "PAST_DUE",
-          "SUSPENDED",
-          "CANCELLED"
-        ]
+        "enum": ["TRIAL", "ACTIVE", "PAST_DUE", "SUSPENDED", "CANCELLED"]
       },
       "Plan": {
         "type": "string",
-        "enum": [
-          "STARTER",
-          "PRO",
-          "PREMIUM"
-        ]
+        "enum": ["STARTER", "PRO", "PREMIUM"]
       },
       "PlatformUpdateTenantDto": {
         "type": "object",
@@ -11431,10 +10562,7 @@
             "description": "Initial password for the owner; omit to require a password-reset flow"
           }
         },
-        "required": [
-          "slug",
-          "name"
-        ]
+        "required": ["slug", "name"]
       },
       "InviteClinicDto": {
         "type": "object",
@@ -11450,9 +10578,7 @@
             "maxLength": 500
           }
         },
-        "required": [
-          "clinicSlug"
-        ]
+        "required": ["clinicSlug"]
       },
       "CreateLabCategoryDto": {
         "type": "object",
@@ -11473,9 +10599,7 @@
             "default": 0
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateLabCategoryDto": {
         "type": "object",
@@ -11552,9 +10676,7 @@
             }
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateLabProductDto": {
         "type": "object",
@@ -11619,10 +10741,7 @@
       },
       "LabCaseUrgency": {
         "type": "string",
-        "enum": [
-          "STANDARD",
-          "URGENT"
-        ]
+        "enum": ["STANDARD", "URGENT"]
       },
       "UpdateLabCaseDto": {
         "type": "object",
@@ -11672,9 +10791,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "PresignLabCaseFileDto": {
         "type": "object",
@@ -11692,11 +10809,7 @@
             "description": "File size in bytes."
           }
         },
-        "required": [
-          "filename",
-          "mimeType",
-          "sizeBytes"
-        ]
+        "required": ["filename", "mimeType", "sizeBytes"]
       },
       "AdvancePhaseDto": {
         "type": "object",
@@ -11718,9 +10831,7 @@
             "description": "Internal note body (lab-only)."
           }
         },
-        "required": [
-          "body"
-        ]
+        "required": ["body"]
       },
       "UpdateNoteDto": {
         "type": "object",
@@ -11729,9 +10840,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "body"
-        ]
+        "required": ["body"]
       },
       "CreateMessageDto": {
         "type": "object",
@@ -11741,9 +10850,7 @@
             "description": "Chat message body."
           }
         },
-        "required": [
-          "body"
-        ]
+        "required": ["body"]
       },
       "UpsertShipmentDto": {
         "type": "object",
@@ -11772,9 +10879,7 @@
             "example": "f59e0b"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateTagDto": {
         "type": "object",
@@ -11794,9 +10899,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "tagId"
-        ]
+        "required": ["tagId"]
       },
       "CreateMaterialDto": {
         "type": "object",
@@ -11824,9 +10927,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateMaterialDto": {
         "type": "object",
@@ -11853,13 +10954,7 @@
       },
       "LabMaterialLotStatus": {
         "type": "string",
-        "enum": [
-          "ACTIVE",
-          "WAREHOUSE",
-          "FINISHED",
-          "DEFECTIVE",
-          "EXPIRED"
-        ]
+        "enum": ["ACTIVE", "WAREHOUSE", "FINISHED", "DEFECTIVE", "EXPIRED"]
       },
       "CreateLotDto": {
         "type": "object",
@@ -11898,10 +10993,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "lotNumber",
-          "initialQty"
-        ]
+        "required": ["lotNumber", "initialQty"]
       },
       "UpdateLotDto": {
         "type": "object",
@@ -11932,10 +11024,7 @@
             "description": "Quantity used in the material UOM."
           }
         },
-        "required": [
-          "lotId",
-          "qty"
-        ]
+        "required": ["lotId", "qty"]
       },
       "CreateTemplateDto": {
         "type": "object",
@@ -11955,10 +11044,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "name",
-          "body"
-        ]
+        "required": ["name", "body"]
       },
       "UpdateTemplateDto": {
         "type": "object",
@@ -11995,21 +11081,11 @@
             "description": "S3 key of the uploaded signature image."
           }
         },
-        "required": [
-          "templateId",
-          "signedByName",
-          "signatureFileKey"
-        ]
+        "required": ["templateId", "signedByName", "signatureFileKey"]
       },
       "LabInvoiceStatus": {
         "type": "string",
-        "enum": [
-          "DRAFT",
-          "ISSUED",
-          "PAID",
-          "OVERDUE",
-          "VOID"
-        ]
+        "enum": ["DRAFT", "ISSUED", "PAID", "OVERDUE", "VOID"]
       },
       "LabInvoiceItemInputDto": {
         "type": "object",
@@ -12037,10 +11113,7 @@
             "default": 0
           }
         },
-        "required": [
-          "description",
-          "unitPriceCents"
-        ]
+        "required": ["description", "unitPriceCents"]
       },
       "CreateLabInvoiceDto": {
         "type": "object",
@@ -12072,9 +11145,7 @@
             }
           }
         },
-        "required": [
-          "clinicTenantId"
-        ]
+        "required": ["clinicTenantId"]
       },
       "GenerateFromCasesDto": {
         "type": "object",
@@ -12105,10 +11176,7 @@
             "default": 0
           }
         },
-        "required": [
-          "clinicTenantId",
-          "caseIds"
-        ]
+        "required": ["clinicTenantId", "caseIds"]
       },
       "UpdateInvoiceDto": {
         "type": "object",
@@ -12151,10 +11219,7 @@
             "default": 0
           }
         },
-        "required": [
-          "description",
-          "unitPriceCents"
-        ]
+        "required": ["description", "unitPriceCents"]
       },
       "UpdateInvoiceItemDto": {
         "type": "object",
@@ -12189,19 +11254,11 @@
             "description": "Free-text reference (bank ref, link id, etc.)."
           }
         },
-        "required": [
-          "amountCents"
-        ]
+        "required": ["amountCents"]
       },
       "LabPaymentLinkProvider": {
         "type": "string",
-        "enum": [
-          "PAYMONGO",
-          "GCASH",
-          "MAYA",
-          "STRIPE",
-          "MANUAL"
-        ]
+        "enum": ["PAYMONGO", "GCASH", "MAYA", "STRIPE", "MANUAL"]
       },
       "CreatePaymentLinkDto": {
         "type": "object",
@@ -12248,11 +11305,7 @@
             "description": "Markdown body the clinic decides on."
           }
         },
-        "required": [
-          "caseId",
-          "title",
-          "summary"
-        ]
+        "required": ["caseId", "title", "summary"]
       },
       "UpdateTreatmentPlanDto": {
         "type": "object",
@@ -12267,13 +11320,7 @@
       },
       "LabTreatmentPlanFileKind": {
         "type": "string",
-        "enum": [
-          "STL",
-          "IMAGE",
-          "REPORT",
-          "IPR_TABLE",
-          "OTHER"
-        ]
+        "enum": ["STL", "IMAGE", "REPORT", "IPR_TABLE", "OTHER"]
       },
       "PresignTreatmentPlanFileDto": {
         "type": "object",
@@ -12298,20 +11345,11 @@
             ]
           }
         },
-        "required": [
-          "filename",
-          "mimeType",
-          "sizeBytes"
-        ]
+        "required": ["filename", "mimeType", "sizeBytes"]
       },
       "LabCaseDisputeKind": {
         "type": "string",
-        "enum": [
-          "QUALITY",
-          "BILLING",
-          "DELIVERY",
-          "OTHER"
-        ]
+        "enum": ["QUALITY", "BILLING", "DELIVERY", "OTHER"]
       },
       "OpenDisputeDto": {
         "type": "object",
@@ -12332,11 +11370,7 @@
             "description": "Why the dispute is being opened."
           }
         },
-        "required": [
-          "caseId",
-          "kind",
-          "reason"
-        ]
+        "required": ["caseId", "kind", "reason"]
       },
       "DisputeMessageDto": {
         "type": "object",
@@ -12345,17 +11379,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "body"
-        ]
+        "required": ["body"]
       },
       "LabCaseDisputeStatus": {
         "type": "string",
-        "enum": [
-          "RESOLVED",
-          "REJECTED",
-          "WITHDRAWN"
-        ]
+        "enum": ["RESOLVED", "REJECTED", "WITHDRAWN"]
       },
       "ResolveDisputeDto": {
         "type": "object",
@@ -12371,9 +11399,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "CreateLabCaseDto": {
         "type": "object",
@@ -12415,18 +11441,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "labTenantId",
-          "productId"
-        ]
+        "required": ["labTenantId", "productId"]
       },
       "LabTreatmentPlanDecision": {
         "type": "string",
-        "enum": [
-          "APPROVED",
-          "REJECTED",
-          "REVISION_REQUESTED"
-        ]
+        "enum": ["APPROVED", "REJECTED", "REVISION_REQUESTED"]
       },
       "DecideTreatmentPlanDto": {
         "type": "object",
@@ -12442,18 +11461,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "decision"
-        ]
+        "required": ["decision"]
       },
       "QueueKind": {
         "type": "string",
-        "enum": [
-          "WALK_IN",
-          "APPOINTMENT",
-          "DRIVE_THRU",
-          "PRIORITY"
-        ]
+        "enum": ["WALK_IN", "APPOINTMENT", "DRIVE_THRU", "PRIORITY"]
       },
       "CreateQueueDto": {
         "type": "object",
@@ -12518,19 +11530,11 @@
             "description": "Soft priority: PRIORITY queues default to 100; pass to override."
           }
         },
-        "required": [
-          "queueId"
-        ]
+        "required": ["queueId"]
       },
       "QueueTicketStatus": {
         "type": "string",
-        "enum": [
-          "WAITING",
-          "CALLED",
-          "SERVED",
-          "NO_SHOW",
-          "CANCELLED"
-        ]
+        "enum": ["WAITING", "CALLED", "SERVED", "NO_SHOW", "CANCELLED"]
       },
       "TicketActionDto": {
         "type": "object",
@@ -12543,9 +11547,7 @@
             ]
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "CreatePregnancyDto": {
         "type": "object",
@@ -12574,19 +11576,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "patientId"
-        ]
+        "required": ["patientId"]
       },
       "ObPregnancyStatus": {
         "type": "string",
-        "enum": [
-          "ACTIVE",
-          "DELIVERED",
-          "MISCARRIED",
-          "TERMINATED",
-          "ECTOPIC"
-        ]
+        "enum": ["ACTIVE", "DELIVERED", "MISCARRIED", "TERMINATED", "ECTOPIC"]
       },
       "UpdatePregnancyDto": {
         "type": "object",
@@ -12649,9 +11643,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "pregnancyId"
-        ]
+        "required": ["pregnancyId"]
       },
       "UltrasoundKind": {
         "type": "string",
@@ -12723,10 +11715,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "patientId",
-          "kind"
-        ]
+        "required": ["patientId", "kind"]
       },
       "PresignUltrasoundFileDto": {
         "type": "object",
@@ -12744,11 +11733,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "filename",
-          "mimeType",
-          "sizeBytes"
-        ]
+        "required": ["filename", "mimeType", "sizeBytes"]
       }
     }
   }
