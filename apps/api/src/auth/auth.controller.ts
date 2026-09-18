@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { parseDurationMs } from '@org/auth';
+import { PrismaService } from '@org/db';
 import type { CookieOptions, Response } from 'express';
 import { AuthService, type ClientMeta } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -64,6 +65,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Public()
@@ -183,9 +185,22 @@ export class AuthController {
     return this.auth.resetPassword(dto);
   }
 
+  /**
+   * The JWT identity plus the tenant's *current* kind / plan. The login
+   * body carries a plan snapshot, but plans change (platform upgrades,
+   * trials) while a session is open; the web reads this instead so
+   * feature gates follow the tenant, not the moment of sign-in.
+   * getTenantContext is cached, so this is one Map lookup per request.
+   */
   @Get('me')
-  me(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+  async me(@CurrentUser() user: AuthenticatedUser) {
+    const tenant = await this.prisma.getTenantContext(user.tenantId);
+    return {
+      ...user,
+      tenantKind: tenant?.kind ?? 'CLINIC',
+      plan: tenant?.plan ?? null,
+      labPlan: tenant?.labPlan ?? null,
+    };
   }
 
   // ── cookies ──────────────────────────────────────────────────────

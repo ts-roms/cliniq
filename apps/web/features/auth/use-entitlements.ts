@@ -24,6 +24,8 @@ import {
   type Plan,
   type LabPlan,
 } from '@org/shared-types';
+import { useQuery } from '@tanstack/react-query';
+import { authControllerMe } from '@org/api-client';
 import { useSession } from './hooks/use-session';
 
 export interface Entitlements {
@@ -42,11 +44,34 @@ export interface Entitlements {
 const CLINIC_LADDER: Plan[] = ['STARTER', 'PRO', 'PREMIUM'];
 const LAB_LADDER: LabPlan[] = ['LAB_BASIC', 'LAB_STANDARD', 'LAB_PREMIUM'];
 
+interface LiveMe {
+  tenantKind?: 'CLINIC' | 'LAB';
+  plan?: Plan | null;
+  labPlan?: LabPlan | null;
+}
+
 export function useEntitlements(): Entitlements {
   const session = useSession();
-  const plan = (session?.user.plan ?? null) as Plan | null;
-  const labPlan = (session?.user.labPlan ?? null) as LabPlan | null;
-  const isLab = session?.user.tenantKind === 'LAB';
+  // The session's plan is a snapshot from sign-in. /auth/me returns the
+  // tenant's current plan, so an upgrade (or a trial change) unlocks
+  // modules without signing out. Session values remain the fallback while
+  // the query loads or if it fails.
+  const live = useQuery({
+    queryKey: ['auth', 'me', session?.user.id ?? null],
+    queryFn: async (): Promise<LiveMe> => {
+      const { data, error } = await authControllerMe();
+      if (error || !data) throw new Error('Failed to load entitlements');
+      return data as unknown as LiveMe;
+    },
+    enabled: !!session,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+  });
+  const plan = (live.data?.plan ?? session?.user.plan ?? null) as Plan | null;
+  const labPlan = (live.data?.labPlan ??
+    session?.user.labPlan ??
+    null) as LabPlan | null;
+  const isLab = (live.data?.tenantKind ?? session?.user.tenantKind) === 'LAB';
 
   return useMemo<Entitlements>(
     () => ({

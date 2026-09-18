@@ -6,14 +6,16 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
-  LabPlan,
   MemberStatus,
-  Plan,
   PrismaService,
   Role,
   TenantKind,
   TenantStatus,
 } from '@org/db';
+import {
+  DEFAULT_SIGNUP_LAB_PLAN,
+  DEFAULT_SIGNUP_PLAN,
+} from '@org/shared-types';
 import { hashPassword, signJwt, JWT_AUDIENCES } from '@org/auth';
 import { CreateTenantDto } from './dto/create-tenant.dto.js';
 
@@ -56,10 +58,16 @@ export class TenantsService {
           slug: dto.slug,
           name: dto.name,
           kind,
-          // Clinic tenants get a Plan; lab tenants get a LabPlan.
-          plan: kind === TenantKind.CLINIC ? (dto.plan ?? Plan.STARTER) : null,
+          // Clinic tenants get a Plan; lab tenants get a LabPlan. The
+          // defaults are the provisional top tiers (see DEFAULT_SIGNUP_PLAN).
+          plan:
+            kind === TenantKind.CLINIC
+              ? (dto.plan ?? DEFAULT_SIGNUP_PLAN)
+              : null,
           labPlan:
-            kind === TenantKind.LAB ? (dto.labPlan ?? LabPlan.LAB_BASIC) : null,
+            kind === TenantKind.LAB
+              ? (dto.labPlan ?? DEFAULT_SIGNUP_LAB_PLAN)
+              : null,
           status: TenantStatus.TRIAL,
           trialEndsAt: this.addDays(new Date(), 30),
         },

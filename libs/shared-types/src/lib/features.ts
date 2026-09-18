@@ -151,6 +151,17 @@ export const PLAN_FEATURES: Record<Plan, ReadonlySet<Feature>> = {
   PREMIUM: PREMIUM_FEATURES,
 };
 
+/**
+ * PROVISIONAL — pricing tiers are not final. Until they are, every new
+ * tenant starts on the top tier so no module (inventory, HMO claims,
+ * queueing, tele, AI, OB, …) is locked behind a plan nobody can buy yet.
+ * The PRO / PREMIUM ladders above stay as the intended shape; when the
+ * tiers are decided, set these back to 'STARTER' / 'LAB_BASIC' and
+ * downgrade the tenants that should not keep the top tier.
+ */
+export const DEFAULT_SIGNUP_PLAN: Plan = 'PREMIUM';
+export const DEFAULT_SIGNUP_LAB_PLAN: LabPlan = 'LAB_PREMIUM';
+
 export function planHasFeature(plan: Plan, feature: Feature): boolean {
   return PLAN_FEATURES[plan]?.has(feature) ?? false;
 }

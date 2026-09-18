@@ -82,7 +82,7 @@ async function main() {
       slug: CLINIC_SLUG,
       name: 'Manila Smile Clinic (demo)',
       kind: TenantKind.CLINIC,
-      plan: Plan.PRO,
+      plan: Plan.PREMIUM,
       status: TenantStatus.ACTIVE,
     },
   });
