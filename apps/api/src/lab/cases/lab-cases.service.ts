@@ -24,6 +24,7 @@ import {
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
 import { LabClinicLinksService } from '../clinic-links/lab-clinic-links.service.js';
 import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
+import { clampLimit, clampOffset } from '../../common/pagination.js';
 import type {
   CreateLabCaseDto,
   PresignLabCaseFileDto,
@@ -180,7 +181,12 @@ export class LabCasesService {
 
   async listForLab(
     user: AuthenticatedUser,
-    opts?: { status?: LabCaseStatus; tagId?: string },
+    opts?: {
+      status?: LabCaseStatus;
+      tagId?: string;
+      limit?: number;
+      offset?: number;
+    },
   ) {
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
       tx.labCase.findMany({
@@ -193,6 +199,8 @@ export class LabCasesService {
             : {}),
         },
         orderBy: [{ createdAt: 'desc' }],
+        take: clampLimit(opts?.limit),
+        skip: clampOffset(opts?.offset),
         include: {
           product: { select: { id: true, name: true } },
           clinic: { select: { id: true, slug: true, name: true } },
@@ -207,7 +215,7 @@ export class LabCasesService {
 
   async listForClinic(
     user: AuthenticatedUser,
-    opts?: { status?: LabCaseStatus },
+    opts?: { status?: LabCaseStatus; limit?: number; offset?: number },
   ) {
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
       tx.labCase.findMany({
@@ -217,6 +225,8 @@ export class LabCasesService {
           ...(opts?.status ? { status: opts.status } : {}),
         },
         orderBy: [{ createdAt: 'desc' }],
+        take: clampLimit(opts?.limit),
+        skip: clampOffset(opts?.offset),
         include: {
           product: { select: { id: true, name: true } },
           lab: { select: { id: true, slug: true, name: true } },

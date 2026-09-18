@@ -16,6 +16,7 @@ import type { AuthenticatedUser } from '../../auth/decorators/current-user.decor
 import { LabClinicLinksService } from '../clinic-links/lab-clinic-links.service.js';
 import { LabPdfRenderingService } from '../_shared/pdf-rendering.service.js';
 import { LabNotificationsService } from '../_shared/lab-notifications.service.js';
+import { clampLimit, clampOffset } from '../../common/pagination.js';
 import { PaymongoService } from './paymongo.service.js';
 import type {
   AddLabInvoiceItemDto,
@@ -60,6 +61,8 @@ export class LabInvoicesService {
             : {}),
         },
         orderBy: [{ createdAt: 'desc' }],
+        take: clampLimit(filter.limit),
+        skip: clampOffset(filter.offset),
         include: {
           clinic: { select: { id: true, slug: true, name: true } },
           _count: { select: { items: true, paymentLinks: true } },
@@ -86,6 +89,8 @@ export class LabInvoicesService {
           },
         },
         orderBy: [{ createdAt: 'desc' }],
+        take: clampLimit(filter.limit),
+        skip: clampOffset(filter.offset),
         include: {
           lab: { select: { id: true, slug: true, name: true } },
           _count: { select: { items: true } },

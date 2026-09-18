@@ -220,7 +220,7 @@ export class AuthService {
 
     const passwordHash = await hashPassword(dto.password);
 
-    const { user, tenantUser, issued } = await this.prisma.withPlatformContext(
+    const { user, issued } = await this.prisma.withPlatformContext(
       async (tx) => {
         const user = await tx.user.create({
           data: { email, name: dto.name, passwordHash },
@@ -255,7 +255,7 @@ export class AuthService {
           undefined,
           meta,
         );
-        return { user, tenantUser, issued };
+        return { user, issued };
       },
     );
     this.logger.log(

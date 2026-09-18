@@ -5,9 +5,11 @@ import {
   IsOptional,
   IsString,
   Length,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LabCaseStatus, LabCaseUrgency } from '@org/db';
 
@@ -199,4 +201,32 @@ export class UpsertShipmentDto {
   @IsString()
   @MaxLength(500)
   notes?: string | null;
+}
+
+/** Query string for the lab / clinic case lists. */
+export class LabCaseListQueryDto {
+  @ApiPropertyOptional({ enum: LabCaseStatus, enumName: 'LabCaseStatus' })
+  @IsOptional()
+  @IsEnum(LabCaseStatus)
+  status?: LabCaseStatus;
+
+  @ApiPropertyOptional({ description: 'Lab-side only: filter to a tag.' })
+  @IsOptional()
+  @IsString()
+  tagId?: string;
+
+  @ApiPropertyOptional({ default: 200, minimum: 1, maximum: 500 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  limit?: number;
+
+  @ApiPropertyOptional({ default: 0, minimum: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset?: number;
 }

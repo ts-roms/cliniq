@@ -10,8 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { LabCaseStatus } from '@org/db';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
 import { Audit } from '../../audit/audit.decorator.js';
 import { Requires } from '../../auth/decorators/requires.decorator.js';
@@ -26,6 +25,7 @@ import {
   PresignLabCaseFileDto,
   TransitionLabCaseDto,
   UpdateLabCaseDto,
+  LabCaseListQueryDto,
 } from '../../lab/cases/dto/case.dto.js';
 
 /**
@@ -56,17 +56,11 @@ export class ClinicLabCasesController {
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: LabCaseStatus,
-    enumName: 'LabCaseStatus',
-  })
   list(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('status') status?: LabCaseStatus,
+    @Query() query: LabCaseListQueryDto,
   ) {
-    return this.cases.listForClinic(user, { status });
+    return this.cases.listForClinic(user, query);
   }
 
   @Get(':id')
