@@ -15,6 +15,21 @@ import { PrismaClient } from '../generated/prisma/client.js';
  * "Class constructor cannot be invoked without 'new'" at runtime. Composition is
  * safer and the proxied surface is what services actually use.
  */
+/**
+ * Interactive-transaction limits for every withTenant / withPlatformContext
+ * / $transaction(fn) call. Prisma's defaults (maxWait 2s to *obtain* a
+ * connection, 5s to finish) are tuned for idle services: under a burst —
+ * e.g. the e2e suite logging in from several jest workers while bcrypt
+ * (cost 12) pins the CPU — requests queue on the pool for longer than 2s
+ * and surface as "Unable to start a transaction in the given time", which
+ * the exception filter reports as a 400 "Database request failed". Waiting
+ * longer is the correct behaviour: the request is fine, the pool is busy.
+ */
+const TX_OPTIONS = { maxWait: 15_000, timeout: 30_000 } as const;
+
+/** pg Pool size; pg's own default is 10. Override with DATABASE_POOL_MAX. */
+const POOL_MAX = Number(process.env['DATABASE_POOL_MAX']) || 20;
+
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
@@ -24,6 +39,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.client = new PrismaClient({
       adapter: new PrismaPg({
         connectionString: process.env['DATABASE_URL'] ?? '',
+        max: POOL_MAX,
       }),
       log:
         process.env['NODE_ENV'] === 'development'
@@ -323,7 +339,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   $transaction<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T>;
   $transaction<T>(promises: Array<Promise<T>>): Promise<T[]>;
   $transaction(arg: unknown): unknown {
-    return this.client.$transaction(arg as never);
+    return typeof arg === 'function'
+      ? this.client.$transaction(arg as never, TX_OPTIONS)
+      : this.client.$transaction(arg as never);
   }
 
   $queryRaw<T = unknown>(
@@ -373,7 +391,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
         `SET LOCAL app.current_user_id = '${userId ?? ''}'`,
       );
       return fn(tx as unknown as PrismaClient);
-    });
+    }, TX_OPTIONS);
   }
 
   /**
@@ -388,7 +406,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(`SET LOCAL app.platform_admin = '1'`);
       return fn(tx as unknown as PrismaClient);
-    });
+    }, TX_OPTIONS);
   }
 
   /**
