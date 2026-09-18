@@ -30,10 +30,32 @@ const TX_OPTIONS = { maxWait: 15_000, timeout: 30_000 } as const;
 /** pg Pool size; pg's own default is 10. Override with DATABASE_POOL_MAX. */
 const POOL_MAX = Number(process.env['DATABASE_POOL_MAX']) || 20;
 
+/**
+ * How long getTenantContext() may serve a tenant's kind / plan from memory.
+ * Kind never changes after creation and plans change rarely (platform admin
+ * action, which invalidates explicitly), so a short TTL turns the
+ * per-request "is this a LAB tenant / does the plan include X" transaction
+ * into a Map lookup. Per process: in a multi-instance deploy a plan change
+ * made on another instance is visible here after at most this long.
+ */
+const TENANT_CONTEXT_TTL_MS =
+  Number(process.env['TENANT_CONTEXT_TTL_MS']) || 30_000;
+const TENANT_CONTEXT_CACHE_MAX = 5_000;
+
+export interface TenantContext {
+  kind: string;
+  plan: string | null;
+  labPlan: string | null;
+}
+
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
   private readonly client: PrismaClient;
+  private readonly tenantContextCache = new Map<
+    string,
+    { value: TenantContext; expiresAt: number }
+  >();
 
   constructor() {
     this.client = new PrismaClient({
@@ -419,18 +441,33 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
    * route's own `withTenant` wrap. Centralise the lookup here so every
    * caller sets the right context.
    */
-  async getTenantContext(tenantId: string): Promise<{
-    kind: string;
-    plan: string | null;
-    labPlan: string | null;
-  } | null> {
+  async getTenantContext(tenantId: string): Promise<TenantContext | null> {
     if (!isCuidLike(tenantId)) return null;
-    return this.withTenant(tenantId, null, (tx) =>
+    const hit = this.tenantContextCache.get(tenantId);
+    if (hit && hit.expiresAt > Date.now()) return hit.value;
+    const value = await this.withTenant(tenantId, null, (tx) =>
       tx.tenant.findUnique({
         where: { id: tenantId },
         select: { kind: true, plan: true, labPlan: true },
       }),
     );
+    // Only positive results are cached: a null (tenant not visible yet, or
+    // just created) must be re-checked on the next request.
+    if (value) {
+      if (this.tenantContextCache.size >= TENANT_CONTEXT_CACHE_MAX) {
+        this.tenantContextCache.clear();
+      }
+      this.tenantContextCache.set(tenantId, {
+        value,
+        expiresAt: Date.now() + TENANT_CONTEXT_TTL_MS,
+      });
+    }
+    return value;
+  }
+
+  /** Call after changing a tenant's kind / plan / labPlan. */
+  invalidateTenantContext(tenantId: string): void {
+    this.tenantContextCache.delete(tenantId);
   }
 }
 

@@ -62,17 +62,11 @@ export class FeatureGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
     if (!req.user) throw new UnauthorizedException('not authenticated');
 
-    // Read the tenant inside its own RLS context — without this wrap,
-    // the lookup runs as cliniq_app with no `current_tenant` GUC set,
-    // and the `tenants_self_read` policy hides the row → null → 401.
-    // Routes without @RequiresFeature don't hit this branch, which is
-    // why patient endpoints work but lab/queue/OB previously didn't.
-    const tenant = await this.prisma.withTenant(req.user.tenantId, null, (tx) =>
-      tx.tenant.findUnique({
-        where: { id: req.user!.tenantId },
-        select: { kind: true, plan: true, labPlan: true },
-      }),
-    );
+    // getTenantContext reads the tenant inside its own RLS context (without
+    // that wrap the `tenants_self_read` policy hides the row → null → 401)
+    // and caches kind / plan for a short TTL, so gated routes don't pay a
+    // transaction per request just to learn the plan.
+    const tenant = await this.prisma.getTenantContext(req.user.tenantId);
     if (!tenant) throw new UnauthorizedException('tenant not found');
 
     // Pick the right plan ladder based on tenant kind. Lab features are only

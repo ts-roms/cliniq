@@ -193,6 +193,9 @@ export class PlatformTenantsService {
         return { updated: next, before: existing };
       },
     );
+    // Plan / status changed: drop the cached kind/plan snapshot so feature
+    // gates and lab guards see it on the next request instead of after TTL.
+    this.prisma.invalidateTenantContext(id);
 
     this.logger.log(
       `Platform admin ${adminId} updated tenant ${id} (slug=${before.slug}): ` +
