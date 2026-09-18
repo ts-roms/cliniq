@@ -25,6 +25,8 @@ import { HmoCardsCard } from '@/features/hmo';
 import { LabOrdersCard } from '@/features/labs';
 import { DentalChartCard } from '@/features/dental';
 import { ObCard, UltrasoundCard } from '@/features/ob';
+import { useCan } from '@/features/auth';
+import { Actions } from '@org/shared-types';
 
 export default function PatientDetailPage({
   params,
@@ -33,8 +35,17 @@ export default function PatientDetailPage({
 }) {
   const { id } = use(params);
 
+  const can = useCan();
+  // Sections the api would 403 for this role are not rendered at all
+  // (e.g. a RECEPTIONIST has no consult:read, a NURSE no billing:read),
+  // instead of showing a card that fails to load.
+  const canReadConsults = can(Actions.CONSULT_READ);
+  const canReadBilling = can(Actions.BILLING_READ);
+
   const patient = usePatient(id);
-  const consults = useConsultationsForPatient(id);
+  const consults = useConsultationsForPatient(id, {
+    enabled: canReadConsults,
+  });
   const startConsult = useStartConsultation(id);
 
   if (patient.isLoading) {
@@ -64,15 +75,19 @@ export default function PatientDetailPage({
     <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <PatientHeader
         patient={patient.data}
-        onStartConsult={() => startConsult.mutate()}
+        onStartConsult={
+          can(Actions.CONSULT_WRITE) ? () => startConsult.mutate() : undefined
+        }
         isStarting={startConsult.isPending}
       />
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
         <PatientContactCard patient={patient.data} />
-        <ConsultationsCard
-          items={consults.data}
-          isLoading={consults.isLoading}
-        />
+        {canReadConsults && (
+          <ConsultationsCard
+            items={consults.data}
+            isLoading={consults.isLoading}
+          />
+        )}
         <ConsentsCard patientId={patient.data.id} />
         <VitalsCard patientId={patient.data.id} />
         <AllergiesCard patientId={patient.data.id} />
@@ -86,7 +101,7 @@ export default function PatientDetailPage({
         <DentalChartCard patientId={patient.data.id} />
         <ObCard patientId={patient.data.id} />
         <UltrasoundCard patientId={patient.data.id} />
-        <InvoicesCard patientId={patient.data.id} />
+        {canReadBilling && <InvoicesCard patientId={patient.data.id} />}
       </div>
     </div>
   );

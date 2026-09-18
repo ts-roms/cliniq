@@ -1,3 +1,4 @@
+// Re-exported for the api; the matrix itself lives in @org/shared-types.
 export {
   Roles,
   Actions,
@@ -5,7 +6,7 @@ export {
   rolesThatCan,
   type Role,
   type Action,
-} from './lib/roles.js';
+} from '@org/shared-types';
 
 export {
   signJwt,

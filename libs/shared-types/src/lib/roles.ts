@@ -1,4 +1,6 @@
 // Role matrix shared between api (authorization) and web/mobile (UI gating).
+// Lives in shared-types (not @org/auth) so the browser bundles can import
+// it without dragging in the server-only password / JWT helpers.
 // Mirrors the Role enum in libs/db/prisma/schema.prisma.
 
 export const Roles = {
