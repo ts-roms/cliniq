@@ -18,12 +18,17 @@ export const appointmentStatusEnum = z.enum([
 ]);
 export type AppointmentStatus = z.infer<typeof appointmentStatusEnum>;
 
+/** `YYYY-MM-DDTHH:mm` (browser local) — what the when-fields produce. */
+const localDateTime = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, 'required');
+
 export const createAppointmentSchema = z
   .object({
     patientId: z.string().min(1, 'required'),
     providerId: z.string().min(1, 'required'),
-    startsAt: z.string().min(1, 'required'),
-    endsAt: z.string().min(1, 'required'),
+    startsAt: localDateTime,
+    endsAt: localDateTime,
     type: appointmentTypeEnum.default('CONSULT'),
     reason: z.string().max(200).optional(),
     notes: z.string().max(500).optional(),
@@ -59,8 +64,8 @@ export interface Appointment {
 
 export const rescheduleSchema = z
   .object({
-    startsAt: z.string().min(1, 'required'),
-    endsAt: z.string().min(1, 'required'),
+    startsAt: localDateTime,
+    endsAt: localDateTime,
   })
   .refine((v) => new Date(v.endsAt) > new Date(v.startsAt), {
     path: ['endsAt'],

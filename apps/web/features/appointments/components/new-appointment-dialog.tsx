@@ -32,6 +32,7 @@ import {
   AvailabilityError,
   useCreateAppointment,
 } from '../hooks/use-appointments';
+import { AppointmentWhenFields } from './appointment-when-fields';
 
 export function NewAppointmentDialog({
   defaultDate,
@@ -73,7 +74,7 @@ function defaultEndIso(date: string): string {
   return `${date}T09:30`;
 }
 
-/** ISO instant → the `YYYY-MM-DDTHH:mm` a datetime-local input wants (browser local time). */
+/** ISO instant → `YYYY-MM-DDTHH:mm` in browser local time (what the when-fields edit). */
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -142,6 +143,7 @@ function NewAppointmentForm({
 
   const providerId = watch('providerId');
   const startsAt = watch('startsAt');
+  const endsAt = watch('endsAt');
   const slotDate = startsAt ? startsAt.slice(0, 10) : defaultDate;
   const slots = useFreeSlots(providerId || null, slotDate || null);
 
@@ -206,14 +208,18 @@ function NewAppointmentForm({
           />
         </FormField>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <FormField label="Starts" error={errors.startsAt?.message}>
-          <Input type="datetime-local" {...register('startsAt')} />
-        </FormField>
-        <FormField label="Ends" error={errors.endsAt?.message}>
-          <Input type="datetime-local" {...register('endsAt')} />
-        </FormField>
-      </div>
+      <AppointmentWhenFields
+        value={{ startsAt: startsAt ?? '', endsAt: endsAt ?? '' }}
+        onChange={(next) => {
+          setValue('startsAt', next.startsAt, { shouldValidate: true });
+          setValue('endsAt', next.endsAt, { shouldValidate: true });
+          setOverride(null);
+        }}
+        errors={{
+          startsAt: errors.startsAt?.message,
+          endsAt: errors.endsAt?.message,
+        }}
+      />
 
       {providerId && (
         <div className="space-y-1">
