@@ -11,8 +11,13 @@ import {
 import { SubscribeFeedButton } from '@/features/calendars';
 import { useSession } from '@/features/auth';
 
+/** Today as `YYYY-MM-DD` in the browser's timezone (not UTC; east of UTC
+ *  `toISOString()` still says yesterday until 08:00 local). */
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
 }
 
 function dayBoundsIso(date: string): { from: string; to: string } {

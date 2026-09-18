@@ -34,3 +34,15 @@ export {
 export { Skeleton } from './lib/components/skeleton';
 export { EmptyState } from './lib/components/empty-state';
 export { Loading, ErrorMessage } from './lib/components/status-message';
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverAnchor,
+  PopoverContent,
+} from './lib/components/popover';
+export {
+  Calendar,
+  CalendarDayButton,
+  type CalendarProps,
+} from './lib/components/calendar';
+export { DatePicker, type DatePickerProps } from './lib/components/date-picker';
