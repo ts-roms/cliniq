@@ -12,15 +12,20 @@ import {
 import { useInvoicesForPatient } from '../hooks/use-billing';
 import { InvoiceRow } from './invoice-row';
 import { NewInvoiceDialog } from './new-invoice-dialog';
+import { useCan } from '@/features/auth';
+import { Actions } from '@org/shared-types';
 
 export function InvoicesCard({ patientId }: { patientId: string }) {
   const { data, isLoading, error } = useInvoicesForPatient(patientId);
+  const can = useCan();
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Invoices</CardTitle>
-        <NewInvoiceDialog patientId={patientId} />
+        {can(Actions.BILLING_WRITE) && (
+          <NewInvoiceDialog patientId={patientId} />
+        )}
       </CardHeader>
       <CardContent>
         {isLoading && <Loading />}

@@ -10,6 +10,8 @@ import {
 } from '@org/ui';
 import { useMemberships } from '../hooks/use-hmo';
 import { AddMembershipDialog } from './add-membership-dialog';
+import { useCan } from '@/features/auth';
+import { Actions } from '@org/shared-types';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
@@ -18,12 +20,14 @@ function formatDate(iso: string | null): string {
 
 export function HmoCardsCard({ patientId }: { patientId: string }) {
   const { data, isLoading } = useMemberships(patientId);
+  const can = useCan();
+  const canAdd = can(Actions.PATIENT_WRITE) && can(Actions.BILLING_READ);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>HMO cards</CardTitle>
-        <AddMembershipDialog patientId={patientId} />
+        {canAdd && <AddMembershipDialog patientId={patientId} />}
       </CardHeader>
       <CardContent>
         {isLoading && <Loading />}

@@ -14,6 +14,8 @@ import {
   usePrescriptionsForPatient,
 } from '../hooks/use-prescriptions';
 import { NewPrescriptionDialog } from './new-prescription-dialog';
+import { useCan } from '@/features/auth';
+import { Actions } from '@org/shared-types';
 import type { Prescription } from '../schemas/prescription';
 
 interface Props {
@@ -29,16 +31,19 @@ export function PrescriptionsCard({
 }: Props) {
   const list = usePrescriptionsForPatient(patientId);
   const cancel = useCancelPrescription(patientId);
+  const can = useCan();
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base">Prescriptions</CardTitle>
-        <NewPrescriptionDialog
-          patientId={patientId}
-          knownAllergies={knownAllergies}
-          currentMedications={currentMedications}
-        />
+        {can(Actions.RX_SIGN) && (
+          <NewPrescriptionDialog
+            patientId={patientId}
+            knownAllergies={knownAllergies}
+            currentMedications={currentMedications}
+          />
+        )}
       </CardHeader>
       <CardContent className="space-y-2">
         {list.isLoading && <Loading />}

@@ -14,9 +14,13 @@ export const consultationKeys = {
     ['consultations', 'patient', patientId] as const,
 };
 
-export function useConsultationsForPatient(patientId: string) {
+export function useConsultationsForPatient(
+  patientId: string,
+  opts: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: consultationKeys.forPatient(patientId),
+    enabled: opts.enabled ?? true,
     queryFn: async (): Promise<Consultation[]> => {
       const { data, error } = await consultationsControllerList({
         query: { patientId },

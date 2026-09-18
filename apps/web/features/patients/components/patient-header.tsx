@@ -8,7 +8,8 @@ import type { Patient } from '../schemas/patient';
 
 interface Props {
   patient: Patient;
-  onStartConsult: () => void;
+  /** Omitted when the signed-in role cannot start consultations. */
+  onStartConsult?: () => void;
   isStarting: boolean;
 }
 
@@ -40,9 +41,11 @@ export function PatientHeader({
           <FileDsrDialog patientId={p.id} />
           <DeletePatientButton patient={p} />
           <EditPatientDialog patient={p} />
-          <Button onClick={onStartConsult} disabled={isStarting}>
-            {isStarting ? 'Starting…' : 'Start consultation'}
-          </Button>
+          {onStartConsult && (
+            <Button onClick={onStartConsult} disabled={isStarting}>
+              {isStarting ? 'Starting…' : 'Start consultation'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

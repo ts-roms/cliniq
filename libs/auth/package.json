@@ -25,6 +25,7 @@
     }
   },
   "dependencies": {
+    "@org/shared-types": "workspace:*",
     "bcryptjs": "*",
     "jose": "*",
     "tslib": "^2.3.0"

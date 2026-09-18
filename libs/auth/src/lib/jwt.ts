@@ -13,7 +13,7 @@
 // token can't impersonate a platform admin and vice versa.
 
 import { SignJWT, jwtVerify, type JWTPayload as JosePayload } from 'jose';
-import type { Role } from './roles.js';
+import type { Role } from '@org/shared-types';
 
 export interface ClinIqJwtPayload extends JosePayload {
   sub: string; // user id

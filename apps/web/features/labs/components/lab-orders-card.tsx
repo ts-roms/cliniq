@@ -20,6 +20,8 @@ import {
 } from '../hooks/use-labs';
 import { NewLabOrderDialog } from './new-order-dialog';
 import { RecordResultsDialog } from './record-results-dialog';
+import { useCan } from '@/features/auth';
+import { Actions } from '@org/shared-types';
 
 const STATUS_TONE: Record<LabOrderStatus, string> = {
   PENDING: 'bg-zinc-200 text-zinc-700',
@@ -45,12 +47,15 @@ function formatDate(iso: string | null): string {
 
 export function LabOrdersCard({ patientId }: { patientId: string }) {
   const { data, isLoading, error } = useLabOrdersForPatient(patientId);
+  const can = useCan();
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Lab orders</CardTitle>
-        <NewLabOrderDialog patientId={patientId} />
+        {can(Actions.CONSULT_WRITE) && (
+          <NewLabOrderDialog patientId={patientId} />
+        )}
       </CardHeader>
       <CardContent>
         {isLoading && <Loading />}

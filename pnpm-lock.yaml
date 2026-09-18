@@ -773,6 +773,9 @@ importers:
 
   libs/auth:
     dependencies:
+      '@org/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       bcryptjs:
         specifier: '*'
         version: 3.0.3
