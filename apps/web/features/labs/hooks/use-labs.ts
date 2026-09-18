@@ -18,7 +18,8 @@ import type {
 
 export const labKeys = {
   patient: (patientId: string) => ['labs', 'patient', patientId] as const,
-  consultation: (consultationId: string) => ['labs', 'consult', consultationId] as const,
+  consultation: (consultationId: string) =>
+    ['labs', 'consult', consultationId] as const,
 };
 
 export function useLabOrdersForPatient(patientId: string) {
@@ -68,7 +69,9 @@ export function useCreateLabOrder({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: labKeys.patient(patientId) });
       if (consultationId) {
-        qc.invalidateQueries({ queryKey: labKeys.consultation(consultationId) });
+        qc.invalidateQueries({
+          queryKey: labKeys.consultation(consultationId),
+        });
       }
     },
   });
@@ -83,7 +86,13 @@ export function useUpdateOrderStatus({
 }) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: LabOrderStatus }) => {
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: LabOrderStatus;
+    }) => {
       const { data, error } = await labsControllerUpdate({
         path: { id },
         body: { status } as Parameters<typeof labsControllerUpdate>[0]['body'],
@@ -94,7 +103,9 @@ export function useUpdateOrderStatus({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: labKeys.patient(patientId) });
       if (consultationId) {
-        qc.invalidateQueries({ queryKey: labKeys.consultation(consultationId) });
+        qc.invalidateQueries({
+          queryKey: labKeys.consultation(consultationId),
+        });
       }
     },
   });
@@ -108,7 +119,8 @@ export function useCancelOrder({ patientId }: { patientId: string }) {
       if (error) throw new Error('Cancel failed');
       return { id };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: labKeys.patient(patientId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: labKeys.patient(patientId) }),
   });
 }
 
@@ -131,6 +143,7 @@ export function useRecordResult({ patientId }: { patientId: string }) {
       if (error || !data) throw new Error('Save failed');
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: labKeys.patient(patientId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: labKeys.patient(patientId) }),
   });
 }

@@ -68,10 +68,15 @@ export class LabsService {
       const patient = await tx.patient.findFirst({
         where: { id: dto.patientId, deletedAt: null },
       });
-      if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${dto.patientId} not found`);
       if (dto.consultationId) {
         const consult = await tx.consultation.findFirst({
-          where: { id: dto.consultationId, patientId: dto.patientId, deletedAt: null },
+          where: {
+            id: dto.consultationId,
+            patientId: dto.patientId,
+            deletedAt: null,
+          },
         });
         if (!consult) {
           throw new BadRequestException(
@@ -171,11 +176,18 @@ export class LabsService {
       const item = await tx.labOrderItem.findFirst({
         where: { id: itemId, orderId },
       });
-      if (!item) throw new NotFoundException(`Item ${itemId} not found in order ${orderId}`);
+      if (!item)
+        throw new NotFoundException(
+          `Item ${itemId} not found in order ${orderId}`,
+        );
 
       const flag =
         dto.abnormalFlag ??
-        deriveFlag(dto.resultValue, item.referenceLow ?? null, item.referenceHigh ?? null);
+        deriveFlag(
+          dto.resultValue,
+          item.referenceLow ?? null,
+          item.referenceHigh ?? null,
+        );
 
       const updatedItem = await tx.labOrderItem.update({
         where: { id: itemId },
@@ -191,9 +203,7 @@ export class LabsService {
       const remaining = await tx.labOrderItem.count({
         where: { orderId, OR: [{ resultValue: null }, { resultValue: '' }] },
       });
-      const isAbnormal =
-        flag &&
-        flag !== LabAbnormalFlag.NORMAL;
+      const isAbnormal = flag && flag !== LabAbnormalFlag.NORMAL;
       const isCritical =
         flag === LabAbnormalFlag.CRITICAL_HIGH ||
         flag === LabAbnormalFlag.CRITICAL_LOW;
@@ -221,7 +231,9 @@ export class LabsService {
             tenantId: user.tenantId,
             userId: order.providerId,
             kind: NotificationKind.LAB_ABNORMAL,
-            severity: isCritical ? NotificationSeverity.CRITICAL : NotificationSeverity.WARNING,
+            severity: isCritical
+              ? NotificationSeverity.CRITICAL
+              : NotificationSeverity.WARNING,
             title: `${item.testName}: ${flag}`,
             body: `${dto.resultValue}${item.resultUnit ? ` ${item.resultUnit}` : ''} (${order.number})`,
             link: `/patients/${order.patientId}`,
@@ -246,7 +258,10 @@ export class LabsService {
 
   // ── helpers ──────────────────────────────────────
 
-  private async nextOrderNumber(tx: PrismaClient, tenantId: string): Promise<string> {
+  private async nextOrderNumber(
+    tx: PrismaClient,
+    tenantId: string,
+  ): Promise<string> {
     const now = new Date();
     const prefix = `LAB-${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
     const monthCount = await tx.labOrder.count({

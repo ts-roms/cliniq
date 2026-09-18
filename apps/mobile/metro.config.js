@@ -21,7 +21,7 @@ const blockedDirs = [
   path.join(workspaceRoot, '.git'),
 ];
 const blockList = blockedDirs.map(
-  (dir) => new RegExp(`^${escapeRe(dir)}(?:[\\\\/].*)?$`)
+  (dir) => new RegExp(`^${escapeRe(dir)}(?:[\\\\/].*)?$`),
 );
 
 /** @type {import('metro-config').MetroConfig} */

@@ -1,12 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsInt, IsObject, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 class PatientContext {
   @ApiPropertyOptional() @IsOptional() @IsInt() age?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() sex?: string;
-  @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() allergies?: string[];
-  @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() activeMedications?: string[];
-  @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() activeConditions?: string[];
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  allergies?: string[];
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  activeMedications?: string[];
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  activeConditions?: string[];
   @ApiPropertyOptional() @IsOptional() @IsString() chiefComplaint?: string;
 }
 

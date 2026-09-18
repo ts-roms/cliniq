@@ -46,7 +46,12 @@ export class LabCasesController {
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
-  @ApiQuery({ name: 'status', required: false, enum: LabCaseStatus, enumName: 'LabCaseStatus' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: LabCaseStatus,
+    enumName: 'LabCaseStatus',
+  })
   @ApiQuery({ name: 'tagId', required: false })
   list(
     @CurrentUser() user: AuthenticatedUser,
@@ -216,7 +221,10 @@ export class LabCasesController {
   @Get(':id/messages')
   @Requires(Actions.TENANT_MANAGE)
   @RequiresFeature(Features.LAB_CHAT)
-  listMessages(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  listMessages(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.cases.listMessages(id, user);
   }
 

@@ -26,14 +26,22 @@ export class CalendarsController {
 
   /** Authenticated: issue a feed token + URL stub for the target provider. */
   @Get('providers/:id/feed-token')
-  issueToken(@Param('id') providerId: string, @CurrentUser() user: AuthenticatedUser) {
+  issueToken(
+    @Param('id') providerId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.cal.issueFeedToken(providerId, user);
   }
 
   /** Public: ICS feed consumed by external calendar apps. */
   @Public()
   @Get('providers/:tenantId/:id.ics')
-  @ApiQuery({ name: 't', required: true, type: String, description: 'Signed feed token' })
+  @ApiQuery({
+    name: 't',
+    required: true,
+    type: String,
+    description: 'Signed feed token',
+  })
   async ics(
     @Param('tenantId') tenantId: string,
     @Param('id') providerId: string,

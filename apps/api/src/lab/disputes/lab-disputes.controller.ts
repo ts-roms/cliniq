@@ -89,9 +89,7 @@ export class LabDisputesController {
     @Body() dto: ResolveDisputeDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    if (
-      dto.status === LabCaseDisputeStatus.OPEN
-    ) {
+    if (dto.status === LabCaseDisputeStatus.OPEN) {
       throw new Error('cannot close to OPEN');
     }
     return this.disputes.close(id, dto.status, dto.notes ?? null, user);

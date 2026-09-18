@@ -10,7 +10,12 @@ import { meControllerRecords } from '@org/api-client';
 import { useT } from '../../shared/i18n';
 
 interface Records {
-  allergies: Array<{ id: string; substance: string; severity: string; reaction: string | null }>;
+  allergies: Array<{
+    id: string;
+    substance: string;
+    severity: string;
+    reaction: string | null;
+  }>;
   medications: Array<{
     id: string;
     drugName: string;
@@ -95,7 +100,9 @@ export function PortalRecordsScreen() {
       )}
       {error && (
         <View className="px-6 py-4">
-          <Text className="text-sm text-destructive">{(error as Error).message}</Text>
+          <Text className="text-sm text-destructive">
+            {(error as Error).message}
+          </Text>
         </View>
       )}
       {data && (
@@ -124,7 +131,9 @@ export function PortalRecordsScreen() {
                   • {m.drugName}
                   {m.dose ? ` ${m.dose}` : ''}
                   {m.frequency ? ` · ${m.frequency}` : ''}{' '}
-                  <Text className="text-xs text-muted-foreground">({m.status})</Text>
+                  <Text className="text-xs text-muted-foreground">
+                    ({m.status})
+                  </Text>
                 </Text>
               ))
             )}
@@ -160,7 +169,9 @@ export function PortalRecordsScreen() {
                   </Text>
                   {order.items.map((it) => (
                     <View key={it.id} className="ml-2 flex-row justify-between">
-                      <Text className="text-sm text-foreground">{it.testName}</Text>
+                      <Text className="text-sm text-foreground">
+                        {it.testName}
+                      </Text>
                       <Text
                         className={`font-mono text-xs ${
                           it.abnormalFlag ? FLAG_TONE[it.abnormalFlag] : ''
@@ -188,7 +199,13 @@ export function PortalRecordsScreen() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <View className="border-b border-border bg-card px-6 py-3">
       <Text className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">

@@ -13,9 +13,9 @@ export default function PrivacyHub() {
         Privacy & data protection
       </h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        ClinIQ acts as a Personal Information Processor for clinics
-        (Personal Information Controllers). This page lists the disclosures
-        we publish under the DPA and its Implementing Rules and Regulations.
+        ClinIQ acts as a Personal Information Processor for clinics (Personal
+        Information Controllers). This page lists the disclosures we publish
+        under the DPA and its Implementing Rules and Regulations.
       </p>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2">

@@ -16,10 +16,7 @@ import {
   PasswordInput,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
-import {
-  patientLoginSchema,
-  type PatientLoginInput,
-} from '../schemas/portal';
+import { patientLoginSchema, type PatientLoginInput } from '../schemas/portal';
 import { usePortalLogin } from '../hooks/use-me';
 
 export function PortalLoginForm() {
@@ -97,7 +94,10 @@ export function PortalLoginForm() {
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
         New here?{' '}
-        <Link href="/portal/signup" className="font-medium text-primary hover:underline">
+        <Link
+          href="/portal/signup"
+          className="font-medium text-primary hover:underline"
+        >
           Activate your portal account
         </Link>
       </p>

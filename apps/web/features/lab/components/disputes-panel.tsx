@@ -32,7 +32,8 @@ const KIND_LABEL: Record<LabCaseDisputeKind, string> = {
 
 const STATUS_COLOR: Record<LabCaseDisputeStatus, string> = {
   OPEN: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  RESOLVED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  RESOLVED:
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   REJECTED: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
   WITHDRAWN: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400',
 };
@@ -60,7 +61,11 @@ export function DisputesPanel({
             <AlertCircle className="h-4 w-4" aria-hidden /> Disputes
           </span>
           {!hasOpenDispute && (
-            <Button size="sm" variant="outline" onClick={() => setShowOpen((v) => !v)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowOpen((v) => !v)}
+            >
               {showOpen ? 'Cancel' : 'Open dispute'}
             </Button>
           )}
@@ -122,7 +127,10 @@ function OpenForm({
       className="space-y-2 rounded-md border bg-muted/20 p-3"
     >
       <div className="grid gap-2 md:grid-cols-[200px,1fr]">
-        <Select value={kind} onChange={(e) => setKind(e.target.value as LabCaseDisputeKind)}>
+        <Select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as LabCaseDisputeKind)}
+        >
           {(Object.keys(KIND_LABEL) as LabCaseDisputeKind[]).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
@@ -191,7 +199,11 @@ function DisputeRow({
           </div>
         </div>
         {canClose && !showCloseUI && (
-          <Button size="sm" variant="outline" onClick={() => setShowCloseUI(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowCloseUI(true)}
+          >
             Close dispute
           </Button>
         )}
@@ -205,7 +217,8 @@ function DisputeRow({
             return (
               <li key={m.id} className="text-sm">
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {mine ? 'You' : 'Other party'} · {new Date(m.createdAt).toLocaleString()}
+                  {mine ? 'You' : 'Other party'} ·{' '}
+                  {new Date(m.createdAt).toLocaleString()}
                 </div>
                 <div className="whitespace-pre-wrap">{m.body}</div>
               </li>
@@ -221,7 +234,11 @@ function DisputeRow({
             onChange={(e) => setBody(e.target.value)}
             placeholder="Reply…"
           />
-          <Button type="submit" size="sm" disabled={post.isPending || !body.trim()}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={post.isPending || !body.trim()}
+          >
             Send
           </Button>
         </form>
@@ -290,7 +307,9 @@ function DisputeRow({
       {dispute.status !== 'OPEN' && dispute.resolutionNotes && (
         <div className="mt-3 border-t pt-2 text-sm">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">
-            {dispute.status} on {dispute.resolvedAt && new Date(dispute.resolvedAt).toLocaleString()}
+            {dispute.status} on{' '}
+            {dispute.resolvedAt &&
+              new Date(dispute.resolvedAt).toLocaleString()}
           </span>
           <p className="mt-1 whitespace-pre-wrap">{dispute.resolutionNotes}</p>
         </div>

@@ -23,19 +23,28 @@ export class ReportsController {
 
   @Get('revenue')
   @Requires(Actions.AUDIT_READ)
-  revenue(@Query() range: ReportRangeDto, @CurrentUser() user: AuthenticatedUser) {
+  revenue(
+    @Query() range: ReportRangeDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.reports.revenueSeries(user, range.from, range.to);
   }
 
   @Get('top-services')
   @Requires(Actions.AUDIT_READ)
-  topServices(@Query() q: TopServicesDto, @CurrentUser() user: AuthenticatedUser) {
+  topServices(
+    @Query() q: TopServicesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.reports.topServices(user, q.from, q.to, q.limit);
   }
 
   @Get('no-shows')
   @Requires(Actions.AUDIT_READ)
-  noShows(@Query() range: ReportRangeDto, @CurrentUser() user: AuthenticatedUser) {
+  noShows(
+    @Query() range: ReportRangeDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.reports.noShowRate(user, range.from, range.to);
   }
 }

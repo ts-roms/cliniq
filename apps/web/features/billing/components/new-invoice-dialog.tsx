@@ -68,7 +68,8 @@ function NewInvoiceForm({
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const items = watch('items') ?? [];
   const subtotal = items.reduce(
-    (sum, it) => sum + (Number(it.quantity) || 0) * (Number(it.unitPriceCentavos) || 0),
+    (sum, it) =>
+      sum + (Number(it.quantity) || 0) * (Number(it.unitPriceCentavos) || 0),
     0,
   );
   const discount = Number(watch('discountCentavos')) || 0;
@@ -146,7 +147,10 @@ function NewInvoiceForm({
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <FormField label="Discount (centavos)" error={errors.discountCentavos?.message}>
+        <FormField
+          label="Discount (centavos)"
+          error={errors.discountCentavos?.message}
+        >
           <Input type="number" {...register('discountCentavos')} />
         </FormField>
         <FormField label="Tax (centavos)" error={errors.taxCentavos?.message}>
@@ -170,7 +174,9 @@ function NewInvoiceForm({
       </div>
 
       {create.error && (
-        <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

@@ -43,7 +43,8 @@ function useEligibleDelegatees() {
   return useQuery({
     queryKey: ['delegations', 'eligible'],
     queryFn: async (): Promise<Eligible[]> => {
-      const { data, error } = await delegationsControllerListEligibleDelegatees();
+      const { data, error } =
+        await delegationsControllerListEligibleDelegatees();
       if (error) throw new Error('Failed to load staff');
       return (data as unknown as Eligible[]) ?? [];
     },
@@ -97,8 +98,7 @@ function DelegationItem({ delegation: d }: { delegation: DelegationRecord }) {
   const revoke = useRevokeDelegation();
   const now = Date.now();
   const ended = new Date(d.endsAt).getTime() < now;
-  const effectiveStatus =
-    d.status === 'ACTIVE' && ended ? 'EXPIRED' : d.status;
+  const effectiveStatus = d.status === 'ACTIVE' && ended ? 'EXPIRED' : d.status;
   return (
     <li className="rounded border bg-card p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -118,7 +118,9 @@ function DelegationItem({ delegation: d }: { delegation: DelegationRecord }) {
             {new Date(d.endsAt).toLocaleString()}
           </p>
           {d.reason && (
-            <p className="mt-1 text-xs italic text-muted-foreground">{d.reason}</p>
+            <p className="mt-1 text-xs italic text-muted-foreground">
+              {d.reason}
+            </p>
           )}
           {d.scope.length > 0 && (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -226,7 +228,10 @@ function NewDelegationDialog() {
             </FormField>
           </div>
           <FormField label="Reason" error={errors.reason?.message}>
-            <Input placeholder="Out for medical leave" {...register('reason')} />
+            <Input
+              placeholder="Out for medical leave"
+              {...register('reason')}
+            />
           </FormField>
           {create.error && (
             <p className="text-xs text-destructive">
@@ -234,7 +239,11 @@ function NewDelegationDialog() {
             </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={create.isPending}>

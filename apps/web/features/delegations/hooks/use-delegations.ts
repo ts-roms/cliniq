@@ -54,7 +54,9 @@ export function useCreateDelegation() {
           endsAt: input.endsAt.toISOString(),
           reason: input.reason,
           scope: input.scope ?? [],
-        } as unknown as Parameters<typeof delegationsControllerCreate>[0]['body'],
+        } as unknown as Parameters<
+          typeof delegationsControllerCreate
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Create failed');
       return data;

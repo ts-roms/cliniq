@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import {
-  Card, CardContent, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Loading,
   EmptyState,
 } from '@org/ui';
@@ -29,7 +32,9 @@ export function ConsultationsCard({
             description="Start a new consultation from the patient header."
           />
         )}
-        {items?.map((c) => <ConsultationRow key={c.id} consult={c} />)}
+        {items?.map((c) => (
+          <ConsultationRow key={c.id} consult={c} />
+        ))}
       </CardContent>
     </Card>
   );
@@ -44,7 +49,10 @@ function ConsultationRow({ consult: c }: { consult: Consultation }) {
           {new Date(c.startedAt).toLocaleString()}
         </span>
       </div>
-      <Link href={`/consultations/${c.id}`} className="text-xs text-primary hover:underline">
+      <Link
+        href={`/consultations/${c.id}`}
+        className="text-xs text-primary hover:underline"
+      >
         Open →
       </Link>
     </div>

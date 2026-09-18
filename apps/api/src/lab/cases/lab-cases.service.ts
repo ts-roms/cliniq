@@ -6,7 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
@@ -35,14 +39,22 @@ import type {
  *             AWAITING_PICKUP/SHIPPED → DELIVERED.
  */
 const TRANSITIONS: Record<LabCaseStatus, LabCaseStatus[]> = {
-  DRAFT:           [LabCaseStatus.SUBMITTED, LabCaseStatus.CANCELLED],
-  SUBMITTED:       [LabCaseStatus.IN_PROGRESS, LabCaseStatus.REJECTED, LabCaseStatus.CANCELLED],
-  IN_PROGRESS:     [LabCaseStatus.AWAITING_PICKUP, LabCaseStatus.SHIPPED, LabCaseStatus.CANCELLED],
+  DRAFT: [LabCaseStatus.SUBMITTED, LabCaseStatus.CANCELLED],
+  SUBMITTED: [
+    LabCaseStatus.IN_PROGRESS,
+    LabCaseStatus.REJECTED,
+    LabCaseStatus.CANCELLED,
+  ],
+  IN_PROGRESS: [
+    LabCaseStatus.AWAITING_PICKUP,
+    LabCaseStatus.SHIPPED,
+    LabCaseStatus.CANCELLED,
+  ],
   AWAITING_PICKUP: [LabCaseStatus.DELIVERED, LabCaseStatus.SHIPPED],
-  SHIPPED:         [LabCaseStatus.DELIVERED],
-  DELIVERED:       [],
-  CANCELLED:       [],
-  REJECTED:        [],
+  SHIPPED: [LabCaseStatus.DELIVERED],
+  DELIVERED: [],
+  CANCELLED: [],
+  REJECTED: [],
 };
 
 @Injectable()
@@ -73,16 +85,27 @@ export class LabCasesService {
     if (!tenant || tenant.kind !== 'CLINIC') {
       throw new ForbiddenException('only CLINIC tenants can create cases');
     }
-    const linked = await this.links.isLinkActive(dto.labTenantId, user.tenantId);
+    const linked = await this.links.isLinkActive(
+      dto.labTenantId,
+      user.tenantId,
+    );
     if (!linked) {
-      throw new ForbiddenException('your clinic has no active link with that lab');
+      throw new ForbiddenException(
+        'your clinic has no active link with that lab',
+      );
     }
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const product = await tx.labProduct.findFirst({
-        where: { id: dto.productId, tenantId: dto.labTenantId, deletedAt: null, isActive: true },
+        where: {
+          id: dto.productId,
+          tenantId: dto.labTenantId,
+          deletedAt: null,
+          isActive: true,
+        },
       });
-      if (!product) throw new BadRequestException('product not found / inactive');
+      if (!product)
+        throw new BadRequestException('product not found / inactive');
 
       const unitPrice =
         product.pricingMode === LabProductPricingMode.ADJUST_ON_ORDER
@@ -111,14 +134,20 @@ export class LabCasesService {
   }
 
   /** Clinic-side update of mutable fields (only valid in DRAFT). */
-  async updateAsClinic(id: string, dto: UpdateLabCaseDto, user: AuthenticatedUser) {
+  async updateAsClinic(
+    id: string,
+    dto: UpdateLabCaseDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.labCase.findFirst({
         where: { id, clinicTenantId: user.tenantId, deletedAt: null },
       });
       if (!existing) throw new NotFoundException('case not found');
       if (existing.status !== LabCaseStatus.DRAFT) {
-        throw new BadRequestException('only DRAFT cases are editable by the clinic');
+        throw new BadRequestException(
+          'only DRAFT cases are editable by the clinic',
+        );
       }
       if (dto.unitPrice !== undefined) {
         throw new ForbiddenException('clinic cannot set unitPrice');
@@ -130,7 +159,11 @@ export class LabCasesService {
     });
   }
 
-  async updateAsLab(id: string, dto: UpdateLabCaseDto, user: AuthenticatedUser) {
+  async updateAsLab(
+    id: string,
+    dto: UpdateLabCaseDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.labCase.findFirst({
         where: { id, labTenantId: user.tenantId, deletedAt: null },
@@ -172,7 +205,10 @@ export class LabCasesService {
     );
   }
 
-  async listForClinic(user: AuthenticatedUser, opts?: { status?: LabCaseStatus }) {
+  async listForClinic(
+    user: AuthenticatedUser,
+    opts?: { status?: LabCaseStatus },
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
       tx.labCase.findMany({
         where: {
@@ -198,7 +234,10 @@ export class LabCasesService {
           product: true,
           lab: { select: { id: true, slug: true, name: true } },
           clinic: { select: { id: true, slug: true, name: true } },
-          files: { where: { deletedAt: null }, orderBy: [{ createdAt: 'asc' }] },
+          files: {
+            where: { deletedAt: null },
+            orderBy: [{ createdAt: 'asc' }],
+          },
         },
       });
       if (!labCase) throw new NotFoundException('case not found');
@@ -213,64 +252,72 @@ export class LabCasesService {
     dto: TransitionLabCaseDto,
     user: AuthenticatedUser,
   ) {
-    const updated = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const labCase = await tx.labCase.findFirst({
-        where: { id, deletedAt: null },
-      });
-      if (!labCase) throw new NotFoundException('case not found');
-
-      const allowed = TRANSITIONS[labCase.status] ?? [];
-      if (!allowed.includes(dto.status)) {
-        throw new BadRequestException(
-          `cannot transition from ${labCase.status} to ${dto.status}`,
-        );
-      }
-
-      const isLab = labCase.labTenantId === user.tenantId;
-      const isClinic = labCase.clinicTenantId === user.tenantId;
-      this.assertActorAllowed(labCase.status, dto.status, isLab, isClinic);
-
-      // refNumber is allocated when SUBMITTED is reached. Race-prone for
-      // concurrent submits; acceptable for MVP — swap to a counter table later.
-      let refNumber = labCase.refNumber;
-      if (
-        dto.status === LabCaseStatus.SUBMITTED &&
-        labCase.status === LabCaseStatus.DRAFT &&
-        refNumber === null
-      ) {
-        const max = await tx.labCase.aggregate({
-          where: { labTenantId: labCase.labTenantId },
-          _max: { refNumber: true },
+    const updated = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const labCase = await tx.labCase.findFirst({
+          where: { id, deletedAt: null },
         });
-        refNumber = (max._max.refNumber ?? 0) + 1;
-      }
+        if (!labCase) throw new NotFoundException('case not found');
 
-      const now = new Date();
-      const updates: Record<string, unknown> = {
-        status: dto.status,
-        refNumber,
-      };
-      if (dto.status === LabCaseStatus.SUBMITTED) updates.submittedAt = now;
-      if (dto.status === LabCaseStatus.IN_PROGRESS) {
-        updates.acceptedAt = now;
-        if (isLab) updates.acceptedByUserId = user.userId;
-      }
-      if (dto.status === LabCaseStatus.AWAITING_PICKUP) updates.completedAt = now;
-      if (dto.status === LabCaseStatus.SHIPPED) updates.shippedAt = now;
-      if (dto.status === LabCaseStatus.DELIVERED) updates.deliveredAt = now;
-      if (dto.status === LabCaseStatus.CANCELLED) updates.cancelledAt = now;
-      if (dto.status === LabCaseStatus.REJECTED) updates.cancelledAt = now;
+        const allowed = TRANSITIONS[labCase.status] ?? [];
+        if (!allowed.includes(dto.status)) {
+          throw new BadRequestException(
+            `cannot transition from ${labCase.status} to ${dto.status}`,
+          );
+        }
 
-      this.logger.log(
-        `lab case ${id} transitioned ${labCase.status} → ${dto.status} by ${user.userId} (tenant ${user.tenantId})`,
-      );
+        const isLab = labCase.labTenantId === user.tenantId;
+        const isClinic = labCase.clinicTenantId === user.tenantId;
+        this.assertActorAllowed(labCase.status, dto.status, isLab, isClinic);
 
-      return tx.labCase.update({ where: { id }, data: updates });
-    });
+        // refNumber is allocated when SUBMITTED is reached. Race-prone for
+        // concurrent submits; acceptable for MVP — swap to a counter table later.
+        let refNumber = labCase.refNumber;
+        if (
+          dto.status === LabCaseStatus.SUBMITTED &&
+          labCase.status === LabCaseStatus.DRAFT &&
+          refNumber === null
+        ) {
+          const max = await tx.labCase.aggregate({
+            where: { labTenantId: labCase.labTenantId },
+            _max: { refNumber: true },
+          });
+          refNumber = (max._max.refNumber ?? 0) + 1;
+        }
+
+        const now = new Date();
+        const updates: Record<string, unknown> = {
+          status: dto.status,
+          refNumber,
+        };
+        if (dto.status === LabCaseStatus.SUBMITTED) updates.submittedAt = now;
+        if (dto.status === LabCaseStatus.IN_PROGRESS) {
+          updates.acceptedAt = now;
+          if (isLab) updates.acceptedByUserId = user.userId;
+        }
+        if (dto.status === LabCaseStatus.AWAITING_PICKUP)
+          updates.completedAt = now;
+        if (dto.status === LabCaseStatus.SHIPPED) updates.shippedAt = now;
+        if (dto.status === LabCaseStatus.DELIVERED) updates.deliveredAt = now;
+        if (dto.status === LabCaseStatus.CANCELLED) updates.cancelledAt = now;
+        if (dto.status === LabCaseStatus.REJECTED) updates.cancelledAt = now;
+
+        this.logger.log(
+          `lab case ${id} transitioned ${labCase.status} → ${dto.status} by ${user.userId} (tenant ${user.tenantId})`,
+        );
+
+        return tx.labCase.update({ where: { id }, data: updates });
+      },
+    );
     // Fire-and-forget notifications. We notify the *other* side of the
     // transition — the actor doesn't need an email about their own action.
-    void this.notifyTransition(updated.id, dto.status, dto.reason).catch((err) =>
-      this.logger.warn(`case-transition notify failed: ${(err as Error).message}`),
+    void this.notifyTransition(updated.id, dto.status, dto.reason).catch(
+      (err) =>
+        this.logger.warn(
+          `case-transition notify failed: ${(err as Error).message}`,
+        ),
     );
     return updated;
   }
@@ -398,23 +445,31 @@ export class LabCasesService {
   }
 
   async confirmUpload(caseId: string, fileId: string, user: AuthenticatedUser) {
-    const confirmed = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const file = await tx.labCaseFile.findFirst({
-        where: { id: fileId, caseId, deletedAt: null },
-      });
-      if (!file) throw new NotFoundException('file not found');
-      if (file.status === LabCaseFileStatus.READY) return file;
-      return tx.labCaseFile.update({
-        where: { id: fileId },
-        data: { status: LabCaseFileStatus.READY, confirmedAt: new Date() },
-      });
-    });
+    const confirmed = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const file = await tx.labCaseFile.findFirst({
+          where: { id: fileId, caseId, deletedAt: null },
+        });
+        if (!file) throw new NotFoundException('file not found');
+        if (file.status === LabCaseFileStatus.READY) return file;
+        return tx.labCaseFile.update({
+          where: { id: fileId },
+          data: { status: LabCaseFileStatus.READY, confirmedAt: new Date() },
+        });
+      },
+    );
     // Best-effort image optimization. Runs after the row is READY so that
     // browsers fetching via presigned URL get the optimized version. We
     // re-encode JPEG/PNG/WebP at quality 85 and cap at 2000px on the long
     // edge — this routinely halves the payload for phone photos.
-    void this.optimizeIfImage(confirmed.id, confirmed.s3Key, confirmed.mimeType).catch(
-      (err) => this.logger.warn(`image optimize failed: ${(err as Error).message}`),
+    void this.optimizeIfImage(
+      confirmed.id,
+      confirmed.s3Key,
+      confirmed.mimeType,
+    ).catch((err) =>
+      this.logger.warn(`image optimize failed: ${(err as Error).message}`),
     );
     return confirmed;
   }
@@ -438,7 +493,12 @@ export class LabCasesService {
     const input = Buffer.concat(chunks);
     const optimized = await sharp(input, { failOn: 'none' })
       .rotate() // honor EXIF orientation before resize
-      .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      .resize({
+        width: 2000,
+        height: 2000,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
       .jpeg({ quality: 85, mozjpeg: true })
       .toBuffer();
     if (optimized.byteLength >= input.byteLength) {
@@ -690,7 +750,11 @@ export class LabCasesService {
     });
   }
 
-  async deleteMessage(caseId: string, messageId: string, user: AuthenticatedUser) {
+  async deleteMessage(
+    caseId: string,
+    messageId: string,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const msg = await tx.labCaseMessage.findFirst({
         where: { id: messageId, caseId, deletedAt: null },
@@ -722,7 +786,11 @@ export class LabCasesService {
   /** Lab-only: create or update the shipment record. */
   async upsertShipment(
     caseId: string,
-    input: { carrier?: string | null; trackingNumber?: string | null; notes?: string | null },
+    input: {
+      carrier?: string | null;
+      trackingNumber?: string | null;
+      notes?: string | null;
+    },
     user: AuthenticatedUser,
   ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
@@ -791,7 +859,9 @@ export class LabCasesService {
       LabCaseStatus.SHIPPED,
     ];
     if (labOnly.includes(toStatus) && !isLab) {
-      throw new ForbiddenException('only the lab can drive manufacturing transitions');
+      throw new ForbiddenException(
+        'only the lab can drive manufacturing transitions',
+      );
     }
     void fromStatus;
   }
@@ -817,15 +887,21 @@ export class LabCasesService {
           : dto.dueAt === null
             ? null
             : new Date(dto.dueAt),
-      formData: dto.formData === undefined ? undefined : (dto.formData ?? undefined),
+      formData:
+        dto.formData === undefined ? undefined : (dto.formData ?? undefined),
       patientLabel:
-        dto.patientLabel === undefined ? existing.patientLabel : dto.patientLabel,
+        dto.patientLabel === undefined
+          ? existing.patientLabel
+          : dto.patientLabel,
       doctorLabel:
         dto.doctorLabel === undefined ? existing.doctorLabel : dto.doctorLabel,
       deliveryCenter:
-        dto.deliveryCenter === undefined ? existing.deliveryCenter : dto.deliveryCenter,
+        dto.deliveryCenter === undefined
+          ? existing.deliveryCenter
+          : dto.deliveryCenter,
       notes: dto.notes === undefined ? existing.notes : dto.notes,
-      unitPrice: dto.unitPrice === undefined ? existing.unitPrice : dto.unitPrice,
+      unitPrice:
+        dto.unitPrice === undefined ? existing.unitPrice : dto.unitPrice,
     };
   }
 }

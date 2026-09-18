@@ -26,10 +26,9 @@ export class ConsentsInterceptor implements NestInterceptor {
   ) {}
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const meta = this.reflector.getAllAndOverride<RequiresConsentMeta | undefined>(
-      REQUIRES_CONSENT_KEY,
-      [ctx.getHandler(), ctx.getClass()],
-    );
+    const meta = this.reflector.getAllAndOverride<
+      RequiresConsentMeta | undefined
+    >(REQUIRES_CONSENT_KEY, [ctx.getHandler(), ctx.getClass()]);
     if (!meta) return next.handle();
 
     const req = ctx.switchToHttp().getRequest<
@@ -77,7 +76,10 @@ export class ConsentsInterceptor implements NestInterceptor {
       case 'param:id-consultation':
         return this.patientIdFromConsultation(req.params?.id, user);
       case 'body:fileId-derived':
-        return this.patientIdFromFile(req.body?.fileId as string | undefined, user);
+        return this.patientIdFromFile(
+          req.body?.fileId as string | undefined,
+          user,
+        );
       default:
         // Auto-resolve in this order — safe defaults
         if (req.params?.patientId) return req.params.patientId;

@@ -45,14 +45,24 @@ export class PrescriptionsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.RX_SIGN)
-  @Audit({ action: 'rx.sign', entity: 'Prescription', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreatePrescriptionDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'rx.sign',
+    entity: 'Prescription',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreatePrescriptionDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.rx.create(dto, user);
   }
 
   @Get()
   @Requires(Actions.PATIENT_READ)
-  list(@Query('patientId') patientId: string, @CurrentUser() user: AuthenticatedUser) {
+  list(
+    @Query('patientId') patientId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.rx.listForPatient(patientId, user);
   }
 
@@ -65,7 +75,11 @@ export class PrescriptionsController {
   @Get(':id/pdf')
   @Header('Content-Type', 'application/pdf')
   @Requires(Actions.PATIENT_READ)
-  @Audit({ action: 'rx.pdf.download', entity: 'Prescription', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'rx.pdf.download',
+    entity: 'Prescription',
+    entityIdFrom: 'param:id',
+  })
   async pdf(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -79,7 +93,11 @@ export class PrescriptionsController {
 
   @Post(':id/cancel')
   @Requires(Actions.RX_SIGN)
-  @Audit({ action: 'rx.cancel', entity: 'Prescription', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'rx.cancel',
+    entity: 'Prescription',
+    entityIdFrom: 'param:id',
+  })
   cancel(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.rx.cancel(id, user);
   }

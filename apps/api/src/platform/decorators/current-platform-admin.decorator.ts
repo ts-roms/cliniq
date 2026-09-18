@@ -7,9 +7,13 @@ export interface AuthenticatedPlatformAdmin {
 
 export const CurrentPlatformAdmin = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): AuthenticatedPlatformAdmin => {
-    const req = ctx.switchToHttp().getRequest<{ platformAdmin?: AuthenticatedPlatformAdmin }>();
+    const req = ctx
+      .switchToHttp()
+      .getRequest<{ platformAdmin?: AuthenticatedPlatformAdmin }>();
     if (!req.platformAdmin) {
-      throw new Error('CurrentPlatformAdmin used on a route without @PlatformAuth');
+      throw new Error(
+        'CurrentPlatformAdmin used on a route without @PlatformAuth',
+      );
     }
     return req.platformAdmin;
   },

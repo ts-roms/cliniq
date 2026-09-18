@@ -58,7 +58,8 @@ export class DentalService {
           teeth: { include: { surfaces: true }, orderBy: { toothCode: 'asc' } },
         },
       });
-      if (!chart) throw new NotFoundException(`Dental chart ${chartId} not found`);
+      if (!chart)
+        throw new NotFoundException(`Dental chart ${chartId} not found`);
       return chart;
     });
   }
@@ -115,7 +116,8 @@ export class DentalService {
         where: { id: chartId, deletedAt: null },
         select: { id: true },
       });
-      if (!chart) throw new NotFoundException(`Dental chart ${chartId} not found`);
+      if (!chart)
+        throw new NotFoundException(`Dental chart ${chartId} not found`);
       await tx.dentalChart.update({
         where: { id: chartId },
         data: { deletedAt: new Date() },

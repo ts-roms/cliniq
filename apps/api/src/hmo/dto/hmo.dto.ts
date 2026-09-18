@@ -15,16 +15,32 @@ import { HmoClaimStatus } from '@org/db';
 
 export class CreateHmoProviderDto {
   @ApiProperty() @IsString() @MaxLength(120) name!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) payerCode?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) contactPhone?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  payerCode?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  contactPhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsEmail() contactEmail?: string;
 }
 
 export class CreateHmoMembershipDto {
   @ApiProperty() @IsString() providerId!: string;
   @ApiProperty() @IsString() @MaxLength(80) memberId!: string;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Date) @IsDate() validFrom?: Date;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Date) @IsDate() validUntil?: Date;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  validFrom?: Date;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  validUntil?: Date;
 }
 
 export class FileClaimDto {
@@ -35,7 +51,11 @@ export class FileClaimDto {
   @Min(0)
   claimedCentavos!: number;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(280) notes?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  notes?: string;
 }
 
 export class UpdateClaimDto {
@@ -44,7 +64,11 @@ export class UpdateClaimDto {
   @IsEnum(HmoClaimStatus)
   status?: HmoClaimStatus;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) authNumber?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  authNumber?: string;
 
   @ApiPropertyOptional({ minimum: 0 })
   @IsOptional()
@@ -60,8 +84,16 @@ export class UpdateClaimDto {
   @Min(0)
   patientResponsibilityCentavos?: number;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(280) denialReason?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(280) notes?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  denialReason?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  notes?: string;
 }
 
 export class RecordHmoPaymentDto {
@@ -71,7 +103,9 @@ export class RecordHmoPaymentDto {
   @Min(1)
   amountCentavos!: number;
 
-  @ApiPropertyOptional({ description: 'HMO payment reference (PRA, voucher #)' })
+  @ApiPropertyOptional({
+    description: 'HMO payment reference (PRA, voucher #)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(80)
@@ -79,9 +113,21 @@ export class RecordHmoPaymentDto {
 }
 
 export class UpdateProviderDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) name?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) payerCode?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) contactPhone?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  name?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  payerCode?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  contactPhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsEmail() contactEmail?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() active?: boolean;
 }

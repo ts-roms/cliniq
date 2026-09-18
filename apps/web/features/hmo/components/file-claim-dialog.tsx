@@ -67,7 +67,8 @@ export function FileClaimDialog({ invoice }: { invoice: Invoice }) {
         </DialogHeader>
         {active.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No active HMO memberships for this patient. Add one from their profile first.
+            No active HMO memberships for this patient. Add one from their
+            profile first.
           </p>
         ) : (
           <form onSubmit={onSubmit} className="space-y-3">
@@ -81,17 +82,26 @@ export function FileClaimDialog({ invoice }: { invoice: Invoice }) {
                 ))}
               </Select>
             </FormField>
-            <FormField label="Claimed amount (centavos)" error={errors.claimedCentavos?.message}>
+            <FormField
+              label="Claimed amount (centavos)"
+              error={errors.claimedCentavos?.message}
+            >
               <Input type="number" {...register('claimedCentavos')} />
             </FormField>
             <FormField label="Notes" error={errors.notes?.message}>
               <Input {...register('notes')} />
             </FormField>
             {file.error && (
-              <p className="text-xs text-destructive">{(file.error as Error).message}</p>
+              <p className="text-xs text-destructive">
+                {(file.error as Error).message}
+              </p>
             )}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting || file.isPending}>

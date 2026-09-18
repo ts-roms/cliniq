@@ -57,10 +57,14 @@ export function FileDsrDialog({ patientId }: { patientId: string }) {
           <FormField label="Type" error={errors.type?.message}>
             <Select {...register('type')}>
               <option value="ACCESS">Access — copy of records</option>
-              <option value="CORRECTION">Correction — fix inaccurate data</option>
+              <option value="CORRECTION">
+                Correction — fix inaccurate data
+              </option>
               <option value="ERASURE">Erasure — delete data</option>
               <option value="OBJECTION">Objection — to processing</option>
-              <option value="PORTABILITY">Portability — machine-readable export</option>
+              <option value="PORTABILITY">
+                Portability — machine-readable export
+              </option>
             </Select>
           </FormField>
           <FormField label="Details" error={errors.details?.message}>
@@ -70,10 +74,16 @@ export function FileDsrDialog({ patientId }: { patientId: string }) {
             />
           </FormField>
           {file.error && (
-            <p className="text-xs text-destructive">{(file.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(file.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || file.isPending}>

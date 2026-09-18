@@ -28,48 +28,52 @@ export class LabDisputesService {
     reason: string,
     user: AuthenticatedUser,
   ) {
-    const dispute = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const labCase = await tx.labCase.findFirst({
-        where: { id: caseId, deletedAt: null },
-        select: { id: true, labTenantId: true, clinicTenantId: true },
-      });
-      if (!labCase) throw new NotFoundException('case not found');
-      if (
-        labCase.labTenantId !== user.tenantId &&
-        labCase.clinicTenantId !== user.tenantId
-      ) {
-        throw new ForbiddenException('not your case');
-      }
-      // Allow at most one OPEN dispute per case at a time. Opening a new
-      // one while another is open creates noise; ask the user to update
-      // the existing thread.
-      const open = await tx.labCaseDispute.findFirst({
-        where: {
-          caseId,
-          status: LabCaseDisputeStatus.OPEN,
-          deletedAt: null,
-        },
-        select: { id: true },
-      });
-      if (open) {
-        throw new BadRequestException(
-          `there is already an open dispute (${open.id}) on this case`,
-        );
-      }
-      return tx.labCaseDispute.create({
-        data: {
-          caseId,
-          labTenantId: labCase.labTenantId,
-          clinicTenantId: labCase.clinicTenantId,
-          openedByUserId: user.userId,
-          openedByTenantId: user.tenantId,
-          kind,
-          reason,
-          status: LabCaseDisputeStatus.OPEN,
-        },
-        include: { messages: true },
-      });
-    });
+    const dispute = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const labCase = await tx.labCase.findFirst({
+          where: { id: caseId, deletedAt: null },
+          select: { id: true, labTenantId: true, clinicTenantId: true },
+        });
+        if (!labCase) throw new NotFoundException('case not found');
+        if (
+          labCase.labTenantId !== user.tenantId &&
+          labCase.clinicTenantId !== user.tenantId
+        ) {
+          throw new ForbiddenException('not your case');
+        }
+        // Allow at most one OPEN dispute per case at a time. Opening a new
+        // one while another is open creates noise; ask the user to update
+        // the existing thread.
+        const open = await tx.labCaseDispute.findFirst({
+          where: {
+            caseId,
+            status: LabCaseDisputeStatus.OPEN,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (open) {
+          throw new BadRequestException(
+            `there is already an open dispute (${open.id}) on this case`,
+          );
+        }
+        return tx.labCaseDispute.create({
+          data: {
+            caseId,
+            labTenantId: labCase.labTenantId,
+            clinicTenantId: labCase.clinicTenantId,
+            openedByUserId: user.userId,
+            openedByTenantId: user.tenantId,
+            kind,
+            reason,
+            status: LabCaseDisputeStatus.OPEN,
+          },
+          include: { messages: true },
+        });
+      },
+    );
     void this.notifyDisputeOpened(dispute.id, user.tenantId).catch((err) =>
       this.logger.warn(`dispute-open notify failed: ${(err as Error).message}`),
     );
@@ -116,7 +120,12 @@ export class LabDisputesService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const dispute = await tx.labCaseDispute.findFirst({
         where: { id, deletedAt: null },
-        select: { id: true, status: true, labTenantId: true, clinicTenantId: true },
+        select: {
+          id: true,
+          status: true,
+          labTenantId: true,
+          clinicTenantId: true,
+        },
       });
       if (!dispute) throw new NotFoundException('dispute not found');
       if (dispute.status !== LabCaseDisputeStatus.OPEN) {
@@ -155,44 +164,51 @@ export class LabDisputesService {
     notes: string | null,
     user: AuthenticatedUser,
   ) {
-    const updated = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const dispute = await tx.labCaseDispute.findFirst({
-        where: { id, deletedAt: null },
-      });
-      if (!dispute) throw new NotFoundException('dispute not found');
-      if (dispute.status !== LabCaseDisputeStatus.OPEN) {
-        throw new BadRequestException(`dispute is already ${dispute.status}`);
-      }
-      if (
-        dispute.labTenantId !== user.tenantId &&
-        dispute.clinicTenantId !== user.tenantId
-      ) {
-        throw new ForbiddenException('not your dispute');
-      }
-      if (
-        status === LabCaseDisputeStatus.WITHDRAWN &&
-        dispute.openedByUserId !== user.userId
-      ) {
-        throw new ForbiddenException('only the opener can withdraw');
-      }
-      return tx.labCaseDispute.update({
-        where: { id },
-        data: {
-          status,
-          resolvedByUserId: user.userId,
-          resolvedAt: new Date(),
-          resolutionNotes: notes ?? null,
-        },
-        include: {
-          messages: {
-            where: { deletedAt: null },
-            orderBy: { createdAt: 'asc' },
+    const updated = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const dispute = await tx.labCaseDispute.findFirst({
+          where: { id, deletedAt: null },
+        });
+        if (!dispute) throw new NotFoundException('dispute not found');
+        if (dispute.status !== LabCaseDisputeStatus.OPEN) {
+          throw new BadRequestException(`dispute is already ${dispute.status}`);
+        }
+        if (
+          dispute.labTenantId !== user.tenantId &&
+          dispute.clinicTenantId !== user.tenantId
+        ) {
+          throw new ForbiddenException('not your dispute');
+        }
+        if (
+          status === LabCaseDisputeStatus.WITHDRAWN &&
+          dispute.openedByUserId !== user.userId
+        ) {
+          throw new ForbiddenException('only the opener can withdraw');
+        }
+        return tx.labCaseDispute.update({
+          where: { id },
+          data: {
+            status,
+            resolvedByUserId: user.userId,
+            resolvedAt: new Date(),
+            resolutionNotes: notes ?? null,
           },
-        },
-      });
-    });
-    void this.notifyDisputeClosed(updated.id, user.tenantId, status).catch((err) =>
-      this.logger.warn(`dispute-close notify failed: ${(err as Error).message}`),
+          include: {
+            messages: {
+              where: { deletedAt: null },
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+        });
+      },
+    );
+    void this.notifyDisputeClosed(updated.id, user.tenantId, status).catch(
+      (err) =>
+        this.logger.warn(
+          `dispute-close notify failed: ${(err as Error).message}`,
+        ),
     );
     return updated;
   }

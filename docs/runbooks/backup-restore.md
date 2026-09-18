@@ -10,15 +10,15 @@
 
 Set in `infra/terraform/modules/database/main.tf`:
 
-| Setting | Value | Why |
-|---|---|---|
-| `backup_retention_period` | 35 days | NPC retention floor + room for monthly drill |
-| `preferred_backup_window` | `18:00-18:30` UTC (02:00–02:30 Manila) | Quiet hours |
-| `copy_tags_to_snapshot` | true | Audit + cost allocation |
-| `deletion_protection` | true | Block accidental drop |
-| `multi_az` | true (prod), false (staging) | Failover capacity |
-| `storage_encrypted` | true | AES-256 via AWS KMS |
-| Custom KMS key | yes | Key rotation owned by us, not AWS |
+| Setting                   | Value                                  | Why                                          |
+| ------------------------- | -------------------------------------- | -------------------------------------------- |
+| `backup_retention_period` | 35 days                                | NPC retention floor + room for monthly drill |
+| `preferred_backup_window` | `18:00-18:30` UTC (02:00–02:30 Manila) | Quiet hours                                  |
+| `copy_tags_to_snapshot`   | true                                   | Audit + cost allocation                      |
+| `deletion_protection`     | true                                   | Block accidental drop                        |
+| `multi_az`                | true (prod), false (staging)           | Failover capacity                            |
+| `storage_encrypted`       | true                                   | AES-256 via AWS KMS                          |
+| Custom KMS key            | yes                                    | Key rotation owned by us, not AWS            |
 
 S3 (file uploads, audio) backed by versioning + 90-day lifecycle to Glacier IR; deletion is soft via versioned delete-markers.
 
@@ -64,13 +64,13 @@ Use this for accidental data loss scenarios (bad migration, bad delete query).
 
 ## Disaster recovery scenarios
 
-| Scenario | Target | Procedure |
-|---|---|---|
-| Single AZ outage | < 5 min unavailability | Multi-AZ failover (automatic) |
-| RDS instance corruption | RTO 1h | Restore latest automated snapshot |
-| Bad migration | RTO 30min | PITR to t-5min before migration |
-| Region failure | RTO 4h | Cross-region snapshot copy → restore in `ap-southeast-2` |
-| Ransomware / total compromise | RTO 8h | Restore from immutable cross-account backup vault |
+| Scenario                      | Target                 | Procedure                                                |
+| ----------------------------- | ---------------------- | -------------------------------------------------------- |
+| Single AZ outage              | < 5 min unavailability | Multi-AZ failover (automatic)                            |
+| RDS instance corruption       | RTO 1h                 | Restore latest automated snapshot                        |
+| Bad migration                 | RTO 30min              | PITR to t-5min before migration                          |
+| Region failure                | RTO 4h                 | Cross-region snapshot copy → restore in `ap-southeast-2` |
+| Ransomware / total compromise | RTO 8h                 | Restore from immutable cross-account backup vault        |
 
 ## Cross-region snapshot copy (DR posture)
 

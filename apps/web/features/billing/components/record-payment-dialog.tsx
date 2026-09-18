@@ -72,7 +72,10 @@ export function RecordPaymentDialog({
             Outstanding balance: <strong>{formatCentavos(remaining)}</strong>
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Amount (centavos)" error={errors.amountCentavos?.message}>
+            <FormField
+              label="Amount (centavos)"
+              error={errors.amountCentavos?.message}
+            >
               <Input type="number" {...register('amountCentavos')} />
             </FormField>
             <FormField label="Method" error={errors.method?.message}>
@@ -92,10 +95,16 @@ export function RecordPaymentDialog({
             <Input placeholder="OR-2026-0001" {...register('reference')} />
           </FormField>
           {record.error && (
-            <p className="text-xs text-destructive">{(record.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(record.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || record.isPending}>

@@ -19,14 +19,19 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const meta = this.reflector.getAllAndOverride<AuditMeta | undefined>(AUDIT_META_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const meta = this.reflector.getAllAndOverride<AuditMeta | undefined>(
+      AUDIT_META_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (!meta) return next.handle();
 
-    const req = ctx.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? null;
+    const req = ctx
+      .switchToHttp()
+      .getRequest<Request & { user?: AuthenticatedUser }>();
+    const ip =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
+      req.ip ??
+      null;
     const userAgent = (req.headers['user-agent'] as string | undefined) ?? null;
 
     return next.handle().pipe(
@@ -72,7 +77,10 @@ export class AuditInterceptor implements NestInterceptor {
 
 function resolveEntityId(
   meta: AuditMeta,
-  req: Request & { params?: Record<string, string>; body?: Record<string, unknown> },
+  req: Request & {
+    params?: Record<string, string>;
+    body?: Record<string, unknown>;
+  },
   result: unknown,
 ): string | null {
   switch (meta.entityIdFrom) {

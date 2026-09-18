@@ -21,7 +21,13 @@ import {
 } from '../schemas/labs';
 import { useRecordResult } from '../hooks/use-labs';
 
-export function RecordResultsDialog({ order, patientId }: { order: LabOrder; patientId: string }) {
+export function RecordResultsDialog({
+  order,
+  patientId,
+}: {
+  order: LabOrder;
+  patientId: string;
+}) {
   const [open, setOpen] = useState(false);
   if (order.status === 'CANCELLED' || order.status === 'REPORTED') {
     return order.status === 'REPORTED' ? (
@@ -113,7 +119,11 @@ function ResultRow({
         </FormField>
       </div>
       <div className="col-span-1 pb-1.5">
-        <Button type="submit" size="sm" disabled={isSubmitting || record.isPending}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isSubmitting || record.isPending}
+        >
           {record.isPending ? '…' : 'Save'}
         </Button>
       </div>

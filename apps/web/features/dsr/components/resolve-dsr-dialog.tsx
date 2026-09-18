@@ -61,7 +61,10 @@ export function ResolveDsrDialog({ dsr }: { dsr: Dsr }) {
               <option value="REJECTED">Rejected (with reason)</option>
             </Select>
           </FormField>
-          <FormField label="Resolution / reason" error={errors.resolution?.message}>
+          <FormField
+            label="Resolution / reason"
+            error={errors.resolution?.message}
+          >
             <Input
               placeholder="Action taken or basis for rejection"
               {...register('resolution')}
@@ -73,7 +76,11 @@ export function ResolveDsrDialog({ dsr }: { dsr: Dsr }) {
             </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || resolve.isPending}>

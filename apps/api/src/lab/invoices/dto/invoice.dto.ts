@@ -23,7 +23,9 @@ import { LabInvoiceStatus, LabPaymentLinkProvider } from '@org/db';
  * adjustment). Money is in centavos.
  */
 export class LabInvoiceItemInputDto {
-  @ApiPropertyOptional({ description: 'Optional LabCase id this line bills for.' })
+  @ApiPropertyOptional({
+    description: 'Optional LabCase id this line bills for.',
+  })
   @IsOptional()
   @IsString()
   caseId?: string;
@@ -74,7 +76,10 @@ export class CreateLabInvoiceDto {
   @MaxLength(2000)
   notes?: string;
 
-  @ApiPropertyOptional({ description: 'Tax in centavos (line-total agnostic).', default: 0 })
+  @ApiPropertyOptional({
+    description: 'Tax in centavos (line-total agnostic).',
+    default: 0,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -109,7 +114,9 @@ export class UpdateInvoiceDto {
 }
 
 export class GenerateFromCasesDto {
-  @ApiProperty({ description: 'Clinic tenant id. All cases must belong to this clinic.' })
+  @ApiProperty({
+    description: 'Clinic tenant id. All cases must belong to this clinic.',
+  })
   @IsString()
   clinicTenantId!: string;
 
@@ -184,7 +191,9 @@ export class RecordLabInvoicePaymentDto {
   @IsISO8601()
   paidAt?: string;
 
-  @ApiPropertyOptional({ description: 'Free-text reference (bank ref, link id, etc.).' })
+  @ApiPropertyOptional({
+    description: 'Free-text reference (bank ref, link id, etc.).',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -201,13 +210,17 @@ export class CreatePaymentLinkDto {
   @IsEnum(LabPaymentLinkProvider)
   provider?: LabPaymentLinkProvider;
 
-  @ApiPropertyOptional({ description: 'Amount in centavos. Defaults to invoice outstanding balance.' })
+  @ApiPropertyOptional({
+    description: 'Amount in centavos. Defaults to invoice outstanding balance.',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   amountCents?: number;
 
-  @ApiPropertyOptional({ description: 'External provider id (PayMongo link id, etc.).' })
+  @ApiPropertyOptional({
+    description: 'External provider id (PayMongo link id, etc.).',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(255)
@@ -231,7 +244,9 @@ export class InvoiceFilterDto {
   @IsEnum(LabInvoiceStatus)
   status?: LabInvoiceStatus;
 
-  @ApiPropertyOptional({ description: 'Filter to a specific clinic (lab-side only).' })
+  @ApiPropertyOptional({
+    description: 'Filter to a specific clinic (lab-side only).',
+  })
   @IsOptional()
   @IsString()
   clinicTenantId?: string;

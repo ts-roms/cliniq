@@ -77,13 +77,24 @@ export function UltrasoundCard({ patientId }: { patientId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {showNew && <NewReportForm patientId={patientId} onDone={() => setShowNew(false)} />}
-        {list.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {showNew && (
+          <NewReportForm
+            patientId={patientId}
+            onDone={() => setShowNew(false)}
+          />
+        )}
+        {list.isLoading && (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        )}
         {list.error && (
-          <p className="text-sm text-destructive">{(list.error as Error).message}</p>
+          <p className="text-sm text-destructive">
+            {(list.error as Error).message}
+          </p>
         )}
         {list.data && list.data.length === 0 && !showNew && (
-          <p className="text-sm text-muted-foreground">No ultrasound reports yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No ultrasound reports yet.
+          </p>
         )}
         {list.data?.map((r) => (
           <ReportRow key={r.id} report={r} />
@@ -118,12 +129,16 @@ function ReportRow({ report }: { report: UltrasoundReport }) {
           {report.flMm && <Stat label="FL" value={`${report.flMm} mm`} />}
         </div>
       )}
-      {(report.estimatedFetalWeightG || report.fetalHeartRate || report.amnioticFluidIndexCm) && (
+      {(report.estimatedFetalWeightG ||
+        report.fetalHeartRate ||
+        report.amnioticFluidIndexCm) && (
         <div className="mt-1 grid grid-cols-3 gap-2 text-xs">
           {report.estimatedFetalWeightG && (
             <Stat label="EFW" value={`${report.estimatedFetalWeightG} g`} />
           )}
-          {report.fetalHeartRate && <Stat label="FHR" value={`${report.fetalHeartRate} bpm`} />}
+          {report.fetalHeartRate && (
+            <Stat label="FHR" value={`${report.fetalHeartRate} bpm`} />
+          )}
           {report.amnioticFluidIndexCm && (
             <Stat label="AFI" value={`${report.amnioticFluidIndexCm} cm`} />
           )}
@@ -134,7 +149,9 @@ function ReportRow({ report }: { report: UltrasoundReport }) {
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
             Impression
           </div>
-          <p className="mt-0.5 whitespace-pre-wrap text-sm">{report.impression}</p>
+          <p className="mt-0.5 whitespace-pre-wrap text-sm">
+            {report.impression}
+          </p>
         </div>
       )}
     </div>
@@ -200,7 +217,10 @@ function NewReportForm({
       className="space-y-2 rounded-md border bg-muted/20 p-3"
     >
       <div className="grid gap-2 md:grid-cols-2">
-        <Select value={kind} onChange={(e) => setKind(e.target.value as UltrasoundKind)}>
+        <Select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as UltrasoundKind)}
+        >
           {(Object.keys(KIND_LABEL) as UltrasoundKind[]).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}

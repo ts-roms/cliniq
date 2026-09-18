@@ -27,7 +27,10 @@ export class SettingsController {
   @Patch()
   @Requires(Actions.TENANT_MANAGE)
   @Audit({ action: 'tenant.settingsUpdate', entity: 'Tenant' })
-  update(@Body() dto: UpdateSettingsDto, @CurrentUser() user: AuthenticatedUser) {
+  update(
+    @Body() dto: UpdateSettingsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.settings.update(dto, user);
   }
 }

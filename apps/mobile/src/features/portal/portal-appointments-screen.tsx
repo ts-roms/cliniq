@@ -66,7 +66,9 @@ export function PortalAppointmentsScreen() {
       )}
       {error && (
         <View className="px-6 py-4">
-          <Text className="text-sm text-destructive">{(error as Error).message}</Text>
+          <Text className="text-sm text-destructive">
+            {(error as Error).message}
+          </Text>
         </View>
       )}
       {data && (

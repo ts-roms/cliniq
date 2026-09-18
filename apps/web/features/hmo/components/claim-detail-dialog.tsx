@@ -28,11 +28,13 @@ import {
 import { useRecordHmoPayment, useUpdateClaim } from '../hooks/use-hmo';
 
 export function ClaimActions({ claim }: { claim: HmoClaim }) {
-  if (claim.status === 'PAID') return <span className="text-xs text-emerald-700">paid</span>;
+  if (claim.status === 'PAID')
+    return <span className="text-xs text-emerald-700">paid</span>;
   if (claim.status === 'DENIED' || claim.status === 'CANCELLED') {
     return <span className="text-xs text-muted-foreground">closed</span>;
   }
-  const canRecordPayment = claim.status === 'APPROVED' || claim.status === 'PARTIAL';
+  const canRecordPayment =
+    claim.status === 'APPROVED' || claim.status === 'PARTIAL';
   return (
     <div className="flex justify-end gap-1">
       <UpdateClaimDialog claim={claim} />
@@ -93,24 +95,36 @@ function UpdateClaimDialog({ claim }: { claim: HmoClaim }) {
             <Input placeholder="HMO approval no." {...register('authNumber')} />
           </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Approved (centavos)" error={errors.approvedCentavos?.message}>
+            <FormField
+              label="Approved (centavos)"
+              error={errors.approvedCentavos?.message}
+            >
               <Input type="number" {...register('approvedCentavos')} />
             </FormField>
             <FormField
               label="Patient responsibility"
               error={errors.patientResponsibilityCentavos?.message}
             >
-              <Input type="number" {...register('patientResponsibilityCentavos')} />
+              <Input
+                type="number"
+                {...register('patientResponsibilityCentavos')}
+              />
             </FormField>
           </div>
           <FormField label="Denial reason" error={errors.denialReason?.message}>
             <Input {...register('denialReason')} />
           </FormField>
           {update.error && (
-            <p className="text-xs text-destructive">{(update.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(update.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || update.isPending}>
@@ -161,17 +175,29 @@ function RecordHmoPaymentDialog({ claim }: { claim: HmoClaim }) {
           {formatCentavos(remainingOnInvoice)}
         </p>
         <form onSubmit={onSubmit} className="space-y-3">
-          <FormField label="Amount (centavos)" error={errors.amountCentavos?.message}>
+          <FormField
+            label="Amount (centavos)"
+            error={errors.amountCentavos?.message}
+          >
             <Input type="number" {...register('amountCentavos')} />
           </FormField>
-          <FormField label="HMO reference / PRA #" error={errors.reference?.message}>
+          <FormField
+            label="HMO reference / PRA #"
+            error={errors.reference?.message}
+          >
             <Input {...register('reference')} />
           </FormField>
           {record.error && (
-            <p className="text-xs text-destructive">{(record.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(record.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || record.isPending}>

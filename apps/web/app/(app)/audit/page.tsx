@@ -52,14 +52,18 @@ export default function AuditPage() {
       <AuditFilters filter={filter} onChange={setFilter} />
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
       {data && <AuditTable items={data.items} onSelect={setSelected} />}
 
       {data && data.nextCursor !== null && (
         <div className="mt-4 flex justify-end">
           <Button
             variant="outline"
-            onClick={() => setFilter((f) => ({ ...f, cursor: data.nextCursor! }))}
+            onClick={() =>
+              setFilter((f) => ({ ...f, cursor: data.nextCursor! }))
+            }
           >
             Load more
           </Button>

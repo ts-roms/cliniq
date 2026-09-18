@@ -12,20 +12,20 @@ export const AuditTable = memo(function AuditTable({ items, onSelect }: Props) {
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px] text-sm">
-        <thead className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
-          <tr>
-            <th className="px-6 py-3">When</th>
-            <th className="px-6 py-3">Action</th>
-            <th className="px-6 py-3">Actor</th>
-            <th className="px-6 py-3">Entity</th>
-            <th className="px-6 py-3">IP</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((row) => (
-            <AuditRow key={row.id} row={row} onSelect={onSelect} />
-          ))}
-        </tbody>
+          <thead className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-6 py-3">When</th>
+              <th className="px-6 py-3">Action</th>
+              <th className="px-6 py-3">Actor</th>
+              <th className="px-6 py-3">Entity</th>
+              <th className="px-6 py-3">IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((row) => (
+              <AuditRow key={row.id} row={row} onSelect={onSelect} />
+            ))}
+          </tbody>
         </table>
       </div>
     </Card>
@@ -57,7 +57,9 @@ const AuditRow = memo(function AuditRow({ row, onSelect }: RowProps) {
           {row.action}
         </span>
       </td>
-      <td className="px-6 py-3 text-xs">{row.actorEmail ?? row.userId ?? '—'}</td>
+      <td className="px-6 py-3 text-xs">
+        {row.actorEmail ?? row.userId ?? '—'}
+      </td>
       <td className="px-6 py-3 text-xs">
         {row.entityType ? (
           <>

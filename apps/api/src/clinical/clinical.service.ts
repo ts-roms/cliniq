@@ -26,13 +26,22 @@ export class ClinicalService {
   async listAllergies(patientId: string, user: AuthenticatedUser) {
     await this.assertPatient(patientId, user);
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.allergy.findMany({ where: { patientId }, orderBy: { notedAt: 'desc' } }),
+      tx.allergy.findMany({
+        where: { patientId },
+        orderBy: { notedAt: 'desc' },
+      }),
     );
   }
-  async addAllergy(patientId: string, dto: CreateAllergyDto, user: AuthenticatedUser) {
+  async addAllergy(
+    patientId: string,
+    dto: CreateAllergyDto,
+    user: AuthenticatedUser,
+  ) {
     await this.assertPatient(patientId, user);
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.allergy.create({ data: { tenantId: user.tenantId, patientId, ...dto } }),
+      tx.allergy.create({
+        data: { tenantId: user.tenantId, patientId, ...dto },
+      }),
     );
   }
   async removeAllergy(patientId: string, id: string, user: AuthenticatedUser) {
@@ -52,10 +61,16 @@ export class ClinicalService {
       }),
     );
   }
-  async addMedication(patientId: string, dto: CreateMedicationDto, user: AuthenticatedUser) {
+  async addMedication(
+    patientId: string,
+    dto: CreateMedicationDto,
+    user: AuthenticatedUser,
+  ) {
     await this.assertPatient(patientId, user);
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.medication.create({ data: { tenantId: user.tenantId, patientId, ...dto } }),
+      tx.medication.create({
+        data: { tenantId: user.tenantId, patientId, ...dto },
+      }),
     );
   }
 
@@ -69,10 +84,16 @@ export class ClinicalService {
       }),
     );
   }
-  async addCondition(patientId: string, dto: CreateConditionDto, user: AuthenticatedUser) {
+  async addCondition(
+    patientId: string,
+    dto: CreateConditionDto,
+    user: AuthenticatedUser,
+  ) {
     await this.assertPatient(patientId, user);
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.condition.create({ data: { tenantId: user.tenantId, patientId, ...dto } }),
+      tx.condition.create({
+        data: { tenantId: user.tenantId, patientId, ...dto },
+      }),
     );
   }
 
@@ -80,10 +101,18 @@ export class ClinicalService {
   async listVitals(patientId: string, user: AuthenticatedUser) {
     await this.assertPatient(patientId, user);
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.vital.findMany({ where: { patientId }, orderBy: { measuredAt: 'desc' }, take: 50 }),
+      tx.vital.findMany({
+        where: { patientId },
+        orderBy: { measuredAt: 'desc' },
+        take: 50,
+      }),
     );
   }
-  async addVital(patientId: string, dto: CreateVitalDto, user: AuthenticatedUser) {
+  async addVital(
+    patientId: string,
+    dto: CreateVitalDto,
+    user: AuthenticatedUser,
+  ) {
     await this.assertPatient(patientId, user);
     const bmi =
       dto.weightKg && dto.heightCm

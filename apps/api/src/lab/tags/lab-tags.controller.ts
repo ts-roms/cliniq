@@ -50,14 +50,22 @@ export class LabTagsController {
   @Post('tags')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.tag.create', entity: 'LabCaseTag', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'lab.tag.create',
+    entity: 'LabCaseTag',
+    entityIdFrom: 'result:id',
+  })
   create(@Body() dto: CreateTagDto, @CurrentUser() user: AuthenticatedUser) {
     return this.tags.create(dto, user);
   }
 
   @Patch('tags/:id')
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.tag.update', entity: 'LabCaseTag', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'lab.tag.update',
+    entity: 'LabCaseTag',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateTagDto,
@@ -69,7 +77,11 @@ export class LabTagsController {
   @Delete('tags/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.tag.delete', entity: 'LabCaseTag', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'lab.tag.delete',
+    entity: 'LabCaseTag',
+    entityIdFrom: 'param:id',
+  })
   remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.tags.remove(id, user);
   }

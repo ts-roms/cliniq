@@ -1,7 +1,10 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { DraftsService } from './drafts.service.js';
-import { SoapDraftRequestDto, SoapDraftResponseDto } from './dto/soap-draft.dto.js';
+import {
+  SoapDraftRequestDto,
+  SoapDraftResponseDto,
+} from './dto/soap-draft.dto.js';
 
 @ApiTags('drafts')
 @ApiBearerAuth('jwt')

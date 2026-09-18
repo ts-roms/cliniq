@@ -21,7 +21,10 @@ import {
   type LabPlan as LabPlanT,
   type Plan as PlanT,
 } from '@org/shared-types';
-import type { PlatformCreateTenantDto, PlatformUpdateTenantDto } from './dto/update-tenant.dto.js';
+import type {
+  PlatformCreateTenantDto,
+  PlatformUpdateTenantDto,
+} from './dto/update-tenant.dto.js';
 
 export interface ListTenantsQuery {
   search?: string;
@@ -40,7 +43,10 @@ export class PlatformTenantsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(q: ListTenantsQuery) {
-    const limit = Math.min(q.limit ?? PlatformTenantsService.DEFAULT_LIMIT, PlatformTenantsService.MAX_LIMIT);
+    const limit = Math.min(
+      q.limit ?? PlatformTenantsService.DEFAULT_LIMIT,
+      PlatformTenantsService.MAX_LIMIT,
+    );
     const where = {
       deletedAt: null,
       ...(q.search
@@ -99,7 +105,7 @@ export class PlatformTenantsService {
         locationCount: t._count.locations,
         patientCount: t._count.patients,
       })),
-      nextCursor: hasMore ? slice[slice.length - 1]?.id ?? null : null,
+      nextCursor: hasMore ? (slice[slice.length - 1]?.id ?? null) : null,
     };
   }
 
@@ -120,8 +126,12 @@ export class PlatformTenantsService {
     // during a transitional state (e.g. cancelled subscription).
     const planMeta =
       t.kind === 'LAB'
-        ? (t.labPlan ? LAB_PLAN_META[t.labPlan as LabPlanT] : null)
-        : (t.plan ? PLAN_META[t.plan as PlanT] : null);
+        ? t.labPlan
+          ? LAB_PLAN_META[t.labPlan as LabPlanT]
+          : null
+        : t.plan
+          ? PLAN_META[t.plan as PlanT]
+          : null;
     return {
       ...t,
       userCount: t._count.users,
@@ -131,47 +141,58 @@ export class PlatformTenantsService {
     };
   }
 
-  async update(id: string, dto: PlatformUpdateTenantDto, adminId: string, adminEmail: string) {
-    const { updated, before } = await this.prisma.withPlatformContext(async (tx) => {
-      const existing = await tx.tenant.findUnique({ where: { id } });
-      if (!existing || existing.deletedAt) throw new NotFoundException('tenant not found');
+  async update(
+    id: string,
+    dto: PlatformUpdateTenantDto,
+    adminId: string,
+    adminEmail: string,
+  ) {
+    const { updated, before } = await this.prisma.withPlatformContext(
+      async (tx) => {
+        const existing = await tx.tenant.findUnique({ where: { id } });
+        if (!existing || existing.deletedAt)
+          throw new NotFoundException('tenant not found');
 
-      const next = await tx.tenant.update({
-        where: { id },
-        data: {
-          ...(dto.plan ? { plan: dto.plan } : {}),
-          ...(dto.status ? { status: dto.status } : {}),
-          ...(dto.name ? { name: dto.name } : {}),
-          ...(dto.trialEndsAt !== undefined
-            ? { trialEndsAt: dto.trialEndsAt === null ? null : new Date(dto.trialEndsAt) }
-            : {}),
-        },
-      });
+        const next = await tx.tenant.update({
+          where: { id },
+          data: {
+            ...(dto.plan ? { plan: dto.plan } : {}),
+            ...(dto.status ? { status: dto.status } : {}),
+            ...(dto.name ? { name: dto.name } : {}),
+            ...(dto.trialEndsAt !== undefined
+              ? {
+                  trialEndsAt:
+                    dto.trialEndsAt === null ? null : new Date(dto.trialEndsAt),
+                }
+              : {}),
+          },
+        });
 
-      await tx.auditLog.create({
-        data: {
-          tenantId: id,
-          userId: null,
-          actorEmail: adminEmail,
-          action: 'platform.tenant.update',
-          entityType: 'Tenant',
-          entityId: id,
-          metadata: {
-            adminId,
-            slug: existing.slug,
-            changes: dto as object,
-            before: {
-              plan: existing.plan,
-              status: existing.status,
-              trialEndsAt: existing.trialEndsAt,
-              name: existing.name,
+        await tx.auditLog.create({
+          data: {
+            tenantId: id,
+            userId: null,
+            actorEmail: adminEmail,
+            action: 'platform.tenant.update',
+            entityType: 'Tenant',
+            entityId: id,
+            metadata: {
+              adminId,
+              slug: existing.slug,
+              changes: dto as object,
+              before: {
+                plan: existing.plan,
+                status: existing.status,
+                trialEndsAt: existing.trialEndsAt,
+                name: existing.name,
+              },
             },
           },
-        },
-      });
+        });
 
-      return { updated: next, before: existing };
-    });
+        return { updated: next, before: existing };
+      },
+    );
 
     this.logger.log(
       `Platform admin ${adminId} updated tenant ${id} (slug=${before.slug}): ` +
@@ -184,17 +205,24 @@ export class PlatformTenantsService {
     return updated;
   }
 
-  async create(dto: PlatformCreateTenantDto, adminId: string, adminEmail: string) {
+  async create(
+    dto: PlatformCreateTenantDto,
+    adminId: string,
+    adminEmail: string,
+  ) {
     const slug = dto.slug.toLowerCase();
     const plan = dto.plan ?? Plan.STARTER;
 
     if (dto.ownerEmail && !dto.ownerPassword) {
-      throw new BadRequestException('ownerPassword is required when ownerEmail is set');
+      throw new BadRequestException(
+        'ownerPassword is required when ownerEmail is set',
+      );
     }
 
     const result = await this.prisma.withPlatformContext(async (tx) => {
       const conflict = await tx.tenant.findUnique({ where: { slug } });
-      if (conflict) throw new ConflictException(`tenant slug "${slug}" already exists`);
+      if (conflict)
+        throw new ConflictException(`tenant slug "${slug}" already exists`);
 
       const tenant = await tx.tenant.create({
         data: {
@@ -208,7 +236,9 @@ export class PlatformTenantsService {
       });
 
       if (dto.ownerEmail && dto.ownerPassword) {
-        const existingUser = await tx.user.findUnique({ where: { email: dto.ownerEmail } });
+        const existingUser = await tx.user.findUnique({
+          where: { email: dto.ownerEmail },
+        });
         if (existingUser) {
           // Link, don't recreate. Cross-tenant memberships are allowed.
           await tx.tenantUser.create({

@@ -1,7 +1,10 @@
 'use client';
 
 import {
-  Card, CardContent, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Loading,
   EmptyState,
 } from '@org/ui';

@@ -12,7 +12,9 @@ const TOKEN = process.env.AI_SERVICE_TOKEN ?? '';
 
 const result = await runEval('evals/soap/golden.jsonl', async (input) => {
   if (!AI_URL) {
-    return stubResponse(input as { transcript: string; patient: Record<string, unknown> });
+    return stubResponse(
+      input as { transcript: string; patient: Record<string, unknown> },
+    );
   }
   const res = await fetch(`${AI_URL}/ai/drafts/soap`, {
     method: 'POST',
@@ -23,7 +25,8 @@ const result = await runEval('evals/soap/golden.jsonl', async (input) => {
     body: JSON.stringify({
       consultationId: 'eval',
       transcript: (input as { transcript: string }).transcript,
-      patientContext: (input as { patient: Record<string, unknown> }).patient ?? {},
+      patientContext:
+        (input as { patient: Record<string, unknown> }).patient ?? {},
     }),
   });
   if (!res.ok) throw new Error(`ai-service ${res.status}`);
@@ -46,7 +49,9 @@ function stubResponse(input: { transcript: string }) {
   return {
     subjective: { chiefComplaint: 'Stub case from local runner' },
     objective: { vitals: null, physicalExam: {} },
-    assessment: [{ problem: 'acute pharyngitis', icd10: 'J02.9', reasoning: 'stub' }],
+    assessment: [
+      { problem: 'acute pharyngitis', icd10: 'J02.9', reasoning: 'stub' },
+    ],
     plan: [{ problem: 'acute pharyngitis', actions: ['symptomatic care'] }],
     uncertainty: [],
   };

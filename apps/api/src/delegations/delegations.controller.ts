@@ -25,8 +25,15 @@ export class DelegationsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Audit({ action: 'delegation.create', entity: 'Delegation', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreateDelegationDto, @CurrentUser() u: AuthenticatedUser) {
+  @Audit({
+    action: 'delegation.create',
+    entity: 'Delegation',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreateDelegationDto,
+    @CurrentUser() u: AuthenticatedUser,
+  ) {
     return this.delegations.create(dto, u);
   }
 
@@ -47,7 +54,11 @@ export class DelegationsController {
 
   @Patch(':id/revoke')
   @HttpCode(HttpStatus.OK)
-  @Audit({ action: 'delegation.revoke', entity: 'Delegation', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'delegation.revoke',
+    entity: 'Delegation',
+    entityIdFrom: 'param:id',
+  })
   revoke(@Param('id') id: string, @CurrentUser() u: AuthenticatedUser) {
     return this.delegations.revoke(id, u);
   }

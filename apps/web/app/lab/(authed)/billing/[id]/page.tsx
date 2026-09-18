@@ -41,9 +41,12 @@ export default function LabInvoiceDetailPage() {
   const invoiceId = params?.id ?? null;
   const { data: invoice, isLoading, error } = useLabInvoice(invoiceId);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error)
-    return <p className="text-sm text-destructive">{(error as Error).message}</p>;
+    return (
+      <p className="text-sm text-destructive">{(error as Error).message}</p>
+    );
   if (!invoice) return null;
 
   const isDraft = invoice.status === 'DRAFT';
@@ -63,10 +66,7 @@ export default function LabInvoiceDetailPage() {
           <DownloadPdfButton id={invoice.id} />
           {isDraft && <IssueButton id={invoice.id} />}
           {invoice.status !== 'PAID' && invoice.status !== 'VOID' && (
-            <VoidButton
-              id={invoice.id}
-              onSuccess={() => router.refresh()}
-            />
+            <VoidButton id={invoice.id} onSuccess={() => router.refresh()} />
           )}
         </div>
       </div>
@@ -76,7 +76,9 @@ export default function LabInvoiceDetailPage() {
           <CardTitle className="flex flex-wrap items-center justify-between gap-2">
             <span className="flex items-center gap-3">
               <span className="font-mono text-base">
-                {invoice.refNumber !== null ? `INV-${invoice.refNumber}` : 'Draft invoice'}
+                {invoice.refNumber !== null
+                  ? `INV-${invoice.refNumber}`
+                  : 'Draft invoice'}
               </span>
               <InvoiceStatusPill status={invoice.status} />
             </span>
@@ -88,7 +90,9 @@ export default function LabInvoiceDetailPage() {
         <CardContent className="space-y-6">
           <div className="grid gap-4 text-sm md:grid-cols-4">
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Subtotal</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Subtotal
+              </div>
               <div className="tabular-nums">
                 {formatMoney(invoice.subtotalCents, invoice.currency)}
               </div>
@@ -100,13 +104,17 @@ export default function LabInvoiceDetailPage() {
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Total</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Total
+              </div>
               <div className="text-lg font-semibold tabular-nums">
                 {formatMoney(invoice.totalCents, invoice.currency)}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Outstanding</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Outstanding
+              </div>
               <div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">
                 {formatMoney(outstanding, invoice.currency)}
               </div>
@@ -115,7 +123,9 @@ export default function LabInvoiceDetailPage() {
 
           <div className="grid gap-3 text-sm md:grid-cols-3">
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Issued</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Issued
+              </div>
               <div>
                 {invoice.issuedAt
                   ? new Date(invoice.issuedAt).toLocaleString()
@@ -125,20 +135,28 @@ export default function LabInvoiceDetailPage() {
             <div>
               <div className="text-xs uppercase text-muted-foreground">Due</div>
               <div>
-                {invoice.dueAt ? new Date(invoice.dueAt).toLocaleDateString() : '—'}
+                {invoice.dueAt
+                  ? new Date(invoice.dueAt).toLocaleDateString()
+                  : '—'}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Paid</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Paid
+              </div>
               <div>
-                {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : '—'}
+                {invoice.paidAt
+                  ? new Date(invoice.paidAt).toLocaleString()
+                  : '—'}
               </div>
             </div>
           </div>
 
           {invoice.notes && (
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Notes</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Notes
+              </div>
               <p className="whitespace-pre-wrap text-sm">{invoice.notes}</p>
             </div>
           )}
@@ -225,7 +243,12 @@ function VoidButton({ id, onSuccess }: { id: string; onSuccess: () => void }) {
 function EditMetaForm({
   invoice,
 }: {
-  invoice: { id: string; dueAt: string | null; notes: string | null; taxCents: number };
+  invoice: {
+    id: string;
+    dueAt: string | null;
+    notes: string | null;
+    taxCents: number;
+  };
 }) {
   const update = useUpdateLabInvoice(invoice.id);
   const [dueAt, setDueAt] = useState(
@@ -271,7 +294,9 @@ function EditMetaForm({
           />
         </div>
         <div className="md:col-span-3">
-          <label className="mb-1 block text-xs text-muted-foreground">Notes</label>
+          <label className="mb-1 block text-xs text-muted-foreground">
+            Notes
+          </label>
           <textarea
             rows={3}
             value={notes}
@@ -333,7 +358,9 @@ function ItemsCard({
                 {invoice.items.map((it) => (
                   <tr key={it.id} className="border-b">
                     <td className="py-2 pr-3">{it.description}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{it.qty}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">
+                      {it.qty}
+                    </td>
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {formatMoney(it.unitPriceCents, invoice.currency)}
                     </td>
@@ -430,7 +457,12 @@ function AddItemForm({ invoiceId }: { invoiceId: string }) {
 function RecordPaymentCard({
   invoice,
 }: {
-  invoice: { id: string; currency: string; totalCents: number; paidCents: number };
+  invoice: {
+    id: string;
+    currency: string;
+    totalCents: number;
+    paidCents: number;
+  };
 }) {
   const record = useRecordLabInvoicePayment(invoice.id);
   const [amount, setAmount] = useState('');
@@ -458,7 +490,10 @@ function RecordPaymentCard({
         <CardTitle>Record payment</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={submit} className="grid gap-3 md:grid-cols-[200px,1fr,auto]">
+        <form
+          onSubmit={submit}
+          className="grid gap-3 md:grid-cols-[200px,1fr,auto]"
+        >
           <Input
             required
             type="number"
@@ -553,9 +588,9 @@ function PaymentLinksCard({
         )}
         {invoice.paymentLinks.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No payment links yet. PayMongo issues a hosted-checkout URL
-            payable by card / GCash / Maya / GrabPay; manual links are
-            placeholders for offline payment intents (bank transfer, etc.).
+            No payment links yet. PayMongo issues a hosted-checkout URL payable
+            by card / GCash / Maya / GrabPay; manual links are placeholders for
+            offline payment intents (bank transfer, etc.).
           </p>
         ) : (
           <ul className="divide-y">
@@ -566,10 +601,12 @@ function PaymentLinksCard({
               >
                 <div>
                   <div className="font-medium">
-                    {l.provider} · {formatMoney(l.amountCents, invoice.currency)}
+                    {l.provider} ·{' '}
+                    {formatMoney(l.amountCents, invoice.currency)}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {l.status} · created {new Date(l.createdAt).toLocaleString()}
+                    {l.status} · created{' '}
+                    {new Date(l.createdAt).toLocaleString()}
                     {l.expiresAt &&
                       ` · expires ${new Date(l.expiresAt).toLocaleString()}`}
                   </div>

@@ -45,7 +45,9 @@ export function NotificationsList() {
         </Button>
       </div>
 
-      {list.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {list.isLoading && (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      )}
       {list.data && list.data.length === 0 && (
         <p className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
           {unreadOnly ? 'No unread notifications.' : 'No notifications yet.'}

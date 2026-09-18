@@ -37,14 +37,24 @@ export class ConsultationsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'consult.start', entity: 'Consultation', entityIdFrom: 'result:id' })
-  start(@Body() dto: StartConsultationDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'consult.start',
+    entity: 'Consultation',
+    entityIdFrom: 'result:id',
+  })
+  start(
+    @Body() dto: StartConsultationDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.consults.start(dto, user);
   }
 
   @Get()
   @Requires(Actions.CONSULT_READ)
-  list(@Query('patientId') patientId: string, @CurrentUser() user: AuthenticatedUser) {
+  list(
+    @Query('patientId') patientId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.consults.listForPatient(patientId, user);
   }
 
@@ -56,7 +66,11 @@ export class ConsultationsController {
 
   @Patch(':id')
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'consult.update', entity: 'Consultation', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'consult.update',
+    entity: 'Consultation',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateConsultationDto,
@@ -67,7 +81,11 @@ export class ConsultationsController {
 
   @Post(':id/complete')
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'consult.complete', entity: 'Consultation', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'consult.complete',
+    entity: 'Consultation',
+    entityIdFrom: 'param:id',
+  })
   complete(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.consults.complete(id, user);
   }
@@ -79,13 +97,22 @@ export class ConsultationsController {
   @Requires(Actions.AI_USE)
   @RequiresFeature(Features.AI_DERMATOLOGY)
   @RequiresConsent(ConsentTypeDto.AI_PROCESSING, 'param:id-consultation')
-  @Audit({ action: 'ai.draft.derm', entity: 'Consultation', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'ai.draft.derm',
+    entity: 'Consultation',
+    entityIdFrom: 'param:id',
+  })
   generateDerm(
     @Param('id') id: string,
     @Body() dto: GenerateDermDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.consults.generateDermDraft(id, dto.fileIds, dto.presentingComplaint, user);
+    return this.consults.generateDermDraft(
+      id,
+      dto.fileIds,
+      dto.presentingComplaint,
+      user,
+    );
   }
 
   @Post(':id/drafts/soap')
@@ -93,7 +120,11 @@ export class ConsultationsController {
   @Requires(Actions.AI_USE)
   @RequiresFeature(Features.AI_SOAP)
   @RequiresConsent(ConsentTypeDto.AI_PROCESSING, 'param:id-consultation')
-  @Audit({ action: 'ai.draft.soap', entity: 'Consultation', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'ai.draft.soap',
+    entity: 'Consultation',
+    entityIdFrom: 'param:id',
+  })
   generateSoap(
     @Param('id') id: string,
     @Body() dto: GenerateSoapDto,
@@ -106,13 +137,20 @@ export class ConsultationsController {
 
   @Get(':id/suggestions')
   @Requires(Actions.AI_USE)
-  listSuggestions(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  listSuggestions(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.consults.listSuggestions(id, user);
   }
 
   @Patch(':id/suggestions/:sid')
   @Requires(Actions.AI_USE)
-  @Audit({ action: 'ai.suggestion.decide', entity: 'AiSuggestion', entityIdFrom: 'param:sid' })
+  @Audit({
+    action: 'ai.suggestion.decide',
+    entity: 'AiSuggestion',
+    entityIdFrom: 'param:sid',
+  })
   decideSuggestion(
     @Param('id') id: string,
     @Param('sid') sid: string,

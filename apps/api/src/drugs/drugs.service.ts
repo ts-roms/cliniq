@@ -21,7 +21,7 @@ export class DrugsService {
           active: true,
           OR: [
             { generic: { contains: q, mode: 'insensitive' } },
-            { brand:   { contains: q, mode: 'insensitive' } },
+            { brand: { contains: q, mode: 'insensitive' } },
           ],
         },
         orderBy: [{ brand: 'asc' }, { generic: 'asc' }],

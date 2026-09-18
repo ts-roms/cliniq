@@ -57,7 +57,9 @@ export function PrescriptionList({ patientId }: { patientId: string }) {
       {data?.slice(0, 10).map((rx) => (
         <View key={rx.id} className="border-b border-border py-2">
           <View className="flex-row items-center justify-between">
-            <Text className="font-mono text-sm text-foreground">{rx.number}</Text>
+            <Text className="font-mono text-sm text-foreground">
+              {rx.number}
+            </Text>
             <Text className={`text-xs ${STATUS_TONE[rx.status] ?? ''}`}>
               {rx.status}
             </Text>
@@ -68,7 +70,8 @@ export function PrescriptionList({ patientId }: { patientId: string }) {
           {rx.items.map((it, i) => (
             <Text key={i} className="text-xs text-foreground">
               • {it.drugName}
-              {it.strength ? ` ${it.strength}` : ''} · {it.dose} · {it.frequency}
+              {it.strength ? ` ${it.strength}` : ''} · {it.dose} ·{' '}
+              {it.frequency}
             </Text>
           ))}
         </View>

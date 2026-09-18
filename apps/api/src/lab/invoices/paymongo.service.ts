@@ -109,9 +109,14 @@ export class PaymongoService {
     const candidate = parts['te'] ?? parts['li'];
     if (!ts || !candidate) return false;
     const payload = `${ts}.${rawBody}`;
-    const expected = createHmac('sha256', this.webhookSecret).update(payload).digest('hex');
+    const expected = createHmac('sha256', this.webhookSecret)
+      .update(payload)
+      .digest('hex');
     try {
-      return timingSafeEqual(Buffer.from(candidate, 'hex'), Buffer.from(expected, 'hex'));
+      return timingSafeEqual(
+        Buffer.from(candidate, 'hex'),
+        Buffer.from(expected, 'hex'),
+      );
     } catch {
       return false;
     }

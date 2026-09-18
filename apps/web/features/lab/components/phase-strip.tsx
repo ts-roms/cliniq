@@ -45,7 +45,10 @@ export function PhaseStrip({ caseId, productPhases, side, caseStatus }: Props) {
           const isDone = completedSet.has(p);
           return (
             <div key={p} className="flex items-center gap-1">
-              <PhasePill state={isOpen ? 'active' : isDone ? 'done' : 'todo'} label={p} />
+              <PhasePill
+                state={isOpen ? 'active' : isDone ? 'done' : 'todo'}
+                label={p}
+              />
               {i < productPhases.length - 1 && (
                 <ChevronRight
                   className="h-3 w-3 text-muted-foreground/50"
@@ -68,7 +71,9 @@ export function PhaseStrip({ caseId, productPhases, side, caseStatus }: Props) {
             disabled={advance.isPending}
             onClick={() => advance.mutate({})}
           >
-            {advance.isPending ? 'Advancing…' : `Advance to "${nextPhase(productPhases, open?.phase)}"`}
+            {advance.isPending
+              ? 'Advancing…'
+              : `Advance to "${nextPhase(productPhases, open?.phase)}"`}
           </Button>
           {advance.error && (
             <span className="text-xs text-destructive">
@@ -78,16 +83,19 @@ export function PhaseStrip({ caseId, productPhases, side, caseStatus }: Props) {
         </div>
       )}
 
-      {side === 'lab' && caseStatus === 'IN_PROGRESS' && !open && productPhases.length > 0 && (
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={advance.isPending}
-          onClick={() => advance.mutate({})}
-        >
-          Start phase tracking ({productPhases[0]})
-        </Button>
-      )}
+      {side === 'lab' &&
+        caseStatus === 'IN_PROGRESS' &&
+        !open &&
+        productPhases.length > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={advance.isPending}
+            onClick={() => advance.mutate({})}
+          >
+            Start phase tracking ({productPhases[0]})
+          </Button>
+        )}
     </div>
   );
 }

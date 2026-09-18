@@ -54,7 +54,11 @@ export class LabComplianceService {
     );
   }
 
-  async updateConformity(id: string, dto: UpdateTemplateDto, user: AuthenticatedUser) {
+  async updateConformity(
+    id: string,
+    dto: UpdateTemplateDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const t = await tx.labConformityDocTemplate.findFirst({
         where: { id, deletedAt: null },
@@ -65,8 +69,7 @@ export class LabComplianceService {
         data: {
           name: dto.name ?? t.name,
           body: dto.body ?? t.body,
-          productId:
-            dto.productId === undefined ? t.productId : dto.productId,
+          productId: dto.productId === undefined ? t.productId : dto.productId,
           isDefault: dto.isDefault ?? t.isDefault,
         },
       });
@@ -112,7 +115,11 @@ export class LabComplianceService {
     );
   }
 
-  async updateConsent(id: string, dto: UpdateTemplateDto, user: AuthenticatedUser) {
+  async updateConsent(
+    id: string,
+    dto: UpdateTemplateDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const t = await tx.labConsentTemplate.findFirst({
         where: { id, deletedAt: null },
@@ -123,8 +130,7 @@ export class LabComplianceService {
         data: {
           name: dto.name ?? t.name,
           body: dto.body ?? t.body,
-          productId:
-            dto.productId === undefined ? t.productId : dto.productId,
+          productId: dto.productId === undefined ? t.productId : dto.productId,
           isDefault: dto.isDefault ?? t.isDefault,
         },
       });
@@ -233,23 +239,24 @@ export class LabComplianceService {
         ? await tx.labConformityDocTemplate.findFirst({
             where: { id: templateId, tenantId: user.tenantId, deletedAt: null },
           })
-        : (await tx.labConformityDocTemplate.findFirst({
+        : await tx.labConformityDocTemplate.findFirst({
             where: {
               tenantId: user.tenantId,
               deletedAt: null,
               OR: [{ productId: labCase.product.id }, { productId: null }],
             },
             orderBy: [{ productId: 'desc' }, { isDefault: 'desc' }],
-          }));
+          });
       if (!template) {
         throw new BadRequestException(
           'no conformity template found — create one (or set isDefault=true) first',
         );
       }
 
-      const lots = labCase.materialUsages
-        .map((u) => `${u.lot.material.name} · lot ${u.lot.lotNumber}`)
-        .join('\n') || '—';
+      const lots =
+        labCase.materialUsages
+          .map((u) => `${u.lot.material.name} · lot ${u.lot.lotNumber}`)
+          .join('\n') || '—';
       const ref =
         labCase.refNumber !== null
           ? `#${labCase.refNumber}`
@@ -285,15 +292,23 @@ export class LabComplianceService {
           { label: 'Template', value: template.name },
         ]);
         if (lots && lots !== '—') {
-          doc.font('Helvetica-Bold').fontSize(9).fillColor('#666')
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(9)
+            .fillColor('#666')
             .text('LOT NUMBERS USED');
           doc.font('Helvetica').fontSize(10).fillColor('black').text(lots);
           doc.moveDown(0.6);
         }
-        doc.font('Helvetica').fontSize(11).fillColor('black').text(body, {
-          width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
-          align: 'left',
-        });
+        doc
+          .font('Helvetica')
+          .fontSize(11)
+          .fillColor('black')
+          .text(body, {
+            width:
+              doc.page.width - doc.page.margins.left - doc.page.margins.right,
+            align: 'left',
+          });
         this.pdf.drawFooter(doc, `${labCase.lab.name} · Conformity ${ref}`);
       });
       return this.pdf.presignDownload(stored.s3Key, stored.filename);
@@ -303,7 +318,9 @@ export class LabComplianceService {
   private async requireLab(user: AuthenticatedUser) {
     const t = await this.prisma.getTenantContext(user.tenantId);
     if (!t || t.kind !== 'LAB') {
-      throw new ForbiddenException('only LAB tenants can manage compliance templates');
+      throw new ForbiddenException(
+        'only LAB tenants can manage compliance templates',
+      );
     }
   }
 }

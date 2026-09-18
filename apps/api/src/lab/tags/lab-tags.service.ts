@@ -105,11 +105,13 @@ export class LabTagsService {
         select: { id: true },
       });
       if (!labCase) throw new NotFoundException('case not found');
-      await tx.labCaseTagAssignment.delete({
-        where: { caseId_tagId: { caseId, tagId } },
-      }).catch(() => {
-        /* idempotent: already unassigned */
-      });
+      await tx.labCaseTagAssignment
+        .delete({
+          where: { caseId_tagId: { caseId, tagId } },
+        })
+        .catch(() => {
+          /* idempotent: already unassigned */
+        });
     });
   }
 

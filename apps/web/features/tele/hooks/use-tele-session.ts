@@ -9,7 +9,11 @@ import {
   teleControllerJoin,
   teleControllerNotifyPatientBySms,
 } from '@org/api-client';
-import type { IceConfig, PatientJoinResponse, ProviderSession } from '../schemas/tele';
+import type {
+  IceConfig,
+  PatientJoinResponse,
+  ProviderSession,
+} from '../schemas/tele';
 
 export const teleKeys = {
   ice: ['tele', 'ice'] as const,
@@ -33,7 +37,9 @@ export function useProviderSession(id: string | null) {
     queryKey: teleKeys.session(id ?? '_'),
     enabled: !!id,
     queryFn: async (): Promise<ProviderSession> => {
-      const { data, error } = await teleControllerDetail({ path: { id: id ?? '' } });
+      const { data, error } = await teleControllerDetail({
+        path: { id: id ?? '' },
+      });
       if (error || !data) throw new Error('session not found');
       return data as unknown as ProviderSession;
     },
@@ -68,7 +74,8 @@ export function useEndTeleSession() {
       if (error) throw new Error('end failed');
       return { id };
     },
-    onSuccess: ({ id }) => qc.invalidateQueries({ queryKey: teleKeys.session(id) }),
+    onSuccess: ({ id }) =>
+      qc.invalidateQueries({ queryKey: teleKeys.session(id) }),
   });
 }
 

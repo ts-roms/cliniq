@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@org/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import { CaseStatusPill, useClinicCases } from '@/features/lab';
 
 export default function ClinicLabCasesPage() {
@@ -40,13 +34,18 @@ export default function ClinicLabCasesPage() {
           <CardTitle>All cases</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No cases yet. Click <span className="font-medium">New case</span> to place one.
+              No cases yet. Click <span className="font-medium">New case</span>{' '}
+              to place one.
             </p>
           )}
 
@@ -68,7 +67,10 @@ export default function ClinicLabCasesPage() {
                   {data.map((c) => (
                     <tr key={c.id} className="border-b hover:bg-muted/30">
                       <td className="py-2 pr-3 font-mono text-xs">
-                        <Link href={`/lab-cases/${c.id}`} className="text-primary hover:underline">
+                        <Link
+                          href={`/lab-cases/${c.id}`}
+                          className="text-primary hover:underline"
+                        >
                           {c.refNumber ?? '—'}
                         </Link>
                       </td>
@@ -80,7 +82,9 @@ export default function ClinicLabCasesPage() {
                       <td className="py-2 pr-3">
                         <CaseStatusPill status={c.status} />
                       </td>
-                      <td className="py-2 pr-3 tabular-nums">{c._count?.files ?? 0}</td>
+                      <td className="py-2 pr-3 tabular-nums">
+                        {c._count?.files ?? 0}
+                      </td>
                       <td className="py-2 pr-3 text-xs text-muted-foreground">
                         {new Date(c.createdAt).toLocaleDateString()}
                       </td>

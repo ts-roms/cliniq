@@ -32,11 +32,18 @@ export const PatientsTable = memo(function PatientsTable({
   );
 });
 
-const PatientRow = memo(function PatientRow({ patient: p }: { patient: Patient }) {
+const PatientRow = memo(function PatientRow({
+  patient: p,
+}: {
+  patient: Patient;
+}) {
   return (
     <tr className="border-b last:border-0 hover:bg-muted/40">
       <td className="px-4 py-3 font-mono text-xs sm:px-6">
-        <Link href={`/patients/${p.id}`} className="text-primary hover:underline">
+        <Link
+          href={`/patients/${p.id}`}
+          className="text-primary hover:underline"
+        >
           {p.mrn}
         </Link>
       </td>

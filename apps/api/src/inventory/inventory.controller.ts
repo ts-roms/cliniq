@@ -37,14 +37,21 @@ export class InventoryController {
 
   @Get('items')
   @Requires(Actions.INVENTORY_READ)
-  list(@Query('q') q: string | undefined, @CurrentUser() user: AuthenticatedUser) {
+  list(
+    @Query('q') q: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.inv.listItems(user, q);
   }
 
   @Post('items')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.INVENTORY_WRITE)
-  @Audit({ action: 'inventory.itemCreate', entity: 'InventoryItem', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'inventory.itemCreate',
+    entity: 'InventoryItem',
+    entityIdFrom: 'result:id',
+  })
   create(@Body() dto: CreateItemDto, @CurrentUser() user: AuthenticatedUser) {
     return this.inv.createItem(dto, user);
   }
@@ -57,7 +64,11 @@ export class InventoryController {
 
   @Patch('items/:id')
   @Requires(Actions.INVENTORY_WRITE)
-  @Audit({ action: 'inventory.itemUpdate', entity: 'InventoryItem', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'inventory.itemUpdate',
+    entity: 'InventoryItem',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateItemDto,
@@ -69,7 +80,11 @@ export class InventoryController {
   @Post('items/:id/receive')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.INVENTORY_WRITE)
-  @Audit({ action: 'inventory.receive', entity: 'StockBatch', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'inventory.receive',
+    entity: 'StockBatch',
+    entityIdFrom: 'result:id',
+  })
   receive(
     @Param('id') id: string,
     @Body() dto: ReceiveBatchDto,
@@ -81,7 +96,11 @@ export class InventoryController {
   @Post('items/:id/dispense')
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.INVENTORY_WRITE)
-  @Audit({ action: 'inventory.dispense', entity: 'InventoryItem', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'inventory.dispense',
+    entity: 'InventoryItem',
+    entityIdFrom: 'param:id',
+  })
   dispense(
     @Param('id') id: string,
     @Body() dto: DispenseStockDto,
@@ -93,7 +112,11 @@ export class InventoryController {
   @Post('items/:id/adjust')
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.INVENTORY_WRITE)
-  @Audit({ action: 'inventory.adjust', entity: 'InventoryItem', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'inventory.adjust',
+    entity: 'InventoryItem',
+    entityIdFrom: 'param:id',
+  })
   adjust(
     @Param('id') id: string,
     @Body() dto: AdjustStockDto,
@@ -110,7 +133,10 @@ export class InventoryController {
 
   @Get('reports/expiring')
   @Requires(Actions.INVENTORY_READ)
-  expiring(@Query('days') days: string | undefined, @CurrentUser() user: AuthenticatedUser) {
+  expiring(
+    @Query('days') days: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     const n = days ? Math.max(1, Math.min(365, Number(days))) : 60;
     return this.inv.expiringSoon(user, n);
   }

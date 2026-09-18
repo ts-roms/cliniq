@@ -47,14 +47,25 @@ export class HmoController {
   @Post('hmo/providers')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'hmo.providerCreate', entity: 'HmoProvider', entityIdFrom: 'result:id' })
-  createProvider(@Body() dto: CreateHmoProviderDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'hmo.providerCreate',
+    entity: 'HmoProvider',
+    entityIdFrom: 'result:id',
+  })
+  createProvider(
+    @Body() dto: CreateHmoProviderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.hmo.createProvider(dto, user);
   }
 
   @Patch('hmo/providers/:id')
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'hmo.providerUpdate', entity: 'HmoProvider', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'hmo.providerUpdate',
+    entity: 'HmoProvider',
+    entityIdFrom: 'param:id',
+  })
   updateProvider(
     @Param('id') id: string,
     @Body() dto: UpdateProviderDto,
@@ -76,7 +87,11 @@ export class HmoController {
   @Post('patients/:patientId/hmo-memberships')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'hmo.membershipAdd', entity: 'HmoMembership', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'hmo.membershipAdd',
+    entity: 'HmoMembership',
+    entityIdFrom: 'result:id',
+  })
   addMembership(
     @Param('patientId') patientId: string,
     @Body() dto: CreateHmoMembershipDto,
@@ -98,7 +113,11 @@ export class HmoController {
   @Post('invoices/:id/hmo-claims')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'hmo.claimFile', entity: 'HmoClaim', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'hmo.claimFile',
+    entity: 'HmoClaim',
+    entityIdFrom: 'result:id',
+  })
   fileClaim(
     @Param('id') invoiceId: string,
     @Body() dto: FileClaimDto,
@@ -109,7 +128,11 @@ export class HmoController {
 
   @Patch('hmo/claims/:id')
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'hmo.claimUpdate', entity: 'HmoClaim', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'hmo.claimUpdate',
+    entity: 'HmoClaim',
+    entityIdFrom: 'param:id',
+  })
   updateClaim(
     @Param('id') id: string,
     @Body() dto: UpdateClaimDto,
@@ -121,7 +144,11 @@ export class HmoController {
   @Post('hmo/claims/:id/payments')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'hmo.claimPaid', entity: 'HmoClaim', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'hmo.claimPaid',
+    entity: 'HmoClaim',
+    entityIdFrom: 'param:id',
+  })
   recordPayment(
     @Param('id') id: string,
     @Body() dto: RecordHmoPaymentDto,

@@ -25,7 +25,10 @@ function pickMime(): string | null {
 export function useAudioRecorder() {
   const [state, setState] = useState<State>(() => ({
     isRecording: false,
-    isSupported: typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!pickMime(),
+    isSupported:
+      typeof navigator !== 'undefined' &&
+      !!navigator.mediaDevices &&
+      !!pickMime(),
     durationSec: 0,
     error: null,
   }));
@@ -43,10 +46,13 @@ export function useAudioRecorder() {
   }, []);
 
   // Cleanup on unmount only.
-  useEffect(() => () => {
-    stopTick();
-    recorderRef.current?.stream.getTracks().forEach((t) => t.stop());
-  }, [stopTick]);
+  useEffect(
+    () => () => {
+      stopTick();
+      recorderRef.current?.stream.getTracks().forEach((t) => t.stop());
+    },
+    [stopTick],
+  );
 
   const start = useCallback(async () => {
     if (state.isRecording || !state.isSupported) return;
@@ -63,7 +69,10 @@ export function useAudioRecorder() {
       recorderRef.current = recorder;
       startedAtRef.current = Date.now();
       tickRef.current = setInterval(() => {
-        setState((s) => ({ ...s, durationSec: Math.floor((Date.now() - startedAtRef.current) / 1000) }));
+        setState((s) => ({
+          ...s,
+          durationSec: Math.floor((Date.now() - startedAtRef.current) / 1000),
+        }));
       }, 1000);
       setState((s) => ({ ...s, isRecording: true }));
     } catch (err) {
@@ -79,7 +88,9 @@ export function useAudioRecorder() {
       recorder.onstop = () => {
         const mimeType = recorder.mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type: mimeType });
-        const durationSec = Math.floor((Date.now() - startedAtRef.current) / 1000);
+        const durationSec = Math.floor(
+          (Date.now() - startedAtRef.current) / 1000,
+        );
         recorder.stream.getTracks().forEach((t) => t.stop());
         recorderRef.current = null;
         resolve({ blob, durationSec, mimeType });

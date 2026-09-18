@@ -10,8 +10,19 @@ export type PasswordInputProps = Omit<InputProps, 'type'> & {
   hideLabel?: string;
 };
 
-export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ className, showLabel = 'Show password', hideLabel = 'Hide password', ...props }, ref) => {
+export const PasswordInput = React.forwardRef<
+  HTMLInputElement,
+  PasswordInputProps
+>(
+  (
+    {
+      className,
+      showLabel = 'Show password',
+      hideLabel = 'Hide password',
+      ...props
+    },
+    ref,
+  ) => {
     const [visible, setVisible] = React.useState(false);
     return (
       <div className="relative">
@@ -35,7 +46,11 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           )}
           disabled={props.disabled}
         >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {visible ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
         </button>
       </div>
     );

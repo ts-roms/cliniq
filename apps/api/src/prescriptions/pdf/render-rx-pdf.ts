@@ -23,7 +23,9 @@ export interface RxPdfData {
   };
   tenant: {
     name: string;
-    settings?: { branding?: { primaryColor?: string; logoUrl?: string } } | null;
+    settings?: {
+      branding?: { primaryColor?: string; logoUrl?: string };
+    } | null;
   };
   location?: {
     name: string;
@@ -84,7 +86,9 @@ function header(
       location.addressLine1,
       location.addressLine2,
       [location.city, location.province].filter(Boolean).join(', '),
-    ].filter(Boolean).join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
     if (line) doc.text(line);
     if (location.phone) doc.text(`Tel: ${location.phone}`);
   }
@@ -112,7 +116,9 @@ function patientBlock(doc: PDFKit.PDFDocument, p: RxPdfData['patient']) {
   doc.font('Helvetica').fontSize(9);
   doc.text(`${p.lastName}, ${p.firstName}`);
   const age = ageFromDob(p.dateOfBirth);
-  doc.text(`MRN ${p.mrn}  ·  ${p.sex}  ·  ${age} y.o.  (DOB ${formatDate(p.dateOfBirth)})`);
+  doc.text(
+    `MRN ${p.mrn}  ·  ${p.sex}  ·  ${age} y.o.  (DOB ${formatDate(p.dateOfBirth)})`,
+  );
   doc.moveDown(0.5);
 }
 
@@ -138,10 +144,21 @@ function itemsBlock(doc: PDFKit.PDFDocument, items: RxPdfData['rx']['items']) {
     const tail: string[] = [];
     if (it.quantity) tail.push(`Disp: ${it.quantity}`);
     if (it.refills > 0) tail.push(`Refills: ${it.refills}`);
-    if (tail.length) doc.fontSize(9).fillColor('#444').text(tail.join('  ·  ')).fillColor('#000').fontSize(10);
+    if (tail.length)
+      doc
+        .fontSize(9)
+        .fillColor('#444')
+        .text(tail.join('  ·  '))
+        .fillColor('#000')
+        .fontSize(10);
 
     if (it.instructions) {
-      doc.fontSize(9).fillColor('#444').text(`  ${it.instructions}`).fillColor('#000').fontSize(10);
+      doc
+        .fontSize(9)
+        .fillColor('#444')
+        .text(`  ${it.instructions}`)
+        .fillColor('#000')
+        .fontSize(10);
     }
     doc.moveDown(0.3);
   });
@@ -159,20 +176,35 @@ function providerBlock(doc: PDFKit.PDFDocument, rx: RxPdfData['rx']) {
   const pageBottom = doc.page.height - doc.page.margins.bottom;
   if (doc.y < pageBottom - 80) doc.y = pageBottom - 80;
 
-  doc.strokeColor('#999').lineWidth(0.5).moveTo(36, doc.y).lineTo(420, doc.y).stroke();
+  doc
+    .strokeColor('#999')
+    .lineWidth(0.5)
+    .moveTo(36, doc.y)
+    .lineTo(420, doc.y)
+    .stroke();
   doc.moveDown(0.4);
 
-  doc.font('Helvetica-Bold').fontSize(10).text(rx.providerName ?? '—');
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(10)
+    .text(rx.providerName ?? '—');
   doc.font('Helvetica').fontSize(9);
   if (rx.providerSpecialty) doc.text(rx.providerSpecialty);
   doc.text(`PRC License No.: ${rx.providerLicense ?? '—'}`);
-  doc.fontSize(8).fillColor('#666').text(
-    'Electronic prescription — generated and signed via ClinIQ. Verify authenticity at the issuing clinic.',
-  );
+  doc
+    .fontSize(8)
+    .fillColor('#666')
+    .text(
+      'Electronic prescription — generated and signed via ClinIQ. Verify authenticity at the issuing clinic.',
+    );
 }
 
 function formatDate(d: Date): string {
-  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: '2-digit' });
+  return d.toLocaleDateString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  });
 }
 
 function ageFromDob(dob: Date): number {

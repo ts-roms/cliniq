@@ -1,5 +1,9 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { SOAP_V1, renderSoapUserMessage, type SoapDraftInput } from '@org/ai-prompts';
+import {
+  SOAP_V1,
+  renderSoapUserMessage,
+  type SoapDraftInput,
+} from '@org/ai-prompts';
 import { BedrockService } from '../bedrock/bedrock.service.js';
 import type { SoapDraftResponseDto } from './dto/soap-draft.dto.js';
 
@@ -9,7 +13,9 @@ export class DraftsService {
 
   constructor(private readonly bedrock: BedrockService) {}
 
-  async draftSoap(input: SoapDraftInput): Promise<SoapDraftResponseDto & { rawText: string }> {
+  async draftSoap(
+    input: SoapDraftInput,
+  ): Promise<SoapDraftResponseDto & { rawText: string }> {
     const result = await this.bedrock.converse({
       systemPrompt: SOAP_V1.systemPrompt,
       systemPromptId: SOAP_V1.id,
@@ -28,7 +34,9 @@ export class DraftsService {
     try {
       draft = JSON.parse(result.text);
     } catch (err) {
-      this.logger.warn(`SOAP draft did not parse as JSON: ${(err as Error).message}`);
+      this.logger.warn(
+        `SOAP draft did not parse as JSON: ${(err as Error).message}`,
+      );
       throw new BadRequestException('AI output failed schema validation');
     }
 

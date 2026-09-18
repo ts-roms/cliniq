@@ -32,7 +32,8 @@ export function ImageUploader({
         multiple
         className="hidden"
         onChange={(e) => {
-          if (e.target.files && e.target.files.length > 0) onSelect(e.target.files);
+          if (e.target.files && e.target.files.length > 0)
+            onSelect(e.target.files);
           e.target.value = '';
         }}
       />
@@ -73,7 +74,9 @@ export function ImageUploader({
                 </button>
               </div>
               {img.error && (
-                <p className="px-2 pb-1 text-xs text-destructive">{img.error}</p>
+                <p className="px-2 pb-1 text-xs text-destructive">
+                  {img.error}
+                </p>
               )}
             </li>
           ))}

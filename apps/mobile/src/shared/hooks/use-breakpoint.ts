@@ -71,7 +71,9 @@ export function useBreakpoint(): BreakpointState {
  * Example: `useResponsiveValue({ xs: 12, lg: 24 })` returns 12 on phones, 24
  * on tablets (md falls through to xs because no md entry was given).
  */
-export function useResponsiveValue<T>(values: Partial<Record<Breakpoint, T>>): T | undefined {
+export function useResponsiveValue<T>(
+  values: Partial<Record<Breakpoint, T>>,
+): T | undefined {
   const { bp } = useBreakpoint();
   const idx = ORDER.indexOf(bp);
   for (let i = idx; i >= 0; i--) {

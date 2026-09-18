@@ -24,9 +24,12 @@ export default function ClinicLabInvoiceDetailPage() {
   const invoiceId = params?.id ?? null;
   const { data: invoice, isLoading, error } = useClinicInvoice(invoiceId);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error)
-    return <p className="text-sm text-destructive">{(error as Error).message}</p>;
+    return (
+      <p className="text-sm text-destructive">{(error as Error).message}</p>
+    );
   if (!invoice) return null;
 
   const outstanding = invoice.totalCents - invoice.paidCents;
@@ -60,7 +63,9 @@ export default function ClinicLabInvoiceDetailPage() {
         <CardContent className="space-y-6">
           <div className="grid gap-4 text-sm md:grid-cols-4">
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Subtotal</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Subtotal
+              </div>
               <div className="tabular-nums">
                 {formatMoney(invoice.subtotalCents, invoice.currency)}
               </div>
@@ -72,13 +77,17 @@ export default function ClinicLabInvoiceDetailPage() {
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Total</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Total
+              </div>
               <div className="text-lg font-semibold tabular-nums">
                 {formatMoney(invoice.totalCents, invoice.currency)}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Outstanding</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Outstanding
+              </div>
               <div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">
                 {formatMoney(outstanding, invoice.currency)}
               </div>
@@ -87,7 +96,9 @@ export default function ClinicLabInvoiceDetailPage() {
 
           <div className="grid gap-3 text-sm md:grid-cols-3">
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Issued</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Issued
+              </div>
               <div>
                 {invoice.issuedAt
                   ? new Date(invoice.issuedAt).toLocaleString()
@@ -97,20 +108,28 @@ export default function ClinicLabInvoiceDetailPage() {
             <div>
               <div className="text-xs uppercase text-muted-foreground">Due</div>
               <div>
-                {invoice.dueAt ? new Date(invoice.dueAt).toLocaleDateString() : '—'}
+                {invoice.dueAt
+                  ? new Date(invoice.dueAt).toLocaleDateString()
+                  : '—'}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Paid</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Paid
+              </div>
               <div>
-                {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : '—'}
+                {invoice.paidAt
+                  ? new Date(invoice.paidAt).toLocaleString()
+                  : '—'}
               </div>
             </div>
           </div>
 
           {invoice.notes && (
             <div>
-              <div className="text-xs uppercase text-muted-foreground">Notes</div>
+              <div className="text-xs uppercase text-muted-foreground">
+                Notes
+              </div>
               <p className="whitespace-pre-wrap text-sm">{invoice.notes}</p>
             </div>
           )}
@@ -149,7 +168,9 @@ export default function ClinicLabInvoiceDetailPage() {
                           </Link>
                         )}
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{it.qty}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {it.qty}
+                      </td>
                       <td className="py-2 pr-3 text-right tabular-nums">
                         {formatMoney(it.unitPriceCents, invoice.currency)}
                       </td>
@@ -175,10 +196,14 @@ export default function ClinicLabInvoiceDetailPage() {
               {invoice.paymentLinks
                 .filter((l) => l.status === 'PENDING')
                 .map((l) => (
-                  <li key={l.id} className="flex items-center justify-between py-2">
+                  <li
+                    key={l.id}
+                    className="flex items-center justify-between py-2"
+                  >
                     <div>
                       <div className="text-sm font-medium">
-                        {l.provider} · {formatMoney(l.amountCents, invoice.currency)}
+                        {l.provider} ·{' '}
+                        {formatMoney(l.amountCents, invoice.currency)}
                       </div>
                       {l.url ? (
                         <a

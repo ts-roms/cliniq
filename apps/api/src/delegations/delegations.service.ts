@@ -34,7 +34,9 @@ export class DelegationsService {
       throw new BadRequestException('endsAt must be in the future');
     }
     if (!CLINICAL_DELEGATORS.has(user.role)) {
-      throw new ForbiddenException(`role ${user.role} cannot grant delegations`);
+      throw new ForbiddenException(
+        `role ${user.role} cannot grant delegations`,
+      );
     }
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
@@ -47,7 +49,9 @@ export class DelegationsService {
         select: { userId: true, role: true },
       });
       if (!delegatee) {
-        throw new BadRequestException('delegatee is not a member of this tenant');
+        throw new BadRequestException(
+          'delegatee is not a member of this tenant',
+        );
       }
 
       return tx.delegation.create({
@@ -109,7 +113,9 @@ export class DelegationsService {
       }
       const isAdmin = user.role === Role.OWNER || user.role === Role.ADMIN;
       if (d.delegatorId !== user.userId && !isAdmin) {
-        throw new ForbiddenException('only the delegator or an admin can revoke');
+        throw new ForbiddenException(
+          'only the delegator or an admin can revoke',
+        );
       }
       return tx.delegation.update({
         where: { id },
@@ -171,4 +177,9 @@ export class DelegationsService {
   }
 }
 
-const CLINICAL_DELEGATORS = new Set<Role>([Role.OWNER, Role.ADMIN, Role.DOCTOR, Role.NURSE]);
+const CLINICAL_DELEGATORS = new Set<Role>([
+  Role.OWNER,
+  Role.ADMIN,
+  Role.DOCTOR,
+  Role.NURSE,
+]);

@@ -23,7 +23,11 @@ export class FilesController {
   @Post('presign')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'file.presign', entity: 'FileObject', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'file.presign',
+    entity: 'FileObject',
+    entityIdFrom: 'result:id',
+  })
   presign(
     @Body() dto: PresignRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -34,8 +38,15 @@ export class FilesController {
   @Post('confirm')
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'file.confirm', entity: 'FileObject', entityIdFrom: 'body:id' })
-  confirm(@Body() dto: ConfirmUploadDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'file.confirm',
+    entity: 'FileObject',
+    entityIdFrom: 'body:id',
+  })
+  confirm(
+    @Body() dto: ConfirmUploadDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.files.confirm(dto.fileId, user);
   }
 }

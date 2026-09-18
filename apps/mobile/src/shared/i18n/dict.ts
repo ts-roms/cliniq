@@ -42,7 +42,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     'consult.complete': 'Mark complete',
     'consult.locked': 'Consultation completed — SOAP edits locked.',
     'ai.scribe': 'AI scribe',
-    'ai.transcript_placeholder': 'Paste/dictate your note. AI will draft a SOAP from it.',
+    'ai.transcript_placeholder':
+      'Paste/dictate your note. AI will draft a SOAP from it.',
     'ai.generate': 'Generate SOAP draft',
     'ai.generating': 'Generating…',
     'lang.label': 'Language',
@@ -58,7 +59,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     'portal.records.medications': 'Medications',
     'portal.records.conditions': 'Conditions',
     'portal.records.labs': 'Lab results',
-    'portal.disclaimer': 'Discuss results with your provider — for reference only.',
+    'portal.disclaimer':
+      'Discuss results with your provider — for reference only.',
   },
   ph: {
     'app.brand': 'ClinIQ',
@@ -95,7 +97,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     'consult.complete': 'Markahang tapos',
     'consult.locked': 'Tapos na ang konsulta — naka-lock ang SOAP.',
     'ai.scribe': 'AI scribe',
-    'ai.transcript_placeholder': 'I-paste o i-dictate ang inyong note. Magdra-draft ng SOAP ang AI.',
+    'ai.transcript_placeholder':
+      'I-paste o i-dictate ang inyong note. Magdra-draft ng SOAP ang AI.',
     'ai.generate': 'Bumuo ng SOAP draft',
     'ai.generating': 'Bumubuo…',
     'lang.label': 'Wika',
@@ -111,7 +114,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     'portal.records.medications': 'Mga gamot',
     'portal.records.conditions': 'Mga kondisyon',
     'portal.records.labs': 'Resulta ng lab',
-    'portal.disclaimer': 'Pag-usapan ang resulta sa inyong doktor — para lang sa reperensya.',
+    'portal.disclaimer':
+      'Pag-usapan ang resulta sa inyong doktor — para lang sa reperensya.',
   },
 };
 

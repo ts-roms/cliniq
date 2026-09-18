@@ -57,16 +57,22 @@ const RULES: InteractionRule[] = [
 ];
 
 const ALLERGY_FAMILIES: Record<string, string[]> = {
-  penicillin: ['amoxicillin', 'ampicillin', 'penicillin', 'piperacillin', 'oxacillin'],
+  penicillin: [
+    'amoxicillin',
+    'ampicillin',
+    'penicillin',
+    'piperacillin',
+    'oxacillin',
+  ],
   sulfa: ['sulfamethoxazole', 'cotrimoxazole', 'sulfasalazine'],
   nsaid: ['ibuprofen', 'naproxen', 'diclofenac', 'mefenamic acid', 'celecoxib'],
   aspirin: ['aspirin', 'acetylsalicylic acid'],
 };
 
 export interface CheckInput {
-  newDrugs: string[];                  // generics being added in this Rx
-  currentMedications?: string[];        // patient's existing meds
-  allergies?: string[];                 // free-form allergy substances
+  newDrugs: string[]; // generics being added in this Rx
+  currentMedications?: string[]; // patient's existing meds
+  allergies?: string[]; // free-form allergy substances
 }
 
 const norm = (s: string) => s.trim().toLowerCase();
@@ -87,7 +93,10 @@ export function checkInteractions(input: CheckInput): InteractionFinding[] {
   const findings: InteractionFinding[] = [];
 
   const newDrugs = input.newDrugs.map(norm);
-  const allDrugs = new Set([...newDrugs, ...(input.currentMedications ?? []).map(norm)]);
+  const allDrugs = new Set([
+    ...newDrugs,
+    ...(input.currentMedications ?? []).map(norm),
+  ]);
 
   // Interactions
   for (const rule of RULES) {

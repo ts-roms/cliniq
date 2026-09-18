@@ -15,7 +15,9 @@ export class CreatePatientDto {
   @IsString()
   @MinLength(1)
   @MaxLength(40)
-  @Matches(/^[A-Za-z0-9-]+$/, { message: 'mrn may contain letters, digits, hyphens only' })
+  @Matches(/^[A-Za-z0-9-]+$/, {
+    message: 'mrn may contain letters, digits, hyphens only',
+  })
   mrn!: string;
 
   @IsString()

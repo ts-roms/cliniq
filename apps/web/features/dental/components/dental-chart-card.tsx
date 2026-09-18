@@ -37,7 +37,11 @@ import {
   useUpsertDentalChart,
 } from '../hooks/use-dental';
 
-type DraftSurface = { surface: ToothSurface; finding: SurfaceFinding; notes?: string | null };
+type DraftSurface = {
+  surface: ToothSurface;
+  finding: SurfaceFinding;
+  notes?: string | null;
+};
 type DraftTooth = {
   toothCode: string;
   status: ToothStatus;
@@ -50,7 +54,10 @@ function fdiCodes(dentition: Dentition): string[] {
   return [...q.upperRight, ...q.upperLeft, ...q.lowerLeft, ...q.lowerRight];
 }
 
-function chartToDraft(chart: DentalChartRecord | null, dentition: Dentition): DraftTooth[] {
+function chartToDraft(
+  chart: DentalChartRecord | null,
+  dentition: Dentition,
+): DraftTooth[] {
   const codes = fdiCodes(dentition);
   const byCode = new Map<string, ToothEntryRecord>();
   for (const t of chart?.teeth ?? []) byCode.set(t.toothCode, t);
@@ -136,7 +143,11 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
     );
   }
 
-  function addSurfaceFinding(code: string, surface: ToothSurface, finding: SurfaceFinding) {
+  function addSurfaceFinding(
+    code: string,
+    surface: ToothSurface,
+    finding: SurfaceFinding,
+  ) {
     setDraft((prev) =>
       prev.map((t) => {
         if (t.toothCode !== code) return t;
@@ -159,7 +170,10 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
   async function save() {
     // Only send teeth that diverge from defaults (status PRESENT + no surfaces + no notes).
     const teeth = draft.filter(
-      (t) => t.status !== 'PRESENT' || t.surfaces.length > 0 || (t.notes && t.notes.trim()),
+      (t) =>
+        t.status !== 'PRESENT' ||
+        t.surfaces.length > 0 ||
+        (t.notes && t.notes.trim()),
     );
     await upsert.mutateAsync({
       dentition,
@@ -242,12 +256,16 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
 
                 {/* Status */}
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-muted-foreground">Status</label>
+                  <label className="text-xs text-muted-foreground">
+                    Status
+                  </label>
                   {editing ? (
                     <Select
                       value={selectedTooth.status}
                       onChange={(e) =>
-                        updateTooth(selected!, { status: e.target.value as ToothStatus })
+                        updateTooth(selected!, {
+                          status: e.target.value as ToothStatus,
+                        })
                       }
                       className="text-xs"
                     >
@@ -258,7 +276,9 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
                       ))}
                     </Select>
                   ) : (
-                    <span className="text-xs">{STATUS_LABEL[selectedTooth.status]}</span>
+                    <span className="text-xs">
+                      {STATUS_LABEL[selectedTooth.status]}
+                    </span>
                   )}
                 </div>
 
@@ -269,7 +289,9 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
                   </div>
                   <ul className="space-y-1">
                     {selectedTooth.surfaces.length === 0 && (
-                      <li className="text-xs text-muted-foreground">— none —</li>
+                      <li className="text-xs text-muted-foreground">
+                        — none —
+                      </li>
                     )}
                     {selectedTooth.surfaces.map((s) => (
                       <li
@@ -290,7 +312,9 @@ export function DentalChartCard({ patientId }: { patientId: string }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => removeSurfaceFinding(selected!, s.surface)}
+                            onClick={() =>
+                              removeSurfaceFinding(selected!, s.surface)
+                            }
                           >
                             Remove
                           </Button>
@@ -408,7 +432,11 @@ function AddFindingForm({
           </option>
         ))}
       </Select>
-      <Button size="sm" variant="outline" onClick={() => onAdd(surface, finding)}>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => onAdd(surface, finding)}
+      >
         Add finding
       </Button>
     </div>

@@ -24,13 +24,20 @@ export default function DpoPage() {
       </h1>
       <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
         Per the Data Privacy Act of 2012, ClinIQ has designated a Data
-        Protection Officer to address questions, concerns, and requests
-        about personal data we process on behalf of clinic clients.
+        Protection Officer to address questions, concerns, and requests about
+        personal data we process on behalf of clinic clients.
       </p>
 
       <dl className="mt-8 space-y-3 rounded-lg border bg-card p-5 text-sm">
         <Row label="Name" value={DPO_NAME} />
-        <Row label="Email" value={<a className="text-primary underline" href={`mailto:${DPO_EMAIL}`}>{DPO_EMAIL}</a>} />
+        <Row
+          label="Email"
+          value={
+            <a className="text-primary underline" href={`mailto:${DPO_EMAIL}`}>
+              {DPO_EMAIL}
+            </a>
+          }
+        />
         {DPO_PHONE && <Row label="Phone" value={DPO_PHONE} />}
         {DPO_ADDRESS && <Row label="Postal address" value={DPO_ADDRESS} />}
       </dl>
@@ -40,9 +47,9 @@ export default function DpoPage() {
           Your rights under the DPA
         </h2>
         <p className="text-muted-foreground">
-          You may request the following from your clinic (the controller of
-          your record); ClinIQ will support the clinic in fulfilling them
-          within the statutory timelines.
+          You may request the following from your clinic (the controller of your
+          record); ClinIQ will support the clinic in fulfilling them within the
+          statutory timelines.
         </p>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
           <li>Right to be informed of how your data is processed</li>
@@ -51,7 +58,9 @@ export default function DpoPage() {
           <li>Right to erasure or blocking (subject to clinical retention)</li>
           <li>Right to data portability</li>
           <li>Right to object to processing</li>
-          <li>Right to lodge a complaint with the National Privacy Commission</li>
+          <li>
+            Right to lodge a complaint with the National Privacy Commission
+          </li>
         </ul>
       </section>
 
@@ -63,7 +72,12 @@ export default function DpoPage() {
           You may also contact the NPC directly:
         </p>
         <p>
-          <a className="text-primary underline" href="https://www.privacy.gov.ph/" target="_blank" rel="noreferrer">
+          <a
+            className="text-primary underline"
+            href="https://www.privacy.gov.ph/"
+            target="_blank"
+            rel="noreferrer"
+          >
             www.privacy.gov.ph
           </a>
           <br />
@@ -77,13 +91,7 @@ export default function DpoPage() {
   );
 }
 
-function Row({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[140px_1fr] items-baseline gap-3">
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">

@@ -47,8 +47,11 @@ export class HmoService {
 
   createProvider(dto: CreateHmoProviderDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const existing = await tx.hmoProvider.findFirst({ where: { name: dto.name } });
-      if (existing) throw new ConflictException(`Provider "${dto.name}" exists`);
+      const existing = await tx.hmoProvider.findFirst({
+        where: { name: dto.name },
+      });
+      if (existing)
+        throw new ConflictException(`Provider "${dto.name}" exists`);
       return tx.hmoProvider.create({
         data: { tenantId: user.tenantId, ...dto },
       });
@@ -75,18 +78,29 @@ export class HmoService {
     );
   }
 
-  addMembership(patientId: string, dto: CreateHmoMembershipDto, user: AuthenticatedUser) {
+  addMembership(
+    patientId: string,
+    dto: CreateHmoMembershipDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const patient = await tx.patient.findFirst({
         where: { id: patientId, deletedAt: null },
       });
-      if (!patient) throw new NotFoundException(`Patient ${patientId} not found`);
-      const provider = await tx.hmoProvider.findFirst({ where: { id: dto.providerId } });
-      if (!provider) throw new NotFoundException(`Provider ${dto.providerId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${patientId} not found`);
+      const provider = await tx.hmoProvider.findFirst({
+        where: { id: dto.providerId },
+      });
+      if (!provider)
+        throw new NotFoundException(`Provider ${dto.providerId} not found`);
       const dup = await tx.hmoMembership.findFirst({
         where: { patientId, providerId: dto.providerId, active: true },
       });
-      if (dup) throw new ConflictException('patient already has an active card with this provider');
+      if (dup)
+        throw new ConflictException(
+          'patient already has an active card with this provider',
+        );
       return tx.hmoMembership.create({
         data: {
           tenantId: user.tenantId,
@@ -111,8 +125,17 @@ export class HmoService {
         },
         include: {
           provider: { select: { id: true, name: true } },
-          patient: { select: { id: true, firstName: true, lastName: true, mrn: true } },
-          invoice: { select: { id: true, number: true, totalCentavos: true, paidCentavos: true } },
+          patient: {
+            select: { id: true, firstName: true, lastName: true, mrn: true },
+          },
+          invoice: {
+            select: {
+              id: true,
+              number: true,
+              totalCentavos: true,
+              paidCentavos: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 200,
@@ -125,12 +148,19 @@ export class HmoService {
       const invoice = await tx.invoice.findFirst({
         where: { id: invoiceId, deletedAt: null },
       });
-      if (!invoice) throw new NotFoundException(`Invoice ${invoiceId} not found`);
+      if (!invoice)
+        throw new NotFoundException(`Invoice ${invoiceId} not found`);
       if (invoice.status === InvoiceStatus.CANCELLED) {
-        throw new BadRequestException('cannot file claim against a cancelled invoice');
+        throw new BadRequestException(
+          'cannot file claim against a cancelled invoice',
+        );
       }
       const membership = await tx.hmoMembership.findFirst({
-        where: { id: dto.membershipId, patientId: invoice.patientId, active: true },
+        where: {
+          id: dto.membershipId,
+          patientId: invoice.patientId,
+          active: true,
+        },
       });
       if (!membership) {
         throw new BadRequestException(
@@ -162,26 +192,34 @@ export class HmoService {
   }
 
   async updateClaim(id: string, dto: UpdateClaimDto, user: AuthenticatedUser) {
-    const updated = await this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const claim = await tx.hmoClaim.findFirst({
-        where: { id, deletedAt: null },
-      });
-      if (!claim) throw new NotFoundException(`Claim ${id} not found`);
-      if (claim.status === HmoClaimStatus.PAID) {
-        throw new BadRequestException('cannot update a PAID claim');
-      }
-      const data: Record<string, unknown> = { ...dto };
-      const reachingTerminal =
-        dto.status === HmoClaimStatus.APPROVED ||
-        dto.status === HmoClaimStatus.PARTIAL ||
-        dto.status === HmoClaimStatus.DENIED ||
-        dto.status === HmoClaimStatus.CANCELLED;
-      if (reachingTerminal && !claim.resolvedAt) data['resolvedAt'] = new Date();
-      if (dto.approvedCentavos !== undefined && dto.approvedCentavos > claim.claimedCentavos) {
-        throw new BadRequestException('approved exceeds claimed');
-      }
-      return tx.hmoClaim.update({ where: { id }, data });
-    });
+    const updated = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const claim = await tx.hmoClaim.findFirst({
+          where: { id, deletedAt: null },
+        });
+        if (!claim) throw new NotFoundException(`Claim ${id} not found`);
+        if (claim.status === HmoClaimStatus.PAID) {
+          throw new BadRequestException('cannot update a PAID claim');
+        }
+        const data: Record<string, unknown> = { ...dto };
+        const reachingTerminal =
+          dto.status === HmoClaimStatus.APPROVED ||
+          dto.status === HmoClaimStatus.PARTIAL ||
+          dto.status === HmoClaimStatus.DENIED ||
+          dto.status === HmoClaimStatus.CANCELLED;
+        if (reachingTerminal && !claim.resolvedAt)
+          data['resolvedAt'] = new Date();
+        if (
+          dto.approvedCentavos !== undefined &&
+          dto.approvedCentavos > claim.claimedCentavos
+        ) {
+          throw new BadRequestException('approved exceeds claimed');
+        }
+        return tx.hmoClaim.update({ where: { id }, data });
+      },
+    );
     // Notify the claim creator on terminal transitions. Best-effort; not part
     // of the RLS-bound transaction.
     if (
@@ -217,14 +255,23 @@ export class HmoService {
    * status (PARTIAL/PAID) so the rest of billing stays consistent. Caps the
    * claim at PAID.
    */
-  async recordHmoPayment(claimId: string, dto: RecordHmoPaymentDto, user: AuthenticatedUser) {
+  async recordHmoPayment(
+    claimId: string,
+    dto: RecordHmoPaymentDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const claim = await tx.hmoClaim.findFirst({
         where: { id: claimId, deletedAt: null },
       });
       if (!claim) throw new NotFoundException(`Claim ${claimId} not found`);
-      if (claim.status === HmoClaimStatus.DENIED || claim.status === HmoClaimStatus.CANCELLED) {
-        throw new BadRequestException('cannot record payment on a denied/cancelled claim');
+      if (
+        claim.status === HmoClaimStatus.DENIED ||
+        claim.status === HmoClaimStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          'cannot record payment on a denied/cancelled claim',
+        );
       }
       if (claim.status === HmoClaimStatus.PAID) {
         throw new BadRequestException('claim already paid');
@@ -235,7 +282,10 @@ export class HmoService {
       });
       if (!invoice) throw new NotFoundException('invoice for claim is missing');
 
-      const remainingOnInvoice = Math.max(invoice.totalCentavos - invoice.paidCentavos, 0);
+      const remainingOnInvoice = Math.max(
+        invoice.totalCentavos - invoice.paidCentavos,
+        0,
+      );
       if (dto.amountCentavos > remainingOnInvoice) {
         throw new BadRequestException(
           `payment ${dto.amountCentavos} exceeds invoice balance ${remainingOnInvoice}`,
@@ -255,7 +305,9 @@ export class HmoService {
 
       const newPaid = invoice.paidCentavos + dto.amountCentavos;
       const newInvoiceStatus =
-        newPaid >= invoice.totalCentavos ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL;
+        newPaid >= invoice.totalCentavos
+          ? InvoiceStatus.PAID
+          : InvoiceStatus.PARTIAL;
       await tx.invoice.update({
         where: { id: invoice.id },
         data: { paidCentavos: newPaid, status: newInvoiceStatus },
@@ -280,7 +332,10 @@ export class HmoService {
    * concurrent submission collides; the unique index will throw and the
    * caller should retry. Production should switch to a sequence.
    */
-  private async nextClaimNumber(tx: PrismaClient, tenantId: string): Promise<string> {
+  private async nextClaimNumber(
+    tx: PrismaClient,
+    tenantId: string,
+  ): Promise<string> {
     const now = new Date();
     const prefix = `CLM-${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
     const monthCount = await tx.hmoClaim.count({

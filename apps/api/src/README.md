@@ -22,15 +22,15 @@ src/
 
 ## Mapping to `apps/web/features/`
 
-| Domain | Web feature folder | API module folder |
-|---|---|---|
-| Auth + session | `features/auth/` | `auth/` |
-| Tenants / clinic onboarding | `features/onboarding/` | `tenants/` |
-| Patients | `features/patients/` | `patients/` |
-| Consultations + AI scribe | `features/consultations/` | `consultations/` + `ai-client/` |
-| Prescriptions + safety check | `features/prescriptions/` | `prescriptions/` (with `safety/`) |
-| Tenant subdomain resolution | `features/tenant/` | `common/tenant-context.middleware.ts` |
-| (cross-cutting) | `shared/components/` + `shared/hooks/` | `common/` + `audit/` |
+| Domain                       | Web feature folder                     | API module folder                     |
+| ---------------------------- | -------------------------------------- | ------------------------------------- |
+| Auth + session               | `features/auth/`                       | `auth/`                               |
+| Tenants / clinic onboarding  | `features/onboarding/`                 | `tenants/`                            |
+| Patients                     | `features/patients/`                   | `patients/`                           |
+| Consultations + AI scribe    | `features/consultations/`              | `consultations/` + `ai-client/`       |
+| Prescriptions + safety check | `features/prescriptions/`              | `prescriptions/` (with `safety/`)     |
+| Tenant subdomain resolution  | `features/tenant/`                     | `common/tenant-context.middleware.ts` |
+| (cross-cutting)              | `shared/components/` + `shared/hooks/` | `common/` + `audit/`                  |
 
 Both sides keep one concern per folder, with co-located DTO/schema, hook/service,
 and component/controller files. Renaming a feature is a single `mv` in either tree.

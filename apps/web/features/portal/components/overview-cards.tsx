@@ -65,7 +65,9 @@ export function PortalOverviewCards() {
         </CardHeader>
         <CardContent>
           {!upcoming || upcoming.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No upcoming appointments.</p>
+            <p className="text-sm text-muted-foreground">
+              No upcoming appointments.
+            </p>
           ) : (
             <ul className="space-y-1 text-sm">
               {upcoming.map((a) => (
@@ -86,8 +88,12 @@ export function PortalOverviewCards() {
           <CardTitle>Balance</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-semibold">{formatCentavos(outstandingCentavos)}</p>
-          <p className="text-xs text-muted-foreground">across unpaid invoices</p>
+          <p className="text-2xl font-semibold">
+            {formatCentavos(outstandingCentavos)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            across unpaid invoices
+          </p>
         </CardContent>
       </Card>
     </div>

@@ -1,9 +1,18 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsISO8601, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsISO8601,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuditFilterDto {
-  @ApiPropertyOptional({ description: 'Filter by action prefix (e.g. "patient.")' })
+  @ApiPropertyOptional({
+    description: 'Filter by action prefix (e.g. "patient.")',
+  })
   @IsOptional()
   @IsString()
   action?: string;
@@ -23,12 +32,16 @@ export class AuditFilterDto {
   @IsString()
   userId?: string;
 
-  @ApiPropertyOptional({ description: 'Inclusive lower bound on occurredAt (ISO 8601)' })
+  @ApiPropertyOptional({
+    description: 'Inclusive lower bound on occurredAt (ISO 8601)',
+  })
   @IsOptional()
   @IsISO8601()
   since?: string;
 
-  @ApiPropertyOptional({ description: 'Inclusive upper bound on occurredAt (ISO 8601)' })
+  @ApiPropertyOptional({
+    description: 'Inclusive upper bound on occurredAt (ISO 8601)',
+  })
   @IsOptional()
   @IsISO8601()
   until?: string;

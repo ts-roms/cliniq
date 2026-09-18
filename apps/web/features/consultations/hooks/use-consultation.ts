@@ -24,7 +24,9 @@ export function useConsultation(id: string) {
   return useQuery({
     queryKey: consultationDetailKeys.detail(id),
     queryFn: async (): Promise<ConsultationDetail> => {
-      const { data, error } = await consultationsControllerFindOne({ path: { id } });
+      const { data, error } = await consultationsControllerFindOne({
+        path: { id },
+      });
       if (error || !data) throw new Error('Consultation not found');
       return data as unknown as ConsultationDetail;
     },
@@ -43,7 +45,9 @@ export function useUpdateSoap(id: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consultationDetailKeys.detail(id) });
+      queryClient.invalidateQueries({
+        queryKey: consultationDetailKeys.detail(id),
+      });
     },
   });
 }
@@ -59,7 +63,9 @@ export function useCompleteConsultation(id: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consultationDetailKeys.detail(id) });
+      queryClient.invalidateQueries({
+        queryKey: consultationDetailKeys.detail(id),
+      });
     },
   });
 }
@@ -89,7 +95,9 @@ export function useGenerateSoapDraft(id: string) {
       return data as unknown as AiSuggestion;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consultationDetailKeys.suggestions(id) });
+      queryClient.invalidateQueries({
+        queryKey: consultationDetailKeys.suggestions(id),
+      });
     },
   });
 }
@@ -113,8 +121,12 @@ export function useDecideSuggestion(consultId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consultationDetailKeys.suggestions(consultId) });
-      queryClient.invalidateQueries({ queryKey: consultationDetailKeys.detail(consultId) });
+      queryClient.invalidateQueries({
+        queryKey: consultationDetailKeys.suggestions(consultId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: consultationDetailKeys.detail(consultId),
+      });
     },
   });
 }

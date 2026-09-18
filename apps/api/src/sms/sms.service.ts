@@ -30,10 +30,15 @@ export class SmsService {
   private readonly senderName: string;
 
   constructor(private readonly config: ConfigService) {
-    const requested = (this.config.get<string>('SMS_PROVIDER') ?? '').toLowerCase();
+    const requested = (
+      this.config.get<string>('SMS_PROVIDER') ?? ''
+    ).toLowerCase();
     this.senderName = this.config.get<string>('SMS_SENDER_NAME') ?? 'CLINIQ';
 
-    if (requested === 'semaphore' && this.config.get<string>('SEMAPHORE_API_KEY')) {
+    if (
+      requested === 'semaphore' &&
+      this.config.get<string>('SEMAPHORE_API_KEY')
+    ) {
       this.provider = 'semaphore';
     } else if (
       requested === 'twilio' &&
@@ -64,7 +69,8 @@ export class SmsService {
       return { id: null, sent: false, provider: 'noop' };
     }
     try {
-      if (this.provider === 'semaphore') return await this.sendSemaphore(to, msg.body);
+      if (this.provider === 'semaphore')
+        return await this.sendSemaphore(to, msg.body);
       return await this.sendTwilio(to, msg.body);
     } catch (err) {
       this.logger.error(`sms send failed: ${(err as Error).message}`);
@@ -106,7 +112,11 @@ export class SmsService {
           authorization: `Basic ${auth}`,
           'content-type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ To: to, From: from, Body: body }).toString(),
+        body: new URLSearchParams({
+          To: to,
+          From: from,
+          Body: body,
+        }).toString(),
       },
     );
     if (!res.ok) {
@@ -123,7 +133,8 @@ function normalizePhone(input: string): string | null {
   const digits = input.replace(/\D/g, '');
   if (!digits) return null;
   if (digits.startsWith('63') && digits.length === 12) return `+${digits}`;
-  if (digits.startsWith('09') && digits.length === 11) return `+63${digits.slice(1)}`;
+  if (digits.startsWith('09') && digits.length === 11)
+    return `+63${digits.slice(1)}`;
   if (input.trim().startsWith('+') && digits.length >= 10) return `+${digits}`;
   return null;
 }

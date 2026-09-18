@@ -20,7 +20,8 @@ import {
   useDeleteConsentTemplate,
 } from '@/features/lab';
 
-const PLACEHOLDER_HELP = 'Use {{caseRef}}, {{patient}}, {{doctor}}, {{lotNumbers}}, {{labName}}, {{date}} as placeholders.';
+const PLACEHOLDER_HELP =
+  'Use {{caseRef}}, {{patient}}, {{doctor}}, {{lotNumbers}}, {{labName}}, {{date}} as placeholders.';
 
 export default function LabCompliancePage() {
   const [tab, setTab] = useState<'conformity' | 'consent'>('conformity');
@@ -30,13 +31,17 @@ export default function LabCompliancePage() {
       <div>
         <h1 className="text-2xl font-semibold">Compliance</h1>
         <p className="text-sm text-muted-foreground">
-          Customizable templates for conformity declarations and patient consent.
-          Generated when a case ships (conformity) or signed at clinic intake (consent).
+          Customizable templates for conformity declarations and patient
+          consent. Generated when a case ships (conformity) or signed at clinic
+          intake (consent).
         </p>
       </div>
 
       <div className="flex gap-2">
-        <TabBtn active={tab === 'conformity'} onClick={() => setTab('conformity')}>
+        <TabBtn
+          active={tab === 'conformity'}
+          onClick={() => setTab('conformity')}
+        >
           Conformity
         </TabBtn>
         <TabBtn active={tab === 'consent'} onClick={() => setTab('consent')}>
@@ -101,7 +106,8 @@ function ConformitySection() {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-          <Plus className="mr-2 h-4 w-4" aria-hidden /> {showForm ? 'Cancel' : 'New conformity template'}
+          <Plus className="mr-2 h-4 w-4" aria-hidden />{' '}
+          {showForm ? 'Cancel' : 'New conformity template'}
         </Button>
       </div>
 
@@ -129,7 +135,9 @@ function ConformitySection() {
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
                   placeholder={`# Declaration of Conformity\n\nLab: {{labName}}\nDate: {{date}}\nCase: {{caseRef}}\nPatient: {{patient}}\n\nWe hereby declare that the dental device manufactured under case {{caseRef}} complies with applicable regulatory requirements...`}
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">{PLACEHOLDER_HELP}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {PLACEHOLDER_HELP}
+                </p>
               </FormField>
               {create.error && (
                 <p className="text-sm text-destructive">
@@ -137,7 +145,11 @@ function ConformitySection() {
                 </p>
               )}
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={create.isPending}>
@@ -154,16 +166,25 @@ function ConformitySection() {
           <CardTitle>Templates</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {data && data.length === 0 && (
-            <p className="text-sm text-muted-foreground">No conformity templates yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No conformity templates yet.
+            </p>
           )}
           <ul className="divide-y">
             {data?.map((t) => (
-              <li key={t.id} className="flex items-start justify-between gap-3 py-3">
+              <li
+                key={t.id}
+                className="flex items-start justify-between gap-3 py-3"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">{t.name}</div>
                   <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted/30 px-2 py-1 font-mono text-[10px] text-muted-foreground">
@@ -215,7 +236,8 @@ function ConsentSection() {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-          <Plus className="mr-2 h-4 w-4" aria-hidden /> {showForm ? 'Cancel' : 'New consent template'}
+          <Plus className="mr-2 h-4 w-4" aria-hidden />{' '}
+          {showForm ? 'Cancel' : 'New consent template'}
         </Button>
       </div>
 
@@ -243,7 +265,9 @@ function ConsentSection() {
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
                   placeholder={`# Patient Consent\n\nI, {{patient}}, authorize {{labName}} to manufacture the dental device described in case {{caseRef}}...`}
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">{PLACEHOLDER_HELP}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {PLACEHOLDER_HELP}
+                </p>
               </FormField>
               {create.error && (
                 <p className="text-sm text-destructive">
@@ -251,7 +275,11 @@ function ConsentSection() {
                 </p>
               )}
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={create.isPending}>
@@ -268,16 +296,25 @@ function ConsentSection() {
           <CardTitle>Templates</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {data && data.length === 0 && (
-            <p className="text-sm text-muted-foreground">No consent templates yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No consent templates yet.
+            </p>
           )}
           <ul className="divide-y">
             {data?.map((t) => (
-              <li key={t.id} className="flex items-start justify-between gap-3 py-3">
+              <li
+                key={t.id}
+                className="flex items-start justify-between gap-3 py-3"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">{t.name}</div>
                   <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted/30 px-2 py-1 font-mono text-[10px] text-muted-foreground">

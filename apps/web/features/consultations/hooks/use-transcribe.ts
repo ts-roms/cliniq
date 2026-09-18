@@ -13,7 +13,9 @@ interface TranscribeResult {
 
 export function useTranscribeAudio() {
   return useMutation({
-    mutationFn: async (recording: AudioRecording): Promise<TranscribeResult> => {
+    mutationFn: async (
+      recording: AudioRecording,
+    ): Promise<TranscribeResult> => {
       const ext = recording.mimeType.includes('mp4') ? 'm4a' : 'webm';
       const filename = `consult-${Date.now()}.${ext}`;
 
@@ -47,9 +49,10 @@ export function useTranscribeAudio() {
 
       // 3. Tell the api the upload landed; it confirms with HeadObject and
       //    forwards to ai-service for STT.
-      const { data: transcript, error: tErr } = await transcriptsControllerTranscribe({
-        body: { fileId: presigned.fileId },
-      });
+      const { data: transcript, error: tErr } =
+        await transcriptsControllerTranscribe({
+          body: { fileId: presigned.fileId },
+        });
       if (tErr || !transcript) throw new Error('Transcription failed');
       return { transcript: (transcript as { transcript: string }).transcript };
     },

@@ -20,7 +20,10 @@ interface Props {
   redirectTo?: string;
 }
 
-export function DeletePatientButton({ patient, redirectTo = '/patients' }: Props) {
+export function DeletePatientButton({
+  patient,
+  redirectTo = '/patients',
+}: Props) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const remove = useDeletePatient();
@@ -49,7 +52,9 @@ export function DeletePatientButton({ patient, redirectTo = '/patients' }: Props
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <p className="font-mono text-xs text-muted-foreground">{confirmText}</p>
+          <p className="font-mono text-xs text-muted-foreground">
+            {confirmText}
+          </p>
           <input
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
@@ -57,7 +62,9 @@ export function DeletePatientButton({ patient, redirectTo = '/patients' }: Props
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           />
           {remove.error && (
-            <p className="text-xs text-destructive">{(remove.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(remove.error as Error).message}
+            </p>
           )}
         </div>
         <DialogFooter>

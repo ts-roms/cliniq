@@ -33,7 +33,11 @@ export function SettingsForm({ tenant }: { tenant: TenantSettings }) {
   const update = useUpdateSettings();
   const settings = tenant.settings ?? {};
   const operatingHours = settings.operatingHours ?? DEFAULT_HOURS;
-  const acceptedPaymentMethods = settings.acceptedPaymentMethods ?? ['CASH', 'GCASH', 'CARD'];
+  const acceptedPaymentMethods = settings.acceptedPaymentMethods ?? [
+    'CASH',
+    'GCASH',
+    'CARD',
+  ];
 
   const {
     register,
@@ -121,14 +125,26 @@ export function SettingsForm({ tenant }: { tenant: TenantSettings }) {
           <CardTitle>Branding</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          <FormField label="Primary color (hex)" error={errors.branding?.primaryColor?.message}>
-            <Input placeholder="#1f6feb" {...register('branding.primaryColor')} />
+          <FormField
+            label="Primary color (hex)"
+            error={errors.branding?.primaryColor?.message}
+          >
+            <Input
+              placeholder="#1f6feb"
+              {...register('branding.primaryColor')}
+            />
           </FormField>
           <FormField label="Logo URL" error={errors.branding?.logoUrl?.message}>
-            <Input placeholder="https://…/logo.png" {...register('branding.logoUrl')} />
+            <Input
+              placeholder="https://…/logo.png"
+              {...register('branding.logoUrl')}
+            />
           </FormField>
           <FormField label="Tagline" error={errors.branding?.tagline?.message}>
-            <Input placeholder="Care, on time" {...register('branding.tagline')} />
+            <Input
+              placeholder="Care, on time"
+              {...register('branding.tagline')}
+            />
           </FormField>
         </CardContent>
       </Card>
@@ -151,12 +167,22 @@ export function SettingsForm({ tenant }: { tenant: TenantSettings }) {
                 </label>
               </div>
               <div className="col-span-3">
-                <Input type="time" {...register(`operatingHours.${idx}.open`)} />
+                <Input
+                  type="time"
+                  {...register(`operatingHours.${idx}.open`)}
+                />
               </div>
               <div className="col-span-3">
-                <Input type="time" {...register(`operatingHours.${idx}.close`)} />
+                <Input
+                  type="time"
+                  {...register(`operatingHours.${idx}.close`)}
+                />
               </div>
-              <input type="hidden" value={idx} {...register(`operatingHours.${idx}.weekday`)} />
+              <input
+                type="hidden"
+                value={idx}
+                {...register(`operatingHours.${idx}.weekday`)}
+              />
             </div>
           ))}
         </CardContent>
@@ -189,11 +215,20 @@ export function SettingsForm({ tenant }: { tenant: TenantSettings }) {
             </div>
           </FormField>
           <div className="grid gap-3 md:grid-cols-2">
-            <FormField label="VAT % (PH typical: 12)" error={errors.vatPercent?.message}>
+            <FormField
+              label="VAT % (PH typical: 12)"
+              error={errors.vatPercent?.message}
+            >
               <Input type="number" {...register('vatPercent')} />
             </FormField>
-            <FormField label="Default invoice notes" error={errors.defaultInvoiceNotes?.message}>
-              <Input placeholder="Thank you. Payment due upon receipt." {...register('defaultInvoiceNotes')} />
+            <FormField
+              label="Default invoice notes"
+              error={errors.defaultInvoiceNotes?.message}
+            >
+              <Input
+                placeholder="Thank you. Payment due upon receipt."
+                {...register('defaultInvoiceNotes')}
+              />
             </FormField>
           </div>
         </CardContent>
@@ -214,19 +249,25 @@ export function SettingsForm({ tenant }: { tenant: TenantSettings }) {
             />
           </FormField>
           <p className="text-xs text-muted-foreground">
-            POST events fire on appointment create / check-in / cancel. Pipe through
-            Zapier, Make, or n8n to push into Google or Microsoft Calendar. Each
-            request is signed with the <code>X-ClinIQ-Signature</code> header
-            (HMAC-SHA256 over the JSON body) — verify on the receiving end.
+            POST events fire on appointment create / check-in / cancel. Pipe
+            through Zapier, Make, or n8n to push into Google or Microsoft
+            Calendar. Each request is signed with the{' '}
+            <code>X-ClinIQ-Signature</code> header (HMAC-SHA256 over the JSON
+            body) — verify on the receiving end.
           </p>
         </CardContent>
       </Card>
 
       {update.error && (
-        <p className="text-sm text-destructive">{(update.error as Error).message}</p>
+        <p className="text-sm text-destructive">
+          {(update.error as Error).message}
+        </p>
       )}
       <div className="sticky bottom-4 flex justify-end gap-2 rounded-lg border bg-card p-3 shadow-sm">
-        <Button type="submit" disabled={isSubmitting || update.isPending || !isDirty}>
+        <Button
+          type="submit"
+          disabled={isSubmitting || update.isPending || !isDirty}
+        >
           {update.isPending ? 'Saving…' : 'Save settings'}
         </Button>
       </div>

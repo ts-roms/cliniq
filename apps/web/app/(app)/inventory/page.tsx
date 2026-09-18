@@ -19,7 +19,8 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Inventory</h1>
           <p className="text-sm text-muted-foreground">
-            {data ? `${data.length} item${data.length === 1 ? '' : 's'}` : '…'} · FEFO dispense, lot tracking, expiry alerts
+            {data ? `${data.length} item${data.length === 1 ? '' : 's'}` : '…'}{' '}
+            · FEFO dispense, lot tracking, expiry alerts
           </p>
         </div>
         <NewItemDialog />
@@ -37,7 +38,9 @@ export default function InventoryPage() {
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
       {data && data.length === 0 && (
         <div className="rounded-lg border border-dashed py-12 text-center">
           <p className="text-sm text-muted-foreground">

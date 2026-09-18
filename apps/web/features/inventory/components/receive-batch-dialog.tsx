@@ -54,7 +54,10 @@ export function ReceiveBatchDialog({ itemId }: { itemId: string }) {
             <FormField label="Quantity" error={errors.receivedQty?.message}>
               <Input type="number" {...register('receivedQty')} />
             </FormField>
-            <FormField label="Unit cost (centavos)" error={errors.unitCostCentavos?.message}>
+            <FormField
+              label="Unit cost (centavos)"
+              error={errors.unitCostCentavos?.message}
+            >
               <Input type="number" {...register('unitCostCentavos')} />
             </FormField>
           </div>
@@ -70,10 +73,16 @@ export function ReceiveBatchDialog({ itemId }: { itemId: string }) {
             <Input placeholder="Mercury Drug" {...register('supplierName')} />
           </FormField>
           {receive.error && (
-            <p className="text-xs text-destructive">{(receive.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(receive.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || receive.isPending}>

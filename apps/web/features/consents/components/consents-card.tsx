@@ -9,7 +9,11 @@ import {
   CardTitle,
   Loading,
 } from '@org/ui';
-import { CONSENT_LABELS, CONSENT_ORDER, type ConsentType } from '../schemas/consent';
+import {
+  CONSENT_LABELS,
+  CONSENT_ORDER,
+  type ConsentType,
+} from '../schemas/consent';
 import { usePatientConsents, useSetConsent } from '../hooks/use-consents';
 
 interface Props {
@@ -21,7 +25,10 @@ export function ConsentsCard({ patientId }: Props) {
   const setConsent = useSetConsent(patientId);
 
   const byType = useMemo(() => {
-    const map = new Map<ConsentType, ReturnType<typeof list.data extends infer T ? () => T : never>>();
+    const map = new Map<
+      ConsentType,
+      ReturnType<typeof list.data extends infer T ? () => T : never>
+    >();
     list.data?.forEach((row) => {
       map.set(row.type as ConsentType, row as never);
     });
@@ -54,7 +61,11 @@ export function ConsentsCard({ patientId }: Props) {
 
 interface RowProps {
   type: ConsentType;
-  row?: { granted: boolean; acceptedAt: string | null; withdrawnAt: string | null };
+  row?: {
+    granted: boolean;
+    acceptedAt: string | null;
+    withdrawnAt: string | null;
+  };
   onChange: (granted: boolean, reason?: string) => void;
   busy: boolean;
 }
@@ -142,7 +153,9 @@ function ConsentMeta({
   row?: { acceptedAt: string | null; withdrawnAt: string | null };
 }) {
   if (!row) {
-    return <p className="mt-1 text-[11px] text-muted-foreground">Not yet recorded</p>;
+    return (
+      <p className="mt-1 text-[11px] text-muted-foreground">Not yet recorded</p>
+    );
   }
   if (row.withdrawnAt) {
     return (

@@ -15,7 +15,11 @@ function isPublic(path: string | null): boolean {
   return false;
 }
 
-export default function PortalLayout({ children }: { children: React.ReactNode }) {
+export default function PortalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const path = usePathname();
   if (isPublic(path)) {
     return <PublicShell>{children}</PublicShell>;

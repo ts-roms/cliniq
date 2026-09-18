@@ -13,7 +13,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@org/ui';
-import { createPatientSchema, type CreatePatientInput } from '../schemas/patient';
+import {
+  createPatientSchema,
+  type CreatePatientInput,
+} from '../schemas/patient';
 import { useCreatePatient } from '../hooks/use-patients';
 import { PatientFormFields } from './patient-form-fields';
 
@@ -29,7 +32,8 @@ export function CreatePatientDialog() {
         <DialogHeader>
           <DialogTitle>New patient</DialogTitle>
           <DialogDescription>
-            Required fields only. Add allergies, history, and contacts after creating.
+            Required fields only. Add allergies, history, and contacts after
+            creating.
           </DialogDescription>
         </DialogHeader>
         <CreatePatientForm onDone={() => setOpen(false)} />
@@ -61,7 +65,9 @@ function CreatePatientForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={onSubmit} className="space-y-3">
       <PatientFormFields register={register} errors={errors} />
       {create.error && (
-        <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
       <DialogFooter className="pt-2">
         <Button type="button" variant="outline" onClick={onDone}>

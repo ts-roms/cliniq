@@ -93,7 +93,9 @@ export function OverviewGrid() {
               : 'no monthly cap set'
         }
         tone={
-          data.ai.hardStopped ? 'critical' : budgetTone(data.ai.spentCentavos, data.ai.budgetCentavos)
+          data.ai.hardStopped
+            ? 'critical'
+            : budgetTone(data.ai.spentCentavos, data.ai.budgetCentavos)
         }
       />
       <KpiTile

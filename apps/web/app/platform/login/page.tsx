@@ -26,7 +26,9 @@ export default function PlatformLoginPage() {
 
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extralight">Operator sign-in</CardTitle>
+            <CardTitle className="text-2xl font-extralight">
+              Operator sign-in
+            </CardTitle>
             <CardDescription>
               Manage tenants, plans, and subscriptions across the SaaS.
             </CardDescription>

@@ -112,7 +112,8 @@ export default function NewClinicLabCasePage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              You need at least one accepted lab invitation before placing a case.
+              You need at least one accepted lab invitation before placing a
+              case.
             </p>
             <Button asChild variant="outline">
               <Link href="/lab-invitations">View invitations</Link>
@@ -162,7 +163,8 @@ export default function NewClinicLabCasePage() {
                 )}
                 {products.length === 0 && !productsErr && (
                   <p className="text-xs text-muted-foreground">
-                    No products visible — ask the lab to share product IDs or set up the catalog browser.
+                    No products visible — ask the lab to share product IDs or
+                    set up the catalog browser.
                   </p>
                 )}
                 <Select
@@ -172,7 +174,10 @@ export default function NewClinicLabCasePage() {
                   <option value="">— pick a product —</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} {p.defaultPrice ? `· ₱${(p.defaultPrice / 100).toLocaleString()}` : ''}
+                      {p.name}{' '}
+                      {p.defaultPrice
+                        ? `· ₱${(p.defaultPrice / 100).toLocaleString()}`
+                        : ''}
                     </option>
                   ))}
                 </Select>
@@ -243,7 +248,8 @@ export default function NewClinicLabCasePage() {
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Created in DRAFT status. Attach STL/photos on the next page, then submit.
+              Created in DRAFT status. Attach STL/photos on the next page, then
+              submit.
             </p>
           </form>
         </CardContent>

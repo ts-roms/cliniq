@@ -135,10 +135,16 @@ function AddConditionDialog({ patientId }: { patientId: string }) {
             <Input {...register('notes')} />
           </FormField>
           {add.error && (
-            <p className="text-xs text-destructive">{(add.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(add.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || add.isPending}>

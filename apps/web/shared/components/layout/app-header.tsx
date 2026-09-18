@@ -28,10 +28,7 @@ export function AppHeader({
   const home = homeHrefFor(session.user.role);
 
   return (
-    <header
-      className="sticky top-0 z-30 border-b bg-card"
-      style={headerStyle}
-    >
+    <header className="sticky top-0 z-30 border-b bg-card" style={headerStyle}>
       <div className="flex h-14 items-center justify-between gap-2 px-4 sm:px-6">
         {/* Left: mobile hamburger + brand (mobile only — sidebar shows brand on desktop) */}
         <div className="flex min-w-0 items-center gap-2">
@@ -47,10 +44,18 @@ export function AppHeader({
           <Link
             href={home}
             className="flex min-w-0 items-center gap-2 text-sm font-semibold lg:hidden"
-            style={branding?.primaryColor ? { color: branding.primaryColor } : undefined}
+            style={
+              branding?.primaryColor
+                ? { color: branding.primaryColor }
+                : undefined
+            }
           >
             {branding?.logoUrl ? (
-              <img src={branding.logoUrl} alt={clinicName} className="h-6 w-auto" />
+              <img
+                src={branding.logoUrl}
+                alt={clinicName}
+                className="h-6 w-auto"
+              />
             ) : null}
             <span className="truncate">{clinicName}</span>
           </Link>

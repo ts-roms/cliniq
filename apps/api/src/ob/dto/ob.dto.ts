@@ -53,7 +53,10 @@ export class CreatePregnancyDto {
 }
 
 export class UpdatePregnancyDto {
-  @ApiPropertyOptional({ enum: ObPregnancyStatus, enumName: 'ObPregnancyStatus' })
+  @ApiPropertyOptional({
+    enum: ObPregnancyStatus,
+    enumName: 'ObPregnancyStatus',
+  })
   @IsOptional()
   @IsEnum(ObPregnancyStatus)
   status?: ObPregnancyStatus;
@@ -174,11 +177,26 @@ export class CreateUltrasoundDto {
   @ApiPropertyOptional() @IsOptional() @IsNumber() acMm?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() flMm?: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() estimatedFetalWeightG?: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() amnioticFluidIndexCm?: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  amnioticFluidIndexCm?: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() fetalHeartRate?: number;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) presentation?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) placentaLocation?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) fetalSex?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  presentation?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  placentaLocation?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  fetalSex?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

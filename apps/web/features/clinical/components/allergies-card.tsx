@@ -88,7 +88,9 @@ function AllergyItem({
           <span className="text-xs text-muted-foreground">{allergy.type}</span>
         </div>
         {allergy.reaction && (
-          <p className="mt-1 text-xs text-muted-foreground">{allergy.reaction}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {allergy.reaction}
+          </p>
         )}
       </div>
       <Button
@@ -159,10 +161,16 @@ function AddAllergyDialog({ patientId }: { patientId: string }) {
             <Input placeholder="anaphylaxis" {...register('reaction')} />
           </FormField>
           {add.error && (
-            <p className="text-xs text-destructive">{(add.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(add.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || add.isPending}>

@@ -83,27 +83,76 @@ export interface LabOrder {
 // vary by lab — they're a starting point, editable per row.
 export const TEST_PRESETS: Array<{
   category: string;
-  tests: Array<Pick<LabOrderItem, 'testCode' | 'testName' | 'resultUnit'> & {
-    referenceLow?: number;
-    referenceHigh?: number;
-  }>;
+  tests: Array<
+    Pick<LabOrderItem, 'testCode' | 'testName' | 'resultUnit'> & {
+      referenceLow?: number;
+      referenceHigh?: number;
+    }
+  >;
 }> = [
   {
     category: 'CBC',
     tests: [
-      { testCode: 'HGB', testName: 'Hemoglobin', resultUnit: 'g/dL', referenceLow: 12, referenceHigh: 17 },
-      { testCode: 'WBC', testName: 'WBC count', resultUnit: '×10⁹/L', referenceLow: 4, referenceHigh: 11 },
-      { testCode: 'PLT', testName: 'Platelet count', resultUnit: '×10⁹/L', referenceLow: 150, referenceHigh: 450 },
-      { testCode: 'HCT', testName: 'Hematocrit', resultUnit: '%', referenceLow: 36, referenceHigh: 50 },
+      {
+        testCode: 'HGB',
+        testName: 'Hemoglobin',
+        resultUnit: 'g/dL',
+        referenceLow: 12,
+        referenceHigh: 17,
+      },
+      {
+        testCode: 'WBC',
+        testName: 'WBC count',
+        resultUnit: '×10⁹/L',
+        referenceLow: 4,
+        referenceHigh: 11,
+      },
+      {
+        testCode: 'PLT',
+        testName: 'Platelet count',
+        resultUnit: '×10⁹/L',
+        referenceLow: 150,
+        referenceHigh: 450,
+      },
+      {
+        testCode: 'HCT',
+        testName: 'Hematocrit',
+        resultUnit: '%',
+        referenceLow: 36,
+        referenceHigh: 50,
+      },
     ],
   },
   {
     category: 'Chemistry',
     tests: [
-      { testCode: 'FBS', testName: 'Fasting blood sugar', resultUnit: 'mg/dL', referenceLow: 70, referenceHigh: 99 },
-      { testCode: 'HBA1C', testName: 'HbA1c', resultUnit: '%', referenceLow: 4, referenceHigh: 5.7 },
-      { testCode: 'CHOL', testName: 'Total cholesterol', resultUnit: 'mg/dL', referenceHigh: 200 },
-      { testCode: 'CREA', testName: 'Creatinine', resultUnit: 'mg/dL', referenceLow: 0.6, referenceHigh: 1.2 },
+      {
+        testCode: 'FBS',
+        testName: 'Fasting blood sugar',
+        resultUnit: 'mg/dL',
+        referenceLow: 70,
+        referenceHigh: 99,
+      },
+      {
+        testCode: 'HBA1C',
+        testName: 'HbA1c',
+        resultUnit: '%',
+        referenceLow: 4,
+        referenceHigh: 5.7,
+      },
+      {
+        testCode: 'CHOL',
+        testName: 'Total cholesterol',
+        resultUnit: 'mg/dL',
+        referenceHigh: 200,
+      },
+      {
+        testCode: 'CREA',
+        testName: 'Creatinine',
+        resultUnit: 'mg/dL',
+        referenceLow: 0.6,
+        referenceHigh: 1.2,
+      },
     ],
   },
   {

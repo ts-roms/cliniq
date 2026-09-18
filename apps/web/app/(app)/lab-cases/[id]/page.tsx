@@ -4,13 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { ArrowLeft, FileText, Upload } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@org/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import {
   CaseStatusPill,
   ChatPanel,
@@ -34,10 +28,14 @@ export default function ClinicLabCaseDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error)
-    return <p className="text-sm text-destructive">{(error as Error).message}</p>;
-  if (!lc) return <p className="text-sm text-muted-foreground">Case not found.</p>;
+    return (
+      <p className="text-sm text-destructive">{(error as Error).message}</p>
+    );
+  if (!lc)
+    return <p className="text-sm text-muted-foreground">Case not found.</p>;
 
   // Available transitions from the clinic side.
   const fromClinic: Partial<Record<LabCaseStatus, LabCaseStatus[]>> = {
@@ -186,7 +184,10 @@ export default function ClinicLabCaseDetailPage() {
                   className="flex items-center justify-between rounded-md border border-border/60 px-2 py-1.5 text-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    <FileText
+                      className="h-4 w-4 text-muted-foreground"
+                      aria-hidden
+                    />
                     <span className="truncate">{f.filename}</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">
@@ -199,9 +200,9 @@ export default function ClinicLabCaseDetailPage() {
               )}
             </ul>
 
-            {(['DRAFT', 'SUBMITTED', 'IN_PROGRESS'] as LabCaseStatus[]).includes(
-              lc.status,
-            ) && (
+            {(
+              ['DRAFT', 'SUBMITTED', 'IN_PROGRESS'] as LabCaseStatus[]
+            ).includes(lc.status) && (
               <label className="block">
                 <input
                   type="file"
@@ -222,13 +223,19 @@ export default function ClinicLabCaseDetailPage() {
         </Card>
       </div>
 
-      {(['SHIPPED', 'DELIVERED', 'AWAITING_PICKUP'] as LabCaseStatus[]).includes(lc.status) && (
+      {(
+        ['SHIPPED', 'DELIVERED', 'AWAITING_PICKUP'] as LabCaseStatus[]
+      ).includes(lc.status) && (
         <Card>
           <CardHeader>
             <CardTitle>Shipment</CardTitle>
           </CardHeader>
           <CardContent>
-            <ShipmentWidget caseId={lc.id} side="clinic" caseStatus={lc.status} />
+            <ShipmentWidget
+              caseId={lc.id}
+              side="clinic"
+              caseStatus={lc.status}
+            />
           </CardContent>
         </Card>
       )}
@@ -251,7 +258,9 @@ export default function ClinicLabCaseDetailPage() {
 
 function ClinicDisputesPanel({ caseId }: { caseId: string }) {
   const session = useSession();
-  return <DisputesPanel caseId={caseId} side="clinic" myUserId={session?.user.id} />;
+  return (
+    <DisputesPanel caseId={caseId} side="clinic" myUserId={session?.user.id} />
+  );
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -268,6 +277,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }

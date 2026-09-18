@@ -37,9 +37,11 @@ const STATUS_LABEL: Record<LabTreatmentPlanStatus, string> = {
 const STATUS_COLOR: Record<LabTreatmentPlanStatus, string> = {
   DRAFT: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
   PROPOSED: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-  APPROVED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  APPROVED:
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   REJECTED: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
-  REVISION_REQUESTED: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  REVISION_REQUESTED:
+    'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
 };
 
 export function TreatmentPlansPanel({
@@ -218,9 +220,10 @@ function PlanRow({
               : `Created ${new Date(plan.createdAt).toLocaleString()}`}
           </div>
         </div>
-        {side === 'lab' && (plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED') && (
-          <ProposeButton id={plan.id} />
-        )}
+        {side === 'lab' &&
+          (plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED') && (
+            <ProposeButton id={plan.id} />
+          )}
         {side === 'clinic' && plan.status === 'PROPOSED' && (
           <DecisionButtons id={plan.id} />
         )}
@@ -228,18 +231,25 @@ function PlanRow({
       <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-muted/30 px-2 py-1 text-xs">
         {plan.summary}
       </pre>
-      {side === 'lab' && (plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED') && (
-        <EditableSummary plan={plan} />
-      )}
+      {side === 'lab' &&
+        (plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED') && (
+          <EditableSummary plan={plan} />
+        )}
       <FilesList plan={plan} side={side} />
       {plan.approvals.length > 0 && (
         <div className="mt-2 space-y-1 text-xs">
-          <div className="font-medium uppercase text-muted-foreground">Decisions</div>
+          <div className="font-medium uppercase text-muted-foreground">
+            Decisions
+          </div>
           {plan.approvals.map((a) => (
             <div key={a.id}>
-              <span className="font-medium">{a.decision.replace('_', ' ')}</span> ·{' '}
-              {new Date(a.decidedAt).toLocaleString()}
-              {a.notes && <span className="text-muted-foreground"> — {a.notes}</span>}
+              <span className="font-medium">
+                {a.decision.replace('_', ' ')}
+              </span>{' '}
+              · {new Date(a.decidedAt).toLocaleString()}
+              {a.notes && (
+                <span className="text-muted-foreground"> — {a.notes}</span>
+              )}
             </div>
           ))}
         </div>
@@ -251,7 +261,11 @@ function PlanRow({
 function ProposeButton({ id }: { id: string }) {
   const propose = useProposeLabTreatmentPlan(id);
   return (
-    <Button size="sm" onClick={() => propose.mutate()} disabled={propose.isPending}>
+    <Button
+      size="sm"
+      onClick={() => propose.mutate()}
+      disabled={propose.isPending}
+    >
       {propose.isPending ? 'Proposing…' : 'Propose to clinic'}
     </Button>
   );
@@ -261,9 +275,12 @@ function DecisionButtons({ id }: { id: string }) {
   const decide = useDecideTreatmentPlan(id);
   const [notes, setNotes] = useState('');
   function go(decision: LabTreatmentPlanDecision) {
-    decide.mutate({ decision, notes: notes.trim() || undefined }, {
-      onSuccess: () => setNotes(''),
-    });
+    decide.mutate(
+      { decision, notes: notes.trim() || undefined },
+      {
+        onSuccess: () => setNotes(''),
+      },
+    );
   }
   return (
     <div className="flex flex-col items-end gap-2">
@@ -274,7 +291,11 @@ function DecisionButtons({ id }: { id: string }) {
         className="h-8 w-56 rounded-md border border-input bg-background px-2 text-xs"
       />
       <div className="flex gap-1">
-        <Button size="sm" onClick={() => go('APPROVED')} disabled={decide.isPending}>
+        <Button
+          size="sm"
+          onClick={() => go('APPROVED')}
+          disabled={decide.isPending}
+        >
           Approve
         </Button>
         <Button
@@ -349,7 +370,9 @@ function FilesList({
   plan: LabTreatmentPlan;
   side: 'lab' | 'clinic';
 }) {
-  const isEditable = side === 'lab' && (plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED');
+  const isEditable =
+    side === 'lab' &&
+    (plan.status === 'DRAFT' || plan.status === 'REVISION_REQUESTED');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -449,6 +472,7 @@ function inferKind(file: File): 'STL' | 'IMAGE' | 'REPORT' | 'OTHER' {
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }

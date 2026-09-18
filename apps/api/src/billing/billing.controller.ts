@@ -40,22 +40,39 @@ export class BillingController {
   @Post('services')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'service.create', entity: 'Service', entityIdFrom: 'result:id' })
-  createService(@Body() dto: CreateServiceDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'service.create',
+    entity: 'Service',
+    entityIdFrom: 'result:id',
+  })
+  createService(
+    @Body() dto: CreateServiceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.billing.createService(dto, user);
   }
 
   // ── Invoices ──────────────────────────────────────
   @Get('invoices')
   @Requires(Actions.BILLING_READ)
-  listInvoices(@Query('patientId') patientId: string, @CurrentUser() user: AuthenticatedUser) {
+  listInvoices(
+    @Query('patientId') patientId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.billing.listInvoicesForPatient(patientId, user);
   }
   @Post('invoices')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'invoice.create', entity: 'Invoice', entityIdFrom: 'result:id' })
-  createInvoice(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'invoice.create',
+    entity: 'Invoice',
+    entityIdFrom: 'result:id',
+  })
+  createInvoice(
+    @Body() dto: CreateInvoiceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.billing.createInvoice(dto, user);
   }
 
@@ -82,7 +99,11 @@ export class BillingController {
   @Post('invoices/:id/payments')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.BILLING_WRITE)
-  @Audit({ action: 'payment.record', entity: 'Payment', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'payment.record',
+    entity: 'Payment',
+    entityIdFrom: 'result:id',
+  })
   recordPayment(
     @Param('id') invoiceId: string,
     @Body() dto: RecordPaymentDto,

@@ -52,13 +52,22 @@ export async function runEval(
 
       const expectFail = c.expected ? matchExpected(output, c.expected) : null;
       if (expectFail) {
-        results.push({ id: c.id, ok: false, reason: expectFail, outputSnippet: json.slice(0, 200) });
+        results.push({
+          id: c.id,
+          ok: false,
+          reason: expectFail,
+          outputSnippet: json.slice(0, 200),
+        });
         continue;
       }
 
       results.push({ id: c.id, ok: true });
     } catch (err) {
-      results.push({ id: c.id, ok: false, reason: `runCase threw: ${(err as Error).message}` });
+      results.push({
+        id: c.id,
+        ok: false,
+        reason: `runCase threw: ${(err as Error).message}`,
+      });
     }
   }
 
@@ -86,7 +95,9 @@ function matchExpected(
     }
     for (let i = 0; i < expected.length; i++) {
       const needle = expected[i];
-      const matched = actual.some((candidate) => matchExpected(candidate, needle, `${path}[?]`) === null);
+      const matched = actual.some(
+        (candidate) => matchExpected(candidate, needle, `${path}[?]`) === null,
+      );
       if (!matched) {
         return `at ${path}[${i}]: no array element matched ${JSON.stringify(needle)}`;
       }
@@ -99,7 +110,9 @@ function matchExpected(
       return `at ${path || 'root'}: actual is not an object`;
     }
     const a = actual as Record<string, unknown>;
-    for (const [key, val] of Object.entries(expected as Record<string, unknown>)) {
+    for (const [key, val] of Object.entries(
+      expected as Record<string, unknown>,
+    )) {
       const here = path ? `${path}.${key}` : key;
       const sub = matchExpected(a[key], val, here);
       if (sub) return sub;
@@ -125,17 +138,23 @@ function readJsonl(path: string): EvalCase[] {
       try {
         return JSON.parse(line) as EvalCase;
       } catch (err) {
-        throw new Error(`bad JSONL at ${path}:${i + 1}: ${(err as Error).message}`);
+        throw new Error(
+          `bad JSONL at ${path}:${i + 1}: ${(err as Error).message}`,
+        );
       }
     });
 }
 
-export function printAndExit(name: string, result: Awaited<ReturnType<typeof runEval>>): void {
+export function printAndExit(
+  name: string,
+  result: Awaited<ReturnType<typeof runEval>>,
+): void {
   console.log(`\n=== ${name} eval ===`);
   for (const r of result.results) {
     const tag = r.ok ? 'PASS' : 'FAIL';
     console.log(`[${tag}] ${r.id}${r.reason ? ` — ${r.reason}` : ''}`);
-    if (!r.ok && r.outputSnippet) console.log(`        out: ${r.outputSnippet}`);
+    if (!r.ok && r.outputSnippet)
+      console.log(`        out: ${r.outputSnippet}`);
   }
   console.log(`\n${result.passed} passed, ${result.failed} failed`);
   if (result.failed > 0) process.exit(1);

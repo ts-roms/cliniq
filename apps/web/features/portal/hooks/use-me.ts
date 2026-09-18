@@ -92,7 +92,9 @@ export function usePortalLogin() {
 export function usePortalSignup() {
   return useMutation({
     mutationFn: async (input: PatientSignupInput): Promise<Session> => {
-      const { data, error } = await authControllerRegisterPatient({ body: input });
+      const { data, error } = await authControllerRegisterPatient({
+        body: input,
+      });
       if (error || !data) throw new Error('Signup failed');
       const session = data as unknown as Session;
       saveSession(session);

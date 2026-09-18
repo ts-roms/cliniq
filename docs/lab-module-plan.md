@@ -101,33 +101,33 @@ clinic plan. Document this in the marketing site.
 
 ## Data model additions
 
-| Model | Purpose | Phase |
-|---|---|---|
-| `LabProduct` | Product catalog item (crown, denture, aligner, etc.) with phases | 1 |
-| `LabProductCategory` | Folder/category tree for the catalog | 1 |
-| `LabProductForm` | Dynamic form schema per product (multi-language) | 1 |
-| `LabProductPhase` | Customizable manufacturing phases per product | 2 |
-| `LabRateProfile` | Per-clinic price overrides (tiered) | 1 |
-| `LabRateProfileItem` | Specific product/clinic price | 1 |
-| `LabOrder` | Case/order from clinic to lab | 1 |
-| `LabOrderFile` | Attached files (STL/ZIP/PDF/JPG, no size limit) | 1 |
-| `LabOrderPhaseEvent` | Audit trail of phase transitions per order | 2 |
-| `LabOrderNote` | Internal notes (lab-only) | 2 |
-| `LabOrderMessage` | Chat messages between clinic and lab on an order | 2 |
-| `LabOrderTag` + `LabOrderTagAssignment` | Order tagging | 2 |
-| `LabDeliveryCenter` | Clinic-managed delivery addresses | 1 |
-| `LabDoctorProfile` | Clinic-managed doctor records (orderers) | 1 |
-| `LabConformityDocTemplate` | Customizable conformity doc per product | 3 |
-| `LabConsentTemplate` | Customizable consent + e-signature | 3 |
-| `LabMaterial` + `LabMaterialLot` | Material/LOT tracking | 3 |
-| `LabMaterialUsage` | Material→order assignments | 3 |
-| `LabShipment` | Outbound shipment + tracking number | 2 |
-| `LabInvoice` + `LabInvoiceItem` | Lab-specific billing (separate from clinic invoices) | 4 |
-| `LabPaymentLink` | Configurable payment URLs on invoices | 4 |
-| `LabTreatmentPlan` + viewers | Treatment plan manager | 5 |
-| `LabIprMovement` | IPR table per treatment plan | 5 |
-| `LabMachine` + `LabMachineSchedule` | Machine occupation control | 6 |
-| `LabUser` (or extend `TenantUser`) | Lab-specific roles + permissions | 1 |
+| Model                                   | Purpose                                                          | Phase |
+| --------------------------------------- | ---------------------------------------------------------------- | ----- |
+| `LabProduct`                            | Product catalog item (crown, denture, aligner, etc.) with phases | 1     |
+| `LabProductCategory`                    | Folder/category tree for the catalog                             | 1     |
+| `LabProductForm`                        | Dynamic form schema per product (multi-language)                 | 1     |
+| `LabProductPhase`                       | Customizable manufacturing phases per product                    | 2     |
+| `LabRateProfile`                        | Per-clinic price overrides (tiered)                              | 1     |
+| `LabRateProfileItem`                    | Specific product/clinic price                                    | 1     |
+| `LabOrder`                              | Case/order from clinic to lab                                    | 1     |
+| `LabOrderFile`                          | Attached files (STL/ZIP/PDF/JPG, no size limit)                  | 1     |
+| `LabOrderPhaseEvent`                    | Audit trail of phase transitions per order                       | 2     |
+| `LabOrderNote`                          | Internal notes (lab-only)                                        | 2     |
+| `LabOrderMessage`                       | Chat messages between clinic and lab on an order                 | 2     |
+| `LabOrderTag` + `LabOrderTagAssignment` | Order tagging                                                    | 2     |
+| `LabDeliveryCenter`                     | Clinic-managed delivery addresses                                | 1     |
+| `LabDoctorProfile`                      | Clinic-managed doctor records (orderers)                         | 1     |
+| `LabConformityDocTemplate`              | Customizable conformity doc per product                          | 3     |
+| `LabConsentTemplate`                    | Customizable consent + e-signature                               | 3     |
+| `LabMaterial` + `LabMaterialLot`        | Material/LOT tracking                                            | 3     |
+| `LabMaterialUsage`                      | Material→order assignments                                       | 3     |
+| `LabShipment`                           | Outbound shipment + tracking number                              | 2     |
+| `LabInvoice` + `LabInvoiceItem`         | Lab-specific billing (separate from clinic invoices)             | 4     |
+| `LabPaymentLink`                        | Configurable payment URLs on invoices                            | 4     |
+| `LabTreatmentPlan` + viewers            | Treatment plan manager                                           | 5     |
+| `LabIprMovement`                        | IPR table per treatment plan                                     | 5     |
+| `LabMachine` + `LabMachineSchedule`     | Machine occupation control                                       | 6     |
+| `LabUser` (or extend `TenantUser`)      | Lab-specific roles + permissions                                 | 1     |
 
 The existing `User`/`TenantUser` model handles the auth side; we extend
 with lab-specific roles (`LAB_OWNER`, `LAB_MANAGER`, `LAB_TECHNICIAN`,
@@ -137,35 +137,35 @@ with lab-specific roles (`LAB_OWNER`, `LAB_MANAGER`, `LAB_TECHNICIAN`,
 
 ## Feature → plan mapping (proposed)
 
-| Feature flag | Basic | Standard | Premium |
-|---|:-:|:-:|:-:|
-| `lab_catalog` (custom product catalog) | ✅ | ✅ | ✅ |
-| `lab_dynamic_forms` (unlimited) | ✅ | ✅ | ✅ |
-| `lab_orders` (per month) | 500 | 1000 | ∞ |
-| `lab_files` (no size limit) | ✅ | ✅ | ✅ |
-| `lab_calendar` | ✅ | ✅ | ✅ |
-| `lab_phases` | — | ✅ | ✅ |
-| `lab_chat` | — | ✅ | ✅ |
-| `lab_internal_notes` | — | ✅ | ✅ |
-| `lab_tags` | — | ✅ | ✅ |
-| `lab_multilab` | — | ✅ | ✅ |
-| `lab_conformity_docs` | — | ✅ | ✅ |
-| `lab_consent_esign` | — | ✅ | ✅ |
-| `lab_materials_lot` | — | ✅ | ✅ |
-| `lab_shipments` | — | ✅ | ✅ |
-| `lab_payment_links` | — | ✅ | ✅ |
-| `lab_einvoice` | — | — | ✅ |
-| `lab_treatment_plan` | — | — | ✅ |
-| `lab_3d_viewer` (OnyxCeph/3Shape) | — | — | ✅ |
-| `lab_ai_assist` (GPT-4) | — | — | ✅ |
-| `lab_machine_control` | — | — | ✅ |
-| `lab_dispute_manager` | — | — | ✅ |
-| `lab_stats_panel` | — | ✅ | ✅ |
-| Users/employees per tenant | 200 | ∞ | ∞ |
-| Cloud storage | 5 GB | 15 GB | ∞ (1) |
-| Custom domain | — | — | ✅ (on-demand) |
-| Dedicated server | — | — | ✅ (on-demand) |
-| 24/7 support | ✅ | ✅ | ✅ |
+| Feature flag                           | Basic | Standard |    Premium     |
+| -------------------------------------- | :---: | :------: | :------------: |
+| `lab_catalog` (custom product catalog) |  ✅   |    ✅    |       ✅       |
+| `lab_dynamic_forms` (unlimited)        |  ✅   |    ✅    |       ✅       |
+| `lab_orders` (per month)               |  500  |   1000   |       ∞        |
+| `lab_files` (no size limit)            |  ✅   |    ✅    |       ✅       |
+| `lab_calendar`                         |  ✅   |    ✅    |       ✅       |
+| `lab_phases`                           |   —   |    ✅    |       ✅       |
+| `lab_chat`                             |   —   |    ✅    |       ✅       |
+| `lab_internal_notes`                   |   —   |    ✅    |       ✅       |
+| `lab_tags`                             |   —   |    ✅    |       ✅       |
+| `lab_multilab`                         |   —   |    ✅    |       ✅       |
+| `lab_conformity_docs`                  |   —   |    ✅    |       ✅       |
+| `lab_consent_esign`                    |   —   |    ✅    |       ✅       |
+| `lab_materials_lot`                    |   —   |    ✅    |       ✅       |
+| `lab_shipments`                        |   —   |    ✅    |       ✅       |
+| `lab_payment_links`                    |   —   |    ✅    |       ✅       |
+| `lab_einvoice`                         |   —   |    —     |       ✅       |
+| `lab_treatment_plan`                   |   —   |    —     |       ✅       |
+| `lab_3d_viewer` (OnyxCeph/3Shape)      |   —   |    —     |       ✅       |
+| `lab_ai_assist` (GPT-4)                |   —   |    —     |       ✅       |
+| `lab_machine_control`                  |   —   |    —     |       ✅       |
+| `lab_dispute_manager`                  |   —   |    —     |       ✅       |
+| `lab_stats_panel`                      |   —   |    ✅    |       ✅       |
+| Users/employees per tenant             |  200  |    ∞     |       ∞        |
+| Cloud storage                          | 5 GB  |  15 GB   |     ∞ (1)      |
+| Custom domain                          |   —   |    —     | ✅ (on-demand) |
+| Dedicated server                       |   —   |    —     | ✅ (on-demand) |
+| 24/7 support                           |  ✅   |    ✅    |       ✅       |
 
 Inferred from pricing — confirm with the source spec.
 
@@ -184,6 +184,7 @@ assuming one full-stack engineer.
 `LabDoctorProfile`. Feature flags + plan gates.
 
 **Backend:**
+
 - New tenant signup flow accepts `kind=LAB` and a `LabPlan` choice.
 - `LabProductsModule`, `LabOrdersModule`, `LabClinicLinksModule`.
 - File upload for orders (re-use existing `FileObject` + S3 presigning).
@@ -192,6 +193,7 @@ assuming one full-stack engineer.
 - Tiered loyalty discount engine (configurable thresholds per lab).
 
 **Web:**
+
 - New `/lab` route group, accessible only when current tenant `kind=LAB`.
 - `/lab/catalog` — product CRUD with multi-language form builder.
 - `/lab/orders` — incoming orders inbox.
@@ -201,6 +203,7 @@ assuming one full-stack engineer.
   with their associated labs.
 
 **Marketing/billing:**
+
 - Update `/pricing` page with a "For Labs" tab toggle that shows the new
   plans alongside the clinic plans.
 - `/signup?plan=LAB_BASIC` etc. flows wired through existing signup.
@@ -215,6 +218,7 @@ in their inbox.
 `LabOrderMessage`, `LabOrderTag`, `LabOrderTagAssignment`, `LabShipment`.
 
 **Backend:**
+
 - Phase-transition state machine + audit events.
 - WebSocket or SSE channel for per-order chat (re-use Tele's signaling
   infra if it fits, or polling for v1).
@@ -222,6 +226,7 @@ in their inbox.
 - Shipment record + tracking-number lookup.
 
 **Web:**
+
 - `/lab/orders/[id]` upgraded with phase Kanban, chat panel, notes
   sidebar, tag picker.
 - Calendar view for orders by due date / phase.
@@ -235,11 +240,13 @@ in their inbox.
 `LabConformityDocTemplate`, `LabConsentTemplate`, `LabConsentSignature`.
 
 **Backend:**
+
 - LOT inventory tracking (active/warehouse/finished/defective).
 - Auto-generate conformity declaration on order completion.
 - E-signature flow for consent (signature image + IP + timestamp).
 
 **Web:**
+
 - `/lab/materials` — material/LOT CRUD with status filters.
 - Per-order material assignment widget.
 - Conformity doc template editor.
@@ -250,6 +257,7 @@ in their inbox.
 `LabMonthlySummary`. Hook to `LabOrder` for auto-line items.
 
 **Backend:**
+
 - Per-order delivery note + invoice generation (PDF, re-using `pdfkit`).
 - Editable invoices (add/remove order lines, change date/numbering).
 - Monthly summary auto-invoicing scheduler (cron — already in deps).
@@ -260,6 +268,7 @@ in their inbox.
   scope this separately.
 
 **Web:**
+
 - `/lab/billing` — invoice list, monthly summary review, export to Excel.
 - Payment link generator on each invoice.
 
@@ -269,11 +278,13 @@ in their inbox.
 `LabTreatmentPlanApproval`.
 
 **Backend:**
+
 - 3D viewer integration: OnyxCeph and 3Shape both expose viewer URLs and
   embed APIs. Use their JS SDKs in the web app — no backend processing.
 - Approval workflow (lab → clinic → approve/reject with chat).
 
 **Web:**
+
 - `/lab/treatment-plans/[id]` — viewer iframe, IPR table, file manager.
 - Clinic-side approval UI in `/orders/[id]`.
 
@@ -295,6 +306,7 @@ in their inbox.
 Phase 6 is open-ended.
 
 **Aggressive (multiple engineers, parallel streams):**
+
 - Foundation + Catalog + Orders (Phase 1) — 3 weeks, 1 eng
 - Workflow + Materials + Billing (Phase 2-4) — 6 weeks, 2 eng parallel
 - Treatment plans + 3D — 3 weeks, 1 eng

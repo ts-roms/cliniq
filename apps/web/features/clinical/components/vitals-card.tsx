@@ -80,7 +80,8 @@ export function VitalsCard({ patientId }: { patientId: string }) {
                     <li key={v.id} className="flex justify-between">
                       <span>{formatDateTime(v.recordedAt)}</span>
                       <span className="font-mono">
-                        BP {bp(v)} · HR {v.heartRate ?? '—'} · SpO₂ {v.spo2 ?? '—'}
+                        BP {bp(v)} · HR {v.heartRate ?? '—'} · SpO₂{' '}
+                        {v.spo2 ?? '—'}
                       </span>
                     </li>
                   ))}
@@ -108,7 +109,11 @@ function Stat({
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-lg font-semibold">
         {value}
-        {unit && <span className="ml-1 text-xs font-normal text-muted-foreground">{unit}</span>}
+        {unit && (
+          <span className="ml-1 text-xs font-normal text-muted-foreground">
+            {unit}
+          </span>
+        )}
       </p>
     </div>
   );
@@ -177,10 +182,16 @@ function AddVitalDialog({ patientId }: { patientId: string }) {
             <p className="text-xs text-destructive">{errors.root.message}</p>
           )}
           {add.error && (
-            <p className="text-xs text-destructive">{(add.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(add.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || add.isPending}>

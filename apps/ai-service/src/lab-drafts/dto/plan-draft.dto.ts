@@ -18,7 +18,10 @@ export class LabPlanCaseContextDto {
   @ApiPropertyOptional() @IsOptional() @IsString() patientLabel?: string | null;
   @ApiPropertyOptional() @IsOptional() @IsString() doctorLabel?: string | null;
   @ApiPropertyOptional() @IsOptional() @IsString() notes?: string | null;
-  @ApiPropertyOptional() @IsOptional() @IsObject() formData?: Record<string, unknown> | null;
+  @ApiPropertyOptional() @IsOptional() @IsObject() formData?: Record<
+    string,
+    unknown
+  > | null;
 }
 
 export class LabPlanMaterialDto {

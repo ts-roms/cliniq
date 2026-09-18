@@ -11,7 +11,13 @@ import type {
   UpdateTenantInput,
 } from '../lib/api';
 
-const STATUSES: TenantStatus[] = ['TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CANCELLED'];
+const STATUSES: TenantStatus[] = [
+  'TRIAL',
+  'ACTIVE',
+  'PAST_DUE',
+  'SUSPENDED',
+  'CANCELLED',
+];
 const PLANS: TenantPlan[] = ['STARTER', 'PRO', 'PREMIUM'];
 
 interface Props {
@@ -41,7 +47,9 @@ export function TenantEditForm({ tenant }: Props) {
     if (plan !== tenant.plan) dto.plan = plan;
     if (status !== tenant.status) dto.status = status;
     if ((trialEndsAt || null) !== (tenant.trialEndsAt?.slice(0, 10) || null)) {
-      dto.trialEndsAt = trialEndsAt ? new Date(trialEndsAt).toISOString() : null;
+      dto.trialEndsAt = trialEndsAt
+        ? new Date(trialEndsAt).toISOString()
+        : null;
     }
     update.mutate(dto);
   }
@@ -54,14 +62,19 @@ export function TenantEditForm({ tenant }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Plan">
-          <Select value={plan} onChange={(e) => setPlan(e.target.value as TenantPlan)}>
+          <Select
+            value={plan}
+            onChange={(e) => setPlan(e.target.value as TenantPlan)}
+          >
             {PLANS.map((p) => (
               <option key={p} value={p}>
                 {p}
               </option>
             ))}
           </Select>
-          <p className="text-xs text-muted-foreground">Determines unlocked features.</p>
+          <p className="text-xs text-muted-foreground">
+            Determines unlocked features.
+          </p>
         </FormField>
 
         <FormField label="Status">
@@ -87,7 +100,9 @@ export function TenantEditForm({ tenant }: Props) {
           value={trialEndsAt}
           onChange={(e) => setTrialEndsAt(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">Leave blank for no trial / paid.</p>
+        <p className="text-xs text-muted-foreground">
+          Leave blank for no trial / paid.
+        </p>
       </FormField>
 
       {update.error && (

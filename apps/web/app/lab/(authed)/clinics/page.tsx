@@ -59,9 +59,13 @@ export default function LabClinicsPage() {
           <CardTitle>Connections</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">
@@ -77,7 +81,9 @@ export default function LabClinicsPage() {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{link.clinic?.name ?? '—'}</span>
+                    <span className="font-medium">
+                      {link.clinic?.name ?? '—'}
+                    </span>
                     <LinkStatusPill status={link.status} />
                     {link.clinic?.type && (
                       <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -176,7 +182,9 @@ function InviteForm({
       </FormField>
 
       {invite.error && (
-        <p className="text-sm text-destructive">{(invite.error as Error).message}</p>
+        <p className="text-sm text-destructive">
+          {(invite.error as Error).message}
+        </p>
       )}
 
       <div className="flex justify-end gap-2">

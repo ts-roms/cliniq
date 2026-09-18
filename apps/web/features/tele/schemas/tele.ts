@@ -45,5 +45,9 @@ export interface TeleSignal {
 }
 
 export interface IceConfig {
-  iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }>;
+  iceServers: Array<{
+    urls: string | string[];
+    username?: string;
+    credential?: string;
+  }>;
 }

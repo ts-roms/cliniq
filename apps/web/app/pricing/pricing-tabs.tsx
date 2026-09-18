@@ -26,7 +26,10 @@ interface FeatureRow {
 }
 
 const CLINIC_FEATURES: FeatureRow[] = [
-  { id: Features.CORE_EMR, label: 'Core EMR (patients, consults, Rx, billing)' },
+  {
+    id: Features.CORE_EMR,
+    label: 'Core EMR (patients, consults, Rx, billing)',
+  },
   { id: Features.REPORTS_BASIC, label: 'Basic reports', comparisonOnly: true },
   { id: Features.REPORTS_ADVANCED, label: 'Advanced reports & analytics' },
   { id: Features.INVENTORY, label: 'Inventory management' },
@@ -35,8 +38,14 @@ const CLINIC_FEATURES: FeatureRow[] = [
   { id: Features.TELEMEDICINE, label: 'Telemedicine' },
   { id: Features.AI_SOAP, label: 'AI SOAP draft generation' },
   { id: Features.QUEUEING, label: 'Patient queueing & display screen' },
-  { id: Features.OBSTETRICS, label: 'OB/GYN visit forms (LMP, EDD, gravida/para)' },
-  { id: Features.ULTRASOUND_2D, label: '2D ultrasound reports + image gallery' },
+  {
+    id: Features.OBSTETRICS,
+    label: 'OB/GYN visit forms (LMP, EDD, gravida/para)',
+  },
+  {
+    id: Features.ULTRASOUND_2D,
+    label: '2D ultrasound reports + image gallery',
+  },
   { id: Features.AI_DERMATOLOGY, label: 'AI dermatology assist' },
   { id: Features.WEBHOOKS, label: 'Webhooks for integrations' },
   { id: Features.CALENDAR_SYNC, label: 'External calendar sync' },
@@ -81,24 +90,27 @@ export function PricingTabs() {
     <>
       <div className="flex justify-center">
         <div className="inline-flex rounded-full border border-border/60 bg-background p-1">
-          <TabButton active={audience === 'clinic'} onClick={() => setAudience('clinic')}>
+          <TabButton
+            active={audience === 'clinic'}
+            onClick={() => setAudience('clinic')}
+          >
             For Clinics
           </TabButton>
-          <TabButton active={audience === 'lab'} onClick={() => setAudience('lab')}>
+          <TabButton
+            active={audience === 'lab'}
+            onClick={() => setAudience('lab')}
+          >
             For Labs
           </TabButton>
         </div>
       </div>
 
       <section className="container mx-auto px-4 pt-10 pb-16 sm:px-6 sm:pb-20">
-        {audience === 'clinic' ? (
-          <ClinicCards />
-        ) : (
-          <LabCards />
-        )}
+        {audience === 'clinic' ? <ClinicCards /> : <LabCards />}
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Prices in PHP, exclusive of VAT. Annual billing available — contact us for a 20% discount.
+          Prices in PHP, exclusive of VAT. Annual billing available — contact us
+          for a 20% discount.
         </p>
       </section>
 
@@ -116,7 +128,11 @@ export function PricingTabs() {
           </div>
 
           <div className="mx-auto mt-10 max-w-4xl overflow-x-auto rounded-xl border border-border/60 bg-background">
-            {audience === 'clinic' ? <ClinicCompareTable /> : <LabCompareTable />}
+            {audience === 'clinic' ? (
+              <ClinicCompareTable />
+            ) : (
+              <LabCompareTable />
+            )}
           </div>
         </div>
       </section>
@@ -167,7 +183,10 @@ function ClinicCard({ plan }: { plan: Plan }) {
   return (
     <PlanShell highlight={!!meta.highlight}>
       <PlanHeader label={meta.label} tagline={meta.tagline} />
-      <PlanPrice price={formatPlanPrice(meta)} hasPeriod={meta.priceMonthly !== null} />
+      <PlanPrice
+        price={formatPlanPrice(meta)}
+        hasPeriod={meta.priceMonthly !== null}
+      />
       <p className="mt-1 text-xs text-muted-foreground">
         {Number.isFinite(meta.maxLocations)
           ? `Up to ${meta.maxLocations} location${meta.maxLocations === 1 ? '' : 's'}`
@@ -179,7 +198,9 @@ function ClinicCard({ plan }: { plan: Plan }) {
         variant={meta.highlight ? 'default' : 'outline'}
         className="mt-8 w-full"
       >
-        <Link href={`/signup?kind=clinic&plan=${meta.id}`}>{meta.cta ?? 'Start free trial'}</Link>
+        <Link href={`/signup?kind=clinic&plan=${meta.id}`}>
+          {meta.cta ?? 'Start free trial'}
+        </Link>
       </Button>
     </PlanShell>
   );
@@ -251,7 +272,10 @@ function LabCard({ plan }: { plan: LabPlan }) {
   return (
     <PlanShell highlight={!!meta.highlight}>
       <PlanHeader label={meta.label} tagline={meta.tagline} />
-      <PlanPrice price={formatLabPlanPrice(meta)} hasPeriod={meta.priceMonthly !== null} />
+      <PlanPrice
+        price={formatLabPlanPrice(meta)}
+        hasPeriod={meta.priceMonthly !== null}
+      />
       <p className="mt-1 text-xs text-muted-foreground">
         {meta.limits.ordersPerMonth === null
           ? 'Unlimited cases / month'
@@ -267,7 +291,9 @@ function LabCard({ plan }: { plan: LabPlan }) {
         variant={meta.highlight ? 'default' : 'outline'}
         className="mt-8 w-full"
       >
-        <Link href={`/signup?kind=lab&plan=${meta.id}`}>{meta.cta ?? 'Try it for free'}</Link>
+        <Link href={`/signup?kind=lab&plan=${meta.id}`}>
+          {meta.cta ?? 'Try it for free'}
+        </Link>
       </Button>
     </PlanShell>
   );
@@ -377,11 +403,19 @@ function PlanHeader({ label, tagline }: { label: string; tagline: string }) {
   );
 }
 
-function PlanPrice({ price, hasPeriod }: { price: string; hasPeriod: boolean }) {
+function PlanPrice({
+  price,
+  hasPeriod,
+}: {
+  price: string;
+  hasPeriod: boolean;
+}) {
   return (
     <div className="mt-6 flex items-baseline gap-1.5">
       <span className="text-4xl font-light tracking-tight">{price}</span>
-      {hasPeriod && <span className="text-sm text-muted-foreground">/ month</span>}
+      {hasPeriod && (
+        <span className="text-sm text-muted-foreground">/ month</span>
+      )}
     </div>
   );
 }
@@ -400,12 +434,21 @@ function FeatureList({
         return (
           <li
             key={row.id}
-            className={'flex items-start gap-2 ' + (has ? '' : 'text-muted-foreground/50')}
+            className={
+              'flex items-start gap-2 ' +
+              (has ? '' : 'text-muted-foreground/50')
+            }
           >
             {has ? (
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+              <Check
+                className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                aria-hidden
+              />
             ) : (
-              <X className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/30" aria-hidden />
+              <X
+                className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/30"
+                aria-hidden
+              />
             )}
             <span>{row.label}</span>
           </li>
@@ -416,9 +459,16 @@ function FeatureList({
 }
 
 function YesIcon() {
-  return <Check className="mx-auto h-4 w-4 text-emerald-500" aria-label="included" />;
+  return (
+    <Check className="mx-auto h-4 w-4 text-emerald-500" aria-label="included" />
+  );
 }
 
 function NoIcon() {
-  return <X className="mx-auto h-4 w-4 text-muted-foreground/30" aria-label="not included" />;
+  return (
+    <X
+      className="mx-auto h-4 w-4 text-muted-foreground/30"
+      aria-label="not included"
+    />
+  );
 }

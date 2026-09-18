@@ -35,7 +35,11 @@ export function RevenueChart() {
   );
 }
 
-function Bars({ points }: { points: { date: string; amountCentavos: number }[] }) {
+function Bars({
+  points,
+}: {
+  points: { date: string; amountCentavos: number }[];
+}) {
   const max = Math.max(...points.map((p) => p.amountCentavos), 1);
   const total = points.reduce((sum, p) => sum + p.amountCentavos, 0);
 

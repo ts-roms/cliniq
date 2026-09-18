@@ -63,13 +63,16 @@ export function StartTelePanel({
           <>
             <p className="text-sm text-muted-foreground">
               Start a 1:1 video call with this patient. They'll receive a join
-              link to open in their browser — no app install or portal account needed.
+              link to open in their browser — no app install or portal account
+              needed.
             </p>
             <Button onClick={start} disabled={create.isPending}>
               {create.isPending ? 'Creating…' : 'Start tele call'}
             </Button>
             {create.error && (
-              <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+              <p className="text-xs text-destructive">
+                {(create.error as Error).message}
+              </p>
             )}
           </>
         )}

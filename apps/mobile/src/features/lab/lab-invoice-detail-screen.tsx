@@ -96,14 +96,23 @@ export function LabInvoiceDetailScreen({
   return (
     <View className="flex-1 bg-background">
       <View className="flex-row items-center gap-3 border-b border-border bg-card px-6 pb-3 pt-4">
-        <TouchableOpacity onPress={onBack} className="rounded-md border border-border px-2 py-1">
+        <TouchableOpacity
+          onPress={onBack}
+          className="rounded-md border border-border px-2 py-1"
+        >
           <Text className="text-xs text-foreground">←</Text>
         </TouchableOpacity>
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-foreground">Invoice {ref}</Text>
-          <Text className="text-xs text-muted-foreground">{inv.lab?.name ?? '—'}</Text>
+          <Text className="text-lg font-semibold text-foreground">
+            Invoice {ref}
+          </Text>
+          <Text className="text-xs text-muted-foreground">
+            {inv.lab?.name ?? '—'}
+          </Text>
         </View>
-        <Text className={`text-xs font-medium ${STATUS_TONE[inv.status] ?? ''}`}>
+        <Text
+          className={`text-xs font-medium ${STATUS_TONE[inv.status] ?? ''}`}
+        >
           {inv.status}
         </Text>
       </View>
@@ -127,9 +136,18 @@ export function LabInvoiceDetailScreen({
         </View>
 
         <View className="mt-4 rounded-md border border-border bg-card">
-          <Row label="Issued" value={inv.issuedAt ? new Date(inv.issuedAt).toLocaleString() : '—'} />
-          <Row label="Due" value={inv.dueAt ? new Date(inv.dueAt).toLocaleDateString() : '—'} />
-          <Row label="Paid" value={inv.paidAt ? new Date(inv.paidAt).toLocaleString() : '—'} />
+          <Row
+            label="Issued"
+            value={inv.issuedAt ? new Date(inv.issuedAt).toLocaleString() : '—'}
+          />
+          <Row
+            label="Due"
+            value={inv.dueAt ? new Date(inv.dueAt).toLocaleDateString() : '—'}
+          />
+          <Row
+            label="Paid"
+            value={inv.paidAt ? new Date(inv.paidAt).toLocaleString() : '—'}
+          />
         </View>
 
         {inv.notes && (
@@ -148,7 +166,9 @@ export function LabInvoiceDetailScreen({
           <View className="rounded-md border border-border bg-card">
             {inv.items.map((it) => (
               <View key={it.id} className="border-b border-border px-3 py-2">
-                <Text className="text-sm text-foreground">{it.description}</Text>
+                <Text className="text-sm text-foreground">
+                  {it.description}
+                </Text>
                 <Text className="mt-0.5 text-xs text-muted-foreground">
                   {it.qty} × {fmt(it.unitPriceCents, inv.currency)} ={' '}
                   {fmt(it.amountCents, inv.currency)}

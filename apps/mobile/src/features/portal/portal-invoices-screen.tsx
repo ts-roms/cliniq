@@ -62,7 +62,9 @@ export function PortalInvoicesScreen() {
       )}
       {error && (
         <View className="px-6 py-4">
-          <Text className="text-sm text-destructive">{(error as Error).message}</Text>
+          <Text className="text-sm text-destructive">
+            {(error as Error).message}
+          </Text>
         </View>
       )}
       {data && (
@@ -78,11 +80,16 @@ export function PortalInvoicesScreen() {
             </Text>
           }
           renderItem={({ item }) => {
-            const remaining = Math.max(item.totalCentavos - item.paidCentavos, 0);
+            const remaining = Math.max(
+              item.totalCentavos - item.paidCentavos,
+              0,
+            );
             return (
               <View className="border-b border-border px-6 py-3">
                 <View className="flex-row items-center justify-between">
-                  <Text className="font-mono text-sm text-foreground">{item.number}</Text>
+                  <Text className="font-mono text-sm text-foreground">
+                    {item.number}
+                  </Text>
                   <Text className={`text-xs ${STATUS_TONE[item.status] ?? ''}`}>
                     {item.status}
                   </Text>

@@ -1,10 +1,23 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  HeadObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaService } from '@org/db';
 import { randomUUID } from 'node:crypto';
-import { FileCategoryDto, type PresignRequestDto, type PresignResponseDto } from './dto/presign.dto.js';
+import {
+  FileCategoryDto,
+  type PresignRequestDto,
+  type PresignResponseDto,
+} from './dto/presign.dto.js';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 
 const PHI_CATEGORIES = new Set<FileCategoryDto>([
@@ -23,12 +36,17 @@ export class FilesService {
   private readonly bucketPublic: string;
   private readonly presignTtlSec = 300;
 
-  constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
     });
-    this.bucketPhi = this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
-    this.bucketPublic = this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
+    this.bucketPhi =
+      this.config.get<string>('S3_BUCKET_PHI') ?? 'cliniq-phi-dev';
+    this.bucketPublic =
+      this.config.get<string>('S3_BUCKET_PUBLIC') ?? 'cliniq-public-dev';
   }
 
   /**
@@ -36,7 +54,10 @@ export class FilesService {
    * Records a PENDING file row so the upload can be confirmed and orphans
    * detected by a janitor job (out of scope here).
    */
-  async presign(dto: PresignRequestDto, user: AuthenticatedUser): Promise<PresignResponseDto> {
+  async presign(
+    dto: PresignRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<PresignResponseDto> {
     const isPhi = dto.isPhi ?? PHI_CATEGORIES.has(dto.category);
     const bucket = isPhi ? this.bucketPhi : this.bucketPublic;
     const ext = sanitizeExt(dto.filename);
@@ -106,7 +127,9 @@ export class FilesService {
 
       const bucket = file.isPhi ? this.bucketPhi : this.bucketPublic;
       try {
-        await this.s3.send(new HeadObjectCommand({ Bucket: bucket, Key: file.s3Key }));
+        await this.s3.send(
+          new HeadObjectCommand({ Bucket: bucket, Key: file.s3Key }),
+        );
       } catch (err) {
         throw new BadRequestException(
           `S3 object missing or unreadable: ${(err as Error).message}`,

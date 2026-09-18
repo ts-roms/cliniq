@@ -1,13 +1,23 @@
 'use client';
 
 import {
-  Card, CardContent, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Loading,
   ErrorMessage,
   EmptyState,
 } from '@org/ui';
-import type { LabAbnormalFlag, LabOrder, LabOrderStatus } from '../schemas/labs';
-import { useLabOrdersForPatient, useUpdateOrderStatus } from '../hooks/use-labs';
+import type {
+  LabAbnormalFlag,
+  LabOrder,
+  LabOrderStatus,
+} from '../schemas/labs';
+import {
+  useLabOrdersForPatient,
+  useUpdateOrderStatus,
+} from '../hooks/use-labs';
 import { NewLabOrderDialog } from './new-order-dialog';
 import { RecordResultsDialog } from './record-results-dialog';
 
@@ -54,7 +64,11 @@ export function LabOrdersCard({ patientId }: { patientId: string }) {
         {data && data.length > 0 && (
           <ul className="space-y-3">
             {data.map((order) => (
-              <LabOrderItem key={order.id} order={order} patientId={patientId} />
+              <LabOrderItem
+                key={order.id}
+                order={order}
+                patientId={patientId}
+              />
             ))}
           </ul>
         )}
@@ -63,8 +77,17 @@ export function LabOrdersCard({ patientId }: { patientId: string }) {
   );
 }
 
-function LabOrderItem({ order, patientId }: { order: LabOrder; patientId: string }) {
-  const update = useUpdateOrderStatus({ patientId, consultationId: order.consultationId ?? undefined });
+function LabOrderItem({
+  order,
+  patientId,
+}: {
+  order: LabOrder;
+  patientId: string;
+}) {
+  const update = useUpdateOrderStatus({
+    patientId,
+    consultationId: order.consultationId ?? undefined,
+  });
   const abnormalCount = order.items.filter(
     (i) => i.abnormalFlag && i.abnormalFlag !== 'NORMAL',
   ).length;
@@ -75,10 +98,14 @@ function LabOrderItem({ order, patientId }: { order: LabOrder; patientId: string
         <div>
           <span className="font-mono text-sm">{order.number}</span>
           {order.vendor && (
-            <span className="ml-2 text-xs text-muted-foreground">@ {order.vendor}</span>
+            <span className="ml-2 text-xs text-muted-foreground">
+              @ {order.vendor}
+            </span>
           )}
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[order.status]}`}>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[order.status]}`}
+        >
           {order.status}
         </span>
       </div>
@@ -108,7 +135,9 @@ function LabOrderItem({ order, patientId }: { order: LabOrder; patientId: string
               >
                 {item.resultValue}
                 {item.resultUnit && ` ${item.resultUnit}`}
-                {item.abnormalFlag && item.abnormalFlag !== 'NORMAL' && ` · ${item.abnormalFlag}`}
+                {item.abnormalFlag &&
+                  item.abnormalFlag !== 'NORMAL' &&
+                  ` · ${item.abnormalFlag}`}
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">pending</span>

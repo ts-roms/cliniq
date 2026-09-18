@@ -47,13 +47,21 @@ export class ClinicLabCasesController {
     entity: 'LabCase',
     entityIdFrom: 'result:id',
   })
-  create(@Body() dto: CreateLabCaseDto, @CurrentUser() user: AuthenticatedUser) {
+  create(
+    @Body() dto: CreateLabCaseDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.cases.createDraft(dto, user);
   }
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
-  @ApiQuery({ name: 'status', required: false, enum: LabCaseStatus, enumName: 'LabCaseStatus' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: LabCaseStatus,
+    enumName: 'LabCaseStatus',
+  })
   list(
     @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: LabCaseStatus,
@@ -154,7 +162,10 @@ export class ClinicLabCasesController {
 
   @Get(':id/messages')
   @Requires(Actions.TENANT_MANAGE)
-  listMessages(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  listMessages(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.cases.listMessages(id, user);
   }
 

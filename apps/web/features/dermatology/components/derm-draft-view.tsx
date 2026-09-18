@@ -26,7 +26,9 @@ export function DermDraftView({ draft }: { draft: DermDraft }) {
                     {d.likelihood}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{d.reasoning}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {d.reasoning}
+                </p>
               </li>
             ))}
           </ul>

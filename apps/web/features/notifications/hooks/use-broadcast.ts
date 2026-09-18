@@ -7,7 +7,9 @@ export interface BroadcastInput {
   title: string;
   body?: string;
   severity?: 'INFO' | 'WARNING' | 'CRITICAL';
-  roles?: Array<'OWNER' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PATIENT'>;
+  roles?: Array<
+    'OWNER' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PATIENT'
+  >;
   link?: string;
 }
 
@@ -16,7 +18,9 @@ export function useBroadcast() {
   return useMutation({
     mutationFn: async (input: BroadcastInput) => {
       const { data, error } = await notificationsControllerBroadcast({
-        body: input as Parameters<typeof notificationsControllerBroadcast>[0]['body'],
+        body: input as Parameters<
+          typeof notificationsControllerBroadcast
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Broadcast failed');
       return data;

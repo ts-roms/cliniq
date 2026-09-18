@@ -37,13 +37,17 @@ const getServerNow = () => 0;
 export function useElapsedSeconds(startIso: string | null | undefined): number {
   const current = useSyncExternalStore(subscribe, getNow, getServerNow);
   if (!startIso) return 0;
-  return Math.max(0, Math.floor((current - new Date(startIso).getTime()) / 1000));
+  return Math.max(
+    0,
+    Math.floor((current - new Date(startIso).getTime()) / 1000),
+  );
 }
 
 export function formatDuration(totalSec: number): string {
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  if (h > 0)
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }

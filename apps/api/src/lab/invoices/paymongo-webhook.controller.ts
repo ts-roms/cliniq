@@ -13,7 +13,10 @@ import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import { Public } from '../../auth/decorators/public.decorator.js';
 import { LabInvoicesService } from './lab-invoices.service.js';
-import { PaymongoService, type PaymongoWebhookEvent } from './paymongo.service.js';
+import {
+  PaymongoService,
+  type PaymongoWebhookEvent,
+} from './paymongo.service.js';
 
 /**
  * Inbound PayMongo webhook. Mounted at /api/webhooks/paymongo (no auth — the

@@ -25,7 +25,11 @@ export class OpenDisputeDto {
 
 export class ResolveDisputeDto {
   @ApiProperty({
-    enum: [LabCaseDisputeStatus.RESOLVED, LabCaseDisputeStatus.REJECTED, LabCaseDisputeStatus.WITHDRAWN],
+    enum: [
+      LabCaseDisputeStatus.RESOLVED,
+      LabCaseDisputeStatus.REJECTED,
+      LabCaseDisputeStatus.WITHDRAWN,
+    ],
     enumName: 'LabCaseDisputeStatus',
   })
   @IsEnum(LabCaseDisputeStatus)

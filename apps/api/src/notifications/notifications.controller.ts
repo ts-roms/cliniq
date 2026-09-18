@@ -26,7 +26,13 @@ import {
   UnregisterPushTokenDto,
 } from './dto/push-token.dto.js';
 
-const STAFF_ROLES = ['OWNER', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] as const;
+const STAFF_ROLES = [
+  'OWNER',
+  'ADMIN',
+  'DOCTOR',
+  'NURSE',
+  'RECEPTIONIST',
+] as const;
 
 @ApiTags('notifications')
 @ApiBearerAuth('jwt')
@@ -98,8 +104,12 @@ export class NotificationsController {
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.TENANT_MANAGE)
   @Audit({ action: 'notification.broadcast', entity: 'Notification' })
-  async broadcast(@Body() dto: BroadcastDto, @CurrentUser() user: AuthenticatedUser) {
-    const roles = dto.roles && dto.roles.length > 0 ? dto.roles : [...STAFF_ROLES];
+  async broadcast(
+    @Body() dto: BroadcastDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const roles =
+      dto.roles && dto.roles.length > 0 ? dto.roles : [...STAFF_ROLES];
     await this.notif.notifyRoles(user.tenantId, roles, {
       kind: NotificationKind.GENERAL,
       severity: dto.severity ?? NotificationSeverity.INFO,

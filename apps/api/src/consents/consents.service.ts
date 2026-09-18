@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '@org/db';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
@@ -16,7 +21,8 @@ export class ConsentsService {
         where: { id: patientId, deletedAt: null },
         select: { id: true },
       });
-      if (!patient) throw new NotFoundException(`Patient ${patientId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${patientId} not found`);
       const rows = await tx.patientConsent.findMany({
         where: { patientId },
         orderBy: { type: 'asc' },
@@ -31,8 +37,14 @@ export class ConsentsService {
     user: AuthenticatedUser,
     req?: Request,
   ) {
-    if (!dto.granted && dto.type !== ConsentTypeDto.TREATMENT && !dto.withdrawalReason) {
-      throw new BadRequestException('withdrawalReason is required when revoking consent');
+    if (
+      !dto.granted &&
+      dto.type !== ConsentTypeDto.TREATMENT &&
+      !dto.withdrawalReason
+    ) {
+      throw new BadRequestException(
+        'withdrawalReason is required when revoking consent',
+      );
     }
     if (!dto.granted && dto.type === ConsentTypeDto.TREATMENT) {
       throw new BadRequestException(
@@ -41,7 +53,9 @@ export class ConsentsService {
     }
 
     const ip =
-      (req?.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req?.ip ?? null;
+      (req?.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
+      req?.ip ??
+      null;
     const now = new Date();
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
@@ -49,7 +63,8 @@ export class ConsentsService {
         where: { id: patientId, deletedAt: null },
         select: { id: true },
       });
-      if (!patient) throw new NotFoundException(`Patient ${patientId} not found`);
+      if (!patient)
+        throw new NotFoundException(`Patient ${patientId} not found`);
 
       const result = await tx.patientConsent.upsert({
         where: {
@@ -67,7 +82,7 @@ export class ConsentsService {
           version: dto.version ?? 'v1',
           acceptedAt: dto.granted ? now : null,
           withdrawnAt: dto.granted ? null : now,
-          withdrawalReason: dto.granted ? null : dto.withdrawalReason ?? null,
+          withdrawalReason: dto.granted ? null : (dto.withdrawalReason ?? null),
           recordedBy: user.userId,
           ip,
         },
@@ -76,7 +91,7 @@ export class ConsentsService {
           version: dto.version ?? 'v1',
           acceptedAt: dto.granted ? now : undefined,
           withdrawnAt: dto.granted ? null : now,
-          withdrawalReason: dto.granted ? null : dto.withdrawalReason ?? null,
+          withdrawalReason: dto.granted ? null : (dto.withdrawalReason ?? null),
           recordedBy: user.userId,
           ip,
         },

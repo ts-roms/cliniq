@@ -18,7 +18,9 @@ export class CreateTemplateDto {
   @Length(1, 50_000)
   body!: string;
 
-  @ApiPropertyOptional({ description: 'Attach to a specific product. Null = generic.' })
+  @ApiPropertyOptional({
+    description: 'Attach to a specific product. Null = generic.',
+  })
   @IsOptional()
   @IsString()
   productId?: string;

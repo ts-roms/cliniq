@@ -11,14 +11,17 @@ import {
   Input,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
-import {
-  useCreateLabTag,
-  useDeleteLabTag,
-  useLabTags,
-} from '@/features/lab';
+import { useCreateLabTag, useDeleteLabTag, useLabTags } from '@/features/lab';
 
 const PRESET_COLORS = [
-  '64748b', 'f59e0b', 'ef4444', '10b981', '3b82f6', '8b5cf6', 'ec4899', '14b8a6',
+  '64748b',
+  'f59e0b',
+  'ef4444',
+  '10b981',
+  '3b82f6',
+  '8b5cf6',
+  'ec4899',
+  '14b8a6',
 ];
 
 export default function LabTagsPage() {
@@ -46,7 +49,8 @@ export default function LabTagsPage() {
       <div>
         <h1 className="text-2xl font-semibold">Tags</h1>
         <p className="text-sm text-muted-foreground">
-          Reusable labels for organizing and filtering cases. Lab-only — clinics don't see tags.
+          Reusable labels for organizing and filtering cases. Lab-only — clinics
+          don't see tags.
         </p>
       </div>
 
@@ -73,7 +77,9 @@ export default function LabTagsPage() {
                     onClick={() => setColor(c)}
                     className={
                       'h-7 w-7 rounded-full border-2 transition ' +
-                      (color === c ? 'border-foreground scale-110' : 'border-transparent')
+                      (color === c
+                        ? 'border-foreground scale-110'
+                        : 'border-transparent')
                     }
                     style={{ backgroundColor: `#${c}` }}
                     aria-label={`Use color ${c}`}
@@ -98,9 +104,13 @@ export default function LabTagsPage() {
           <CardTitle>Existing tags</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">No tags yet.</p>

@@ -56,7 +56,8 @@ export class PlatformCreateTenantDto {
   plan?: Plan;
 
   @ApiPropertyOptional({
-    description: 'Initial owner user. If omitted, the tenant is created without users — invite owner separately via the regular /api/auth/register flow once the slug is known.',
+    description:
+      'Initial owner user. If omitted, the tenant is created without users — invite owner separately via the regular /api/auth/register flow once the slug is known.',
   })
   @IsOptional()
   ownerEmail?: string;
@@ -65,7 +66,10 @@ export class PlatformCreateTenantDto {
   @IsOptional()
   ownerName?: string;
 
-  @ApiPropertyOptional({ description: 'Initial password for the owner; omit to require a password-reset flow' })
+  @ApiPropertyOptional({
+    description:
+      'Initial password for the owner; omit to require a password-reset flow',
+  })
   @IsOptional()
   ownerPassword?: string;
 }

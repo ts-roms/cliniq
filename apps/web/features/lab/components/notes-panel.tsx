@@ -43,16 +43,24 @@ export function NotesPanel({ caseId }: Props) {
           disabled={submitting}
         />
         {create.error && (
-          <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+          <p className="text-xs text-destructive">
+            {(create.error as Error).message}
+          </p>
         )}
         <div className="flex justify-end">
-          <Button type="submit" size="sm" disabled={submitting || !draft.trim()}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={submitting || !draft.trim()}
+          >
             {submitting ? 'Adding…' : 'Add note'}
           </Button>
         </div>
       </form>
 
-      {isLoading && <p className="text-xs text-muted-foreground">Loading notes…</p>}
+      {isLoading && (
+        <p className="text-xs text-muted-foreground">Loading notes…</p>
+      )}
       {error && (
         <p className="text-xs text-destructive">{(error as Error).message}</p>
       )}

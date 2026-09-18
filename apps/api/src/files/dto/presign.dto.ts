@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
 
 export enum FileCategoryDto {
   PATIENT_DOC = 'PATIENT_DOC',
@@ -19,7 +28,9 @@ export class PresignRequestDto {
   @IsEnum(FileCategoryDto)
   category!: FileCategoryDto;
 
-  @ApiProperty({ description: 'Original filename, used for content-disposition' })
+  @ApiProperty({
+    description: 'Original filename, used for content-disposition',
+  })
   @IsString()
   @Matches(/^[\w.\-+ ()]{1,200}$/, { message: 'invalid filename characters' })
   filename!: string;
@@ -34,7 +45,9 @@ export class PresignRequestDto {
   @Max(50 * 1024 * 1024) // 50 MB hard cap
   sizeBytes!: number;
 
-  @ApiPropertyOptional({ description: 'Mark as PHI. Defaults true for clinical categories.' })
+  @ApiPropertyOptional({
+    description: 'Mark as PHI. Defaults true for clinical categories.',
+  })
   @IsOptional()
   @IsBoolean()
   isPhi?: boolean;

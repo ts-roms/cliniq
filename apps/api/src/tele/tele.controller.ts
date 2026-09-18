@@ -40,8 +40,15 @@ export class TeleController {
   @Post('sessions')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TELE_HOST)
-  @Audit({ action: 'tele.sessionCreate', entity: 'TeleSession', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreateSessionDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'tele.sessionCreate',
+    entity: 'TeleSession',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreateSessionDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.tele.create(dto, user);
   }
 
@@ -54,7 +61,11 @@ export class TeleController {
   @Post('sessions/:id/end')
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.TELE_HOST)
-  @Audit({ action: 'tele.sessionEnd', entity: 'TeleSession', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'tele.sessionEnd',
+    entity: 'TeleSession',
+    entityIdFrom: 'param:id',
+  })
   end(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.tele.end(id, user);
   }
@@ -62,7 +73,11 @@ export class TeleController {
   @Post('sessions/:id/notify-sms')
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.TELE_HOST)
-  @Audit({ action: 'tele.notifySms', entity: 'TeleSession', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'tele.notifySms',
+    entity: 'TeleSession',
+    entityIdFrom: 'param:id',
+  })
   notifyPatientBySms(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -75,7 +90,11 @@ export class TeleController {
   @Public()
   @Post('join')
   @HttpCode(HttpStatus.OK)
-  @Audit({ action: 'tele.join', entity: 'TeleSession', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'tele.join',
+    entity: 'TeleSession',
+    entityIdFrom: 'result:id',
+  })
   join(@Body() dto: JoinSessionDto) {
     return this.tele.join(dto.joinToken);
   }
@@ -90,7 +109,11 @@ export class TeleController {
   @Post('sessions/:id/recording-consent')
   @HttpCode(HttpStatus.OK)
   @ApiHeader({ name: 'X-Tele-Token', required: true })
-  @Audit({ action: 'tele.recordingConsent', entity: 'TeleSession', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'tele.recordingConsent',
+    entity: 'TeleSession',
+    entityIdFrom: 'param:id',
+  })
   async setRecordingConsent(
     @Param('id') id: string,
     @Body() dto: { granted: boolean },
@@ -100,7 +123,11 @@ export class TeleController {
     if (typeof dto?.granted !== 'boolean') {
       throw new BadRequestException('granted must be a boolean');
     }
-    const updated = await this.tele.setRecordingConsent(id, dto.granted, patientToken);
+    const updated = await this.tele.setRecordingConsent(
+      id,
+      dto.granted,
+      patientToken,
+    );
     return {
       granted: dto.granted,
       recordingConsentAt: updated.recordingConsentAt,
@@ -140,7 +167,10 @@ export class TeleController {
     void authHeader;
     void user;
     if (!patientToken) throw new BadRequestException('missing X-Tele-Token');
-    return this.tele.listSignals(id, cursor, { kind: 'patient', token: patientToken });
+    return this.tele.listSignals(id, cursor, {
+      kind: 'patient',
+      token: patientToken,
+    });
   }
 
   @Get('sessions/:id/signals/provider')

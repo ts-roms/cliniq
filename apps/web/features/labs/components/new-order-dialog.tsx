@@ -78,7 +78,10 @@ function NewLabOrderForm({
       items: [{ testName: '' }],
     },
   });
-  const { fields, append, remove, replace } = useFieldArray({ control, name: 'items' });
+  const { fields, append, remove, replace } = useFieldArray({
+    control,
+    name: 'items',
+  });
 
   const onSubmit = handleSubmit(async (values) => {
     await create.mutateAsync(values);
@@ -107,7 +110,10 @@ function NewLabOrderForm({
         <FormField label="Vendor / lab" error={errors.vendor?.message}>
           <Input placeholder="Hi-Precision" {...register('vendor')} />
         </FormField>
-        <FormField label="Lab reference (optional)" error={errors.externalRef?.message}>
+        <FormField
+          label="Lab reference (optional)"
+          error={errors.externalRef?.message}
+        >
           <Input {...register('externalRef')} />
         </FormField>
       </div>
@@ -142,22 +148,36 @@ function NewLabOrderForm({
                 label={idx === 0 ? 'Test' : ''}
                 error={errors.items?.[idx]?.testName?.message}
               >
-                <Input placeholder="e.g. Hemoglobin" {...register(`items.${idx}.testName`)} />
+                <Input
+                  placeholder="e.g. Hemoglobin"
+                  {...register(`items.${idx}.testName`)}
+                />
               </FormField>
             </div>
             <div className="col-span-2">
               <FormField label={idx === 0 ? 'Unit' : ''}>
-                <Input placeholder="g/dL" {...register(`items.${idx}.resultUnit`)} />
+                <Input
+                  placeholder="g/dL"
+                  {...register(`items.${idx}.resultUnit`)}
+                />
               </FormField>
             </div>
             <div className="col-span-2">
               <FormField label={idx === 0 ? 'Ref low' : ''}>
-                <Input type="number" step="0.1" {...register(`items.${idx}.referenceLow`)} />
+                <Input
+                  type="number"
+                  step="0.1"
+                  {...register(`items.${idx}.referenceLow`)}
+                />
               </FormField>
             </div>
             <div className="col-span-2">
               <FormField label={idx === 0 ? 'Ref high' : ''}>
-                <Input type="number" step="0.1" {...register(`items.${idx}.referenceHigh`)} />
+                <Input
+                  type="number"
+                  step="0.1"
+                  {...register(`items.${idx}.referenceHigh`)}
+                />
               </FormField>
             </div>
             <div className="col-span-1 pb-1.5">
@@ -188,7 +208,9 @@ function NewLabOrderForm({
       </div>
 
       {create.error && (
-        <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

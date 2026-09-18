@@ -50,7 +50,10 @@ export class ObController {
   @Get('pregnancies')
   @Requires(Actions.PATIENT_READ)
   @RequiresFeature(Features.OBSTETRICS)
-  list(@CurrentUser() user: AuthenticatedUser, @Query('patientId') patientId: string) {
+  list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('patientId') patientId: string,
+  ) {
     return this.ob.listPregnancies(patientId, user);
   }
 
@@ -58,8 +61,15 @@ export class ObController {
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
   @RequiresFeature(Features.OBSTETRICS)
-  @Audit({ action: 'ob.pregnancy.create', entity: 'ObPregnancy', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreatePregnancyDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'ob.pregnancy.create',
+    entity: 'ObPregnancy',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreatePregnancyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.ob.createPregnancy(dto, user);
   }
 
@@ -78,8 +88,15 @@ export class ObController {
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
   @RequiresFeature(Features.OBSTETRICS)
-  @Audit({ action: 'ob.visit.create', entity: 'ObVisit', entityIdFrom: 'result:id' })
-  createVisit(@Body() dto: CreateObVisitDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'ob.visit.create',
+    entity: 'ObVisit',
+    entityIdFrom: 'result:id',
+  })
+  createVisit(
+    @Body() dto: CreateObVisitDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.ob.createVisit(dto, user);
   }
 
@@ -98,7 +115,10 @@ export class ObController {
   @Get('ultrasound/:id')
   @Requires(Actions.PATIENT_READ)
   @RequiresFeature(Features.ULTRASOUND_2D)
-  findUltrasound(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  findUltrasound(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.ob.findUltrasoundById(id, user);
   }
 
@@ -106,8 +126,15 @@ export class ObController {
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
   @RequiresFeature(Features.ULTRASOUND_2D)
-  @Audit({ action: 'ob.ultrasound.create', entity: 'UltrasoundReport', entityIdFrom: 'result:id' })
-  createUltrasound(@Body() dto: CreateUltrasoundDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'ob.ultrasound.create',
+    entity: 'UltrasoundReport',
+    entityIdFrom: 'result:id',
+  })
+  createUltrasound(
+    @Body() dto: CreateUltrasoundDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.ob.createUltrasound(dto, user);
   }
 
@@ -115,7 +142,11 @@ export class ObController {
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
   @RequiresFeature(Features.ULTRASOUND_2D)
-  @Audit({ action: 'ob.ultrasound.file.presign', entity: 'UltrasoundReport', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'ob.ultrasound.file.presign',
+    entity: 'UltrasoundReport',
+    entityIdFrom: 'param:id',
+  })
   presignFile(
     @Param('id') id: string,
     @Body() dto: PresignUltrasoundFileDto,

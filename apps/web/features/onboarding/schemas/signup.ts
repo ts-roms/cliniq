@@ -7,7 +7,10 @@ export const clinicStepSchema = z.object({
     .string()
     .min(3, 'at least 3 characters')
     .max(40)
-    .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, 'lowercase letters, digits, and hyphens'),
+    .regex(
+      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
+      'lowercase letters, digits, and hyphens',
+    ),
 });
 
 export const ownerStepSchema = z

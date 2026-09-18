@@ -188,7 +188,9 @@ export function ConsultDetailScreen({
               onPress={() => generate.mutate()}
               disabled={!transcript.trim() || generate.isPending}
               className={`mt-2 rounded-md px-3 py-2 ${
-                transcript.trim() && !generate.isPending ? 'bg-primary' : 'bg-primary/40'
+                transcript.trim() && !generate.isPending
+                  ? 'bg-primary'
+                  : 'bg-primary/40'
               }`}
             >
               <Text className="text-center text-xs font-medium text-primary-foreground">
@@ -217,33 +219,38 @@ export function ConsultDetailScreen({
               </Text>
             </View>
           )}
-          {latest.draftJson.assessment && latest.draftJson.assessment.length > 0 && (
-            <View className="mt-2">
-              <Text className="text-xs text-muted-foreground">Assessment</Text>
-              {latest.draftJson.assessment.map((a, i) => (
-                <Text key={i} className="text-sm text-foreground">
-                  • {a.problem ?? '—'}
+          {latest.draftJson.assessment &&
+            latest.draftJson.assessment.length > 0 && (
+              <View className="mt-2">
+                <Text className="text-xs text-muted-foreground">
+                  Assessment
                 </Text>
-              ))}
-            </View>
-          )}
+                {latest.draftJson.assessment.map((a, i) => (
+                  <Text key={i} className="text-sm text-foreground">
+                    • {a.problem ?? '—'}
+                  </Text>
+                ))}
+              </View>
+            )}
           {latest.draftJson.plan && latest.draftJson.plan.length > 0 && (
             <View className="mt-2">
               <Text className="text-xs text-muted-foreground">Plan</Text>
               {latest.draftJson.plan.map((p, i) => (
                 <Text key={i} className="text-sm text-foreground">
-                  • {p.problem ?? '—'}{p.actions?.length ? ` — ${p.actions.join(', ')}` : ''}
+                  • {p.problem ?? '—'}
+                  {p.actions?.length ? ` — ${p.actions.join(', ')}` : ''}
                 </Text>
               ))}
             </View>
           )}
-          {latest.draftJson.uncertainty && latest.draftJson.uncertainty.length > 0 && (
-            <View className="mt-2">
-              <Text className="text-xs text-amber-700">
-                Uncertainty: {latest.draftJson.uncertainty.join('; ')}
-              </Text>
-            </View>
-          )}
+          {latest.draftJson.uncertainty &&
+            latest.draftJson.uncertainty.length > 0 && (
+              <View className="mt-2">
+                <Text className="text-xs text-amber-700">
+                  Uncertainty: {latest.draftJson.uncertainty.join('; ')}
+                </Text>
+              </View>
+            )}
         </View>
       )}
 

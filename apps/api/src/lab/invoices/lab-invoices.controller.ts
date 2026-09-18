@@ -47,7 +47,10 @@ export class LabInvoicesController {
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
-  list(@CurrentUser() user: AuthenticatedUser, @Query() filter: InvoiceFilterDto) {
+  list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() filter: InvoiceFilterDto,
+  ) {
     return this.invoices.listForLab(user, filter);
   }
 
@@ -65,7 +68,10 @@ export class LabInvoicesController {
     entity: 'LabInvoice',
     entityIdFrom: 'result:id',
   })
-  create(@Body() dto: CreateLabInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
+  create(
+    @Body() dto: CreateLabInvoiceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.invoices.createDraft(dto, user);
   }
 

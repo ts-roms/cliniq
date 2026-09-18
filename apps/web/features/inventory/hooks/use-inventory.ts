@@ -42,7 +42,8 @@ export function useItems(q = '') {
       const needle = q.toLowerCase();
       return items.filter(
         (i) =>
-          i.name.toLowerCase().includes(needle) || i.sku.toLowerCase().includes(needle),
+          i.name.toLowerCase().includes(needle) ||
+          i.sku.toLowerCase().includes(needle),
       );
     },
     placeholderData: (prev) => prev,
@@ -81,7 +82,9 @@ export function useReceiveBatch(itemId: string) {
     mutationFn: async (input: ReceiveBatchOutput) => {
       const body = {
         ...input,
-        ...(input.expiresOn ? { expiresOn: new Date(input.expiresOn).toISOString() } : {}),
+        ...(input.expiresOn
+          ? { expiresOn: new Date(input.expiresOn).toISOString() }
+          : {}),
       };
       const { data, error } = await inventoryControllerReceive({
         path: { id: itemId },
@@ -103,7 +106,9 @@ export function useDispense(itemId: string) {
     mutationFn: async (input: DispenseOutput) => {
       const { data, error } = await inventoryControllerDispense({
         path: { id: itemId },
-        body: input as Parameters<typeof inventoryControllerDispense>[0]['body'],
+        body: input as Parameters<
+          typeof inventoryControllerDispense
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Dispense failed');
       return data;
@@ -118,7 +123,11 @@ export function useDispense(itemId: string) {
 export function useAdjust(itemId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { delta: number; reason?: string; batchId?: string }) => {
+    mutationFn: async (input: {
+      delta: number;
+      reason?: string;
+      batchId?: string;
+    }) => {
       const { data, error } = await inventoryControllerAdjust({
         path: { id: itemId },
         body: input as Parameters<typeof inventoryControllerAdjust>[0]['body'],

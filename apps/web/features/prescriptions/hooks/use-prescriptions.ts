@@ -15,7 +15,8 @@ import type {
 
 export const prescriptionKeys = {
   all: ['prescriptions'] as const,
-  forPatient: (patientId: string) => ['prescriptions', 'patient', patientId] as const,
+  forPatient: (patientId: string) =>
+    ['prescriptions', 'patient', patientId] as const,
 };
 
 export function usePrescriptionsForPatient(patientId: string) {
@@ -35,10 +36,15 @@ export function usePrecheckPrescription() {
   return useMutation({
     mutationFn: async (input: CreatePrescriptionInput) => {
       const { data, error } = await prescriptionsControllerPrecheck({
-        body: input as Parameters<typeof prescriptionsControllerPrecheck>[0]['body'],
+        body: input as Parameters<
+          typeof prescriptionsControllerPrecheck
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Precheck failed');
-      return data as unknown as { findings: InteractionFinding[]; blocking: boolean };
+      return data as unknown as {
+        findings: InteractionFinding[];
+        blocking: boolean;
+      };
     },
   });
 }
@@ -48,16 +54,22 @@ export function useCreatePrescription(patientId: string) {
   return useMutation({
     mutationFn: async (input: CreatePrescriptionInput) => {
       const { data, error } = await prescriptionsControllerCreate({
-        body: input as Parameters<typeof prescriptionsControllerCreate>[0]['body'],
+        body: input as Parameters<
+          typeof prescriptionsControllerCreate
+        >[0]['body'],
       });
       if (error || !data) {
         const err = error as { message?: string } | undefined;
         throw new Error(err?.message ?? 'Create failed');
       }
-      return data as unknown as Prescription & { safetyFindings: InteractionFinding[] };
+      return data as unknown as Prescription & {
+        safetyFindings: InteractionFinding[];
+      };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: prescriptionKeys.forPatient(patientId) });
+      queryClient.invalidateQueries({
+        queryKey: prescriptionKeys.forPatient(patientId),
+      });
     },
   });
 }
@@ -66,12 +78,16 @@ export function useCancelPrescription(patientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await prescriptionsControllerCancel({ path: { id } });
+      const { data, error } = await prescriptionsControllerCancel({
+        path: { id },
+      });
       if (error || !data) throw new Error('Cancel failed');
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: prescriptionKeys.forPatient(patientId) });
+      queryClient.invalidateQueries({
+        queryKey: prescriptionKeys.forPatient(patientId),
+      });
     },
   });
 }

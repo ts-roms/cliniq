@@ -33,13 +33,19 @@ export function ShipmentWidget({ caseId, side, caseStatus }: Props) {
     setNotes(data.notes ?? '');
   }, [data?.id]);
 
-  if (isLoading) return <p className="text-xs text-muted-foreground">Loading shipment…</p>;
+  if (isLoading)
+    return <p className="text-xs text-muted-foreground">Loading shipment…</p>;
 
   const isLabSide = side === 'lab';
   const canEdit =
-    isLabSide && (caseStatus === 'IN_PROGRESS' || caseStatus === 'AWAITING_PICKUP' || caseStatus === 'SHIPPED');
+    isLabSide &&
+    (caseStatus === 'IN_PROGRESS' ||
+      caseStatus === 'AWAITING_PICKUP' ||
+      caseStatus === 'SHIPPED');
   const showMarkDelivered =
-    !!data && data.deliveredAt === null && (caseStatus === 'SHIPPED' || caseStatus === 'AWAITING_PICKUP');
+    !!data &&
+    data.deliveredAt === null &&
+    (caseStatus === 'SHIPPED' || caseStatus === 'AWAITING_PICKUP');
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +88,9 @@ export function ShipmentWidget({ caseId, side, caseStatus }: Props) {
                   ` · Delivered ${new Date(data.deliveredAt).toLocaleString()}`}
               </div>
               {data.notes && (
-                <p className="mt-1 text-xs text-muted-foreground">{data.notes}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {data.notes}
+                </p>
               )}
             </>
           ) : (
@@ -92,7 +100,10 @@ export function ShipmentWidget({ caseId, side, caseStatus }: Props) {
       </div>
 
       {canEdit && (
-        <form onSubmit={submit} className="space-y-2 rounded-md border border-border/60 p-3">
+        <form
+          onSubmit={submit}
+          className="space-y-2 rounded-md border border-border/60 p-3"
+        >
           <div className="grid gap-2 sm:grid-cols-2">
             <FormField label="Carrier">
               <Input
@@ -126,7 +137,11 @@ export function ShipmentWidget({ caseId, side, caseStatus }: Props) {
           )}
           <div className="flex justify-end">
             <Button type="submit" size="sm" disabled={upsert.isPending}>
-              {upsert.isPending ? 'Saving…' : data ? 'Update' : 'Create shipment'}
+              {upsert.isPending
+                ? 'Saving…'
+                : data
+                  ? 'Update'
+                  : 'Create shipment'}
             </Button>
           </div>
         </form>

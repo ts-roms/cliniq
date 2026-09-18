@@ -2,7 +2,6 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client.js';
 
 declare global {
-
   var __prisma: PrismaClient | undefined;
 }
 

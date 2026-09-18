@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:shared", "type:lib"],
+    "tags": [
+      "scope:shared",
+      "type:lib"
+    ],
     "targets": {
       "emit-openapi": {
         "executor": "nx:run-commands",
@@ -11,8 +14,17 @@
           "command": "node apps/api/dist/main.js --emit-openapi",
           "cwd": "{workspaceRoot}"
         },
-        "dependsOn": [{ "projects": ["@org/api"], "target": "build" }],
-        "outputs": ["{workspaceRoot}/apps/api/openapi.json"],
+        "dependsOn": [
+          {
+            "projects": [
+              "@org/api"
+            ],
+            "target": "build"
+          }
+        ],
+        "outputs": [
+          "{workspaceRoot}/apps/api/openapi.json"
+        ],
         "cache": true
       },
       "generate": {
@@ -25,8 +37,12 @@
           "parallel": false,
           "cwd": "libs/api-client"
         },
-        "dependsOn": ["emit-openapi"],
-        "outputs": ["{projectRoot}/src/generated"],
+        "dependsOn": [
+          "emit-openapi"
+        ],
+        "outputs": [
+          "{projectRoot}/src/generated"
+        ],
         "cache": true
       }
     }

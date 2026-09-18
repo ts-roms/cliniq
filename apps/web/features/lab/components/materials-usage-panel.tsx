@@ -68,7 +68,10 @@ export function MaterialsUsagePanel({ caseId }: Props) {
 
   return (
     <div className="space-y-3">
-      <form onSubmit={submit} className="space-y-3 rounded-md border border-border/60 p-3">
+      <form
+        onSubmit={submit}
+        className="space-y-3 rounded-md border border-border/60 p-3"
+      >
         <FormField label="LOT">
           <Select value={lotId} onChange={(e) => setLotId(e.target.value)}>
             <option value="">— pick an active LOT —</option>
@@ -84,7 +87,9 @@ export function MaterialsUsagePanel({ caseId }: Props) {
             </p>
           )}
         </FormField>
-        <FormField label={selectedLot ? `Qty used (${selectedLot.uom})` : 'Qty used'}>
+        <FormField
+          label={selectedLot ? `Qty used (${selectedLot.uom})` : 'Qty used'}
+        >
           <Input
             type="number"
             step="0.01"
@@ -102,15 +107,23 @@ export function MaterialsUsagePanel({ caseId }: Props) {
           </p>
         )}
         <div className="flex justify-end">
-          <Button type="submit" size="sm" disabled={!lotId || !qty || record.isPending}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!lotId || !qty || record.isPending}
+          >
             {record.isPending ? 'Recording…' : 'Record usage'}
           </Button>
         </div>
       </form>
 
-      {isLoading && <p className="text-xs text-muted-foreground">Loading usages…</p>}
+      {isLoading && (
+        <p className="text-xs text-muted-foreground">Loading usages…</p>
+      )}
       {usages && usages.length === 0 && (
-        <p className="text-xs text-muted-foreground">No materials recorded for this case.</p>
+        <p className="text-xs text-muted-foreground">
+          No materials recorded for this case.
+        </p>
       )}
 
       <ul className="space-y-1.5">
@@ -120,10 +133,13 @@ export function MaterialsUsagePanel({ caseId }: Props) {
             className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-sm"
           >
             <div>
-              <div className="font-medium">{u.lot?.material.name ?? 'Material'}</div>
+              <div className="font-medium">
+                {u.lot?.material.name ?? 'Material'}
+              </div>
               <div className="text-[11px] text-muted-foreground">
                 LOT <code className="font-mono">{u.lot?.lotNumber}</code> ·{' '}
-                {u.qty} {u.lot?.material.unitOfMeasure} · {new Date(u.usedAt).toLocaleString()}
+                {u.qty} {u.lot?.material.unitOfMeasure} ·{' '}
+                {new Date(u.usedAt).toLocaleString()}
               </div>
             </div>
             <button

@@ -47,7 +47,8 @@ export default function PatientTelePage({
           <CardContent className="space-y-3 text-sm">
             <p className="text-destructive">{(join.error as Error).message}</p>
             <p className="text-xs text-muted-foreground">
-              The link may have expired or the session ended. Contact your clinic.
+              The link may have expired or the session ended. Contact your
+              clinic.
             </p>
           </CardContent>
         </Card>
@@ -64,8 +65,8 @@ export default function PatientTelePage({
           Video visit with {session.provider.name ?? 'your provider'}
         </h1>
         <p className="text-xs text-muted-foreground">
-          Camera + microphone access required. Audio/video stays peer-to-peer between
-          you and your provider.
+          Camera + microphone access required. Audio/video stays peer-to-peer
+          between you and your provider.
         </p>
       </header>
       <TeleRoom
@@ -78,8 +79,8 @@ export default function PatientTelePage({
         }}
       />
       <p className="text-center text-xs italic text-muted-foreground">
-        Telemedicine consultations are not for medical emergencies. If this is an
-        emergency, call 911 (PH: 911 or your local hospital).
+        Telemedicine consultations are not for medical emergencies. If this is
+        an emergency, call 911 (PH: 911 or your local hospital).
       </p>
       <ReturnHomeFallback />
     </div>
@@ -89,7 +90,11 @@ export default function PatientTelePage({
 function ReturnHomeFallback() {
   return (
     <div className="text-center">
-      <Button variant="outline" size="sm" onClick={() => window.location.assign('/portal/login')}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => window.location.assign('/portal/login')}
+      >
         Return home
       </Button>
     </div>

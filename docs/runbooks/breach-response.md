@@ -8,12 +8,12 @@
 
 ## Roles
 
-| Role | Owner | Backup |
-|---|---|---|
-| Incident Commander | DPO | CTO |
-| Communications | DPO | Founder |
-| Forensics / containment | On-call SRE | CTO |
-| Legal counsel | External (retainer) | — |
+| Role                    | Owner               | Backup  |
+| ----------------------- | ------------------- | ------- |
+| Incident Commander      | DPO                 | CTO     |
+| Communications          | DPO                 | Founder |
+| Forensics / containment | On-call SRE         | CTO     |
+| Legal counsel           | External (retainer) | —       |
 
 The DPO is the single point of accountability. The IC drives the timeline below.
 

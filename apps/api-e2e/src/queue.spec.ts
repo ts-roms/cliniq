@@ -52,9 +52,12 @@ describe('Queue happy path', () => {
     expect(called.data.calledAt).toBeTruthy();
 
     // 4. Close as SERVED.
-    const served = await client.axios.post(`/api/queue/tickets/${t1.data.id}/close`, {
-      status: 'SERVED',
-    });
+    const served = await client.axios.post(
+      `/api/queue/tickets/${t1.data.id}/close`,
+      {
+        status: 'SERVED',
+      },
+    );
     expect(served.status).toBe(200);
     expect(served.data.status).toBe('SERVED');
     expect(served.data.servedAt).toBeTruthy();
@@ -65,7 +68,9 @@ describe('Queue happy path', () => {
 
     // Create both a walk-in and a priority queue (different kind, so the
     // unique (tenant, location, kind) constraint is satisfied).
-    const walkIn = await client.axios.post('/api/queue/queues', { kind: 'WALK_IN' });
+    const walkIn = await client.axios.post('/api/queue/queues', {
+      kind: 'WALK_IN',
+    });
     expect(walkIn.status).toBe(201);
 
     // Issue normal walk-in tickets first.

@@ -108,11 +108,16 @@ export function LabCaseDetailScreen({
   return (
     <View className="flex-1 bg-background">
       <View className="flex-row items-center gap-3 border-b border-border bg-card px-6 pb-3 pt-4">
-        <TouchableOpacity onPress={onBack} className="rounded-md border border-border px-2 py-1">
+        <TouchableOpacity
+          onPress={onBack}
+          className="rounded-md border border-border px-2 py-1"
+        >
           <Text className="text-xs text-foreground">←</Text>
         </TouchableOpacity>
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-foreground">Case {ref}</Text>
+          <Text className="text-lg font-semibold text-foreground">
+            Case {ref}
+          </Text>
           <Text className="text-xs text-muted-foreground">
             {c.product.name} · {c.lab?.name ?? '—'}
           </Text>
@@ -148,7 +153,9 @@ export function LabCaseDetailScreen({
                   {p.exitedAt ? ` → ${fmt(p.exitedAt)}` : ' → ongoing'}
                 </Text>
                 {p.notes && (
-                  <Text className="mt-0.5 text-xs text-muted-foreground">{p.notes}</Text>
+                  <Text className="mt-0.5 text-xs text-muted-foreground">
+                    {p.notes}
+                  </Text>
                 )}
               </View>
             ))}
@@ -170,13 +177,21 @@ export function LabCaseDetailScreen({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <View className="mt-4">
       <Text className="mb-1 text-[11px] uppercase tracking-widest text-muted-foreground">
         {title}
       </Text>
-      <View className="rounded-md border border-border bg-card">{children}</View>
+      <View className="rounded-md border border-border bg-card">
+        {children}
+      </View>
     </View>
   );
 }

@@ -36,12 +36,15 @@ export function useCreateInvoice(patientId: string) {
   return useMutation({
     mutationFn: async (input: CreateInvoiceOutput) => {
       const { data, error } = await billingControllerCreateInvoice({
-        body: input as Parameters<typeof billingControllerCreateInvoice>[0]['body'],
+        body: input as Parameters<
+          typeof billingControllerCreateInvoice
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Create failed');
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: billingKeys.invoices(patientId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: billingKeys.invoices(patientId) }),
   });
 }
 
@@ -57,11 +60,14 @@ export function useRecordPayment(patientId: string) {
     }) => {
       const { data, error } = await billingControllerRecordPayment({
         path: { id: invoiceId },
-        body: input as Parameters<typeof billingControllerRecordPayment>[0]['body'],
+        body: input as Parameters<
+          typeof billingControllerRecordPayment
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Payment failed');
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: billingKeys.invoices(patientId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: billingKeys.invoices(patientId) }),
   });
 }

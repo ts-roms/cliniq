@@ -64,7 +64,8 @@ function stubResponse(input: DermInput) {
         {
           condition: 'pigmented lesion — refer dermatology',
           likelihood: 'moderate',
-          reasoning: 'asymmetric morphology with reported growth — non-diagnostic AI assessment',
+          reasoning:
+            'asymmetric morphology with reported growth — non-diagnostic AI assessment',
         },
       ],
       recommendedNextSteps: [
@@ -85,12 +86,14 @@ function stubResponse(input: DermInput) {
       {
         condition: 'contact dermatitis',
         likelihood: 'moderate',
-        reasoning: 'recent new-soap exposure with localized erythema — supportive but not confirmatory',
+        reasoning:
+          'recent new-soap exposure with localized erythema — supportive but not confirmatory',
       },
       {
         condition: 'atopic eczema',
         likelihood: 'low',
-        reasoning: 'pruritus pattern partially fits; no flexural distribution noted',
+        reasoning:
+          'pruritus pattern partially fits; no flexural distribution noted',
       },
     ],
     recommendedNextSteps: [

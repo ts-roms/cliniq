@@ -12,7 +12,9 @@ export function usePatientConsents(patientId: string) {
   return useQuery({
     queryKey: consentKeys.forPatient(patientId),
     queryFn: async (): Promise<PatientConsent[]> => {
-      const { data, error } = await consentsControllerList({ path: { patientId } });
+      const { data, error } = await consentsControllerList({
+        path: { patientId },
+      });
       if (error) throw new Error('Failed to load consents');
       return (data ?? []) as unknown as PatientConsent[];
     },
@@ -35,7 +37,9 @@ export function useSetConsent(patientId: string) {
       return data as unknown as PatientConsent;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consentKeys.forPatient(patientId) });
+      queryClient.invalidateQueries({
+        queryKey: consentKeys.forPatient(patientId),
+      });
     },
   });
 }

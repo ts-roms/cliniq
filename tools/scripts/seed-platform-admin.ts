@@ -60,7 +60,9 @@ async function main() {
   const passwordHash = await hashPassword(password);
 
   try {
-    const existing = await prisma.platformAdmin.findUnique({ where: { email } });
+    const existing = await prisma.platformAdmin.findUnique({
+      where: { email },
+    });
 
     if (existing) {
       const updated = await prisma.platformAdmin.update({
@@ -71,14 +73,20 @@ async function main() {
           deletedAt: null, // un-soft-delete if it was deleted
         },
       });
-      console.log(`✓ Updated platform admin ${updated.email} (id=${updated.id})`);
+      console.log(
+        `✓ Updated platform admin ${updated.email} (id=${updated.id})`,
+      );
       console.log('  Password reset. MFA state preserved.');
     } else {
       const created = await prisma.platformAdmin.create({
         data: { email, name, passwordHash },
       });
-      console.log(`✓ Created platform admin ${created.email} (id=${created.id})`);
-      console.log('  Sign in at https://<web>/platform/login and enroll MFA on first session.');
+      console.log(
+        `✓ Created platform admin ${created.email} (id=${created.id})`,
+      );
+      console.log(
+        '  Sign in at https://<web>/platform/login and enroll MFA on first session.',
+      );
     }
   } finally {
     await prisma.$disconnect();

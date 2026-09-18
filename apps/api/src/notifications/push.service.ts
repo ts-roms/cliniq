@@ -49,11 +49,16 @@ export class PushService {
     // a logout/re-login on the same device under a different user can hit
     // the @unique(token) constraint.
     await this.prisma.pushToken.deleteMany({
-      where: { token: input.token, NOT: { AND: [{ userId: input.userId }, { deviceId: input.deviceId }] } },
+      where: {
+        token: input.token,
+        NOT: { AND: [{ userId: input.userId }, { deviceId: input.deviceId }] },
+      },
     });
 
     const row = await this.prisma.pushToken.upsert({
-      where: { userId_deviceId: { userId: input.userId, deviceId: input.deviceId } },
+      where: {
+        userId_deviceId: { userId: input.userId, deviceId: input.deviceId },
+      },
       create: {
         tenantId: input.tenantId,
         userId: input.userId,
@@ -151,7 +156,7 @@ export class PushService {
         const dead = tickets
           .map((t, idx) => ({
             token: slice[idx]?.to,
-            err: t.status === 'error' ? t.details?.error ?? '' : '',
+            err: t.status === 'error' ? (t.details?.error ?? '') : '',
           }))
           .filter(
             (x) =>

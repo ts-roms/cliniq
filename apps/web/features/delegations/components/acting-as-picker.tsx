@@ -3,11 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { Select } from '@org/ui';
 import { useReceivedDelegations } from '../hooks/use-delegations';
-import {
-  getActingAs,
-  setActingAs,
-  subscribeActingAs,
-} from '../acting-as';
+import { getActingAs, setActingAs, subscribeActingAs } from '../acting-as';
 
 function useActingAs() {
   return useSyncExternalStore(
@@ -45,7 +41,7 @@ export function ActingAsPicker() {
     setActingAs(null);
   }
 
-  const value = stillValid ? acting ?? '' : '';
+  const value = stillValid ? (acting ?? '') : '';
   const isActing = !!value;
 
   return (
@@ -57,7 +53,11 @@ export function ActingAsPicker() {
         className={`h-8 text-xs ${
           isActing ? 'border-amber-500 bg-amber-50 text-amber-900' : ''
         }`}
-        title={isActing ? 'You are acting on behalf of someone' : 'Acting as yourself'}
+        title={
+          isActing
+            ? 'You are acting on behalf of someone'
+            : 'Acting as yourself'
+        }
       >
         <option value="">Self</option>
         {list.map((d) => (
@@ -89,9 +89,7 @@ export function ActingAsBanner() {
   return (
     <div className="border-b border-amber-300 bg-amber-100 px-4 py-1 text-center text-xs text-amber-900 sm:px-6">
       You are acting on behalf of{' '}
-      <span className="font-semibold">
-        {match.delegator?.name ?? acting}
-      </span>{' '}
+      <span className="font-semibold">{match.delegator?.name ?? acting}</span>{' '}
       until {new Date(match.endsAt).toLocaleString()}.{' '}
       <button
         type="button"

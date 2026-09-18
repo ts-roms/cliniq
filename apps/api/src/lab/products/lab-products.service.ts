@@ -50,7 +50,11 @@ export class LabProductsService {
     });
   }
 
-  async updateCategory(id: string, dto: UpdateLabCategoryDto, user: AuthenticatedUser) {
+  async updateCategory(
+    id: string,
+    dto: UpdateLabCategoryDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const cat = await tx.labProductCategory.findFirst({
         where: { id, deletedAt: null },
@@ -87,7 +91,10 @@ export class LabProductsService {
 
   // ── Products ────────────────────────────────────────────────────
 
-  listProducts(user: AuthenticatedUser, opts?: { activeOnly?: boolean; categoryId?: string }) {
+  listProducts(
+    user: AuthenticatedUser,
+    opts?: { activeOnly?: boolean; categoryId?: string },
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
       tx.labProduct.findMany({
         where: {
@@ -115,7 +122,10 @@ export class LabProductsService {
 
   async createProduct(dto: CreateLabProductDto, user: AuthenticatedUser) {
     await this.requireLab(user);
-    this.validatePricing(dto.pricingMode ?? LabProductPricingMode.FIXED, dto.defaultPrice);
+    this.validatePricing(
+      dto.pricingMode ?? LabProductPricingMode.FIXED,
+      dto.defaultPrice,
+    );
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       if (dto.categoryId) {
         const cat = await tx.labProductCategory.findFirst({
@@ -153,7 +163,11 @@ export class LabProductsService {
     });
   }
 
-  async updateProduct(id: string, dto: UpdateLabProductDto, user: AuthenticatedUser) {
+  async updateProduct(
+    id: string,
+    dto: UpdateLabProductDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.labProduct.findFirst({
         where: { id, deletedAt: null },
@@ -161,7 +175,9 @@ export class LabProductsService {
       if (!existing) throw new NotFoundException('product not found');
       const nextMode = dto.pricingMode ?? existing.pricingMode;
       const nextPrice =
-        dto.defaultPrice === undefined ? existing.defaultPrice : dto.defaultPrice;
+        dto.defaultPrice === undefined
+          ? existing.defaultPrice
+          : dto.defaultPrice;
       this.validatePricing(nextMode, nextPrice);
       return tx.labProduct.update({
         where: { id },
@@ -169,11 +185,15 @@ export class LabProductsService {
           name: dto.name ?? existing.name,
           description: dto.description ?? existing.description,
           sku: dto.sku === undefined ? existing.sku : dto.sku,
-          categoryId: dto.categoryId === undefined ? existing.categoryId : dto.categoryId,
+          categoryId:
+            dto.categoryId === undefined ? existing.categoryId : dto.categoryId,
           defaultPrice: nextPrice,
           currency: dto.currency ?? existing.currency,
           pricingMode: nextMode,
-          formSchema: dto.formSchema === undefined ? undefined : dto.formSchema ?? undefined,
+          formSchema:
+            dto.formSchema === undefined
+              ? undefined
+              : (dto.formSchema ?? undefined),
           phases: dto.phases ?? existing.phases,
           tags: dto.tags ?? existing.tags,
           isActive: dto.isActive ?? existing.isActive,
@@ -226,17 +246,29 @@ export class LabProductsService {
   private async requireLab(user: AuthenticatedUser) {
     const t = await this.prisma.getTenantContext(user.tenantId);
     if (!t || t.kind !== 'LAB') {
-      throw new ForbiddenException('only LAB tenants can manage product catalog');
+      throw new ForbiddenException(
+        'only LAB tenants can manage product catalog',
+      );
     }
   }
 
-  private validatePricing(mode: LabProductPricingMode, price: number | null | undefined) {
-    if (mode === LabProductPricingMode.FIXED && (price === null || price === undefined)) {
+  private validatePricing(
+    mode: LabProductPricingMode,
+    price: number | null | undefined,
+  ) {
+    if (
+      mode === LabProductPricingMode.FIXED &&
+      (price === null || price === undefined)
+    ) {
       throw new BadRequestException(
         'FIXED pricing requires a defaultPrice (centavos)',
       );
     }
-    if (mode === LabProductPricingMode.ADJUST_ON_ORDER && price !== null && price !== undefined) {
+    if (
+      mode === LabProductPricingMode.ADJUST_ON_ORDER &&
+      price !== null &&
+      price !== undefined
+    ) {
       throw new BadRequestException(
         'ADJUST_ON_ORDER pricing must not have a defaultPrice (set on order intake)',
       );

@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Select,
-} from '@org/ui';
+import { Card, CardContent, CardHeader, CardTitle, Select } from '@org/ui';
 import {
   CaseStatusPill,
   useLabCases,
@@ -66,7 +60,9 @@ export default function LabCasesInboxPage() {
               )}
               <Select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as LabCaseStatus | 'all')}
+                onChange={(e) =>
+                  setStatus(e.target.value as LabCaseStatus | 'all')
+                }
                 className="w-44"
               >
                 <option value="all">All statuses</option>
@@ -80,12 +76,18 @@ export default function LabCasesInboxPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {!isLoading && data && data.length === 0 && (
-            <p className="text-sm text-muted-foreground">No cases match this filter.</p>
+            <p className="text-sm text-muted-foreground">
+              No cases match this filter.
+            </p>
           )}
 
           {data && data.length > 0 && (
@@ -142,13 +144,17 @@ export default function LabCasesInboxPage() {
                             URGENT
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">standard</span>
+                          <span className="text-muted-foreground">
+                            standard
+                          </span>
                         )}
                       </td>
                       <td className="py-2 pr-3">
                         <CaseStatusPill status={c.status} />
                       </td>
-                      <td className="py-2 pr-3 tabular-nums">{c._count?.files ?? 0}</td>
+                      <td className="py-2 pr-3 tabular-nums">
+                        {c._count?.files ?? 0}
+                      </td>
                       <td className="py-2 pr-3 text-xs text-muted-foreground">
                         {new Date(c.createdAt).toLocaleDateString()}
                       </td>

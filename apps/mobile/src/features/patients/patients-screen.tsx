@@ -23,7 +23,11 @@ interface PatientList {
   total: number;
 }
 
-export function PatientsScreen({ onSelect }: { onSelect: (id: string) => void }) {
+export function PatientsScreen({
+  onSelect,
+}: {
+  onSelect: (id: string) => void;
+}) {
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['patients', 'mobile'],
     queryFn: async (): Promise<PatientList> => {
@@ -39,7 +43,9 @@ export function PatientsScreen({ onSelect }: { onSelect: (id: string) => void })
     <View className="flex-1 bg-background">
       <View className="flex-row items-center justify-between border-b border-border bg-card px-6 pb-3 pt-4">
         <View>
-          <Text className="text-xs uppercase tracking-widest text-primary">ClinIQ</Text>
+          <Text className="text-xs uppercase tracking-widest text-primary">
+            ClinIQ
+          </Text>
           <Text className="text-xl font-semibold text-foreground">
             Patients{data ? ` · ${data.total}` : ''}
           </Text>
@@ -59,7 +65,9 @@ export function PatientsScreen({ onSelect }: { onSelect: (id: string) => void })
       )}
       {error && (
         <View className="px-6 py-4">
-          <Text className="text-sm text-destructive">{(error as Error).message}</Text>
+          <Text className="text-sm text-destructive">
+            {(error as Error).message}
+          </Text>
         </View>
       )}
       {data && (

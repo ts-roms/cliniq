@@ -54,7 +54,9 @@ export function DsrInbox() {
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
       {data && visible.length === 0 && (
         <p className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
           No requests in this view.
@@ -101,7 +103,9 @@ function DsrItem({ dsr }: { dsr: Dsr }) {
             {dsr.resolvedAt && ` · Resolved ${formatDate(dsr.resolvedAt)}`}
           </p>
           {dsr.details && (
-            <p className="mt-2 rounded bg-muted/40 p-2 text-xs">{dsr.details}</p>
+            <p className="mt-2 rounded bg-muted/40 p-2 text-xs">
+              {dsr.details}
+            </p>
           )}
           {dsr.resolution && (
             <p className="mt-1 text-xs text-emerald-700">→ {dsr.resolution}</p>

@@ -27,12 +27,17 @@ export function ConsultLabsPanel({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Labs</CardTitle>
-        <NewLabOrderDialog patientId={patientId} consultationId={consultationId} />
+        <NewLabOrderDialog
+          patientId={patientId}
+          consultationId={consultationId}
+        />
       </CardHeader>
       <CardContent>
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {data && data.length === 0 && (
-          <p className="text-sm text-muted-foreground">No labs ordered for this consult.</p>
+          <p className="text-sm text-muted-foreground">
+            No labs ordered for this consult.
+          </p>
         )}
         {data && data.length > 0 && (
           <ul className="space-y-2">
@@ -40,7 +45,9 @@ export function ConsultLabsPanel({
               <li key={order.id} className="rounded border bg-card p-3">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs">{order.number}</span>
-                  <span className="text-xs text-muted-foreground">{order.status}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {order.status}
+                  </span>
                 </div>
                 <ul className="mt-1 text-xs">
                   {order.items.map((item) => (
@@ -48,7 +55,9 @@ export function ConsultLabsPanel({
                       <span>{item.testName}</span>
                       <span
                         className={`font-mono ${
-                          item.abnormalFlag ? FLAG_TONE[item.abnormalFlag] : 'text-muted-foreground'
+                          item.abnormalFlag
+                            ? FLAG_TONE[item.abnormalFlag]
+                            : 'text-muted-foreground'
                         }`}
                       >
                         {item.resultValue

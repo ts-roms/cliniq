@@ -10,7 +10,9 @@ function formatDate(iso: string | null): string {
 
 function daysUntil(iso: string | null): number | null {
   if (!iso) return null;
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  return Math.ceil(
+    (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+  );
 }
 
 export function InventoryAlertsCards() {
@@ -24,9 +26,13 @@ export function InventoryAlertsCards() {
           <CardTitle>Low stock</CardTitle>
         </CardHeader>
         <CardContent>
-          {lowStock.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {lowStock.isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {lowStock.data && lowStock.data.length === 0 && (
-            <p className="text-sm text-muted-foreground">All items are above reorder level.</p>
+            <p className="text-sm text-muted-foreground">
+              All items are above reorder level.
+            </p>
           )}
           {lowStock.data && lowStock.data.length > 0 && (
             <ul className="space-y-1 text-sm">
@@ -53,9 +59,13 @@ export function InventoryAlertsCards() {
           <CardTitle>Expiring within 60 days</CardTitle>
         </CardHeader>
         <CardContent>
-          {expiring.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {expiring.isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {expiring.data && expiring.data.length === 0 && (
-            <p className="text-sm text-muted-foreground">No batches expiring soon.</p>
+            <p className="text-sm text-muted-foreground">
+              No batches expiring soon.
+            </p>
           )}
           {expiring.data && expiring.data.length > 0 && (
             <ul className="space-y-1 text-sm">

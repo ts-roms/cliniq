@@ -95,8 +95,13 @@ export function renderInvoicePdf(data: InvoicePdfData): Promise<Buffer> {
     patientBlock(doc, data.patient);
     itemsTable(doc, data.invoice.items, money);
     totalsBlock(doc, data.invoice, money);
-    if (data.invoice.payments.length > 0) paymentsBlock(doc, data.invoice.payments, money);
-    notesFooter(doc, data.invoice.notes, data.tenant.settings?.defaultInvoiceNotes);
+    if (data.invoice.payments.length > 0)
+      paymentsBlock(doc, data.invoice.payments, money);
+    notesFooter(
+      doc,
+      data.invoice.notes,
+      data.tenant.settings?.defaultInvoiceNotes,
+    );
 
     doc.end();
   });
@@ -115,17 +120,25 @@ function header(doc: PDFKit.PDFDocument, tenant: InvoicePdfData['tenant']) {
   doc.strokeColor('black').moveDown(0.5);
 }
 
-function invoiceMeta(doc: PDFKit.PDFDocument, invoice: InvoicePdfData['invoice']) {
+function invoiceMeta(
+  doc: PDFKit.PDFDocument,
+  invoice: InvoicePdfData['invoice'],
+) {
   const startY = doc.y;
   doc.fontSize(16).text('INVOICE', 50, startY);
   doc.fontSize(10).fillColor('#666');
   doc.text(`Number: ${invoice.number}`, 350, startY, { align: 'right' });
-  doc.text(`Date: ${fmtDate(invoice.issuedAt)}`, 350, doc.y, { align: 'right' });
+  doc.text(`Date: ${fmtDate(invoice.issuedAt)}`, 350, doc.y, {
+    align: 'right',
+  });
   doc.text(`Status: ${invoice.status}`, 350, doc.y, { align: 'right' });
   doc.fillColor('black').moveDown(1);
 }
 
-function patientBlock(doc: PDFKit.PDFDocument, patient: InvoicePdfData['patient']) {
+function patientBlock(
+  doc: PDFKit.PDFDocument,
+  patient: InvoicePdfData['patient'],
+) {
   doc.fontSize(11).text('Bill to:', { continued: false });
   doc.fontSize(10).fillColor('#444');
   doc.text(`${patient.lastName}, ${patient.firstName}`);
@@ -155,7 +168,10 @@ function itemsTable(
     const y = doc.y;
     doc.text(item.description, 50, y, { width: 280 });
     doc.text(String(item.quantity), 340, y, { width: 40, align: 'right' });
-    doc.text(money(item.unitPriceCentavos), 390, y, { width: 70, align: 'right' });
+    doc.text(money(item.unitPriceCentavos), 390, y, {
+      width: 70,
+      align: 'right',
+    });
     doc.text(money(item.totalCentavos), 470, y, { width: 75, align: 'right' });
     doc.moveDown(0.5);
   }

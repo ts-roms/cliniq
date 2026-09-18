@@ -78,7 +78,9 @@ export function PatientDetailScreen({
   const patient = useQuery({
     queryKey: ['patient', patientId],
     queryFn: async (): Promise<Patient> => {
-      const { data, error } = await patientsControllerFindOne({ path: { id: patientId } });
+      const { data, error } = await patientsControllerFindOne({
+        path: { id: patientId },
+      });
       if (error || !data) throw new Error('Patient not found');
       return data as unknown as Patient;
     },
@@ -87,7 +89,9 @@ export function PatientDetailScreen({
   const allergies = useQuery({
     queryKey: ['clinical', patientId, 'allergies'],
     queryFn: async (): Promise<Allergy[]> => {
-      const { data, error } = await clinicalControllerListAllergies({ path: { patientId } });
+      const { data, error } = await clinicalControllerListAllergies({
+        path: { patientId },
+      });
       if (error || !data) return [];
       return data as unknown as Allergy[];
     },
@@ -96,7 +100,9 @@ export function PatientDetailScreen({
   const meds = useQuery({
     queryKey: ['clinical', patientId, 'meds'],
     queryFn: async (): Promise<Medication[]> => {
-      const { data, error } = await clinicalControllerListMeds({ path: { patientId } });
+      const { data, error } = await clinicalControllerListMeds({
+        path: { patientId },
+      });
       if (error || !data) return [];
       return data as unknown as Medication[];
     },
@@ -105,7 +111,9 @@ export function PatientDetailScreen({
   const conditions = useQuery({
     queryKey: ['clinical', patientId, 'conditions'],
     queryFn: async (): Promise<Condition[]> => {
-      const { data, error } = await clinicalControllerListConditions({ path: { patientId } });
+      const { data, error } = await clinicalControllerListConditions({
+        path: { patientId },
+      });
       if (error || !data) return [];
       return data as unknown as Condition[];
     },
@@ -114,7 +122,9 @@ export function PatientDetailScreen({
   const vitals = useQuery({
     queryKey: ['clinical', patientId, 'vitals'],
     queryFn: async (): Promise<Vital[]> => {
-      const { data, error } = await clinicalControllerListVitals({ path: { patientId } });
+      const { data, error } = await clinicalControllerListVitals({
+        path: { patientId },
+      });
       if (error || !data) return [];
       return data as unknown as Vital[];
     },
@@ -166,11 +176,14 @@ export function PatientDetailScreen({
       <Section title="Latest vitals">
         {latestVital ? (
           <View className="flex-row flex-wrap gap-3">
-            <Stat label="BP" value={
-              latestVital.systolic && latestVital.diastolic
-                ? `${latestVital.systolic}/${latestVital.diastolic}`
-                : '—'
-            } />
+            <Stat
+              label="BP"
+              value={
+                latestVital.systolic && latestVital.diastolic
+                  ? `${latestVital.systolic}/${latestVital.diastolic}`
+                  : '—'
+              }
+            />
             <Stat label="HR" value={latestVital.heartRate ?? '—'} />
             <Stat label="SpO₂" value={latestVital.spo2 ?? '—'} />
             <Stat label="BMI" value={latestVital.bmi ?? '—'} />
@@ -195,7 +208,9 @@ export function PatientDetailScreen({
                 </Text>
               </Text>
               {a.reaction && (
-                <Text className="text-xs text-muted-foreground">→ {a.reaction}</Text>
+                <Text className="text-xs text-muted-foreground">
+                  → {a.reaction}
+                </Text>
               )}
             </View>
           ))
@@ -210,7 +225,9 @@ export function PatientDetailScreen({
             <View key={m.id} className="py-1.5">
               <Text className="text-sm text-foreground">
                 {m.drugName}{' '}
-                <Text className="text-xs text-muted-foreground">({m.status})</Text>
+                <Text className="text-xs text-muted-foreground">
+                  ({m.status})
+                </Text>
               </Text>
               <Text className="text-xs text-muted-foreground">
                 {[m.dose, m.frequency].filter(Boolean).join(' · ') || '—'}
@@ -233,7 +250,9 @@ export function PatientDetailScreen({
                     {c.icd10Code}
                   </Text>
                 )}{' '}
-                <Text className="text-xs text-muted-foreground">({c.status})</Text>
+                <Text className="text-xs text-muted-foreground">
+                  ({c.status})
+                </Text>
               </Text>
             </View>
           ))
@@ -253,7 +272,13 @@ export function PatientDetailScreen({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <View className="border-b border-border bg-card px-6 py-3">
       <Text className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">

@@ -32,7 +32,8 @@ const LOT_STATUSES: LabMaterialLotStatus[] = [
 ];
 
 const STATUS_COLOR: Record<LabMaterialLotStatus, string> = {
-  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  ACTIVE:
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   WAREHOUSE: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
   FINISHED: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400',
   DEFECTIVE: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
@@ -79,7 +80,8 @@ export default function LabMaterialsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Materials</h1>
           <p className="text-sm text-muted-foreground">
-            Inventory + LOT traceability for materials consumed during manufacturing.
+            Inventory + LOT traceability for materials consumed during
+            manufacturing.
           </p>
         </div>
         <Button onClick={() => setShowForm((v) => !v)}>
@@ -105,7 +107,11 @@ export default function LabMaterialsPage() {
               </FormField>
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField label="SKU (optional)">
-                  <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="ZR-DISC-T" />
+                  <Input
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    placeholder="ZR-DISC-T"
+                  />
                 </FormField>
                 <FormField label="Category">
                   <Input
@@ -140,7 +146,11 @@ export default function LabMaterialsPage() {
                 </p>
               )}
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={create.isPending}>
@@ -162,7 +172,11 @@ export default function LabMaterialsPage() {
 
       <div className="space-y-3">
         {data?.map((m) => (
-          <MaterialRow key={m.id} material={m} onDelete={() => remove.mutate(m.id)} />
+          <MaterialRow
+            key={m.id}
+            material={m}
+            onDelete={() => remove.mutate(m.id)}
+          />
         ))}
       </div>
     </div>
@@ -196,7 +210,8 @@ function MaterialRow({
             <div>
               <div className="font-medium">{material.name}</div>
               <div className="text-xs text-muted-foreground">
-                {material.category ?? 'Uncategorized'} · {material.unitOfMeasure}
+                {material.category ?? 'Uncategorized'} ·{' '}
+                {material.unitOfMeasure}
                 {material.sku && ` · SKU ${material.sku}`}
               </div>
             </div>
@@ -321,7 +336,11 @@ function LotsPanel({ material }: { material: LabMaterial }) {
             </FormField>
           </div>
           <FormField label="Expires (optional)">
-            <Input type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
+            <Input
+              type="date"
+              value={expires}
+              onChange={(e) => setExpires(e.target.value)}
+            />
           </FormField>
           {create.error && (
             <p className="text-sm text-destructive">
@@ -336,7 +355,9 @@ function LotsPanel({ material }: { material: LabMaterial }) {
         </form>
       )}
 
-      {isLoading && <p className="text-xs text-muted-foreground">Loading LOTs…</p>}
+      {isLoading && (
+        <p className="text-xs text-muted-foreground">Loading LOTs…</p>
+      )}
 
       {lots && lots.length > 0 && (
         <div className="overflow-x-auto">

@@ -30,7 +30,10 @@ export class CreateMaterialDto {
   @MaxLength(120)
   category?: string;
 
-  @ApiPropertyOptional({ example: 'g', description: 'Unit of measure (g, ml, pcs, cc).' })
+  @ApiPropertyOptional({
+    example: 'g',
+    description: 'Unit of measure (g, ml, pcs, cc).',
+  })
   @IsOptional()
   @IsString()
   @Length(1, 16)
@@ -126,7 +129,10 @@ export class CreateLotDto {
   @IsISO8601()
   receivedAt?: string;
 
-  @ApiPropertyOptional({ enum: LabMaterialLotStatus, enumName: 'LabMaterialLotStatus' })
+  @ApiPropertyOptional({
+    enum: LabMaterialLotStatus,
+    enumName: 'LabMaterialLotStatus',
+  })
   @IsOptional()
   @IsEnum(LabMaterialLotStatus)
   status?: LabMaterialLotStatus;
@@ -139,7 +145,10 @@ export class CreateLotDto {
 }
 
 export class UpdateLotDto {
-  @ApiPropertyOptional({ enum: LabMaterialLotStatus, enumName: 'LabMaterialLotStatus' })
+  @ApiPropertyOptional({
+    enum: LabMaterialLotStatus,
+    enumName: 'LabMaterialLotStatus',
+  })
   @IsOptional()
   @IsEnum(LabMaterialLotStatus)
   status?: LabMaterialLotStatus;

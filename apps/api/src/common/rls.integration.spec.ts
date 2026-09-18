@@ -26,9 +26,13 @@ DESCRIBE('RLS — cross-tenant isolation', () => {
   beforeAll(async () => {
     // Ensure migrations are applied (no-op if already up to date)
     try {
-      execSync('pnpm --dir libs/db exec prisma migrate deploy', { stdio: 'pipe' });
+      execSync('pnpm --dir libs/db exec prisma migrate deploy', {
+        stdio: 'pipe',
+      });
     } catch (err) {
-      Logger.warn(`prisma migrate deploy failed (continuing): ${(err as Error).message}`);
+      Logger.warn(
+        `prisma migrate deploy failed (continuing): ${(err as Error).message}`,
+      );
     }
 
     process.env['DATABASE_URL'] = APP_URL!;
@@ -57,8 +61,12 @@ DESCRIBE('RLS — cross-tenant isolation', () => {
 
   afterAll(async () => {
     if (svc) {
-      await svc.patient.deleteMany({ where: { tenantId: { in: [tenantA.id, tenantB.id] } } });
-      await svc.tenant.deleteMany({ where: { id: { in: [tenantA.id, tenantB.id] } } });
+      await svc.patient.deleteMany({
+        where: { tenantId: { in: [tenantA.id, tenantB.id] } },
+      });
+      await svc.tenant.deleteMany({
+        where: { id: { in: [tenantA.id, tenantB.id] } },
+      });
       await svc.onModuleDestroy();
     }
   });

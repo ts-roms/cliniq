@@ -1,5 +1,9 @@
 export { ConsentsCard } from './components/consents-card';
-export { usePatientConsents, useSetConsent, consentKeys } from './hooks/use-consents';
+export {
+  usePatientConsents,
+  useSetConsent,
+  consentKeys,
+} from './hooks/use-consents';
 export {
   CONSENT_LABELS,
   CONSENT_ORDER,

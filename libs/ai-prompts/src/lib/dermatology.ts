@@ -68,7 +68,8 @@ export function renderDermUserMessage(input: DermInput): string {
   if (c.age != null) lines.push(`- Age: ${c.age}`);
   if (c.sex) lines.push(`- Sex: ${c.sex}`);
   if (c.allergies?.length) lines.push(`- Allergies: ${c.allergies.join(', ')}`);
-  if (c.presentingComplaint) lines.push(`- Presenting complaint: ${c.presentingComplaint}`);
+  if (c.presentingComplaint)
+    lines.push(`- Presenting complaint: ${c.presentingComplaint}`);
   lines.push('', `# Images: ${input.imageCount} attached`);
   return lines.join('\n');
 }

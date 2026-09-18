@@ -23,7 +23,11 @@ export class CreateItemDto {
   @MaxLength(120)
   name!: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) category?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  category?: string;
 
   @ApiPropertyOptional({ default: 'each' })
   @IsOptional()
@@ -52,8 +56,16 @@ export class CreateItemDto {
 }
 
 export class UpdateItemDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) name?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) category?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  name?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  category?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) unit?: string;
 
   @ApiPropertyOptional({ minimum: 0 })
@@ -81,7 +93,11 @@ export class ReceiveBatchDto {
   @Min(1)
   receivedQty!: number;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) lotNumber?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  lotNumber?: string;
 
   @ApiPropertyOptional({ description: 'ISO 8601 date — for FEFO ordering' })
   @IsOptional()
@@ -96,7 +112,11 @@ export class ReceiveBatchDto {
   @Min(0)
   unitCostCentavos?: number;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) supplierName?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  supplierName?: string;
 }
 
 export class AdjustStockDto {
@@ -111,7 +131,9 @@ export class AdjustStockDto {
   @MaxLength(200)
   reason?: string;
 
-  @ApiPropertyOptional({ description: 'Specific batch to adjust; defaults to FEFO order' })
+  @ApiPropertyOptional({
+    description: 'Specific batch to adjust; defaults to FEFO order',
+  })
   @IsOptional()
   @IsString()
   batchId?: string;
@@ -125,5 +147,9 @@ export class DispenseStockDto {
   quantity!: number;
 
   @ApiPropertyOptional() @IsOptional() @IsString() prescriptionId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) reason?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  reason?: string;
 }

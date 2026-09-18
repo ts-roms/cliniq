@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export enum ConsentTypeDto {
   TREATMENT = 'TREATMENT',
@@ -18,7 +24,9 @@ export class SetConsentDto {
   @IsBoolean()
   granted!: boolean;
 
-  @ApiPropertyOptional({ description: 'Required when withdrawing a previously granted consent' })
+  @ApiPropertyOptional({
+    description: 'Required when withdrawing a previously granted consent',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(280)

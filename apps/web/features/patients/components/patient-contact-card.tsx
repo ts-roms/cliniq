@@ -15,7 +15,13 @@ export function PatientContactCard({ patient: p }: { patient: Patient }) {
   );
 }
 
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
+function Row({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
   return (
     <div className="flex justify-between">
       <span className="text-muted-foreground">{label}</span>

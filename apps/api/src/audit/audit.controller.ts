@@ -17,7 +17,10 @@ export class AuditController {
 
   @Get()
   @Requires(Actions.AUDIT_READ)
-  async list(@Query() filter: AuditFilterDto, @CurrentUser() user: AuthenticatedUser) {
+  async list(
+    @Query() filter: AuditFilterDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     const limit = filter.limit ?? 50;
     const offset = filter.cursor ?? 0;
 
@@ -53,7 +56,8 @@ export class AuditController {
         total,
         limit,
         cursor: offset,
-        nextCursor: offset + items.length < total ? offset + items.length : null,
+        nextCursor:
+          offset + items.length < total ? offset + items.length : null,
       };
     });
   }

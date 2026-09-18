@@ -19,7 +19,9 @@ export class PostSignalDto {
   @IsEnum(TeleSignalKind)
   kind!: TeleSignalKind;
 
-  @ApiProperty({ description: 'Opaque signaling payload (SDP, ICE candidate, chat text)' })
+  @ApiProperty({
+    description: 'Opaque signaling payload (SDP, ICE candidate, chat text)',
+  })
   @IsObject()
   payload!: Record<string, unknown>;
 }

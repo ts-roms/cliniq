@@ -141,7 +141,9 @@ function PendingDraft({
         <Button
           size="sm"
           disabled={disabled}
-          onClick={() => onDecide({ suggestionId: suggestion.id, decision: 'ACCEPT' })}
+          onClick={() =>
+            onDecide({ suggestionId: suggestion.id, decision: 'ACCEPT' })
+          }
         >
           Accept
         </Button>
@@ -163,7 +165,9 @@ function PendingDraft({
           size="sm"
           variant="ghost"
           disabled={disabled}
-          onClick={() => onDecide({ suggestionId: suggestion.id, decision: 'REJECT' })}
+          onClick={() =>
+            onDecide({ suggestionId: suggestion.id, decision: 'REJECT' })
+          }
         >
           Reject
         </Button>

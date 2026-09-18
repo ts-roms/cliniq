@@ -23,7 +23,8 @@ export class MailerService {
 
   constructor(private readonly config: ConfigService) {
     const key = this.config.get<string>('RESEND_API_KEY');
-    this.from = this.config.get<string>('MAIL_FROM') ?? 'ClinIQ <noreply@cliniq.app>';
+    this.from =
+      this.config.get<string>('MAIL_FROM') ?? 'ClinIQ <noreply@cliniq.app>';
     this.enabled = !!key;
     this.client = this.enabled ? new Resend(key) : null;
   }
@@ -45,7 +46,9 @@ export class MailerService {
       });
       return { id: data?.id ?? null, sent: true };
     } catch (err) {
-      this.logger.error(`mail send failed (${msg.subject}): ${(err as Error).message}`);
+      this.logger.error(
+        `mail send failed (${msg.subject}): ${(err as Error).message}`,
+      );
       return { id: null, sent: false };
     }
   }

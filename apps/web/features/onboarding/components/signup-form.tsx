@@ -27,11 +27,15 @@ type Kind = 'CLINIC' | 'LAB';
 
 function planFromQuery(value: string | null): Plan | null {
   if (!value) return null;
-  return (ALL_PLANS as readonly string[]).includes(value) ? (value as Plan) : null;
+  return (ALL_PLANS as readonly string[]).includes(value)
+    ? (value as Plan)
+    : null;
 }
 function labPlanFromQuery(value: string | null): LabPlan | null {
   if (!value) return null;
-  return (ALL_LAB_PLANS as readonly string[]).includes(value) ? (value as LabPlan) : null;
+  return (ALL_LAB_PLANS as readonly string[]).includes(value)
+    ? (value as LabPlan)
+    : null;
 }
 
 export function SignupForm() {
@@ -46,7 +50,9 @@ export function SignupForm() {
   const [step, setStep] = useState<Step>('clinic');
   const [clinic, setClinic] = useState<ClinicStepInput | null>(null);
   const [plan, setPlan] = useState<Plan>(initialClinicPlan ?? 'STARTER');
-  const [labPlan, setLabPlan] = useState<LabPlan>(initialLabPlan ?? 'LAB_BASIC');
+  const [labPlan, setLabPlan] = useState<LabPlan>(
+    initialLabPlan ?? 'LAB_BASIC',
+  );
 
   const signup = useSignup({
     onSuccess: () => router.push(kind === 'LAB' ? '/lab/cases' : '/patients'),
@@ -279,16 +285,33 @@ function OwnerStep({
       <FormField label="Password" error={errors.password?.message}>
         <PasswordInput autoComplete="new-password" {...register('password')} />
       </FormField>
-      <FormField label="Confirm password" error={errors.confirmPassword?.message}>
-        <PasswordInput autoComplete="new-password" {...register('confirmPassword')} />
+      <FormField
+        label="Confirm password"
+        error={errors.confirmPassword?.message}
+      >
+        <PasswordInput
+          autoComplete="new-password"
+          {...register('confirmPassword')}
+        />
       </FormField>
       {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={onBack} disabled={submitting}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          disabled={submitting}
+        >
           Back
         </Button>
-        <Button type="submit" className="flex-1" disabled={isSubmitting || submitting}>
-          {submitting ? 'Creating…' : `Create ${isLab ? 'lab' : 'clinic'} & sign in`}
+        <Button
+          type="submit"
+          className="flex-1"
+          disabled={isSubmitting || submitting}
+        >
+          {submitting
+            ? 'Creating…'
+            : `Create ${isLab ? 'lab' : 'clinic'} & sign in`}
         </Button>
       </div>
     </form>

@@ -16,10 +16,18 @@ export class ReportsService {
    */
   async overview(user: AuthenticatedUser) {
     const now = new Date();
-    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const startOfLastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-    const startOfTomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const startOfMonth = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
+    const startOfLastMonth = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1),
+    );
+    const startOfTomorrow = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
+    );
+    const startOfToday = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const [
@@ -79,10 +87,14 @@ export class ReportsService {
 
       const collected = revenueThisMonth._sum.amountCentavos ?? 0;
       const outstanding =
-        (outstandingAr._sum.totalCentavos ?? 0) - (outstandingAr._sum.paidCentavos ?? 0);
+        (outstandingAr._sum.totalCentavos ?? 0) -
+        (outstandingAr._sum.paidCentavos ?? 0);
 
       return {
-        period: { from: startOfMonth.toISOString(), to: startOfTomorrow.toISOString() },
+        period: {
+          from: startOfMonth.toISOString(),
+          to: startOfTomorrow.toISOString(),
+        },
         patients: {
           addedThisMonth: patientsThisMonth,
           addedLastMonth: patientsLastMonth,
@@ -148,13 +160,22 @@ export class ReportsService {
    * Top services by revenue for the window. Joins invoice_items × invoices
    * (only PAID/PARTIAL count toward revenue).
    */
-  async topServices(user: AuthenticatedUser, from?: Date, to?: Date, limit = 10) {
+  async topServices(
+    user: AuthenticatedUser,
+    from?: Date,
+    to?: Date,
+    limit = 10,
+  ) {
     const end = to ?? new Date();
     const start = from ?? new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const rows = await tx.$queryRaw<
-        Array<{ description: string; cents: bigint | number | null; n: bigint | number | null }>
+        Array<{
+          description: string;
+          cents: bigint | number | null;
+          n: bigint | number | null;
+        }>
       >`
         SELECT ii.description AS description,
                SUM(ii."totalCentavos") AS cents,

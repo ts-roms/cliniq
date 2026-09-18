@@ -46,8 +46,8 @@ export default function PricingPage() {
             Pricing for the whole care chain
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Plans for clinics and dental labs in one place. Pick your audience below.
-            30-day free trial on every tier. No credit card to start.
+            Plans for clinics and dental labs in one place. Pick your audience
+            below. 30-day free trial on every tier. No credit card to start.
           </p>
         </div>
       </section>
@@ -61,10 +61,13 @@ export default function PricingPage() {
           </h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Email{' '}
-            <a className="text-primary hover:underline" href="mailto:hello@cliniq.app">
+            <a
+              className="text-primary hover:underline"
+              href="mailto:hello@cliniq.app"
+            >
               hello@cliniq.app
-            </a>
-            {' '}or start a 30-day trial — no credit card required.
+            </a>{' '}
+            or start a 30-day trial — no credit card required.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild className="h-11 px-6">

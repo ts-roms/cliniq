@@ -9,7 +9,12 @@ interface Props {
   isFetching: boolean;
 }
 
-export function PatientsSearch({ value, onChange, onRefresh, isFetching }: Props) {
+export function PatientsSearch({
+  value,
+  onChange,
+  onRefresh,
+  isFetching,
+}: Props) {
   return (
     <div className="mb-4 flex gap-2">
       <Input

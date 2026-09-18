@@ -19,7 +19,8 @@ export function useRequiredPortalSession(): Session | null {
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
 
-  const isPortalUser = session && session.user.role === 'PATIENT' && session.user.patientId;
+  const isPortalUser =
+    session && session.user.role === 'PATIENT' && session.user.patientId;
 
   useEffect(() => {
     setHydrated(true);

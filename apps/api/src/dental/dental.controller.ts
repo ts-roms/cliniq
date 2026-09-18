@@ -47,7 +47,11 @@ export class DentalController {
   @Post('patients/:patientId/dental-chart')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'dental.chart.upsert', entity: 'DentalChart', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'dental.chart.upsert',
+    entity: 'DentalChart',
+    entityIdFrom: 'result:id',
+  })
   upsert(
     @Param('patientId') p: string,
     @Body() dto: UpsertDentalChartDto,
@@ -66,7 +70,11 @@ export class DentalController {
   @Delete('dental-charts/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'dental.chart.delete', entity: 'DentalChart', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'dental.chart.delete',
+    entity: 'DentalChart',
+    entityIdFrom: 'param:id',
+  })
   remove(@Param('id') id: string, @CurrentUser() u: AuthenticatedUser) {
     return this.dental.softDelete(id, u);
   }

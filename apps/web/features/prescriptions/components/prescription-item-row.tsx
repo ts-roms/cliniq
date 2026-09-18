@@ -35,7 +35,10 @@ export function PrescriptionItemRow({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <FormField label="Drug name" error={itemErr?.drugName?.message}>
-          <Input placeholder="amoxicillin" {...register(`items.${index}.drugName`)} />
+          <Input
+            placeholder="amoxicillin"
+            {...register(`items.${index}.drugName`)}
+          />
         </FormField>
         <FormField label="Strength">
           <Input placeholder="500mg" {...register(`items.${index}.strength`)} />
@@ -61,7 +64,10 @@ export function PrescriptionItemRow({
           />
         </FormField>
         <FormField label="Quantity">
-          <Input placeholder="14 tabs" {...register(`items.${index}.quantity`)} />
+          <Input
+            placeholder="14 tabs"
+            {...register(`items.${index}.quantity`)}
+          />
         </FormField>
         <FormField label="Refills" error={itemErr?.refills?.message}>
           <Input
@@ -72,7 +78,10 @@ export function PrescriptionItemRow({
         </FormField>
       </div>
       <FormField label="Instructions">
-        <Input placeholder="after meals" {...register(`items.${index}.instructions`)} />
+        <Input
+          placeholder="after meals"
+          {...register(`items.${index}.instructions`)}
+        />
       </FormField>
     </div>
   );

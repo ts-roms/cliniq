@@ -32,7 +32,12 @@ export function NewItemDialog() {
     formState: { errors, isSubmitting },
   } = useForm<CreateItemInput, unknown, CreateItemOutput>({
     resolver: zodResolver(createItemSchema),
-    defaultValues: { unit: 'each', reorderLevel: 0, defaultPriceCentavos: 0, isControlled: false },
+    defaultValues: {
+      unit: 'each',
+      reorderLevel: 0,
+      defaultPriceCentavos: 0,
+      isControlled: false,
+    },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -69,11 +74,17 @@ export function NewItemDialog() {
             <FormField label="Category" error={errors.category?.message}>
               <Input placeholder="antibiotic" {...register('category')} />
             </FormField>
-            <FormField label="Reorder level" error={errors.reorderLevel?.message}>
+            <FormField
+              label="Reorder level"
+              error={errors.reorderLevel?.message}
+            >
               <Input type="number" {...register('reorderLevel')} />
             </FormField>
           </div>
-          <FormField label="Default price (centavos)" error={errors.defaultPriceCentavos?.message}>
+          <FormField
+            label="Default price (centavos)"
+            error={errors.defaultPriceCentavos?.message}
+          >
             <Input type="number" {...register('defaultPriceCentavos')} />
           </FormField>
           <label className="flex items-center gap-2 text-sm">
@@ -81,10 +92,16 @@ export function NewItemDialog() {
             <span>Controlled substance (extra logging on dispense)</span>
           </label>
           {create.error && (
-            <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(create.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || create.isPending}>

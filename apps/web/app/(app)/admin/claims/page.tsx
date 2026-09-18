@@ -8,7 +8,8 @@ export default function ClaimsAdminPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">HMO claims</h1>
         <p className="text-sm text-muted-foreground">
-          Filed against patient invoices · paid claims auto-reconcile to invoice balances
+          Filed against patient invoices · paid claims auto-reconcile to invoice
+          balances
         </p>
       </header>
 

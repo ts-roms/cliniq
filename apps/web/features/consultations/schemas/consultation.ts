@@ -23,7 +23,12 @@ export interface ConsultationDetail extends Consultation, SoapNote {
 export interface AiSuggestion {
   id: string;
   consultationId: string;
-  kind: 'SOAP_DRAFT' | 'TRIAGE' | 'INTERACTION_CHECK' | 'DERM_DIFFERENTIAL' | 'SUMMARY';
+  kind:
+    | 'SOAP_DRAFT'
+    | 'TRIAGE'
+    | 'INTERACTION_CHECK'
+    | 'DERM_DIFFERENTIAL'
+    | 'SUMMARY';
   status: 'PENDING' | 'ACCEPTED' | 'EDITED_ACCEPTED' | 'REJECTED';
   draftJson: Record<string, unknown>;
   promptVersion: string;

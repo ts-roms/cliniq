@@ -63,7 +63,9 @@ export function useCreatePatient() {
   return useMutation({
     mutationFn: async (input: CreatePatientInput) => {
       const { data, error } = await patientsControllerCreate({
-        body: normalizeBody(input) as Parameters<typeof patientsControllerCreate>[0]['body'],
+        body: normalizeBody(input) as Parameters<
+          typeof patientsControllerCreate
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Create failed');
       return data;
@@ -80,7 +82,9 @@ export function useUpdatePatient(id: string) {
     mutationFn: async (input: UpdatePatientInput) => {
       const { data, error } = await patientsControllerUpdate({
         path: { id },
-        body: normalizeBody(input) as Parameters<typeof patientsControllerUpdate>[0]['body'],
+        body: normalizeBody(input) as Parameters<
+          typeof patientsControllerUpdate
+        >[0]['body'],
       });
       if (error || !data) throw new Error('Update failed');
       return data;
@@ -95,7 +99,9 @@ export function useUpdatePatient(id: string) {
 export function useExportPatient() {
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await patientsControllerExportRecord({ path: { id } });
+      const { data, error } = await patientsControllerExportRecord({
+        path: { id },
+      });
       if (error || !data) throw new Error('Export failed');
       return data as unknown as { patient: { mrn: string } };
     },

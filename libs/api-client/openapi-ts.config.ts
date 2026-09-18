@@ -9,9 +9,5 @@ export default defineConfig({
     postProcess: ['prettier'],
     clean: true,
   },
-  plugins: [
-    '@hey-api/typescript',
-    '@hey-api/sdk',
-    '@hey-api/client-fetch',
-  ],
+  plugins: ['@hey-api/typescript', '@hey-api/sdk', '@hey-api/client-fetch'],
 });

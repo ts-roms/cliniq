@@ -21,7 +21,13 @@ import {
   type LabInvoiceStatus,
 } from '@/features/lab';
 
-const STATUSES: LabInvoiceStatus[] = ['DRAFT', 'ISSUED', 'PAID', 'OVERDUE', 'VOID'];
+const STATUSES: LabInvoiceStatus[] = [
+  'DRAFT',
+  'ISSUED',
+  'PAID',
+  'OVERDUE',
+  'VOID',
+];
 
 function formatMoney(cents: number, currency: string): string {
   const formatter = new Intl.NumberFormat('en-PH', {
@@ -68,7 +74,9 @@ export default function LabBillingPage() {
             <span>Invoices</span>
             <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value as LabInvoiceStatus | 'all')}
+              onChange={(e) =>
+                setStatus(e.target.value as LabInvoiceStatus | 'all')
+              }
               className="w-44"
             >
               <option value="all">All statuses</option>
@@ -81,9 +89,13 @@ export default function LabBillingPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">
@@ -112,7 +124,9 @@ export default function LabBillingPage() {
                           href={`/lab/billing/${inv.id}`}
                           className="text-primary hover:underline"
                         >
-                          {inv.refNumber !== null ? `INV-${inv.refNumber}` : 'Draft'}
+                          {inv.refNumber !== null
+                            ? `INV-${inv.refNumber}`
+                            : 'Draft'}
                         </Link>
                       </td>
                       <td className="py-2 pr-3">{inv.clinic?.name ?? '—'}</td>
@@ -126,7 +140,9 @@ export default function LabBillingPage() {
                         {formatMoney(inv.paidCents, inv.currency)}
                       </td>
                       <td className="py-2 pr-3 text-xs text-muted-foreground">
-                        {inv.dueAt ? new Date(inv.dueAt).toLocaleDateString() : '—'}
+                        {inv.dueAt
+                          ? new Date(inv.dueAt).toLocaleDateString()
+                          : '—'}
                       </td>
                       <td className="py-2 pr-3 text-xs text-muted-foreground">
                         {new Date(inv.createdAt).toLocaleDateString()}
@@ -306,9 +322,11 @@ function GenerateFromCases({ onDone }: { onDone: () => void }) {
                         {c.patientLabel ?? '—'}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
-                        {c.unitPrice !== null
-                          ? formatMoney(c.unitPrice, c.currency)
-                          : <span className="text-amber-600">no price</span>}
+                        {c.unitPrice !== null ? (
+                          formatMoney(c.unitPrice, c.currency)
+                        ) : (
+                          <span className="text-amber-600">no price</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -326,7 +344,8 @@ function GenerateFromCases({ onDone }: { onDone: () => void }) {
 
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
-            {selected.size} case{selected.size === 1 ? '' : 's'} selected — subtotal{' '}
+            {selected.size} case{selected.size === 1 ? '' : 's'} selected —
+            subtotal{' '}
             <span className="font-medium text-foreground tabular-nums">
               {formatMoney(total, 'PHP')}
             </span>

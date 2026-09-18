@@ -18,10 +18,7 @@ import {
   type AuthenticatedUser,
 } from '../auth/decorators/current-user.decorator.js';
 import { LocationsService } from './locations.service.js';
-import {
-  CreateLocationDto,
-  UpdateLocationDto,
-} from './dto/location.dto.js';
+import { CreateLocationDto, UpdateLocationDto } from './dto/location.dto.js';
 
 @ApiTags('locations')
 @ApiBearerAuth('jwt')
@@ -39,14 +36,22 @@ export class LocationsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'location.create', entity: 'Location', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'location.create',
+    entity: 'Location',
+    entityIdFrom: 'result:id',
+  })
   create(@Body() dto: CreateLocationDto, @CurrentUser() u: AuthenticatedUser) {
     return this.locations.create(dto, u);
   }
 
   @Patch(':id')
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'location.update', entity: 'Location', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'location.update',
+    entity: 'Location',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateLocationDto,
@@ -58,7 +63,11 @@ export class LocationsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'location.delete', entity: 'Location', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'location.delete',
+    entity: 'Location',
+    entityIdFrom: 'param:id',
+  })
   remove(@Param('id') id: string, @CurrentUser() u: AuthenticatedUser) {
     return this.locations.remove(id, u);
   }

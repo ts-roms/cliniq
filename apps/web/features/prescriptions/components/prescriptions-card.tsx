@@ -82,14 +82,20 @@ function PrescriptionRow({
         {rx.items.map((item) => (
           <li key={item.id}>
             {item.drugName}
-            {item.strength ? ` ${item.strength}` : ''} — {item.dose} {item.frequency}
+            {item.strength ? ` ${item.strength}` : ''} — {item.dose}{' '}
+            {item.frequency}
             {item.durationDays ? ` × ${item.durationDays}d` : ''}
           </li>
         ))}
       </ul>
       {rx.status === 'ISSUED' && (
         <div className="mt-2 flex justify-end">
-          <Button size="sm" variant="ghost" onClick={onCancel} disabled={isCancelling}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onCancel}
+            disabled={isCancelling}
+          >
             {isCancelling ? 'Cancelling…' : 'Cancel'}
           </Button>
         </div>

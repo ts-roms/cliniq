@@ -33,7 +33,9 @@ export function TabBar<T extends string>({ tabs, active, onChange }: Props<T>) {
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
             className={`flex-1 items-center py-2.5 ${
-              isActive ? 'border-t-2 border-primary bg-primary/5' : 'border-t-2 border-transparent'
+              isActive
+                ? 'border-t-2 border-primary bg-primary/5'
+                : 'border-t-2 border-transparent'
             }`}
           >
             <View className="items-center">

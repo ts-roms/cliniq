@@ -53,13 +53,19 @@ export function SubscribeFeedButton({ providerId }: { providerId?: string }) {
             Outlook, or Apple Calendar. Refreshes automatically.
           </DialogDescription>
         </DialogHeader>
-        {issue.isPending && <p className="text-sm text-muted-foreground">Generating…</p>}
+        {issue.isPending && (
+          <p className="text-sm text-muted-foreground">Generating…</p>
+        )}
         {issue.error && (
-          <p className="text-sm text-destructive">{(issue.error as Error).message}</p>
+          <p className="text-sm text-destructive">
+            {(issue.error as Error).message}
+          </p>
         )}
         {url && (
           <div className="space-y-2">
-            <code className="block break-all rounded bg-muted/40 p-2 text-xs">{url}</code>
+            <code className="block break-all rounded bg-muted/40 p-2 text-xs">
+              {url}
+            </code>
             <Button
               type="button"
               size="sm"
@@ -69,8 +75,9 @@ export function SubscribeFeedButton({ providerId }: { providerId?: string }) {
               Copy URL
             </Button>
             <p className="text-xs text-muted-foreground">
-              Anyone with this URL can read the appointments. Treat it like a password —
-              if leaked, rotate the server's JWT_SECRET to invalidate all feeds.
+              Anyone with this URL can read the appointments. Treat it like a
+              password — if leaked, rotate the server's JWT_SECRET to invalidate
+              all feeds.
             </p>
           </div>
         )}

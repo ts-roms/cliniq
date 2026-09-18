@@ -42,7 +42,10 @@ export function NavRail<T extends string>({
             </Text>
           </View>
           {expanded && (
-            <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>
+            <Text
+              className="text-sm font-semibold text-foreground"
+              numberOfLines={1}
+            >
               {brand}
             </Text>
           )}
@@ -58,9 +61,7 @@ export function NavRail<T extends string>({
               onPress={() => onChange(tab.key)}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
-              className={`rounded-xl ${
-                isActive ? 'bg-primary/10' : ''
-              } ${
+              className={`rounded-xl ${isActive ? 'bg-primary/10' : ''} ${
                 expanded
                   ? 'flex-row items-center gap-3 px-3 py-2.5'
                   : 'items-center px-2 py-3'

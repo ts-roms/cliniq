@@ -88,7 +88,10 @@ export class LabProductsController {
     entity: 'LabProductCategory',
     entityIdFrom: 'param:id',
   })
-  removeCategory(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  removeCategory(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.products.removeCategory(id, user);
   }
 
@@ -153,7 +156,10 @@ export class LabProductsController {
     entity: 'LabProduct',
     entityIdFrom: 'param:id',
   })
-  removeProduct(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  removeProduct(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.products.removeProduct(id, user);
   }
 
@@ -165,7 +171,10 @@ export class LabProductsController {
     entity: 'LabProduct',
     entityIdFrom: 'result:id',
   })
-  cloneProduct(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  cloneProduct(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.products.cloneProduct(id, user);
   }
 }

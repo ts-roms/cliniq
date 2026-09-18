@@ -20,7 +20,10 @@ export interface PatientConsent {
   updatedAt: string;
 }
 
-export const CONSENT_LABELS: Record<ConsentType, { label: string; help: string }> = {
+export const CONSENT_LABELS: Record<
+  ConsentType,
+  { label: string; help: string }
+> = {
   TREATMENT: {
     label: 'Treatment record processing',
     help: 'Required. Allows the clinic to record care delivered to this patient.',

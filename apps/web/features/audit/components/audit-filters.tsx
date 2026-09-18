@@ -80,7 +80,9 @@ export function AuditFilters({ filter, onChange }: Props) {
           <p className="mb-1 text-xs text-muted-foreground">Action</p>
           <Select
             value={filter.action ?? ''}
-            onChange={(e) => onChange({ ...filter, action: e.target.value, cursor: 0 })}
+            onChange={(e) =>
+              onChange({ ...filter, action: e.target.value, cursor: 0 })
+            }
           >
             {ACTION_PREFIXES.map((p) => (
               <option key={p} value={p}>
@@ -94,7 +96,11 @@ export function AuditFilters({ filter, onChange }: Props) {
           <Input
             value={filter.entityType ?? ''}
             onChange={(e) =>
-              onChange({ ...filter, entityType: e.target.value || undefined, cursor: 0 })
+              onChange({
+                ...filter,
+                entityType: e.target.value || undefined,
+                cursor: 0,
+              })
             }
             placeholder="e.g. Patient"
           />
@@ -104,7 +110,11 @@ export function AuditFilters({ filter, onChange }: Props) {
           <Input
             value={filter.entityId ?? ''}
             onChange={(e) =>
-              onChange({ ...filter, entityId: e.target.value || undefined, cursor: 0 })
+              onChange({
+                ...filter,
+                entityId: e.target.value || undefined,
+                cursor: 0,
+              })
             }
             placeholder="cl..."
           />
@@ -114,7 +124,11 @@ export function AuditFilters({ filter, onChange }: Props) {
           <Input
             value={filter.userId ?? ''}
             onChange={(e) =>
-              onChange({ ...filter, userId: e.target.value || undefined, cursor: 0 })
+              onChange({
+                ...filter,
+                userId: e.target.value || undefined,
+                cursor: 0,
+              })
             }
             placeholder="cl..."
           />
@@ -127,7 +141,11 @@ export function AuditFilters({ filter, onChange }: Props) {
             type="datetime-local"
             value={filter.since ?? ''}
             onChange={(e) =>
-              onChange({ ...filter, since: e.target.value || undefined, cursor: 0 })
+              onChange({
+                ...filter,
+                since: e.target.value || undefined,
+                cursor: 0,
+              })
             }
           />
         </div>
@@ -137,7 +155,11 @@ export function AuditFilters({ filter, onChange }: Props) {
             type="datetime-local"
             value={filter.until ?? ''}
             onChange={(e) =>
-              onChange({ ...filter, until: e.target.value || undefined, cursor: 0 })
+              onChange({
+                ...filter,
+                until: e.target.value || undefined,
+                cursor: 0,
+              })
             }
           />
         </div>

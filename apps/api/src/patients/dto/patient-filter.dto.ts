@@ -1,9 +1,18 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PatientFilterDto {
-  @ApiPropertyOptional({ description: 'Free-text search across name, phone, MRN' })
+  @ApiPropertyOptional({
+    description: 'Free-text search across name, phone, MRN',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(80)

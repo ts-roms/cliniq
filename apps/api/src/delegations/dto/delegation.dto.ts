@@ -10,7 +10,9 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDelegationDto {
-  @ApiProperty({ description: 'User receiving the delegation (assistant/secretary)' })
+  @ApiProperty({
+    description: 'User receiving the delegation (assistant/secretary)',
+  })
   @IsString()
   delegateeId!: string;
 
@@ -32,7 +34,8 @@ export class CreateDelegationDto {
 
   @ApiPropertyOptional({
     type: [String],
-    description: 'Empty = full proxy. Otherwise list of Action strings to permit.',
+    description:
+      'Empty = full proxy. Otherwise list of Action strings to permit.',
   })
   @IsOptional()
   @IsArray()

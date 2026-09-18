@@ -31,7 +31,8 @@ export function AiBudgetCard() {
     );
   }
 
-  const ratio = data.budgetCentavos === 0 ? 0 : data.spentCentavos / data.budgetCentavos;
+  const ratio =
+    data.budgetCentavos === 0 ? 0 : data.spentCentavos / data.budgetCentavos;
   const tone =
     data.hardStopped || ratio >= 1
       ? 'bg-destructive'
@@ -44,7 +45,9 @@ export function AiBudgetCard() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-baseline justify-between">
-        <CardTitle className="text-base">AI budget · {data.monthYear}</CardTitle>
+        <CardTitle className="text-base">
+          AI budget · {data.monthYear}
+        </CardTitle>
         <span className="text-xs text-muted-foreground">
           {(ratio * 100).toFixed(0)}% used
         </span>
@@ -66,7 +69,8 @@ export function AiBudgetCard() {
         </div>
         {data.hardStopped && (
           <p className="rounded bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            AI generation paused — monthly cap reached. Upgrade plan or wait for next cycle.
+            AI generation paused — monthly cap reached. Upgrade plan or wait for
+            next cycle.
           </p>
         )}
       </CardContent>

@@ -1,10 +1,5 @@
 import { forwardRef, useState } from 'react';
-import {
-  Pressable,
-  TextInput,
-  type TextInputProps,
-  View,
-} from 'react-native';
+import { Pressable, TextInput, type TextInputProps, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useT } from '../i18n';
 
@@ -28,13 +23,19 @@ export const PasswordInput = forwardRef<TextInput, PasswordInputProps>(
         />
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={visible ? t('auth.hide_password') : t('auth.show_password')}
+          accessibilityLabel={
+            visible ? t('auth.hide_password') : t('auth.show_password')
+          }
           accessibilityState={{ selected: visible }}
           onPress={() => setVisible((v) => !v)}
           className="absolute inset-y-0 right-0 items-center justify-center px-3"
           hitSlop={8}
         >
-          <Feather name={visible ? 'eye-off' : 'eye'} size={18} color="#6b7280" />
+          <Feather
+            name={visible ? 'eye-off' : 'eye'}
+            size={18}
+            color="#6b7280"
+          />
         </Pressable>
       </View>
     );

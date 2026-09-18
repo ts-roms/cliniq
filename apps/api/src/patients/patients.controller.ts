@@ -35,27 +35,45 @@ export class PatientsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'patient.create', entity: 'Patient', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreatePatientDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'patient.create',
+    entity: 'Patient',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreatePatientDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.patients.create(dto, user);
   }
 
   @Get()
   @Requires(Actions.PATIENT_READ)
-  list(@Query() filter: PatientFilterDto, @CurrentUser() user: AuthenticatedUser) {
+  list(
+    @Query() filter: PatientFilterDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.patients.list(filter, user);
   }
 
   @Get(':id')
   @Requires(Actions.PATIENT_READ)
-  @Audit({ action: 'patient.read', entity: 'Patient', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'patient.read',
+    entity: 'Patient',
+    entityIdFrom: 'param:id',
+  })
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.patients.findById(id, user);
   }
 
   @Patch(':id')
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'patient.update', entity: 'Patient', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'patient.update',
+    entity: 'Patient',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdatePatientDto,
@@ -67,7 +85,11 @@ export class PatientsController {
   @Get(':id/export')
   @Requires(Actions.PATIENT_READ)
   @ApiQuery({ name: 'format', enum: ['json', 'pdf'], required: false })
-  @Audit({ action: 'patient.export', entity: 'Patient', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'patient.export',
+    entity: 'Patient',
+    entityIdFrom: 'param:id',
+  })
   async exportRecord(
     @Param('id') id: string,
     @Query('format') format: 'json' | 'pdf' = 'json',
@@ -91,7 +113,11 @@ export class PatientsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'patient.delete', entity: 'Patient', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'patient.delete',
+    entity: 'Patient',
+    entityIdFrom: 'param:id',
+  })
   remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.patients.softDelete(id, user);
   }

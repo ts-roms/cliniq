@@ -1,4 +1,12 @@
-import { IsEmail, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { LabPlan, Plan, TenantKind } from '@org/db';
 
 export class CreateTenantDto {
@@ -6,7 +14,8 @@ export class CreateTenantDto {
   @MinLength(3)
   @MaxLength(40)
   @Matches(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, {
-    message: 'slug must be lowercase alphanumeric, hyphens allowed (not at edges)',
+    message:
+      'slug must be lowercase alphanumeric, hyphens allowed (not at edges)',
   })
   slug!: string;
 

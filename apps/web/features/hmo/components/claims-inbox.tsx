@@ -61,7 +61,9 @@ export function ClaimsInbox() {
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
       {data && visible.length === 0 && (
         <p className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
           No claims in this view.
@@ -116,9 +118,13 @@ function ClaimRow({ claim }: { claim: HmoClaim }) {
           <p className="text-xs text-muted-foreground">{claim.patient.mrn}</p>
         )}
       </td>
-      <td className="px-4 py-3 text-sm">{claim.provider?.name ?? claim.providerId}</td>
+      <td className="px-4 py-3 text-sm">
+        {claim.provider?.name ?? claim.providerId}
+      </td>
       <td className="px-4 py-3">
-        <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[claim.status]}`}>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[claim.status]}`}
+        >
           {claim.status}
         </span>
       </td>

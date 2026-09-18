@@ -85,7 +85,9 @@ export function saveSession(session: Session): void {
   notify();
   // Fire-and-forget. If the write fails the user re-logs in next launch;
   // not catastrophic.
-  void SecureStore.setItemAsync(KEY, JSON.stringify(session)).catch(() => undefined);
+  void SecureStore.setItemAsync(KEY, JSON.stringify(session)).catch(
+    () => undefined,
+  );
 }
 
 export function clearSession(): void {

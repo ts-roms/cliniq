@@ -55,7 +55,8 @@ export function useAcceptInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.acceptInvitation(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'clinic-invitations'] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'clinic-invitations'] }),
   });
 }
 
@@ -63,7 +64,8 @@ export function useRejectInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.rejectInvitation(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'clinic-invitations'] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'clinic-invitations'] }),
   });
 }
 
@@ -168,8 +170,13 @@ export function useLabCase(id: string | null) {
 export function useTransitionLabCase(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ status, reason }: { status: LabCaseStatus; reason?: string }) =>
-      api.transitionLabCase(id, status, reason),
+    mutationFn: ({
+      status,
+      reason,
+    }: {
+      status: LabCaseStatus;
+      reason?: string;
+    }) => api.transitionLabCase(id, status, reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEY, 'case', id] });
       qc.invalidateQueries({ queryKey: [...KEY, 'cases', 'lab'] });
@@ -179,7 +186,10 @@ export function useTransitionLabCase(id: string) {
 
 // ── Phases ──────────────────────────────────────────────────
 
-export function useLabCasePhases(caseId: string | null, side: 'lab' | 'clinic') {
+export function useLabCasePhases(
+  caseId: string | null,
+  side: 'lab' | 'clinic',
+) {
   return useQuery({
     queryKey: [...KEY, 'phases', side, caseId],
     queryFn: () =>
@@ -217,7 +227,8 @@ export function useCreateLabCaseNote(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: string) => api.createLabCaseNote(caseId, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'notes', caseId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'notes', caseId] }),
   });
 }
 
@@ -226,7 +237,8 @@ export function useUpdateLabCaseNote(caseId: string) {
   return useMutation({
     mutationFn: ({ noteId, body }: { noteId: string; body: string }) =>
       api.updateLabCaseNote(caseId, noteId, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'notes', caseId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'notes', caseId] }),
   });
 }
 
@@ -234,13 +246,17 @@ export function useDeleteLabCaseNote(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (noteId: string) => api.deleteLabCaseNote(caseId, noteId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'notes', caseId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'notes', caseId] }),
   });
 }
 
 // ── Chat ────────────────────────────────────────────────────
 
-export function useLabCaseMessages(caseId: string | null, side: 'lab' | 'clinic') {
+export function useLabCaseMessages(
+  caseId: string | null,
+  side: 'lab' | 'clinic',
+) {
   return useQuery({
     queryKey: [...KEY, 'messages', side, caseId],
     queryFn: () =>
@@ -311,7 +327,10 @@ export function useDeleteConsentTemplate() {
   });
 }
 
-export function useCaseSignatures(caseId: string | null, side: 'lab' | 'clinic') {
+export function useCaseSignatures(
+  caseId: string | null,
+  side: 'lab' | 'clinic',
+) {
   return useQuery({
     queryKey: [...KEY, 'signatures', side, caseId],
     queryFn: () =>
@@ -330,8 +349,7 @@ export function useCaptureClinicCaseSignature(caseId: string) {
       signedByRole?: string;
       signatureFileKey: string;
     }) => api.captureClinicCaseSignature(caseId, input),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: [...KEY, 'signatures'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'signatures'] }),
   });
 }
 
@@ -423,7 +441,8 @@ export function useRecordCaseMaterialUsage(caseId: string) {
 export function useDeleteCaseMaterialUsage(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (usageId: string) => api.deleteCaseMaterialUsage(caseId, usageId),
+    mutationFn: (usageId: string) =>
+      api.deleteCaseMaterialUsage(caseId, usageId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEY, 'usages', caseId] });
       qc.invalidateQueries({ queryKey: [...KEY, 'lots'] });
@@ -434,7 +453,10 @@ export function useDeleteCaseMaterialUsage(caseId: string) {
 
 // ── Shipments ───────────────────────────────────────────────
 
-export function useLabCaseShipment(caseId: string | null, side: 'lab' | 'clinic') {
+export function useLabCaseShipment(
+  caseId: string | null,
+  side: 'lab' | 'clinic',
+) {
   return useQuery({
     queryKey: [...KEY, 'shipment', side, caseId],
     queryFn: () =>
@@ -453,12 +475,14 @@ export function useUpsertLabCaseShipment(caseId: string) {
       trackingNumber?: string | null;
       notes?: string | null;
     }) => api.upsertLabCaseShipment(caseId, input),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: [...KEY, 'shipment'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'shipment'] }),
   });
 }
 
-export function useMarkLabCaseDelivered(caseId: string, side: 'lab' | 'clinic') {
+export function useMarkLabCaseDelivered(
+  caseId: string,
+  side: 'lab' | 'clinic',
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () =>
@@ -494,15 +518,21 @@ export function useCreateClinicCase() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateCaseInput) => api.createClinicCase(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'cases', 'clinic'] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'cases', 'clinic'] }),
   });
 }
 
 export function useTransitionClinicCase(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ status, reason }: { status: LabCaseStatus; reason?: string }) =>
-      api.transitionClinicCase(id, status, reason),
+    mutationFn: ({
+      status,
+      reason,
+    }: {
+      status: LabCaseStatus;
+      reason?: string;
+    }) => api.transitionClinicCase(id, status, reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEY, 'clinic-case', id] });
       qc.invalidateQueries({ queryKey: [...KEY, 'cases', 'clinic'] });
@@ -538,7 +568,8 @@ export function useCreateLabInvoice() {
 export function useGenerateInvoiceFromCases() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: GenerateFromCasesInput) => api.generateInvoiceFromCases(input),
+    mutationFn: (input: GenerateFromCasesInput) =>
+      api.generateInvoiceFromCases(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'invoices'] }),
   });
 }
@@ -546,8 +577,11 @@ export function useGenerateInvoiceFromCases() {
 export function useUpdateLabInvoice(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { dueAt?: string | null; notes?: string | null; taxCents?: number }) =>
-      api.updateLabInvoice(id, input),
+    mutationFn: (input: {
+      dueAt?: string | null;
+      notes?: string | null;
+      taxCents?: number;
+    }) => api.updateLabInvoice(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] });
       qc.invalidateQueries({ queryKey: [...KEY, 'invoices'] });
@@ -569,8 +603,13 @@ export function useAddLabInvoiceItem(id: string) {
 export function useUpdateLabInvoiceItem(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ itemId, input }: { itemId: string; input: Partial<InvoiceItemInput> }) =>
-      api.updateLabInvoiceItem(id, itemId, input),
+    mutationFn: ({
+      itemId,
+      input,
+    }: {
+      itemId: string;
+      input: Partial<InvoiceItemInput>;
+    }) => api.updateLabInvoiceItem(id, itemId, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] });
       qc.invalidateQueries({ queryKey: [...KEY, 'invoices'] });
@@ -603,8 +642,11 @@ export function useIssueLabInvoice(id: string) {
 export function useRecordLabInvoicePayment(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { amountCents: number; paidAt?: string; reference?: string }) =>
-      api.recordLabInvoicePayment(id, input),
+    mutationFn: (input: {
+      amountCents: number;
+      paidAt?: string;
+      reference?: string;
+    }) => api.recordLabInvoicePayment(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] });
       qc.invalidateQueries({ queryKey: [...KEY, 'invoices'] });
@@ -633,7 +675,8 @@ export function useCreateLabPaymentLink(id: string) {
       url?: string;
       expiresAt?: string;
     }) => api.createLabPaymentLink(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] }),
   });
 }
 
@@ -641,7 +684,8 @@ export function useCancelLabPaymentLink(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (linkId: string) => api.cancelLabPaymentLink(id, linkId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'invoice', 'lab', id] }),
   });
 }
 
@@ -678,7 +722,8 @@ export function useGetClinicInvoicePdf(id: string) {
 
 export function useRenderConformityPdf(caseId: string) {
   return useMutation({
-    mutationFn: (templateId?: string) => api.renderConformityPdf(caseId, templateId),
+    mutationFn: (templateId?: string) =>
+      api.renderConformityPdf(caseId, templateId),
   });
 }
 
@@ -740,7 +785,8 @@ export function useCreateLabTreatmentPlan() {
   return useMutation({
     mutationFn: (input: { caseId: string; title: string; summary: string }) =>
       api.createLabTreatmentPlan(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEY, 'treatment-plans'] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...KEY, 'treatment-plans'] }),
   });
 }
 
@@ -775,7 +821,9 @@ export function useDecideTreatmentPlan(id: string) {
       notes?: string;
     }) => api.decideTreatmentPlan(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...KEY, 'treatment-plan', 'clinic', id] });
+      qc.invalidateQueries({
+        queryKey: [...KEY, 'treatment-plan', 'clinic', id],
+      });
       qc.invalidateQueries({ queryKey: [...KEY, 'treatment-plans'] });
     },
   });
@@ -821,10 +869,7 @@ export function usePostLabDisputeMessage(
   });
 }
 
-export function useCloseLabDispute(
-  side: 'lab' | 'clinic',
-  disputeId: string,
-) {
+export function useCloseLabDispute(side: 'lab' | 'clinic', disputeId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: {

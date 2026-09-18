@@ -10,7 +10,9 @@ export class VerifyTotpDto {
 }
 
 export class DisableMfaDto {
-  @ApiProperty({ description: 'Current TOTP code (proves possession before disabling)' })
+  @ApiProperty({
+    description: 'Current TOTP code (proves possession before disabling)',
+  })
   @IsString()
   @Length(6, 6)
   @Matches(/^\d{6}$/)

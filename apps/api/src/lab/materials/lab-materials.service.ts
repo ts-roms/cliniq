@@ -65,7 +65,11 @@ export class LabMaterialsService {
     });
   }
 
-  async updateMaterial(id: string, dto: UpdateMaterialDto, user: AuthenticatedUser) {
+  async updateMaterial(
+    id: string,
+    dto: UpdateMaterialDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.labMaterial.findFirst({
         where: { id, deletedAt: null },
@@ -76,11 +80,17 @@ export class LabMaterialsService {
         data: {
           name: dto.name ?? existing.name,
           sku: dto.sku === undefined ? existing.sku : dto.sku,
-          category: dto.category === undefined ? existing.category : dto.category,
+          category:
+            dto.category === undefined ? existing.category : dto.category,
           unitOfMeasure: dto.unitOfMeasure ?? existing.unitOfMeasure,
-          description: dto.description === undefined ? existing.description : dto.description,
+          description:
+            dto.description === undefined
+              ? existing.description
+              : dto.description,
           defaultSupplier:
-            dto.defaultSupplier === undefined ? existing.defaultSupplier : dto.defaultSupplier,
+            dto.defaultSupplier === undefined
+              ? existing.defaultSupplier
+              : dto.defaultSupplier,
         },
       });
     });
@@ -115,7 +125,11 @@ export class LabMaterialsService {
     });
   }
 
-  async createLot(materialId: string, dto: CreateLotDto, user: AuthenticatedUser) {
+  async createLot(
+    materialId: string,
+    dto: CreateLotDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const material = await tx.labMaterial.findFirst({
         where: { id: materialId, deletedAt: null },
@@ -211,7 +225,11 @@ export class LabMaterialsService {
     });
   }
 
-  async recordUsage(caseId: string, dto: RecordUsageDto, user: AuthenticatedUser) {
+  async recordUsage(
+    caseId: string,
+    dto: RecordUsageDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const labCase = await tx.labCase.findFirst({
         where: { id: caseId, deletedAt: null, labTenantId: user.tenantId },

@@ -14,7 +14,7 @@ afterAll(async () => {
 });
 
 describe('OB happy path', () => {
-  it('creates a pregnancy with auto-EDD via Naegele\'s rule', async () => {
+  it("creates a pregnancy with auto-EDD via Naegele's rule", async () => {
     const { client } = await env.makeTenant({ plan: 'PREMIUM' });
 
     const patient = await client.axios.post('/api/patients', {
@@ -61,7 +61,9 @@ describe('OB happy path', () => {
       lmp: '2026-03-01',
     });
     expect(second.status).toBe(400);
-    expect(String(second.data.message)).toMatch(/already has an active pregnancy/i);
+    expect(String(second.data.message)).toMatch(
+      /already has an active pregnancy/i,
+    );
   });
 
   it('records a visit with auto-computed gestational age', async () => {

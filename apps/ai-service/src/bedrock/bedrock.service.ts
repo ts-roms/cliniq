@@ -9,12 +9,12 @@ import {
 
 export interface ConverseInput {
   systemPrompt: string;
-  systemPromptId: string;        // for prompt-cache key + audit
+  systemPromptId: string; // for prompt-cache key + audit
   userMessages: Message[];
-  modelId?: string;              // overrides default
+  modelId?: string; // overrides default
   maxTokens?: number;
   temperature?: number;
-  cacheSystemPrompt?: boolean;   // true → request prompt caching
+  cacheSystemPrompt?: boolean; // true → request prompt caching
 }
 
 export interface ConverseResult {

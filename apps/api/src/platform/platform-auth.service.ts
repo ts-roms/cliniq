@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@org/db';
 import {
@@ -90,8 +86,10 @@ export class PlatformAuthService {
 
   private async issueTokens(adminId: string, email: string) {
     const secret = this.config.getOrThrow<string>('JWT_SECRET');
-    const accessTtl = this.config.get<string>('PLATFORM_JWT_EXPIRES_IN') ?? '15m';
-    const refreshTtl = this.config.get<string>('PLATFORM_REFRESH_TOKEN_EXPIRES_IN') ?? '7d';
+    const accessTtl =
+      this.config.get<string>('PLATFORM_JWT_EXPIRES_IN') ?? '15m';
+    const refreshTtl =
+      this.config.get<string>('PLATFORM_REFRESH_TOKEN_EXPIRES_IN') ?? '7d';
 
     const access = await signPlatformJwt(
       { sub: adminId, email },
@@ -99,7 +97,11 @@ export class PlatformAuthService {
     );
     const refresh = await signPlatformJwt(
       { sub: adminId, email },
-      { secret, expiresIn: refreshTtl, audience: JWT_AUDIENCES.PLATFORM_REFRESH },
+      {
+        secret,
+        expiresIn: refreshTtl,
+        audience: JWT_AUDIENCES.PLATFORM_REFRESH,
+      },
     );
 
     this.logger.log(`Issued platform tokens for admin ${adminId}`);

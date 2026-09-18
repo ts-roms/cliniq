@@ -50,7 +50,10 @@ export default function PatientDetailPage({
         <p className="text-sm text-destructive">
           {(patient.error as Error)?.message ?? 'Patient not found'}
         </p>
-        <Link href="/patients" className="mt-3 inline-block text-sm text-primary underline">
+        <Link
+          href="/patients"
+          className="mt-3 inline-block text-sm text-primary underline"
+        >
           ← Back to patients
         </Link>
       </div>
@@ -66,7 +69,10 @@ export default function PatientDetailPage({
       />
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
         <PatientContactCard patient={patient.data} />
-        <ConsultationsCard items={consults.data} isLoading={consults.isLoading} />
+        <ConsultationsCard
+          items={consults.data}
+          isLoading={consults.isLoading}
+        />
         <ConsentsCard patientId={patient.data.id} />
         <VitalsCard patientId={patient.data.id} />
         <AllergiesCard patientId={patient.data.id} />

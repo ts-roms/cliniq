@@ -49,7 +49,10 @@ export class QueueController {
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TENANT_MANAGE)
   @Audit({ action: 'queue.create', entity: 'Queue', entityIdFrom: 'result:id' })
-  createQueue(@Body() dto: CreateQueueDto, @CurrentUser() user: AuthenticatedUser) {
+  createQueue(
+    @Body() dto: CreateQueueDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.queue.createQueue(dto, user);
   }
 

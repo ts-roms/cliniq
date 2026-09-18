@@ -12,10 +12,17 @@ interface Props {
   isStarting: boolean;
 }
 
-export function PatientHeader({ patient: p, onStartConsult, isStarting }: Props) {
+export function PatientHeader({
+  patient: p,
+  onStartConsult,
+  isStarting,
+}: Props) {
   return (
     <div className="mb-6">
-      <Link href="/patients" className="text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/patients"
+        className="text-sm text-muted-foreground hover:text-foreground"
+      >
         ← All patients
       </Link>
       <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">

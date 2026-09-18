@@ -3,12 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@org/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import {
   TenantEditForm,
   TenantFeaturesCard,
@@ -46,11 +41,11 @@ export default function TenantDetailPage() {
       <div>
         <h1 className="text-2xl font-semibold">{t.name}</h1>
         <p className="text-sm text-muted-foreground">
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{t.slug}</code> ·
-          {' '}
-          {t.userCount} users · {t.locationCount} locations · {t.patientCount} patients ·
-          {' '}
-          created {new Date(t.createdAt).toLocaleDateString()}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+            {t.slug}
+          </code>{' '}
+          · {t.userCount} users · {t.locationCount} locations · {t.patientCount}{' '}
+          patients · created {new Date(t.createdAt).toLocaleDateString()}
         </p>
       </div>
 

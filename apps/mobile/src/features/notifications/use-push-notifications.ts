@@ -73,7 +73,9 @@ export function usePushNotifications() {
         void (async () => {
           try {
             const deviceId = await getOrCreateDeviceId();
-            await notificationsControllerUnregisterPushToken({ body: { deviceId } });
+            await notificationsControllerUnregisterPushToken({
+              body: { deviceId },
+            });
           } catch {
             // ignore — token will get reaped server-side on next push if invalid
           }

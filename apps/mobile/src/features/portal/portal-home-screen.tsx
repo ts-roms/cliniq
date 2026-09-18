@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   meControllerAppointments,
   meControllerInvoices,
@@ -160,7 +166,9 @@ export function PortalHomeScreen() {
         ) : (
           upcoming.map((a) => (
             <View key={a.id} className="mt-1">
-              <Text className="text-sm text-foreground">{formatDateTime(a.startsAt)}</Text>
+              <Text className="text-sm text-foreground">
+                {formatDateTime(a.startsAt)}
+              </Text>
               <Text className="text-xs text-muted-foreground">
                 {a.type}
                 {a.reason ? ` · ${a.reason}` : ''}
@@ -177,7 +185,9 @@ export function PortalHomeScreen() {
         <Text className="mt-1 text-2xl font-semibold text-foreground">
           {formatCentavos(outstanding, invoices.data?.[0]?.currency)}
         </Text>
-        <Text className="text-xs text-muted-foreground">across unpaid invoices</Text>
+        <Text className="text-xs text-muted-foreground">
+          across unpaid invoices
+        </Text>
       </View>
     </ScrollView>
   );

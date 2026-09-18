@@ -45,8 +45,16 @@ export class BrandingDto {
   @Matches(/^#[0-9a-fA-F]{6}$/, { message: 'CSS hex e.g. #1f6feb' })
   primaryColor?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(500) logoUrl?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) tagline?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logoUrl?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  tagline?: string;
 }
 
 export class UpdateSettingsDto {
@@ -65,16 +73,23 @@ export class UpdateSettingsDto {
 
   @ApiPropertyOptional({
     type: [String],
-    description: 'PaymentMethod values: CASH, GCASH, MAYA, BANK_TRANSFER, CARD, HMO, INSURANCE, OTHER',
+    description:
+      'PaymentMethod values: CASH, GCASH, MAYA, BANK_TRANSFER, CARD, HMO, INSURANCE, OTHER',
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   acceptedPaymentMethods?: string[];
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(500) defaultInvoiceNotes?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  defaultInvoiceNotes?: string;
 
-  @ApiPropertyOptional({ description: 'PH VAT %; 12 typical, 0 for VAT-exempt' })
+  @ApiPropertyOptional({
+    description: 'PH VAT %; 12 typical, 0 for VAT-exempt',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -91,7 +106,9 @@ export class UpdateSettingsDto {
   @MaxLength(500)
   appointmentWebhookUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Free-form key/value extension; merged shallowly' })
+  @ApiPropertyOptional({
+    description: 'Free-form key/value extension; merged shallowly',
+  })
   @IsOptional()
   @IsObject()
   extras?: Record<string, unknown>;

@@ -10,7 +10,8 @@ import { patientKeys } from '@/features/patients/hooks/use-patients';
 
 export const consultationKeys = {
   all: ['consultations'] as const,
-  forPatient: (patientId: string) => ['consultations', 'patient', patientId] as const,
+  forPatient: (patientId: string) =>
+    ['consultations', 'patient', patientId] as const,
 };
 
 export function useConsultationsForPatient(patientId: string) {
@@ -37,8 +38,12 @@ export function useStartConsultation(patientId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consultationKeys.forPatient(patientId) });
-      queryClient.invalidateQueries({ queryKey: patientKeys.detail(patientId) });
+      queryClient.invalidateQueries({
+        queryKey: consultationKeys.forPatient(patientId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.detail(patientId),
+      });
     },
   });
 }

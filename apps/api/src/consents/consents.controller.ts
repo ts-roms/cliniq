@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Put, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Put,
+  Req,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { Actions } from '@org/auth';
@@ -19,14 +28,21 @@ export class ConsentsController {
 
   @Get()
   @Requires(Actions.PATIENT_READ)
-  list(@Param('patientId') patientId: string, @CurrentUser() user: AuthenticatedUser) {
+  list(
+    @Param('patientId') patientId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.consents.listForPatient(patientId, user);
   }
 
   @Put()
   @HttpCode(HttpStatus.OK)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'consent.set', entity: 'PatientConsent', entityIdFrom: 'param:patientId' })
+  @Audit({
+    action: 'consent.set',
+    entity: 'PatientConsent',
+    entityIdFrom: 'param:patientId',
+  })
   set(
     @Param('patientId') patientId: string,
     @Body() dto: SetConsentDto,

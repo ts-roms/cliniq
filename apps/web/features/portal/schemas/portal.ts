@@ -63,7 +63,12 @@ export interface MeInvoice {
 }
 
 export interface MeRecords {
-  allergies: Array<{ id: string; substance: string; severity: string; reaction: string | null }>;
+  allergies: Array<{
+    id: string;
+    substance: string;
+    severity: string;
+    reaction: string | null;
+  }>;
   medications: Array<{
     id: string;
     drugName: string;
@@ -91,7 +96,11 @@ export interface MeRecords {
     number: string;
     issuedAt: string;
     status: string;
-    items: Array<{ drugName: string; dose: string | null; frequency: string | null }>;
+    items: Array<{
+      drugName: string;
+      dose: string | null;
+      frequency: string | null;
+    }>;
   }>;
   labOrders: Array<{
     id: string;

@@ -37,14 +37,20 @@ function formatPhp(cents: number): string {
 export default function LabStatsPage() {
   const { data, isLoading, error } = useLabStats();
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error)
-    return <p className="text-sm text-destructive">{(error as Error).message}</p>;
+    return (
+      <p className="text-sm text-destructive">{(error as Error).message}</p>
+    );
   if (!data) return null;
 
   const totalRevenue = data.revenueByMonth.reduce((s, m) => s + m.cents, 0);
   const maxMonthCases = Math.max(1, ...data.casesByMonth.map((m) => m.count));
-  const maxMonthRevenue = Math.max(1, ...data.revenueByMonth.map((m) => m.cents));
+  const maxMonthRevenue = Math.max(
+    1,
+    ...data.revenueByMonth.map((m) => m.cents),
+  );
   const maxStatusCount = Math.max(1, ...Object.values(data.casesByStatus));
 
   return (
@@ -59,9 +65,21 @@ export default function LabStatsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard title="Open caseload" value={String(data.openCases)} hint="not yet delivered" />
-        <SummaryCard title="Outstanding" value={formatPhp(data.outstandingCents)} hint="issued + overdue, unpaid" />
-        <SummaryCard title="12-mo paid revenue" value={formatPhp(totalRevenue)} hint="sum of paidCents" />
+        <SummaryCard
+          title="Open caseload"
+          value={String(data.openCases)}
+          hint="not yet delivered"
+        />
+        <SummaryCard
+          title="Outstanding"
+          value={formatPhp(data.outstandingCents)}
+          hint="issued + overdue, unpaid"
+        />
+        <SummaryCard
+          title="12-mo paid revenue"
+          value={formatPhp(totalRevenue)}
+          hint="sum of paidCents"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -128,7 +146,9 @@ export default function LabStatsPage() {
         </CardHeader>
         <CardContent>
           {data.revenueByMonth.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No paid invoices yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No paid invoices yet.
+            </p>
           ) : (
             <div className="flex h-32 items-end gap-1">
               {data.revenueByMonth.map((m) => (
@@ -157,7 +177,9 @@ export default function LabStatsPage() {
         </CardHeader>
         <CardContent>
           {data.topClinics.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No clinic activity yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No clinic activity yet.
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -171,7 +193,9 @@ export default function LabStatsPage() {
                 {data.topClinics.map((c) => (
                   <tr key={c.clinicId} className="border-b last:border-0">
                     <td className="py-2 pr-3">{c.name}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{c.cases}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">
+                      {c.cases}
+                    </td>
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {formatPhp(c.revenueCents)}
                     </td>

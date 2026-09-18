@@ -24,7 +24,9 @@ export function PlatformNav() {
             <span className="text-sm font-semibold">P</span>
           </div>
           <div>
-            <div className="text-sm font-semibold leading-none">ClinIQ Platform</div>
+            <div className="text-sm font-semibold leading-none">
+              ClinIQ Platform
+            </div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
               Operator console
             </div>
@@ -32,7 +34,10 @@ export function PlatformNav() {
         </Link>
 
         <nav className="flex flex-1 items-center gap-1">
-          <NavLink href="/platform/dashboard" active={isActive('/platform/dashboard')}>
+          <NavLink
+            href="/platform/dashboard"
+            active={isActive('/platform/dashboard')}
+          >
             Tenants
           </NavLink>
         </nav>

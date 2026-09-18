@@ -80,12 +80,19 @@ export function ObCard({ patientId }: { patientId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {list.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {list.isLoading && (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        )}
         {list.error && (
-          <p className="text-sm text-destructive">{(list.error as Error).message}</p>
+          <p className="text-sm text-destructive">
+            {(list.error as Error).message}
+          </p>
         )}
         {showNew && !active && (
-          <NewPregnancyForm patientId={patientId} onDone={() => setShowNew(false)} />
+          <NewPregnancyForm
+            patientId={patientId}
+            onDone={() => setShowNew(false)}
+          />
         )}
         {active && <ActivePregnancy pregnancy={active} />}
         {list.data && list.data.length === 0 && !showNew && (
@@ -93,35 +100,36 @@ export function ObCard({ patientId }: { patientId: string }) {
             No pregnancies recorded yet.
           </p>
         )}
-        {list.data && list.data.filter((p) => p.status !== 'ACTIVE').length > 0 && (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              History
-            </div>
-            <ul className="mt-1 space-y-1 text-sm">
-              {list.data
-                .filter((p) => p.status !== 'ACTIVE')
-                .map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between border-b py-1 last:border-0"
-                  >
-                    <span>
-                      <span
-                        className={`mr-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_TONE[p.status]}`}
-                      >
-                        {p.status}
+        {list.data &&
+          list.data.filter((p) => p.status !== 'ACTIVE').length > 0 && (
+            <div className="mt-4">
+              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                History
+              </div>
+              <ul className="mt-1 space-y-1 text-sm">
+                {list.data
+                  .filter((p) => p.status !== 'ACTIVE')
+                  .map((p) => (
+                    <li
+                      key={p.id}
+                      className="flex items-center justify-between border-b py-1 last:border-0"
+                    >
+                      <span>
+                        <span
+                          className={`mr-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_TONE[p.status]}`}
+                        >
+                          {p.status}
+                        </span>
+                        EDD {fmtDate(p.edd)}
                       </span>
-                      EDD {fmtDate(p.edd)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      G{p.gravida ?? '?'}P{p.para ?? '?'}
-                    </span>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
+                      <span className="text-xs text-muted-foreground">
+                        G{p.gravida ?? '?'}P{p.para ?? '?'}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
       </CardContent>
     </Card>
   );
@@ -129,7 +137,9 @@ export function ObCard({ patientId }: { patientId: string }) {
   function ActivePregnancy({ pregnancy }: { pregnancy: Pregnancy }) {
     const [showVisit, setShowVisit] = useState(false);
     const update = useMutation({
-      mutationFn: async (status: 'DELIVERED' | 'MISCARRIED' | 'TERMINATED' | 'ECTOPIC') => {
+      mutationFn: async (
+        status: 'DELIVERED' | 'MISCARRIED' | 'TERMINATED' | 'ECTOPIC',
+      ) => {
         const { data, error } = await obControllerUpdate({
           path: { id: pregnancy.id },
           body: { status } as never,
@@ -158,7 +168,8 @@ export function ObCard({ patientId }: { patientId: string }) {
             size="sm"
             variant="outline"
             onClick={() => {
-              if (confirm('Mark this pregnancy DELIVERED?')) update.mutate('DELIVERED');
+              if (confirm('Mark this pregnancy DELIVERED?'))
+                update.mutate('DELIVERED');
             }}
           >
             Mark delivered
@@ -167,7 +178,8 @@ export function ObCard({ patientId }: { patientId: string }) {
             size="sm"
             variant="outline"
             onClick={() => {
-              if (confirm('Mark MISCARRIED? This is permanent.')) update.mutate('MISCARRIED');
+              if (confirm('Mark MISCARRIED? This is permanent.'))
+                update.mutate('MISCARRIED');
             }}
           >
             Miscarried
@@ -264,7 +276,9 @@ function NewPregnancyForm({
     >
       <div className="grid gap-2 md:grid-cols-2">
         <label className="block text-xs">
-          <span className="mb-1 block text-muted-foreground">LMP (last menstrual period)</span>
+          <span className="mb-1 block text-muted-foreground">
+            LMP (last menstrual period)
+          </span>
           <input
             type="date"
             value={lmp}
@@ -303,7 +317,9 @@ function NewPregnancyForm({
         </label>
       </div>
       {create.error && (
-        <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onDone}>
@@ -360,7 +376,9 @@ function NewVisitForm({
     >
       <div className="grid gap-2 md:grid-cols-3">
         <label className="block text-xs">
-          <span className="mb-1 block text-muted-foreground">Fundal height (cm)</span>
+          <span className="mb-1 block text-muted-foreground">
+            Fundal height (cm)
+          </span>
           <Input
             type="number"
             step="0.1"

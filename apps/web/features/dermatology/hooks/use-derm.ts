@@ -16,6 +16,8 @@ export function useGenerateDermDraft(consultationId: string) {
       return data;
     },
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ['consultations', consultationId, 'suggestions'] }),
+      qc.invalidateQueries({
+        queryKey: ['consultations', consultationId, 'suggestions'],
+      }),
   });
 }

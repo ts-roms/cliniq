@@ -177,7 +177,10 @@ export class LabComplianceController {
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string | undefined,
   ) {
-    return this.compliance.captureSignature(caseId, dto, user, { ip, userAgent });
+    return this.compliance.captureSignature(caseId, dto, user, {
+      ip,
+      userAgent,
+    });
   }
 
   @Post('lab/cases/:caseId/signatures')
@@ -195,7 +198,10 @@ export class LabComplianceController {
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string | undefined,
   ) {
-    return this.compliance.captureSignature(caseId, dto, user, { ip, userAgent });
+    return this.compliance.captureSignature(caseId, dto, user, {
+      ip,
+      userAgent,
+    });
   }
 
   // ── Conformity PDF render (lab-only) ────────────────────
@@ -214,6 +220,10 @@ export class LabComplianceController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('templateId') templateId?: string,
   ) {
-    return this.compliance.renderConformityPdf(caseId, templateId ?? null, user);
+    return this.compliance.renderConformityPdf(
+      caseId,
+      templateId ?? null,
+      user,
+    );
   }
 }

@@ -32,8 +32,12 @@ export default function PatientsPage() {
         isFetching={isFetching}
       />
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading patients…</p>}
-      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">Loading patients…</p>
+      )}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
       {data && data.items.length === 0 && <PatientsEmpty q={q} />}
       {data && data.items.length > 0 && <PatientsTable items={data.items} />}
     </div>

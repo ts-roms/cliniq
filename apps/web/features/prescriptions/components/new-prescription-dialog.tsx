@@ -56,7 +56,8 @@ export function NewPrescriptionDialog({
         <DialogHeader>
           <DialogTitle>Issue prescription</DialogTitle>
           <DialogDescription>
-            Safety check runs before submission. Urgent findings block — override only when clinically justified.
+            Safety check runs before submission. Urgent findings block —
+            override only when clinically justified.
           </DialogDescription>
         </DialogHeader>
         <PrescriptionForm
@@ -136,7 +137,10 @@ function PrescriptionForm({
       </div>
 
       <FormField label="Notes" error={errors.notes?.message}>
-        <Input placeholder="Optional notes for the patient" {...register('notes')} />
+        <Input
+          placeholder="Optional notes for the patient"
+          {...register('notes')}
+        />
       </FormField>
 
       <div className="space-y-2 border-t pt-3">
@@ -151,7 +155,11 @@ function PrescriptionForm({
             onClick={runPrecheck}
             disabled={precheck.isPending}
           >
-            {precheck.isPending ? 'Checking…' : findings ? 'Re-check' : 'Run safety check'}
+            {precheck.isPending
+              ? 'Checking…'
+              : findings
+                ? 'Re-check'
+                : 'Run safety check'}
           </Button>
         </div>
         {findings && <SafetyFindings findings={findings} />}
@@ -173,14 +181,19 @@ function PrescriptionForm({
       )}
 
       {create.error && (
-        <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
 
       <DialogFooter className="pt-2">
         <Button type="button" variant="outline" onClick={onDone}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting || create.isPending || (blocking && !override)}>
+        <Button
+          type="submit"
+          disabled={isSubmitting || create.isPending || (blocking && !override)}
+        >
           {create.isPending ? 'Issuing…' : 'Issue prescription'}
         </Button>
       </DialogFooter>

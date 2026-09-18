@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Select,
-} from '@org/ui';
+import { Card, CardContent, CardHeader, CardTitle, Select } from '@org/ui';
 import {
   InvoiceStatusPill,
   useClinicInvoices,
@@ -47,7 +41,9 @@ export default function ClinicLabInvoicesPage() {
             <span>Invoices</span>
             <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value as LabInvoiceStatus | 'all')}
+              onChange={(e) =>
+                setStatus(e.target.value as LabInvoiceStatus | 'all')
+              }
               className="w-44"
             >
               <option value="all">All statuses</option>
@@ -60,9 +56,13 @@ export default function ClinicLabInvoicesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">No invoices yet.</p>
@@ -89,7 +89,9 @@ export default function ClinicLabInvoicesPage() {
                           href={`/lab-invoices/${inv.id}`}
                           className="text-primary hover:underline"
                         >
-                          {inv.refNumber !== null ? `INV-${inv.refNumber}` : '—'}
+                          {inv.refNumber !== null
+                            ? `INV-${inv.refNumber}`
+                            : '—'}
                         </Link>
                       </td>
                       <td className="py-2 pr-3">{inv.lab?.name ?? '—'}</td>
@@ -103,7 +105,9 @@ export default function ClinicLabInvoicesPage() {
                         {formatMoney(inv.paidCents, inv.currency)}
                       </td>
                       <td className="py-2 pr-3 text-xs text-muted-foreground">
-                        {inv.dueAt ? new Date(inv.dueAt).toLocaleDateString() : '—'}
+                        {inv.dueAt
+                          ? new Date(inv.dueAt).toLocaleDateString()
+                          : '—'}
                       </td>
                       <td className="py-2 pr-3 text-xs text-muted-foreground">
                         {inv.issuedAt

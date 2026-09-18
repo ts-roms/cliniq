@@ -25,7 +25,9 @@ export const createPrescriptionSchema = z.object({
 // Use z.input for form values (pre-coercion) and z.output for the result that
 // hits the api. react-hook-form needs the input type so its registers match
 // raw <input> values (strings for number fields).
-export type CreatePrescriptionFormInput = z.input<typeof createPrescriptionSchema>;
+export type CreatePrescriptionFormInput = z.input<
+  typeof createPrescriptionSchema
+>;
 export type CreatePrescriptionInput = z.output<typeof createPrescriptionSchema>;
 export type PrescriptionItemInput = z.output<typeof prescriptionItemSchema>;
 

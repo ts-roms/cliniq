@@ -57,7 +57,8 @@ const STATUS_LABEL: Record<string, string> = {
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
@@ -82,19 +83,28 @@ export function LabTreatmentPlansScreen({
   return (
     <View className="flex-1 bg-background">
       <View className="flex-row items-center gap-3 border-b border-border bg-card px-6 pb-3 pt-4">
-        <TouchableOpacity onPress={onBack} className="rounded-md border border-border px-2 py-1">
+        <TouchableOpacity
+          onPress={onBack}
+          className="rounded-md border border-border px-2 py-1"
+        >
           <Text className="text-xs text-foreground">←</Text>
         </TouchableOpacity>
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-foreground">Treatment plans</Text>
-          <Text className="text-xs text-muted-foreground">Decide proposed plans here</Text>
+          <Text className="text-lg font-semibold text-foreground">
+            Treatment plans
+          </Text>
+          <Text className="text-xs text-muted-foreground">
+            Decide proposed plans here
+          </Text>
         </View>
       </View>
 
       <ScrollView className="flex-1 px-4 py-4">
         {list.isLoading && <ActivityIndicator className="mt-6" />}
         {list.error && (
-          <Text className="text-sm text-rose-700">{(list.error as Error).message}</Text>
+          <Text className="text-sm text-rose-700">
+            {(list.error as Error).message}
+          </Text>
         )}
         {!list.isLoading && list.data && list.data.length === 0 && (
           <Text className="mt-6 text-center text-sm text-muted-foreground">
@@ -115,7 +125,9 @@ function PlanCard({ plan }: { plan: TreatmentPlan }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   const decide = useMutation({
-    mutationFn: async (decision: 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED') => {
+    mutationFn: async (
+      decision: 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED',
+    ) => {
       const { data, error } = await clinicLabTreatmentPlansControllerDecide({
         path: { id: plan.id },
         body: { decision, notes: notes.trim() || undefined } as never,
@@ -146,7 +158,9 @@ function PlanCard({ plan }: { plan: TreatmentPlan }) {
       <View className="border-b border-border px-4 py-3">
         <View className="flex-row items-start justify-between">
           <View className="flex-1 pr-2">
-            <Text className="text-base font-semibold text-foreground">{plan.title}</Text>
+            <Text className="text-base font-semibold text-foreground">
+              {plan.title}
+            </Text>
             <Text className="mt-0.5 text-xs text-muted-foreground">
               {plan.proposedAt
                 ? `Proposed ${new Date(plan.proposedAt).toLocaleString()}`
@@ -154,7 +168,9 @@ function PlanCard({ plan }: { plan: TreatmentPlan }) {
               {plan.revision !== null && ` · rev ${plan.revision}`}
             </Text>
           </View>
-          <Text className={`text-xs font-medium ${STATUS_TONE[plan.status] ?? ''}`}>
+          <Text
+            className={`text-xs font-medium ${STATUS_TONE[plan.status] ?? ''}`}
+          >
             {STATUS_LABEL[plan.status] ?? plan.status}
           </Text>
         </View>
@@ -236,8 +252,10 @@ function PlanCard({ plan }: { plan: TreatmentPlan }) {
           {plan.approvals.map((a) => (
             <View key={a.id} className="mt-1">
               <Text className="text-xs text-foreground">
-                <Text className="font-medium">{a.decision.replace('_', ' ')}</Text> ·{' '}
-                {new Date(a.decidedAt).toLocaleString()}
+                <Text className="font-medium">
+                  {a.decision.replace('_', ' ')}
+                </Text>{' '}
+                · {new Date(a.decidedAt).toLocaleString()}
               </Text>
               {a.notes && (
                 <Text className="text-xs text-muted-foreground">{a.notes}</Text>

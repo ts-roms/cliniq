@@ -18,7 +18,7 @@ export class IcdCodesService {
     return this.prisma.icdCode.findMany({
       where: {
         OR: [
-          { code:        { startsWith: q.toUpperCase() } },
+          { code: { startsWith: q.toUpperCase() } },
           { description: { contains: q, mode: 'insensitive' } },
         ],
       },

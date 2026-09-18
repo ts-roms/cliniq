@@ -12,7 +12,9 @@ export class DecideAiSuggestionDto {
   @IsEnum(AiSuggestionDecision)
   decision!: AiSuggestionDecision;
 
-  @ApiPropertyOptional({ description: 'Final edited content if decision is EDIT_ACCEPT' })
+  @ApiPropertyOptional({
+    description: 'Final edited content if decision is EDIT_ACCEPT',
+  })
   @IsOptional()
   @IsObject()
   editedContent?: Record<string, unknown>;

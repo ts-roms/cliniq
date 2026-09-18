@@ -19,31 +19,37 @@ export class LabStatsService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const since = startOfMonthsAgo(12);
 
-      const [casesByStatus, openCases, recentMonthlyCases, recentMonthlyRevenue, topClinics, outstandingTotal] =
-        await Promise.all([
-          // Cases-by-status histogram (lifetime).
-          tx.labCase.groupBy({
-            by: ['status'],
-            where: { labTenantId: user.tenantId, deletedAt: null },
-            _count: { _all: true },
-          }),
-          // Open caseload (anything not yet DELIVERED/CANCELLED/REJECTED).
-          tx.labCase.count({
-            where: {
-              labTenantId: user.tenantId,
-              deletedAt: null,
-              status: {
-                in: [
-                  LabCaseStatus.SUBMITTED,
-                  LabCaseStatus.IN_PROGRESS,
-                  LabCaseStatus.AWAITING_PICKUP,
-                  LabCaseStatus.SHIPPED,
-                ],
-              },
+      const [
+        casesByStatus,
+        openCases,
+        recentMonthlyCases,
+        recentMonthlyRevenue,
+        topClinics,
+        outstandingTotal,
+      ] = await Promise.all([
+        // Cases-by-status histogram (lifetime).
+        tx.labCase.groupBy({
+          by: ['status'],
+          where: { labTenantId: user.tenantId, deletedAt: null },
+          _count: { _all: true },
+        }),
+        // Open caseload (anything not yet DELIVERED/CANCELLED/REJECTED).
+        tx.labCase.count({
+          where: {
+            labTenantId: user.tenantId,
+            deletedAt: null,
+            status: {
+              in: [
+                LabCaseStatus.SUBMITTED,
+                LabCaseStatus.IN_PROGRESS,
+                LabCaseStatus.AWAITING_PICKUP,
+                LabCaseStatus.SHIPPED,
+              ],
             },
-          }),
-          // Cases delivered per calendar month (last 12).
-          tx.$queryRaw<Array<{ month: string; count: bigint }>>`
+          },
+        }),
+        // Cases delivered per calendar month (last 12).
+        tx.$queryRaw<Array<{ month: string; count: bigint }>>`
             SELECT to_char(date_trunc('month', "deliveredAt"), 'YYYY-MM') AS month,
                    COUNT(*)::bigint AS count
               FROM "lab_cases"
@@ -54,8 +60,8 @@ export class LabStatsService {
              GROUP BY 1
              ORDER BY 1
           `,
-          // Revenue (sum of paidCents) per calendar month — paid invoices only.
-          tx.$queryRaw<Array<{ month: string; cents: bigint }>>`
+        // Revenue (sum of paidCents) per calendar month — paid invoices only.
+        tx.$queryRaw<Array<{ month: string; cents: bigint }>>`
             SELECT to_char(date_trunc('month', "paidAt"), 'YYYY-MM') AS month,
                    COALESCE(SUM("paidCents"), 0)::bigint AS cents
               FROM "lab_invoices"
@@ -66,8 +72,15 @@ export class LabStatsService {
              GROUP BY 1
              ORDER BY 1
           `,
-          // Top 5 clinics by paid revenue (lifetime).
-          tx.$queryRaw<Array<{ clinic_id: string; clinic_name: string; cents: bigint; cases: bigint }>>`
+        // Top 5 clinics by paid revenue (lifetime).
+        tx.$queryRaw<
+          Array<{
+            clinic_id: string;
+            clinic_name: string;
+            cents: bigint;
+            cases: bigint;
+          }>
+        >`
             SELECT c."id"   AS clinic_id,
                    c."name" AS clinic_name,
                    COALESCE(SUM(i."paidCents"), 0)::bigint AS cents,
@@ -91,19 +104,20 @@ export class LabStatsService {
              ORDER BY cents DESC, cases DESC
              LIMIT 5
           `,
-          // Total outstanding (issued + overdue, unpaid balance).
-          tx.labInvoice.aggregate({
-            where: {
-              labTenantId: user.tenantId,
-              deletedAt: null,
-              status: { in: [LabInvoiceStatus.ISSUED, LabInvoiceStatus.OVERDUE] },
-            },
-            _sum: { totalCents: true, paidCents: true },
-          }),
-        ]);
+        // Total outstanding (issued + overdue, unpaid balance).
+        tx.labInvoice.aggregate({
+          where: {
+            labTenantId: user.tenantId,
+            deletedAt: null,
+            status: { in: [LabInvoiceStatus.ISSUED, LabInvoiceStatus.OVERDUE] },
+          },
+          _sum: { totalCents: true, paidCents: true },
+        }),
+      ]);
 
       const outstanding =
-        (outstandingTotal._sum.totalCents ?? 0) - (outstandingTotal._sum.paidCents ?? 0);
+        (outstandingTotal._sum.totalCents ?? 0) -
+        (outstandingTotal._sum.paidCents ?? 0);
 
       return {
         casesByStatus: Object.fromEntries(

@@ -13,7 +13,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@org/ui';
-import { createPatientSchema, type CreatePatientInput } from '../schemas/patient';
+import {
+  createPatientSchema,
+  type CreatePatientInput,
+} from '../schemas/patient';
 import { useUpdatePatient } from '../hooks/use-patients';
 import { PatientFormFields } from './patient-form-fields';
 import type { Patient } from '../schemas/patient';
@@ -45,7 +48,13 @@ export function EditPatientDialog({ patient }: Props) {
   );
 }
 
-function EditPatientForm({ patient, onDone }: { patient: Patient; onDone: () => void }) {
+function EditPatientForm({
+  patient,
+  onDone,
+}: {
+  patient: Patient;
+  onDone: () => void;
+}) {
   const {
     register,
     handleSubmit,
@@ -74,7 +83,9 @@ function EditPatientForm({ patient, onDone }: { patient: Patient; onDone: () => 
     <form onSubmit={onSubmit} className="space-y-3">
       <PatientFormFields register={register} errors={errors} />
       {update.error && (
-        <p className="text-xs text-destructive">{(update.error as Error).message}</p>
+        <p className="text-xs text-destructive">
+          {(update.error as Error).message}
+        </p>
       )}
       <DialogFooter className="pt-2">
         <Button type="button" variant="outline" onClick={onDone}>

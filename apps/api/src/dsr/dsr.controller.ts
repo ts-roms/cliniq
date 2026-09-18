@@ -30,20 +30,31 @@ export class DsrController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'dsr.file', entity: 'DataSubjectRequest', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'dsr.file',
+    entity: 'DataSubjectRequest',
+    entityIdFrom: 'result:id',
+  })
   file(@Body() dto: FileDsrDto, @CurrentUser() user: AuthenticatedUser) {
     return this.dsr.file(dto, user);
   }
 
   @Get()
   @Requires(Actions.AUDIT_READ)
-  list(@Query('status') status: DsrStatus | undefined, @CurrentUser() user: AuthenticatedUser) {
+  list(
+    @Query('status') status: DsrStatus | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.dsr.list(user, status);
   }
 
   @Patch(':id/resolve')
   @Requires(Actions.AUDIT_READ)
-  @Audit({ action: 'dsr.resolve', entity: 'DataSubjectRequest', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'dsr.resolve',
+    entity: 'DataSubjectRequest',
+    entityIdFrom: 'param:id',
+  })
   resolve(
     @Param('id') id: string,
     @Body() dto: ResolveDsrDto,

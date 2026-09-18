@@ -35,7 +35,9 @@ export function TenantFeaturesCard({ tenant }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p className="text-xs text-muted-foreground">{tenant.planMeta.tagline}</p>
+        <p className="text-xs text-muted-foreground">
+          {tenant.planMeta.tagline}
+        </p>
         <ul className="space-y-1.5 text-sm">
           {ALL_FEATURES.map((f) => {
             const on = enabled.has(f.id);
@@ -46,7 +48,9 @@ export function TenantFeaturesCard({ tenant }: Props) {
                 ) : (
                   <X className="h-4 w-4 text-muted-foreground/40" aria-hidden />
                 )}
-                <span className={on ? '' : 'text-muted-foreground/60'}>{f.label}</span>
+                <span className={on ? '' : 'text-muted-foreground/60'}>
+                  {f.label}
+                </span>
               </li>
             );
           })}

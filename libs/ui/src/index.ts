@@ -1,7 +1,14 @@
 export { cn } from './lib/utils';
-export { Button, buttonVariants, type ButtonProps } from './lib/components/button';
+export {
+  Button,
+  buttonVariants,
+  type ButtonProps,
+} from './lib/components/button';
 export { Input, type InputProps } from './lib/components/input';
-export { PasswordInput, type PasswordInputProps } from './lib/components/password-input';
+export {
+  PasswordInput,
+  type PasswordInputProps,
+} from './lib/components/password-input';
 export { Label } from './lib/components/label';
 export { Select, type SelectProps } from './lib/components/select';
 export {

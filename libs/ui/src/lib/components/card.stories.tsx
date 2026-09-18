@@ -22,7 +22,9 @@ export const Default: Story = {
     <Card className="w-96">
       <CardHeader>
         <CardTitle>Sign in to ClinIQ</CardTitle>
-        <CardDescription>Use the email tied to your clinic account.</CardDescription>
+        <CardDescription>
+          Use the email tied to your clinic account.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">Form goes here.</p>

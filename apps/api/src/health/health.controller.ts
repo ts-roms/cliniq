@@ -15,9 +15,9 @@ import { Public } from '../auth/decorators/public.decorator.js';
 const LAB_ENV_VARS = {
   required: ['DATABASE_URL', 'AWS_REGION', 'S3_BUCKET_PHI', 'JWT_SECRET'],
   optional: [
-    'WEB_URL',          // emails fall back to localhost in their links
-    'RESEND_API_KEY',   // mailer becomes no-op
-    'AI_SERVICE_URL',   // AI assist endpoints throw 502 when unset
+    'WEB_URL', // emails fall back to localhost in their links
+    'RESEND_API_KEY', // mailer becomes no-op
+    'AI_SERVICE_URL', // AI assist endpoints throw 502 when unset
     'PAYMONGO_SECRET_KEY',
     'PAYMONGO_WEBHOOK_SECRET',
   ],
@@ -70,8 +70,7 @@ export class HealthController {
   async labReadiness() {
     const env = this.snapshotEnv();
     const migration = await this.checkLabMigration();
-    const ok =
-      env.required.missing.length === 0 && migration.applied;
+    const ok = env.required.missing.length === 0 && migration.applied;
     return {
       status: ok ? 'ready' : 'not-ready',
       env: {

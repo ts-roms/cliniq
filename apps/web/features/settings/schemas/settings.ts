@@ -56,7 +56,15 @@ export interface TenantSettings {
   } | null;
 }
 
-export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+export const WEEKDAYS = [
+  'Sun',
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+] as const;
 export const PAYMENT_METHODS = [
   'CASH',
   'GCASH',

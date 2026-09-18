@@ -120,7 +120,9 @@ export function LabInboxScreen({
   return (
     <View className="flex-1 bg-background">
       <View className="border-b border-border bg-card px-6 pb-3 pt-4">
-        <Text className="text-xs uppercase tracking-widest text-primary">ClinIQ</Text>
+        <Text className="text-xs uppercase tracking-widest text-primary">
+          ClinIQ
+        </Text>
         <Text className="text-xl font-semibold text-foreground">Lab</Text>
         <Text className="text-xs text-muted-foreground">
           Cases, invoices and treatment plans from your associated labs.
@@ -129,12 +131,16 @@ export function LabInboxScreen({
 
       <ScrollView
         className="flex-1"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} />
+        }
       >
         {/* Outstanding invoices */}
         <Section title="Outstanding invoices">
           {invoices.isLoading && <ActivityIndicator className="my-4" />}
-          {invoices.error && <ErrorRow message={(invoices.error as Error).message} />}
+          {invoices.error && (
+            <ErrorRow message={(invoices.error as Error).message} />
+          )}
           {!invoices.isLoading && outstandingInvoices.length === 0 && (
             <EmptyRow message="Nothing outstanding." />
           )}
@@ -148,14 +154,18 @@ export function LabInboxScreen({
                 <Text className="font-mono text-sm text-foreground">
                   {inv.refNumber !== null ? `INV-${inv.refNumber}` : 'Draft'}
                 </Text>
-                <Text className={`text-xs font-medium ${INVOICE_TONE[inv.status] ?? ''}`}>
+                <Text
+                  className={`text-xs font-medium ${INVOICE_TONE[inv.status] ?? ''}`}
+                >
                   {inv.status}
                 </Text>
               </View>
               <Text className="mt-0.5 text-xs text-muted-foreground">
                 {inv.lab?.name ?? '—'} ·{' '}
                 {formatPhp(inv.totalCents - inv.paidCents, inv.currency)} due
-                {inv.dueAt ? ` by ${new Date(inv.dueAt).toLocaleDateString()}` : ''}
+                {inv.dueAt
+                  ? ` by ${new Date(inv.dueAt).toLocaleDateString()}`
+                  : ''}
               </Text>
             </TouchableOpacity>
           ))}
@@ -180,16 +190,21 @@ export function LabInboxScreen({
                 </Text>
                 <View className="flex-row items-center gap-2">
                   {c.urgency === 'URGENT' && (
-                    <Text className="text-xs font-semibold text-amber-700">URGENT</Text>
+                    <Text className="text-xs font-semibold text-amber-700">
+                      URGENT
+                    </Text>
                   )}
-                  <Text className={`text-xs font-medium ${CASE_TONE[c.status] ?? ''}`}>
+                  <Text
+                    className={`text-xs font-medium ${CASE_TONE[c.status] ?? ''}`}
+                  >
                     {c.status.replace('_', ' ')}
                   </Text>
                 </View>
               </View>
               <Text className="mt-0.5 text-xs text-muted-foreground">
                 {c.product?.name ?? '—'} · {c.lab?.name ?? '—'}
-                {c.patientLabel ? ` · ${c.patientLabel}` : ''} · {timeAgo(c.createdAt)}
+                {c.patientLabel ? ` · ${c.patientLabel}` : ''} ·{' '}
+                {timeAgo(c.createdAt)}
               </Text>
               <TouchableOpacity
                 onPress={() => onSelectPlansForCase(c.id)}
@@ -205,7 +220,13 @@ export function LabInboxScreen({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <View className="mt-3">
       <Text className="px-6 pb-1 pt-3 text-[11px] uppercase tracking-widest text-muted-foreground">

@@ -20,7 +20,11 @@ module.exports = {
   // not). Until we migrate to Tailwind v4 + @tailwindcss/postcss, force a
   // pattern-based safelist for the breakpoint variants we use in the shell.
   safelist: [
-    'min-h-screen', 'h-screen', 'w-60', 'w-72', 'shrink-0',
+    'min-h-screen',
+    'h-screen',
+    'w-60',
+    'w-72',
+    'shrink-0',
     'max-w-[85vw]',
     {
       pattern:
@@ -33,7 +37,8 @@ module.exports = {
       pattern: /^(sm|md|lg|xl|2xl):(gap-[1-9]|px-[1-9]|py-[1-9]|p-[1-9])$/,
     },
     {
-      pattern: /^(sm|md|lg|xl|2xl):(w-(?:[0-9]+|full|auto)|max-w-(?:sm|md|lg|xl|2xl|full|none))$/,
+      pattern:
+        /^(sm|md|lg|xl|2xl):(w-(?:[0-9]+|full|auto)|max-w-(?:sm|md|lg|xl|2xl|full|none))$/,
     },
   ],
 };

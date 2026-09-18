@@ -32,8 +32,7 @@ function renderTooth(
   const baseFill = STATUS_FILL[status];
   const surfaces = state?.surfaces ?? {};
   const interactive = !!onClick;
-  const opacity =
-    status === 'MISSING' || status === 'EXTRACTED' ? 0.35 : 1;
+  const opacity = status === 'MISSING' || status === 'EXTRACTED' ? 0.35 : 1;
 
   // Surface layout (5-zone tooth):
   // outer rect = base; inner cross divides into M (left), D (right),
@@ -162,7 +161,10 @@ export function Odontogram({
   }, [teeth]);
 
   const upper = [...quadrants.upperRight, ...quadrants.upperLeft];
-  const lower = [...quadrants.lowerRight.slice().reverse(), ...quadrants.lowerLeft.slice().reverse()];
+  const lower = [
+    ...quadrants.lowerRight.slice().reverse(),
+    ...quadrants.lowerLeft.slice().reverse(),
+  ];
 
   const rowWidth = upper.length * (TOOTH_W + GAP_X) - GAP_X;
   const totalHeight = TOOTH_H * 2 + ROW_GAP;

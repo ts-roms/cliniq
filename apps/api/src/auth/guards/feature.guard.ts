@@ -38,10 +38,10 @@ export class FeatureGuard implements CanActivate {
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     // Platform routes don't have a tenant plan — feature gating doesn't apply.
-    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(
+      IS_PLATFORM_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
     if (isPlatform) return true;
 
     // @Public routes have no authenticated user/tenant context — feature

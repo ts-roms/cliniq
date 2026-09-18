@@ -33,13 +33,20 @@ export class ClinicalController {
   // ── Allergies ─────────────────────────────────────
   @Get('allergies')
   @Requires(Actions.PATIENT_READ)
-  listAllergies(@Param('patientId') p: string, @CurrentUser() u: AuthenticatedUser) {
+  listAllergies(
+    @Param('patientId') p: string,
+    @CurrentUser() u: AuthenticatedUser,
+  ) {
     return this.clinical.listAllergies(p, u);
   }
   @Post('allergies')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'allergy.add', entity: 'Allergy', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'allergy.add',
+    entity: 'Allergy',
+    entityIdFrom: 'result:id',
+  })
   addAllergy(
     @Param('patientId') p: string,
     @Body() dto: CreateAllergyDto,
@@ -50,7 +57,11 @@ export class ClinicalController {
   @Delete('allergies/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'allergy.delete', entity: 'Allergy', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'allergy.delete',
+    entity: 'Allergy',
+    entityIdFrom: 'param:id',
+  })
   removeAllergy(
     @Param('patientId') p: string,
     @Param('id') id: string,
@@ -68,7 +79,11 @@ export class ClinicalController {
   @Post('medications')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'medication.add', entity: 'Medication', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'medication.add',
+    entity: 'Medication',
+    entityIdFrom: 'result:id',
+  })
   addMed(
     @Param('patientId') p: string,
     @Body() dto: CreateMedicationDto,
@@ -80,13 +95,20 @@ export class ClinicalController {
   // ── Conditions ───────────────────────────────────
   @Get('conditions')
   @Requires(Actions.PATIENT_READ)
-  listConditions(@Param('patientId') p: string, @CurrentUser() u: AuthenticatedUser) {
+  listConditions(
+    @Param('patientId') p: string,
+    @CurrentUser() u: AuthenticatedUser,
+  ) {
     return this.clinical.listConditions(p, u);
   }
   @Post('conditions')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.PATIENT_WRITE)
-  @Audit({ action: 'condition.add', entity: 'Condition', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'condition.add',
+    entity: 'Condition',
+    entityIdFrom: 'result:id',
+  })
   addCondition(
     @Param('patientId') p: string,
     @Body() dto: CreateConditionDto,
@@ -98,7 +120,10 @@ export class ClinicalController {
   // ── Vitals ───────────────────────────────────────
   @Get('vitals')
   @Requires(Actions.PATIENT_READ)
-  listVitals(@Param('patientId') p: string, @CurrentUser() u: AuthenticatedUser) {
+  listVitals(
+    @Param('patientId') p: string,
+    @CurrentUser() u: AuthenticatedUser,
+  ) {
     return this.clinical.listVitals(p, u);
   }
   @Post('vitals')

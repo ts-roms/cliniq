@@ -12,7 +12,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QueueKind, QueueTicketStatus } from '@org/db';
 
 export class CreateQueueDto {
-  @ApiPropertyOptional({ description: 'Optional location id this queue is bound to.' })
+  @ApiPropertyOptional({
+    description: 'Optional location id this queue is bound to.',
+  })
   @IsOptional()
   @IsString()
   locationId?: string;
@@ -28,7 +30,10 @@ export class CreateQueueDto {
   @MaxLength(80)
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Number prefix, e.g. "A" → "A-001".', default: 'A' })
+  @ApiPropertyOptional({
+    description: 'Number prefix, e.g. "A" → "A-001".',
+    default: 'A',
+  })
   @IsOptional()
   @IsString()
   @Length(1, 4)
@@ -59,12 +64,16 @@ export class IssueTicketDto {
   @IsString()
   queueId!: string;
 
-  @ApiPropertyOptional({ description: 'Patient id if the patient is registered.' })
+  @ApiPropertyOptional({
+    description: 'Patient id if the patient is registered.',
+  })
   @IsOptional()
   @IsString()
   patientId?: string;
 
-  @ApiPropertyOptional({ description: 'Free-text label for unidentified walk-ins.' })
+  @ApiPropertyOptional({
+    description: 'Free-text label for unidentified walk-ins.',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -77,7 +86,8 @@ export class IssueTicketDto {
   phone?: string;
 
   @ApiPropertyOptional({
-    description: 'Soft priority: PRIORITY queues default to 100; pass to override.',
+    description:
+      'Soft priority: PRIORITY queues default to 100; pass to override.',
   })
   @IsOptional()
   @IsInt()

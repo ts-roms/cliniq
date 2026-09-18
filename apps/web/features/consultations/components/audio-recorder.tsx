@@ -18,7 +18,8 @@ export function AudioRecorder({ disabled, onTranscript }: Props) {
   if (!recorder.isSupported) {
     return (
       <p className="text-xs text-muted-foreground">
-        Audio recording isn&apos;t supported in this browser. Type the transcript instead.
+        Audio recording isn&apos;t supported in this browser. Type the
+        transcript instead.
       </p>
     );
   }

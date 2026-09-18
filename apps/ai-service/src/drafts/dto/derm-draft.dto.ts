@@ -1,10 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 class DermPatientContext {
   @ApiPropertyOptional() @IsOptional() @IsInt() age?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() sex?: string;
-  @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() allergies?: string[];
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  allergies?: string[];
   @ApiPropertyOptional() @IsOptional() @IsString() presentingComplaint?: string;
 }
 
@@ -13,7 +24,10 @@ export class DermDraftRequestDto {
   @IsString()
   consultationId!: string;
 
-  @ApiProperty({ type: [String], description: 'S3 keys for the captured images' })
+  @ApiProperty({
+    type: [String],
+    description: 'S3 keys for the captured images',
+  })
   @IsArray()
   @IsString({ each: true })
   imageS3Keys!: string[];

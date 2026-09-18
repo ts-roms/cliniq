@@ -78,7 +78,9 @@ export function ScheduleScreen() {
   return (
     <View className="flex-1 bg-background">
       <View className="border-b border-border bg-card px-6 pb-3 pt-4">
-        <Text className="text-xs uppercase tracking-widest text-primary">Schedule</Text>
+        <Text className="text-xs uppercase tracking-widest text-primary">
+          Schedule
+        </Text>
         <Text className="text-xl font-semibold text-foreground">
           {formatDateLabel(date)} · {data ? `${data.length}` : '…'}
         </Text>
@@ -96,7 +98,9 @@ export function ScheduleScreen() {
       )}
       {error && (
         <View className="px-6 py-4">
-          <Text className="text-sm text-destructive">{(error as Error).message}</Text>
+          <Text className="text-sm text-destructive">
+            {(error as Error).message}
+          </Text>
         </View>
       )}
       {data && (
@@ -162,7 +166,10 @@ function ApptRow({ appt }: { appt: Appt }) {
           ? `${appt.patient.lastName}, ${appt.patient.firstName}`
           : 'Patient'}
         {appt.patient && (
-          <Text className="text-xs text-muted-foreground"> · {appt.patient.mrn}</Text>
+          <Text className="text-xs text-muted-foreground">
+            {' '}
+            · {appt.patient.mrn}
+          </Text>
         )}
       </Text>
       <Text className="text-xs text-muted-foreground">

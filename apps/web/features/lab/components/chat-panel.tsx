@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@org/ui';
-import {
-  useLabCaseMessages,
-  useSendLabCaseMessage,
-} from '../hooks/use-lab';
+import { useLabCaseMessages, useSendLabCaseMessage } from '../hooks/use-lab';
 import { useSession } from '@/features/auth';
 
 interface Props {
@@ -73,7 +70,9 @@ export function ChatPanel({ caseId, side }: Props) {
                 <p
                   className={
                     'mt-0.5 text-[10px] ' +
-                    (mine ? 'text-primary-foreground/70' : 'text-muted-foreground')
+                    (mine
+                      ? 'text-primary-foreground/70'
+                      : 'text-muted-foreground')
                   }
                 >
                   {new Date(m.createdAt).toLocaleTimeString([], {
@@ -96,7 +95,11 @@ export function ChatPanel({ caseId, side }: Props) {
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
           disabled={send.isPending}
         />
-        <Button type="submit" size="sm" disabled={send.isPending || !draft.trim()}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={send.isPending || !draft.trim()}
+        >
           <Send className="h-4 w-4" aria-hidden />
         </Button>
       </form>

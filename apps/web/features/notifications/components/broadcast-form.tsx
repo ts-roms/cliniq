@@ -19,7 +19,9 @@ type Role = (typeof ROLES)[number];
 export function BroadcastForm() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [severity, setSeverity] = useState<'INFO' | 'WARNING' | 'CRITICAL'>('INFO');
+  const [severity, setSeverity] = useState<'INFO' | 'WARNING' | 'CRITICAL'>(
+    'INFO',
+  );
   const [roles, setRoles] = useState<Set<Role>>(new Set());
   const [link, setLink] = useState('');
   const [sentNote, setSentNote] = useState<string | null>(null);
@@ -118,11 +120,15 @@ export function BroadcastForm() {
               })}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {roles.size === 0 ? 'Reaches all staff (default)' : `Reaches ${roles.size} role(s)`}
+              {roles.size === 0
+                ? 'Reaches all staff (default)'
+                : `Reaches ${roles.size} role(s)`}
             </p>
           </FormField>
           {broadcast.error && (
-            <p className="text-sm text-destructive">{(broadcast.error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(broadcast.error as Error).message}
+            </p>
           )}
           {sentNote && !broadcast.error && (
             <p className="text-sm text-emerald-700">{sentNote}</p>

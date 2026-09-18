@@ -46,7 +46,9 @@ export default function SchedulePage() {
           <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
           <p className="text-sm text-muted-foreground">
             {formatDateLabel(date)} ·{' '}
-            {data ? `${data.length} appointment${data.length === 1 ? '' : 's'}` : '…'}
+            {data
+              ? `${data.length} appointment${data.length === 1 ? '' : 's'}`
+              : '…'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -63,7 +65,9 @@ export default function SchedulePage() {
       {error && (
         <p className="text-sm text-destructive">{(error as Error).message}</p>
       )}
-      {data && data.length === 0 && <ScheduleEmpty dateLabel={formatDateLabel(date)} />}
+      {data && data.length === 0 && (
+        <ScheduleEmpty dateLabel={formatDateLabel(date)} />
+      )}
       {data && data.length > 0 && <ScheduleTable items={data} />}
     </div>
   );

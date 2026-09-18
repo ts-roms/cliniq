@@ -23,7 +23,8 @@ export interface AuthenticatedUser {
 export const CurrentUser = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): AuthenticatedUser => {
     const req = ctx.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
-    if (!req.user) throw new Error('CurrentUser used on an unauthenticated route');
+    if (!req.user)
+      throw new Error('CurrentUser used on an unauthenticated route');
     return req.user;
-  }
+  },
 );

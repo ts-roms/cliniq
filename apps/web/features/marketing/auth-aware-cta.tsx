@@ -16,7 +16,10 @@ interface Props {
  * logged-out CTA. Kept as a tiny client island so the surrounding marketing
  * page stays a static server component.
  */
-export function AuthAwareCta({ className, loggedOutVariant = 'default' }: Props) {
+export function AuthAwareCta({
+  className,
+  loggedOutVariant = 'default',
+}: Props) {
   const session = useSession();
 
   if (session) {

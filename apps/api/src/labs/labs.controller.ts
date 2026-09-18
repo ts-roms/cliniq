@@ -43,7 +43,10 @@ export class LabsController {
 
   @Get('consultations/:id/lab-orders')
   @Requires(Actions.CONSULT_READ)
-  listForConsultation(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  listForConsultation(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.labs.listForConsultation(id, user);
   }
 
@@ -56,14 +59,25 @@ export class LabsController {
   @Post('lab-orders')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'lab.orderCreate', entity: 'LabOrder', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreateLabOrderDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'lab.orderCreate',
+    entity: 'LabOrder',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreateLabOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.labs.create(dto, user);
   }
 
   @Patch('lab-orders/:id')
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'lab.orderUpdate', entity: 'LabOrder', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'lab.orderUpdate',
+    entity: 'LabOrder',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateLabOrderDto,
@@ -74,14 +88,22 @@ export class LabsController {
 
   @Patch('lab-orders/:id/cancel')
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'lab.orderCancel', entity: 'LabOrder', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'lab.orderCancel',
+    entity: 'LabOrder',
+    entityIdFrom: 'param:id',
+  })
   cancel(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.labs.cancel(id, user);
   }
 
   @Patch('lab-orders/:id/items/:itemId')
   @Requires(Actions.CONSULT_WRITE)
-  @Audit({ action: 'lab.resultRecord', entity: 'LabOrderItem', entityIdFrom: 'param:itemId' })
+  @Audit({
+    action: 'lab.resultRecord',
+    entity: 'LabOrderItem',
+    entityIdFrom: 'param:itemId',
+  })
   recordResult(
     @Param('id') id: string,
     @Param('itemId') itemId: string,

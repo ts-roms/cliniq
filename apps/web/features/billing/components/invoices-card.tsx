@@ -1,7 +1,10 @@
 'use client';
 
 import {
-  Card, CardContent, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Loading,
   ErrorMessage,
   EmptyState,
@@ -44,7 +47,11 @@ export function InvoicesCard({ patientId }: { patientId: string }) {
               </thead>
               <tbody>
                 {data.map((inv) => (
-                  <InvoiceRow key={inv.id} patientId={patientId} invoice={inv} />
+                  <InvoiceRow
+                    key={inv.id}
+                    patientId={patientId}
+                    invoice={inv}
+                  />
                 ))}
               </tbody>
             </table>

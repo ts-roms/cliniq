@@ -38,7 +38,10 @@ export function PortalInvoicesList() {
         {data && data.length > 0 && (
           <ul className="space-y-3">
             {data.map((inv) => {
-              const remaining = Math.max(inv.totalCentavos - inv.paidCentavos, 0);
+              const remaining = Math.max(
+                inv.totalCentavos - inv.paidCentavos,
+                0,
+              );
               return (
                 <li key={inv.id} className="rounded border bg-card p-3">
                   <div className="flex items-center justify-between">
@@ -59,7 +62,9 @@ export function PortalInvoicesList() {
                           {it.description}
                           {it.quantity > 1 && ` × ${it.quantity}`}
                         </span>
-                        <span className="font-mono">{formatCentavos(it.totalCentavos)}</span>
+                        <span className="font-mono">
+                          {formatCentavos(it.totalCentavos)}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -68,7 +73,9 @@ export function PortalInvoicesList() {
                       Total {formatCentavos(inv.totalCentavos)} · Paid{' '}
                       {formatCentavos(inv.paidCentavos)}
                     </span>
-                    <span className="font-semibold">{formatCentavos(remaining)} due</span>
+                    <span className="font-semibold">
+                      {formatCentavos(remaining)} due
+                    </span>
                   </div>
                   <div className="mt-2 flex justify-end">
                     <Button

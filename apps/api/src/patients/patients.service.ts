@@ -23,7 +23,9 @@ export class PatientsService {
         select: { id: true },
       });
       if (existing) {
-        throw new ConflictException(`MRN ${dto.mrn} already exists in this clinic`);
+        throw new ConflictException(
+          `MRN ${dto.mrn} already exists in this clinic`,
+        );
       }
       // `createdBy` isn't a column on Patient — actor identity for creates
       // lives in the AuditLog table via the @Audit interceptor on the
@@ -31,7 +33,9 @@ export class PatientsService {
       const patient = await tx.patient.create({
         data: { ...dto, tenantId: user.tenantId },
       });
-      this.logger.log(`Patient ${patient.id} (${patient.mrn}) created by ${user.userId}`);
+      this.logger.log(
+        `Patient ${patient.id} (${patient.mrn}) created by ${user.userId}`,
+      );
       return patient;
     });
   }
@@ -69,7 +73,8 @@ export class PatientsService {
         total,
         limit,
         cursor: offset,
-        nextCursor: offset + items.length < total ? offset + items.length : null,
+        nextCursor:
+          offset + items.length < total ? offset + items.length : null,
       };
     });
   }
@@ -98,7 +103,9 @@ export class PatientsService {
           select: { id: true },
         });
         if (collision && collision.id !== id) {
-          throw new ConflictException(`MRN ${dto.mrn} already exists in this clinic`);
+          throw new ConflictException(
+            `MRN ${dto.mrn} already exists in this clinic`,
+          );
         }
       }
 
@@ -121,31 +128,32 @@ export class PatientsService {
       });
       if (!patient) throw new NotFoundException(`Patient ${id} not found`);
 
-      const [consultations, prescriptions, files, auditTrail] = await Promise.all([
-        tx.consultation.findMany({
-          where: { patientId: id, deletedAt: null },
-          include: { suggestions: { orderBy: { createdAt: 'asc' } } },
-          orderBy: { startedAt: 'desc' },
-        }),
-        tx.prescription.findMany({
-          where: { patientId: id, deletedAt: null },
-          include: { items: true },
-          orderBy: { issuedAt: 'desc' },
-        }),
-        tx.fileObject.findMany({
-          where: { tenantId: user.tenantId, deletedAt: null },
-          orderBy: { createdAt: 'desc' },
-        }),
-        tx.auditLog.findMany({
-          where: {
-            tenantId: user.tenantId,
-            entityType: 'Patient',
-            entityId: id,
-          },
-          orderBy: { occurredAt: 'desc' },
-          take: 1000,
-        }),
-      ]);
+      const [consultations, prescriptions, files, auditTrail] =
+        await Promise.all([
+          tx.consultation.findMany({
+            where: { patientId: id, deletedAt: null },
+            include: { suggestions: { orderBy: { createdAt: 'asc' } } },
+            orderBy: { startedAt: 'desc' },
+          }),
+          tx.prescription.findMany({
+            where: { patientId: id, deletedAt: null },
+            include: { items: true },
+            orderBy: { issuedAt: 'desc' },
+          }),
+          tx.fileObject.findMany({
+            where: { tenantId: user.tenantId, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+          }),
+          tx.auditLog.findMany({
+            where: {
+              tenantId: user.tenantId,
+              entityType: 'Patient',
+              entityId: id,
+            },
+            orderBy: { occurredAt: 'desc' },
+            take: 1000,
+          }),
+        ]);
 
       return {
         exportedAt: new Date().toISOString(),

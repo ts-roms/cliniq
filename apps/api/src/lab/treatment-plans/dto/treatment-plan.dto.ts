@@ -8,10 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  LabTreatmentPlanDecision,
-  LabTreatmentPlanFileKind,
-} from '@org/db';
+import { LabTreatmentPlanDecision, LabTreatmentPlanFileKind } from '@org/db';
 
 export class CreateTreatmentPlanDto {
   @ApiProperty({ description: 'Lab case id this plan attaches to.' })

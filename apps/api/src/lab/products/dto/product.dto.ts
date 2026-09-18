@@ -24,7 +24,9 @@ export class CreateLabCategoryDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Parent category id for nested folders.' })
+  @ApiPropertyOptional({
+    description: 'Parent category id for nested folders.',
+  })
   @IsOptional()
   @IsString()
   parentId?: string;
@@ -98,7 +100,10 @@ export class CreateLabProductDto {
   @Length(3, 3)
   currency?: string;
 
-  @ApiPropertyOptional({ enum: LabProductPricingMode, enumName: 'LabProductPricingMode' })
+  @ApiPropertyOptional({
+    enum: LabProductPricingMode,
+    enumName: 'LabProductPricingMode',
+  })
   @IsOptional()
   @IsEnum(LabProductPricingMode)
   pricingMode?: LabProductPricingMode;
@@ -158,7 +163,10 @@ export class UpdateLabProductDto {
   @Length(3, 3)
   currency?: string;
 
-  @ApiPropertyOptional({ enum: LabProductPricingMode, enumName: 'LabProductPricingMode' })
+  @ApiPropertyOptional({
+    enum: LabProductPricingMode,
+    enumName: 'LabProductPricingMode',
+  })
   @IsOptional()
   @IsEnum(LabProductPricingMode)
   pricingMode?: LabProductPricingMode;

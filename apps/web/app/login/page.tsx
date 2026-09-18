@@ -28,10 +28,10 @@ export default function LoginPage() {
 
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extralight">Welcome back</CardTitle>
-            <CardDescription>
-              Sign in to manage your clinic.
-            </CardDescription>
+            <CardTitle className="text-2xl font-extralight">
+              Welcome back
+            </CardTitle>
+            <CardDescription>Sign in to manage your clinic.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <LoginForm />
@@ -40,7 +40,10 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           New here?{' '}
-          <Link href="/signup" className="font-medium text-primary hover:underline">
+          <Link
+            href="/signup"
+            className="font-medium text-primary hover:underline"
+          >
             Start your clinic
           </Link>
         </p>

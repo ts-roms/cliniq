@@ -35,7 +35,9 @@ export const surfaceFindingSchema = z.object({
 });
 
 export const toothEntrySchema = z.object({
-  toothCode: z.string().regex(/^(1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])$/),
+  toothCode: z
+    .string()
+    .regex(/^(1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])$/),
   status: toothStatusEnum.default('PRESENT'),
   notes: z.string().max(280).optional(),
   surfaces: z.array(surfaceFindingSchema).max(5).optional(),
@@ -81,15 +83,15 @@ export interface DentalChartRecord {
 // (Q1 = patient's upper-right, viewer's left).
 export const ADULT_QUADRANTS = {
   upperRight: ['18', '17', '16', '15', '14', '13', '12', '11'],
-  upperLeft:  ['21', '22', '23', '24', '25', '26', '27', '28'],
-  lowerLeft:  ['38', '37', '36', '35', '34', '33', '32', '31'],
+  upperLeft: ['21', '22', '23', '24', '25', '26', '27', '28'],
+  lowerLeft: ['38', '37', '36', '35', '34', '33', '32', '31'],
   lowerRight: ['41', '42', '43', '44', '45', '46', '47', '48'],
 };
 
 export const DECIDUOUS_QUADRANTS = {
   upperRight: ['55', '54', '53', '52', '51'],
-  upperLeft:  ['61', '62', '63', '64', '65'],
-  lowerLeft:  ['75', '74', '73', '72', '71'],
+  upperLeft: ['61', '62', '63', '64', '65'],
+  lowerLeft: ['75', '74', '73', '72', '71'],
   lowerRight: ['81', '82', '83', '84', '85'],
 };
 

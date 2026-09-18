@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import type { Notification, NotificationSeverity } from '../schemas/notification';
+import type {
+  Notification,
+  NotificationSeverity,
+} from '../schemas/notification';
 import { useMarkRead } from '../hooks/use-notifications';
 
 const SEV_TONE: Record<NotificationSeverity, string> = {
@@ -23,7 +26,11 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export function NotificationRow({ notification: n }: { notification: Notification }) {
+export function NotificationRow({
+  notification: n,
+}: {
+  notification: Notification;
+}) {
   const markRead = useMarkRead();
   const onClick = () => {
     if (!n.readAt) markRead.mutate(n.id);
@@ -52,7 +59,10 @@ export function NotificationRow({ notification: n }: { notification: Notificatio
     );
   }
   return (
-    <button onClick={onClick} className="block w-full text-left hover:bg-muted/40">
+    <button
+      onClick={onClick}
+      className="block w-full text-left hover:bg-muted/40"
+    >
       {body}
     </button>
   );

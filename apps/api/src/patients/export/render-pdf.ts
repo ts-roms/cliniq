@@ -2,7 +2,11 @@ import PDFDocument from 'pdfkit';
 
 interface ExportBundle {
   exportedAt: string;
-  exportedBy: { userId: string | null; email?: string | null; role?: string | null };
+  exportedBy: {
+    userId: string | null;
+    email?: string | null;
+    role?: string | null;
+  };
   tenantId: string | null;
   patient: {
     mrn: string;
@@ -25,10 +29,23 @@ interface ExportBundle {
     number: string;
     issuedAt: Date | string;
     status: string;
-    items: Array<{ drugName: string; strength?: string | null; dose: string; frequency: string }>;
+    items: Array<{
+      drugName: string;
+      strength?: string | null;
+      dose: string;
+      frequency: string;
+    }>;
   }>;
-  files: Array<{ filename: string; category: string; createdAt: Date | string }>;
-  auditTrail: Array<{ action: string; occurredAt: Date | string; actorEmail?: string | null }>;
+  files: Array<{
+    filename: string;
+    category: string;
+    createdAt: Date | string;
+  }>;
+  auditTrail: Array<{
+    action: string;
+    occurredAt: Date | string;
+    actorEmail?: string | null;
+  }>;
 }
 
 /**
@@ -38,7 +55,11 @@ interface ExportBundle {
  */
 export function renderPatientExportPdf(bundle: ExportBundle): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: 'ClinIQ patient record' } });
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 50,
+      info: { Title: 'ClinIQ patient record' },
+    });
     const chunks: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -67,9 +88,14 @@ export function renderPatientExportPdf(bundle: ExportBundle): Promise<Buffer> {
       doc.fillColor('black');
     } else {
       for (const c of bundle.consultations) {
-        doc.fontSize(11).text(`${fmtDate(c.startedAt)} — ${c.status}`, { continued: false });
+        doc
+          .fontSize(11)
+          .text(`${fmtDate(c.startedAt)} — ${c.status}`, { continued: false });
         if (c.diagnosisCodes.length > 0) {
-          doc.fontSize(9).fillColor('#666').text(`ICD-10: ${c.diagnosisCodes.join(', ')}`);
+          doc
+            .fontSize(9)
+            .fillColor('#666')
+            .text(`ICD-10: ${c.diagnosisCodes.join(', ')}`);
           doc.fillColor('black');
         }
         const summary = collapseAssessment(c.assessment);
@@ -84,7 +110,9 @@ export function renderPatientExportPdf(bundle: ExportBundle): Promise<Buffer> {
       doc.fillColor('black');
     } else {
       for (const rx of bundle.prescriptions) {
-        doc.fontSize(11).text(`${rx.number} — ${rx.status} — ${fmtDate(rx.issuedAt)}`);
+        doc
+          .fontSize(11)
+          .text(`${rx.number} — ${rx.status} — ${fmtDate(rx.issuedAt)}`);
         for (const item of rx.items) {
           doc
             .fontSize(10)
@@ -103,10 +131,17 @@ export function renderPatientExportPdf(bundle: ExportBundle): Promise<Buffer> {
       doc.fillColor('black');
     } else {
       for (const f of bundle.files.slice(0, 50)) {
-        doc.fontSize(10).text(`${fmtDate(f.createdAt)}  ${f.category.padEnd(18, ' ')}  ${f.filename}`);
+        doc
+          .fontSize(10)
+          .text(
+            `${fmtDate(f.createdAt)}  ${f.category.padEnd(18, ' ')}  ${f.filename}`,
+          );
       }
       if (bundle.files.length > 50) {
-        doc.fontSize(9).fillColor('#666').text(`(+${bundle.files.length - 50} more — see JSON export)`);
+        doc
+          .fontSize(9)
+          .fillColor('#666')
+          .text(`(+${bundle.files.length - 50} more — see JSON export)`);
         doc.fillColor('black');
       }
     }
@@ -119,10 +154,15 @@ export function renderPatientExportPdf(bundle: ExportBundle): Promise<Buffer> {
       for (const a of bundle.auditTrail.slice(0, 100)) {
         doc
           .fontSize(9)
-          .text(`${fmtDate(a.occurredAt)}  ${a.action.padEnd(28, ' ')}  ${a.actorEmail ?? '—'}`);
+          .text(
+            `${fmtDate(a.occurredAt)}  ${a.action.padEnd(28, ' ')}  ${a.actorEmail ?? '—'}`,
+          );
       }
       if (bundle.auditTrail.length > 100) {
-        doc.fontSize(9).fillColor('#666').text(`(+${bundle.auditTrail.length - 100} more — see JSON export)`);
+        doc
+          .fontSize(9)
+          .fillColor('#666')
+          .text(`(+${bundle.auditTrail.length - 100} more — see JSON export)`);
         doc.fillColor('black');
       }
     }
@@ -165,7 +205,10 @@ function section(doc: PDFKit.PDFDocument, label: string) {
   doc.moveDown(0.3);
 }
 
-function keyValueGrid(doc: PDFKit.PDFDocument, entries: Array<[string, string]>) {
+function keyValueGrid(
+  doc: PDFKit.PDFDocument,
+  entries: Array<[string, string]>,
+) {
   for (const [k, v] of entries) {
     doc.fontSize(9).fillColor('#666').text(k, { continued: true, width: 100 });
     doc.fillColor('black').text(`  ${v}`);

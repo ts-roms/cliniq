@@ -21,7 +21,13 @@ import {
 } from '../schemas/inventory';
 import { useDispense } from '../hooks/use-inventory';
 
-export function DispenseDialog({ itemId, onHand }: { itemId: string; onHand: number }) {
+export function DispenseDialog({
+  itemId,
+  onHand,
+}: {
+  itemId: string;
+  onHand: number;
+}) {
   const [open, setOpen] = useState(false);
   const dispense = useDispense(itemId);
   const {
@@ -57,17 +63,26 @@ export function DispenseDialog({ itemId, onHand }: { itemId: string; onHand: num
           <FormField label="Quantity" error={errors.quantity?.message}>
             <Input type="number" max={onHand} {...register('quantity')} />
           </FormField>
-          <FormField label="Prescription ID (optional)" error={errors.prescriptionId?.message}>
+          <FormField
+            label="Prescription ID (optional)"
+            error={errors.prescriptionId?.message}
+          >
             <Input {...register('prescriptionId')} />
           </FormField>
           <FormField label="Reason" error={errors.reason?.message}>
             <Input placeholder="walk-in dispense" {...register('reason')} />
           </FormField>
           {dispense.error && (
-            <p className="text-xs text-destructive">{(dispense.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(dispense.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || dispense.isPending}>

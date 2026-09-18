@@ -10,9 +10,9 @@ Run **once per AWS account**, before any Terraform `apply` or any GitHub Actions
 
 Two implementations — pick one:
 
-| File | Use when |
-|---|---|
-| `bootstrap.sh` | One-shot AWS CLI script. No state. Re-runnable (idempotent). |
+| File           | Use when                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bootstrap.sh` | One-shot AWS CLI script. No state. Re-runnable (idempotent).                                                                                |
 | `bootstrap.tf` | Terraform module that owns the bootstrap. Use if you want IaC for everything (chicken-and-egg solved with local state for this stack only). |
 
 The shell script is faster to read and reason about; the Terraform module is what mature teams settle on. Both produce identical resources.
@@ -37,6 +37,7 @@ export GITHUB_REPO="your-org/cliniq"
 ```
 
 The script prints the ARNs you need to paste into:
+
 - GitHub repo Secrets → `AWS_DEPLOY_ROLE_ARN`
 - `infra/terraform/environments/<env>/main.tf` (uncomment the `backend "s3"` stanza with the printed bucket name)
 

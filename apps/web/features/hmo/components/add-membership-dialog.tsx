@@ -46,7 +46,11 @@ export function AddMembershipDialog({ patientId }: { patientId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" disabled={activeProviders.length === 0}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={activeProviders.length === 0}
+        >
           Add HMO card
         </Button>
       </DialogTrigger>
@@ -70,7 +74,10 @@ export function AddMembershipDialog({ patientId }: { patientId: string }) {
                 ))}
               </Select>
             </FormField>
-            <FormField label="Member ID / card number" error={errors.memberId?.message}>
+            <FormField
+              label="Member ID / card number"
+              error={errors.memberId?.message}
+            >
               <Input placeholder="MX-123456789" {...register('memberId')} />
             </FormField>
             <div className="grid grid-cols-2 gap-3">
@@ -82,10 +89,16 @@ export function AddMembershipDialog({ patientId }: { patientId: string }) {
               </FormField>
             </div>
             {add.error && (
-              <p className="text-xs text-destructive">{(add.error as Error).message}</p>
+              <p className="text-xs text-destructive">
+                {(add.error as Error).message}
+              </p>
             )}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting || add.isPending}>

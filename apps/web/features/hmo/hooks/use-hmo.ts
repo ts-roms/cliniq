@@ -25,7 +25,8 @@ import type {
 export const hmoKeys = {
   all: ['hmo'] as const,
   providers: () => ['hmo', 'providers'] as const,
-  memberships: (patientId: string) => ['hmo', 'memberships', patientId] as const,
+  memberships: (patientId: string) =>
+    ['hmo', 'memberships', patientId] as const,
   claims: () => ['hmo', 'claims'] as const,
 };
 
@@ -77,8 +78,12 @@ export function useAddMembership(patientId: string) {
     mutationFn: async (input: CreateMembershipInput) => {
       const body = {
         ...input,
-        ...(input.validFrom ? { validFrom: new Date(input.validFrom).toISOString() } : {}),
-        ...(input.validUntil ? { validUntil: new Date(input.validUntil).toISOString() } : {}),
+        ...(input.validFrom
+          ? { validFrom: new Date(input.validFrom).toISOString() }
+          : {}),
+        ...(input.validUntil
+          ? { validUntil: new Date(input.validUntil).toISOString() }
+          : {}),
       };
       const { data, error } = await hmoControllerAddMembership({
         path: { patientId },
@@ -87,7 +92,8 @@ export function useAddMembership(patientId: string) {
       if (error || !data) throw new Error('Add failed');
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: hmoKeys.memberships(patientId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: hmoKeys.memberships(patientId) }),
   });
 }
 
@@ -123,7 +129,13 @@ export function useFileClaim(invoiceId: string) {
 export function useUpdateClaim() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: UpdateClaimOutput }) => {
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateClaimOutput;
+    }) => {
       const { data, error } = await hmoControllerUpdateClaim({
         path: { id },
         body: input as Parameters<typeof hmoControllerUpdateClaim>[0]['body'],
@@ -138,7 +150,13 @@ export function useUpdateClaim() {
 export function useRecordHmoPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: RecordPaymentOutput }) => {
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: RecordPaymentOutput;
+    }) => {
       const { data, error } = await hmoControllerRecordPayment({
         path: { id },
         body: input as Parameters<typeof hmoControllerRecordPayment>[0]['body'],

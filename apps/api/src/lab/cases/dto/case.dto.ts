@@ -30,11 +30,15 @@ export class CreateLabCaseDto {
   @IsISO8601()
   dueAt?: string;
 
-  @ApiPropertyOptional({ description: 'Form data matching the product\'s schema.' })
+  @ApiPropertyOptional({
+    description: "Form data matching the product's schema.",
+  })
   @IsOptional()
   formData?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ description: 'Free-text patient identifier (clinic-internal).' })
+  @ApiPropertyOptional({
+    description: 'Free-text patient identifier (clinic-internal).',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(120)
@@ -99,7 +103,8 @@ export class UpdateLabCaseDto {
   notes?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Lab-only override of unit price (centavos). Used with ADJUST_ON_ORDER products.',
+    description:
+      'Lab-only override of unit price (centavos). Used with ADJUST_ON_ORDER products.',
   })
   @IsOptional()
   @IsInt()
@@ -120,7 +125,9 @@ export class TransitionLabCaseDto {
 }
 
 export class PresignLabCaseFileDto {
-  @ApiProperty({ description: 'Original filename — passed through to S3 metadata.' })
+  @ApiProperty({
+    description: 'Original filename — passed through to S3 metadata.',
+  })
   @IsString()
   @Length(1, 255)
   filename!: string;
@@ -139,7 +146,7 @@ export class PresignLabCaseFileDto {
 export class AdvancePhaseDto {
   @ApiPropertyOptional({
     description:
-      'Target phase (must match one entry from the product\'s phases array). Omit to advance to the next phase in declared order.',
+      "Target phase (must match one entry from the product's phases array). Omit to advance to the next phase in declared order.",
   })
   @IsOptional()
   @IsString()

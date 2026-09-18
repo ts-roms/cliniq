@@ -4,11 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  PrismaService,
-  QueueKind,
-  QueueTicketStatus,
-} from '@org/db';
+import { PrismaService, QueueKind, QueueTicketStatus } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type {
   CreateQueueDto,
@@ -56,7 +52,8 @@ export class QueueService {
           locationId: dto.locationId ?? null,
           kind: dto.kind ?? QueueKind.WALK_IN,
           name: dto.name ?? null,
-          numberPrefix: dto.numberPrefix ?? defaultPrefixFor(dto.kind ?? QueueKind.WALK_IN),
+          numberPrefix:
+            dto.numberPrefix ?? defaultPrefixFor(dto.kind ?? QueueKind.WALK_IN),
         },
       });
     });
@@ -90,7 +87,12 @@ export class QueueService {
   async issueTicket(dto: IssueTicketDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const queue = await tx.queue.findFirst({
-        where: { id: dto.queueId, tenantId: user.tenantId, deletedAt: null, isActive: true },
+        where: {
+          id: dto.queueId,
+          tenantId: user.tenantId,
+          deletedAt: null,
+          isActive: true,
+        },
       });
       if (!queue) {
         throw new NotFoundException('queue not found or inactive');
@@ -164,7 +166,11 @@ export class QueueService {
   }
 
   /** Mark a CALLED ticket as served (or NO_SHOW / CANCELLED). */
-  async closeTicket(id: string, target: QueueTicketStatus, user: AuthenticatedUser) {
+  async closeTicket(
+    id: string,
+    target: QueueTicketStatus,
+    user: AuthenticatedUser,
+  ) {
     if (
       target !== QueueTicketStatus.SERVED &&
       target !== QueueTicketStatus.NO_SHOW &&
@@ -196,15 +202,22 @@ export class QueueService {
 /** UTC midnight today — keeps numbering boundaries deterministic. */
 function todayUtc(): Date {
   const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  return new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+  );
 }
 
 function defaultPrefixFor(kind: QueueKind): string {
   switch (kind) {
-    case QueueKind.WALK_IN: return 'A';
-    case QueueKind.APPOINTMENT: return 'B';
-    case QueueKind.DRIVE_THRU: return 'D';
-    case QueueKind.PRIORITY: return 'P';
-    default: return 'A';
+    case QueueKind.WALK_IN:
+      return 'A';
+    case QueueKind.APPOINTMENT:
+      return 'B';
+    case QueueKind.DRIVE_THRU:
+      return 'D';
+    case QueueKind.PRIORITY:
+      return 'P';
+    default:
+      return 'A';
   }
 }

@@ -4,13 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { ArrowLeft, FileText, Upload } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@org/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
 import {
   CaseStatusPill,
   ChatPanel,
@@ -37,10 +31,14 @@ export default function LabCaseDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error)
-    return <p className="text-sm text-destructive">{(error as Error).message}</p>;
-  if (!lc) return <p className="text-sm text-muted-foreground">Case not found.</p>;
+    return (
+      <p className="text-sm text-destructive">{(error as Error).message}</p>
+    );
+  if (!lc)
+    return <p className="text-sm text-muted-foreground">Case not found.</p>;
 
   // Available transitions from the lab side.
   const fromLab: Partial<Record<LabCaseStatus, LabCaseStatus[]>> = {
@@ -214,7 +212,10 @@ export default function LabCaseDetailPage() {
                   className="flex items-center justify-between rounded-md border border-border/60 px-2 py-1.5 text-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    <FileText
+                      className="h-4 w-4 text-muted-foreground"
+                      aria-hidden
+                    />
                     <span className="truncate">{f.filename}</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">
@@ -227,9 +228,14 @@ export default function LabCaseDetailPage() {
               )}
             </ul>
 
-            {(['SUBMITTED', 'IN_PROGRESS', 'AWAITING_PICKUP', 'SHIPPED'] as LabCaseStatus[]).includes(
-              lc.status,
-            ) && (
+            {(
+              [
+                'SUBMITTED',
+                'IN_PROGRESS',
+                'AWAITING_PICKUP',
+                'SHIPPED',
+              ] as LabCaseStatus[]
+            ).includes(lc.status) && (
               <label className="block">
                 <input
                   type="file"
@@ -294,7 +300,9 @@ function DisputesPanelWithSession({
   side: 'lab' | 'clinic';
 }) {
   const session = useSession();
-  return <DisputesPanel caseId={caseId} side={side} myUserId={session?.user.id} />;
+  return (
+    <DisputesPanel caseId={caseId} side={side} myUserId={session?.user.id} />
+  );
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -330,7 +338,8 @@ function labelForTransition(t: LabCaseStatus): string {
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 

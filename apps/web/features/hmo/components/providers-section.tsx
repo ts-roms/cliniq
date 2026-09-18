@@ -18,10 +18,7 @@ import {
   Input,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
-import {
-  createProviderSchema,
-  type CreateProviderInput,
-} from '../schemas/hmo';
+import { createProviderSchema, type CreateProviderInput } from '../schemas/hmo';
 import { useCreateProvider, useProviders } from '../hooks/use-hmo';
 
 export function ProvidersSection() {
@@ -37,7 +34,8 @@ export function ProvidersSection() {
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {data && data.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No providers configured. Add Maxicare, Medicard, PhilHealth, etc. to start filing claims.
+            No providers configured. Add Maxicare, Medicard, PhilHealth, etc. to
+            start filing claims.
           </p>
         )}
         {data && data.length > 0 && (
@@ -102,18 +100,30 @@ function NewProviderDialog() {
             <Input placeholder="MX-001" {...register('payerCode')} />
           </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Contact phone" error={errors.contactPhone?.message}>
+            <FormField
+              label="Contact phone"
+              error={errors.contactPhone?.message}
+            >
               <Input {...register('contactPhone')} />
             </FormField>
-            <FormField label="Contact email" error={errors.contactEmail?.message}>
+            <FormField
+              label="Contact email"
+              error={errors.contactEmail?.message}
+            >
               <Input type="email" {...register('contactEmail')} />
             </FormField>
           </div>
           {create.error && (
-            <p className="text-xs text-destructive">{(create.error as Error).message}</p>
+            <p className="text-xs text-destructive">
+              {(create.error as Error).message}
+            </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || create.isPending}>

@@ -84,7 +84,9 @@ export function ConsultList({
           </Text>
         )}
         {list.data && list.data.length === 0 && (
-          <Text className="text-xs text-muted-foreground">No consults yet.</Text>
+          <Text className="text-xs text-muted-foreground">
+            No consults yet.
+          </Text>
         )}
         {list.data?.slice(0, 8).map((c) => (
           <TouchableOpacity
@@ -95,7 +97,9 @@ export function ConsultList({
             <Text className="text-sm text-foreground">
               {formatDateTime(c.startedAt)}
             </Text>
-            <Text className={`text-xs ${STATUS_TONE[c.status] ?? 'text-muted-foreground'}`}>
+            <Text
+              className={`text-xs ${STATUS_TONE[c.status] ?? 'text-muted-foreground'}`}
+            >
               {c.status}
             </Text>
           </TouchableOpacity>

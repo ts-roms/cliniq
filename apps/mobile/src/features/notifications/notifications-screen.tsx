@@ -88,7 +88,9 @@ export function NotificationsScreen() {
     <View className="flex-1 bg-background">
       <View className="flex-row items-center justify-between border-b border-border bg-card px-6 pb-3 pt-4">
         <View>
-          <Text className="text-xs uppercase tracking-widest text-primary">Inbox</Text>
+          <Text className="text-xs uppercase tracking-widest text-primary">
+            Inbox
+          </Text>
           <Text className="text-xl font-semibold text-foreground">
             Notifications{unread > 0 ? ` · ${unread} new` : ''}
           </Text>
@@ -111,7 +113,9 @@ export function NotificationsScreen() {
       )}
       {error && (
         <View className="px-6 py-4">
-          <Text className="text-sm text-destructive">{(error as Error).message}</Text>
+          <Text className="text-sm text-destructive">
+            {(error as Error).message}
+          </Text>
         </View>
       )}
       {data && (
@@ -137,16 +141,21 @@ export function NotificationsScreen() {
             >
               <Text
                 className={`text-sm ${
-                  item.readAt ? 'text-muted-foreground' : 'font-medium text-foreground'
+                  item.readAt
+                    ? 'text-muted-foreground'
+                    : 'font-medium text-foreground'
                 }`}
               >
                 {item.title}
               </Text>
               {item.body && (
-                <Text className="text-xs text-muted-foreground">{item.body}</Text>
+                <Text className="text-xs text-muted-foreground">
+                  {item.body}
+                </Text>
               )}
               <Text className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {item.kind.replace(/_/g, ' ').toLowerCase()} · {timeAgo(item.createdAt)} ago
+                {item.kind.replace(/_/g, ' ').toLowerCase()} ·{' '}
+                {timeAgo(item.createdAt)} ago
               </Text>
             </TouchableOpacity>
           )}

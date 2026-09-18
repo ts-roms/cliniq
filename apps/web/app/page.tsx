@@ -33,33 +33,27 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     title: 'Patient records',
-    body:
-      'MRN-keyed charts, demographics, allergies, vitals, conditions, and medications — searchable in one place.',
+    body: 'MRN-keyed charts, demographics, allergies, vitals, conditions, and medications — searchable in one place.',
   },
   {
     title: 'AI consultation scribe',
-    body:
-      'Capture the encounter; the AI drafts the SOAP note, ICD-10 suggestions, and Rx — provider always reviews before signing.',
+    body: 'Capture the encounter; the AI drafts the SOAP note, ICD-10 suggestions, and Rx — provider always reviews before signing.',
   },
   {
     title: 'PRC-compliant prescriptions',
-    body:
-      'PRC license, specialty, and signature snapshotted onto every Rx PDF. Drug catalog with brand/generic/strength.',
+    body: 'PRC license, specialty, and signature snapshotted onto every Rx PDF. Drug catalog with brand/generic/strength.',
   },
   {
     title: 'Telemedicine',
-    body:
-      'Browser-based video consults with patient consent capture and per-session recording controls.',
+    body: 'Browser-based video consults with patient consent capture and per-session recording controls.',
   },
   {
     title: 'HMO claims',
-    body:
-      'Track memberships, eligibility, and claim status across the country’s major HMOs without spreadsheets.',
+    body: 'Track memberships, eligibility, and claim status across the country’s major HMOs without spreadsheets.',
   },
   {
     title: 'Inventory & billing',
-    body:
-      'Stock movements, expiry tracking, invoices, and payments — wired to your consultation workflow.',
+    body: 'Stock movements, expiry tracking, invoices, and payments — wired to your consultation workflow.',
   },
 ];
 
@@ -71,18 +65,15 @@ interface Audience {
 const AUDIENCES: Audience[] = [
   {
     title: 'Solo practitioners',
-    body:
-      'Bring your records, scribe, and Rx into one place. No IT team required.',
+    body: 'Bring your records, scribe, and Rx into one place. No IT team required.',
   },
   {
     title: 'Multi-location clinics',
-    body:
-      'One tenant, many locations. Role-based access for owners, admins, doctors, nurses, and reception.',
+    body: 'One tenant, many locations. Role-based access for owners, admins, doctors, nurses, and reception.',
   },
   {
     title: 'Specialty practices',
-    body:
-      'Built-in flows for dental charting, pediatrics, OB-GYN, dermatology, cardiology, and psych.',
+    body: 'Built-in flows for dental charting, pediatrics, OB-GYN, dermatology, cardiology, and psych.',
   },
 ];
 
@@ -94,18 +85,15 @@ interface TrustItem {
 const TRUST: TrustItem[] = [
   {
     title: 'PRC-aware',
-    body:
-      'License number, expiry, and specialty captured per-provider and stamped on every prescription.',
+    body: 'License number, expiry, and specialty captured per-provider and stamped on every prescription.',
   },
   {
     title: 'DPA-aligned',
-    body:
-      'Patient data subject requests, consent capture, and a tamper-evident audit log out of the box.',
+    body: 'Patient data subject requests, consent capture, and a tamper-evident audit log out of the box.',
   },
   {
     title: 'PH-first',
-    body:
-      'PHP currency, Asia/Manila timezone, local HMO networks, and SMS-friendly notifications.',
+    body: 'PHP currency, Asia/Manila timezone, local HMO networks, and SMS-friendly notifications.',
   },
 ];
 
@@ -145,13 +133,17 @@ export default function LandingPage() {
             <span className="text-primary">with a brain.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Patients, consultations, prescriptions, telemedicine, HMO claims, and
-            inventory — in one place, with an AI scribe that drafts the note so
-            you can focus on the patient.
+            Patients, consultations, prescriptions, telemedicine, HMO claims,
+            and inventory — in one place, with an AI scribe that drafts the note
+            so you can focus on the patient.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <AuthAwareCta className="h-11 w-full px-6 text-base sm:w-auto" />
-            <Button asChild variant="outline" className="h-11 w-full px-6 text-base sm:w-auto">
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full px-6 text-base sm:w-auto"
+            >
               <Link href="/login">Sign in</Link>
             </Button>
           </div>
@@ -241,7 +233,11 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <AuthAwareCta className="h-11 w-full px-6 text-base sm:w-auto" />
-            <Button asChild variant="ghost" className="h-11 w-full px-6 text-base sm:w-auto">
+            <Button
+              asChild
+              variant="ghost"
+              className="h-11 w-full px-6 text-base sm:w-auto"
+            >
               <Link href="/login">I already have an account</Link>
             </Button>
           </div>

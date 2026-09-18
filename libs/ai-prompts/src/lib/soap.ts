@@ -45,8 +45,8 @@ Return STRICT JSON matching the schema below. No prose outside the JSON. No code
 };
 
 export interface RecentVisitSummary {
-  date: string;        // YYYY-MM-DD
-  assessment: string;  // collapsed prose
+  date: string; // YYYY-MM-DD
+  assessment: string; // collapsed prose
   icd10: string[];
 }
 
@@ -70,7 +70,8 @@ export function renderSoapUserMessage(input: SoapDraftInput): string {
   const lines: string[] = ['# Patient context'];
   if (ctx.age != null) lines.push(`- Age: ${ctx.age}`);
   if (ctx.sex) lines.push(`- Sex: ${ctx.sex}`);
-  if (ctx.allergies?.length) lines.push(`- Allergies: ${ctx.allergies.join(', ')}`);
+  if (ctx.allergies?.length)
+    lines.push(`- Allergies: ${ctx.allergies.join(', ')}`);
   if (ctx.activeMedications?.length)
     lines.push(`- Current meds: ${ctx.activeMedications.join(', ')}`);
   if (ctx.recentMedications?.length)
@@ -78,14 +79,19 @@ export function renderSoapUserMessage(input: SoapDraftInput): string {
   if (ctx.activeConditions?.length)
     lines.push(`- Active conditions: ${ctx.activeConditions.join(', ')}`);
   if (ctx.knownConditions?.length)
-    lines.push(`- Known conditions / prior dx: ${ctx.knownConditions.join(', ')}`);
-  if (ctx.chiefComplaint) lines.push(`- Chief complaint: ${ctx.chiefComplaint}`);
+    lines.push(
+      `- Known conditions / prior dx: ${ctx.knownConditions.join(', ')}`,
+    );
+  if (ctx.chiefComplaint)
+    lines.push(`- Chief complaint: ${ctx.chiefComplaint}`);
 
   if (ctx.recentVisits?.length) {
     lines.push('', '# Recent visits (most recent first)');
     for (const v of ctx.recentVisits) {
       const icd = v.icd10.length ? ` [${v.icd10.join(', ')}]` : '';
-      lines.push(`- ${v.date}${icd}: ${v.assessment || '(no recorded assessment)'}`);
+      lines.push(
+        `- ${v.date}${icd}: ${v.assessment || '(no recorded assessment)'}`,
+      );
     }
   }
 

@@ -60,9 +60,13 @@ export default function LabCatalogPage() {
           <CardTitle>Products</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
           {error && (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
+            <p className="text-sm text-destructive">
+              {(error as Error).message}
+            </p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">
@@ -108,7 +112,8 @@ function NewProductForm({
 }) {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
-  const [pricingMode, setPricingMode] = useState<LabProductPricingMode>('FIXED');
+  const [pricingMode, setPricingMode] =
+    useState<LabProductPricingMode>('FIXED');
   const [defaultPriceMajor, setDefaultPriceMajor] = useState<string>('');
   const [phases, setPhases] = useState<string>('');
 
@@ -122,8 +127,12 @@ function NewProductForm({
         name,
         sku: sku || undefined,
         pricingMode,
-        defaultPrice: pricingMode === 'ADJUST_ON_ORDER' ? undefined : priceCentavos,
-        phases: phases.split(',').map((s) => s.trim()).filter(Boolean),
+        defaultPrice:
+          pricingMode === 'ADJUST_ON_ORDER' ? undefined : priceCentavos,
+        phases: phases
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
       },
       { onSuccess: onCreated },
     );
@@ -142,18 +151,26 @@ function NewProductForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="SKU (optional)">
-          <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="ZA-CR-001" />
+          <Input
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            placeholder="ZA-CR-001"
+          />
         </FormField>
 
         <FormField label="Pricing mode">
           <Select
             value={pricingMode}
-            onChange={(e) => setPricingMode(e.target.value as LabProductPricingMode)}
+            onChange={(e) =>
+              setPricingMode(e.target.value as LabProductPricingMode)
+            }
           >
             <option value="FIXED">Fixed</option>
             <option value="ADJUST_ON_ORDER">Adjust on order</option>
             <option value="PER_RATE_PROFILE">Per rate profile (Phase 4)</option>
-            <option value="VARIABLE_PER_TIER">Variable per tier (Phase 4)</option>
+            <option value="VARIABLE_PER_TIER">
+              Variable per tier (Phase 4)
+            </option>
           </Select>
         </FormField>
       </div>
@@ -183,7 +200,9 @@ function NewProductForm({
       </FormField>
 
       {create.error && (
-        <p className="text-sm text-destructive">{(create.error as Error).message}</p>
+        <p className="text-sm text-destructive">
+          {(create.error as Error).message}
+        </p>
       )}
 
       <div className="flex justify-end gap-2">

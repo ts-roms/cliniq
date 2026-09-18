@@ -1,6 +1,13 @@
 'use client';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@org/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@org/ui';
 import type { AuditFilter, AuditLogEntry } from '../schemas/audit';
 
 interface Props {
@@ -16,13 +23,19 @@ export function AuditDetailDrawer({ entry, onClose, onApplyFilter }: Props) {
         {entry && (
           <>
             <DialogHeader>
-              <DialogTitle className="font-mono text-base">{entry.action}</DialogTitle>
+              <DialogTitle className="font-mono text-base">
+                {entry.action}
+              </DialogTitle>
               <DialogDescription>
                 {new Date(entry.occurredAt).toLocaleString()}
               </DialogDescription>
             </DialogHeader>
             <DetailGrid entry={entry} />
-            <FilterShortcuts entry={entry} onApply={onApplyFilter} onClose={onClose} />
+            <FilterShortcuts
+              entry={entry}
+              onApply={onApplyFilter}
+              onClose={onClose}
+            />
             <MetadataBlock metadata={entry.metadata} />
           </>
         )}
@@ -36,7 +49,10 @@ function DetailGrid({ entry }: { entry: AuditLogEntry }) {
     <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
       <Field label="Actor" value={entry.actorEmail ?? entry.userId} mono />
       <Field label="Tenant" value={entry.tenantId} mono />
-      <Field label="Entity" value={entry.entityType ? `${entry.entityType}` : null} />
+      <Field
+        label="Entity"
+        value={entry.entityType ? `${entry.entityType}` : null}
+      />
       <Field label="Entity ID" value={entry.entityId} mono />
       <Field label="IP" value={entry.ip} mono />
       <Field label="User agent" value={entry.userAgent} truncate />
@@ -57,7 +73,9 @@ function Field({
 }) {
   return (
     <>
-      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">
+        {label}
+      </dt>
       <dd
         className={[
           'text-sm',
@@ -127,10 +145,16 @@ function FilterShortcuts({
   );
 }
 
-function MetadataBlock({ metadata }: { metadata: Record<string, unknown> | null }) {
+function MetadataBlock({
+  metadata,
+}: {
+  metadata: Record<string, unknown> | null;
+}) {
   if (!metadata || Object.keys(metadata).length === 0) {
     return (
-      <p className="border-t pt-3 text-xs text-muted-foreground">No metadata recorded.</p>
+      <p className="border-t pt-3 text-xs text-muted-foreground">
+        No metadata recorded.
+      </p>
     );
   }
   return (

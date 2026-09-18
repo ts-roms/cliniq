@@ -31,7 +31,10 @@ class DermatologyDraftRequestDto {
   @IsString()
   consultationId!: string;
 
-  @ApiProperty({ type: [String], description: 'S3 keys of uploaded clinical photos' })
+  @ApiProperty({
+    type: [String],
+    description: 'S3 keys of uploaded clinical photos',
+  })
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(8)
@@ -77,7 +80,9 @@ export class DermatologyController {
 
   @Post('draft')
   @HttpCode(HttpStatus.OK)
-  async draft(@Body() dto: DermatologyDraftRequestDto): Promise<DermatologyDraftResponseDto> {
+  async draft(
+    @Body() dto: DermatologyDraftRequestDto,
+  ): Promise<DermatologyDraftResponseDto> {
     const userMessage = renderDermUserMessage({
       patientContext: dto.patientContext,
       imageCount: dto.imageS3Keys.length,
@@ -95,7 +100,12 @@ export class DermatologyController {
             {
               text:
                 `\n\n[image-references]\n` +
-                dto.imageS3Keys.map((k, i) => `${i + 1}: s3://${dto.s3Bucket ?? 'default'}/${k}`).join('\n'),
+                dto.imageS3Keys
+                  .map(
+                    (k, i) =>
+                      `${i + 1}: s3://${dto.s3Bucket ?? 'default'}/${k}`,
+                  )
+                  .join('\n'),
             },
           ],
         },
@@ -108,7 +118,9 @@ export class DermatologyController {
     try {
       draft = JSON.parse(result.text);
     } catch (err) {
-      this.logger.warn(`derm draft did not parse as JSON: ${(err as Error).message}`);
+      this.logger.warn(
+        `derm draft did not parse as JSON: ${(err as Error).message}`,
+      );
       throw new BadRequestException('AI output failed schema validation');
     }
 

@@ -13,12 +13,19 @@ import {
 import { useTenants } from '../hooks/use-tenants';
 import type { TenantPlan, TenantStatus } from '../lib/api';
 
-const STATUSES: TenantStatus[] = ['TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CANCELLED'];
+const STATUSES: TenantStatus[] = [
+  'TRIAL',
+  'ACTIVE',
+  'PAST_DUE',
+  'SUSPENDED',
+  'CANCELLED',
+];
 const PLANS: TenantPlan[] = ['STARTER', 'PRO', 'PREMIUM'];
 
 const STATUS_COLOR: Record<TenantStatus, string> = {
   TRIAL: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  ACTIVE:
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   PAST_DUE: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   SUSPENDED: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
   CANCELLED: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
@@ -27,7 +34,8 @@ const STATUS_COLOR: Record<TenantStatus, string> = {
 const PLAN_COLOR: Record<TenantPlan, string> = {
   STARTER: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
   PRO: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300',
-  PREMIUM: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
+  PREMIUM:
+    'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
 };
 
 export function TenantsTable() {
@@ -100,14 +108,20 @@ export function TenantsTable() {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-muted-foreground">
+                  <td
+                    colSpan={7}
+                    className="py-6 text-center text-muted-foreground"
+                  >
                     Loading…
                   </td>
                 </tr>
               )}
               {!isLoading && data?.items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-muted-foreground">
+                  <td
+                    colSpan={7}
+                    className="py-6 text-center text-muted-foreground"
+                  >
                     No tenants match those filters.
                   </td>
                 </tr>
@@ -121,7 +135,9 @@ export function TenantsTable() {
                     >
                       {t.name}
                     </Link>
-                    <div className="text-xs text-muted-foreground">{t.slug}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {t.slug}
+                    </div>
                   </td>
                   <td className="py-2 pr-3">
                     <span

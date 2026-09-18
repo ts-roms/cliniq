@@ -32,7 +32,10 @@ export class BroadcastDto {
   @MaxLength(500)
   body?: string;
 
-  @ApiPropertyOptional({ enum: NotificationSeverity, default: NotificationSeverity.INFO })
+  @ApiPropertyOptional({
+    enum: NotificationSeverity,
+    default: NotificationSeverity.INFO,
+  })
   @IsOptional()
   @IsEnum(NotificationSeverity)
   severity?: NotificationSeverity;

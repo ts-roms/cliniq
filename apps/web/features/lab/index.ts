@@ -43,7 +43,11 @@ export type {
 export { LabApiError } from './lib/api';
 export * from './hooks/use-lab';
 export { useTenantKind } from './hooks/use-tenant-kind';
-export { CaseStatusPill, InvoiceStatusPill, LinkStatusPill } from './components/status-pill';
+export {
+  CaseStatusPill,
+  InvoiceStatusPill,
+  LinkStatusPill,
+} from './components/status-pill';
 export { PhaseStrip } from './components/phase-strip';
 export { NotesPanel } from './components/notes-panel';
 export { ChatPanel } from './components/chat-panel';

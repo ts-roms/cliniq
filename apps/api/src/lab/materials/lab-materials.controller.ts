@@ -61,14 +61,25 @@ export class LabMaterialsController {
   @Post('materials')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.material.create', entity: 'LabMaterial', entityIdFrom: 'result:id' })
-  create(@Body() dto: CreateMaterialDto, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'lab.material.create',
+    entity: 'LabMaterial',
+    entityIdFrom: 'result:id',
+  })
+  create(
+    @Body() dto: CreateMaterialDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.mats.createMaterial(dto, user);
   }
 
   @Patch('materials/:id')
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.material.update', entity: 'LabMaterial', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'lab.material.update',
+    entity: 'LabMaterial',
+    entityIdFrom: 'param:id',
+  })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateMaterialDto,
@@ -80,7 +91,11 @@ export class LabMaterialsController {
   @Delete('materials/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.material.delete', entity: 'LabMaterial', entityIdFrom: 'param:id' })
+  @Audit({
+    action: 'lab.material.delete',
+    entity: 'LabMaterial',
+    entityIdFrom: 'param:id',
+  })
   remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.mats.removeMaterial(id, user);
   }
@@ -96,7 +111,11 @@ export class LabMaterialsController {
   @Post('materials/:id/lots')
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.lot.create', entity: 'LabMaterialLot', entityIdFrom: 'result:id' })
+  @Audit({
+    action: 'lab.lot.create',
+    entity: 'LabMaterialLot',
+    entityIdFrom: 'result:id',
+  })
   createLot(
     @Param('id') id: string,
     @Body() dto: CreateLotDto,
@@ -107,7 +126,11 @@ export class LabMaterialsController {
 
   @Patch('lots/:lotId')
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.lot.update', entity: 'LabMaterialLot', entityIdFrom: 'param:lotId' })
+  @Audit({
+    action: 'lab.lot.update',
+    entity: 'LabMaterialLot',
+    entityIdFrom: 'param:lotId',
+  })
   updateLot(
     @Param('lotId') lotId: string,
     @Body() dto: UpdateLotDto,
@@ -119,8 +142,15 @@ export class LabMaterialsController {
   @Delete('lots/:lotId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Requires(Actions.TENANT_MANAGE)
-  @Audit({ action: 'lab.lot.delete', entity: 'LabMaterialLot', entityIdFrom: 'param:lotId' })
-  removeLot(@Param('lotId') lotId: string, @CurrentUser() user: AuthenticatedUser) {
+  @Audit({
+    action: 'lab.lot.delete',
+    entity: 'LabMaterialLot',
+    entityIdFrom: 'param:lotId',
+  })
+  removeLot(
+    @Param('lotId') lotId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.mats.removeLot(lotId, user);
   }
 

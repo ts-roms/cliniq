@@ -22,7 +22,11 @@ export class UpdateConsultationDto {
   @IsObject()
   plan?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ description: 'ICD-10 codes', isArray: true, type: String })
+  @ApiPropertyOptional({
+    description: 'ICD-10 codes',
+    isArray: true,
+    type: String,
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

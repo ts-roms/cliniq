@@ -10,7 +10,10 @@ export async function hashPassword(plaintext: string): Promise<string> {
   return bcrypt.hash(plaintext, COST);
 }
 
-export async function verifyPassword(plaintext: string, hash: string | null): Promise<boolean> {
+export async function verifyPassword(
+  plaintext: string,
+  hash: string | null,
+): Promise<boolean> {
   if (!hash) return false;
   return bcrypt.compare(plaintext, hash);
 }

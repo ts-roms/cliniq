@@ -8,11 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
-import {
-  ObPregnancyStatus,
-  PrismaService,
-  UltrasoundKind,
-} from '@org/db';
+import { ObPregnancyStatus, PrismaService, UltrasoundKind } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type {
   CreateObVisitDto,
@@ -94,14 +90,23 @@ export class ObService {
     });
   }
 
-  async updatePregnancy(id: string, dto: UpdatePregnancyDto, user: AuthenticatedUser) {
+  async updatePregnancy(
+    id: string,
+    dto: UpdatePregnancyDto,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const existing = await tx.obPregnancy.findFirst({
         where: { id, tenantId: user.tenantId, deletedAt: null },
       });
       if (!existing) throw new NotFoundException('pregnancy not found');
       // If LMP changed and EDD wasn't explicitly set, recompute EDD via Naegele.
-      const newLmp = dto.lmp === undefined ? existing.lmp : dto.lmp ? new Date(dto.lmp) : null;
+      const newLmp =
+        dto.lmp === undefined
+          ? existing.lmp
+          : dto.lmp
+            ? new Date(dto.lmp)
+            : null;
       const newEdd =
         dto.edd === undefined
           ? existing.edd
@@ -138,7 +143,11 @@ export class ObService {
   async createVisit(dto: CreateObVisitDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const preg = await tx.obPregnancy.findFirst({
-        where: { id: dto.pregnancyId, tenantId: user.tenantId, deletedAt: null },
+        where: {
+          id: dto.pregnancyId,
+          tenantId: user.tenantId,
+          deletedAt: null,
+        },
       });
       if (!preg) throw new NotFoundException('pregnancy not found');
       const visitDate = dto.visitDate ? new Date(dto.visitDate) : new Date();
@@ -173,12 +182,18 @@ export class ObService {
       if (!patient) throw new NotFoundException('patient not found');
       if (dto.pregnancyId) {
         const preg = await tx.obPregnancy.findFirst({
-          where: { id: dto.pregnancyId, tenantId: user.tenantId, deletedAt: null },
+          where: {
+            id: dto.pregnancyId,
+            tenantId: user.tenantId,
+            deletedAt: null,
+          },
           select: { id: true, patientId: true },
         });
         if (!preg) throw new NotFoundException('pregnancy not found');
         if (preg.patientId !== patient.id) {
-          throw new BadRequestException('pregnancy belongs to a different patient');
+          throw new BadRequestException(
+            'pregnancy belongs to a different patient',
+          );
         }
       }
       return tx.ultrasoundReport.create({
@@ -213,7 +228,9 @@ export class ObService {
       tx.ultrasoundReport.findMany({
         where: { tenantId: user.tenantId, patientId, deletedAt: null },
         orderBy: [{ performedAt: 'desc' }],
-        include: { files: { where: { deletedAt: null }, orderBy: { sortOrder: 'asc' } } },
+        include: {
+          files: { where: { deletedAt: null }, orderBy: { sortOrder: 'asc' } },
+        },
       }),
     );
   }
@@ -222,7 +239,9 @@ export class ObService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const report = await tx.ultrasoundReport.findFirst({
         where: { id, tenantId: user.tenantId, deletedAt: null },
-        include: { files: { where: { deletedAt: null }, orderBy: { sortOrder: 'asc' } } },
+        include: {
+          files: { where: { deletedAt: null }, orderBy: { sortOrder: 'asc' } },
+        },
       });
       if (!report) throw new NotFoundException('report not found');
       return report;
@@ -288,7 +307,11 @@ export class ObService {
     });
   }
 
-  async deleteUltrasoundFile(reportId: string, fileId: string, user: AuthenticatedUser) {
+  async deleteUltrasoundFile(
+    reportId: string,
+    fileId: string,
+    user: AuthenticatedUser,
+  ) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const file = await tx.ultrasoundFile.findFirst({
         where: { id: fileId, reportId, deletedAt: null },
@@ -320,7 +343,10 @@ function eddFromLmp(lmp: Date | null): Date | null {
  * Naegele's rule (visitDate is at GA = 40w − (EDD - visitDate)/7d).
  * Returns weeks + remainder days, both >= 0.
  */
-function gaFromEdd(visitDate: Date, edd: Date): { weeks: number; days: number } {
+function gaFromEdd(
+  visitDate: Date,
+  edd: Date,
+): { weeks: number; days: number } {
   const conception = new Date(edd);
   conception.setUTCDate(conception.getUTCDate() - 280);
   const ms = visitDate.getTime() - conception.getTime();

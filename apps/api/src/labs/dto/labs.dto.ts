@@ -14,10 +14,22 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LabAbnormalFlag, LabOrderStatus } from '@org/db';
 
 export class LabOrderItemInputDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) testCode?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  testCode?: string;
   @ApiProperty() @IsString() @MaxLength(120) testName!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) category?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) resultUnit?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  category?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  resultUnit?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -36,9 +48,21 @@ export class CreateLabOrderDto {
   @ApiProperty() @IsString() patientId!: string;
 
   @ApiPropertyOptional() @IsOptional() @IsString() consultationId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) vendor?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) externalRef?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(280) notes?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  vendor?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  externalRef?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  notes?: string;
 
   @ApiProperty({ type: [LabOrderItemInputDto] })
   @IsArray()
@@ -54,22 +78,50 @@ export class UpdateLabOrderDto {
   @IsEnum(LabOrderStatus)
   status?: LabOrderStatus;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) vendor?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) externalRef?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(280) notes?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  vendor?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  externalRef?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  notes?: string;
 
-  @ApiPropertyOptional() @IsOptional() @Type(() => Date) @IsDate() collectedAt?: Date;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Date) @IsDate() receivedAt?: Date;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  collectedAt?: Date;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  receivedAt?: Date;
 }
 
 export class RecordResultDto {
   @ApiProperty() @IsString() resultValue!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) resultUnit?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  resultUnit?: string;
 
   @ApiPropertyOptional({ enum: LabAbnormalFlag })
   @IsOptional()
   @IsEnum(LabAbnormalFlag)
   abnormalFlag?: LabAbnormalFlag;
 
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(280) comment?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  comment?: string;
 }

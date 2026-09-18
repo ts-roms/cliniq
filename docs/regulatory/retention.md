@@ -6,19 +6,19 @@ The public-facing summary is at [/privacy/pia §4](../../apps/web/app/privacy/pi
 
 ## Retention windows
 
-| Data | Window | Mechanism | Rationale |
-|---|---|---|---|
-| **Active patient record** | Indefinite (while clinic-patient relationship is active) | None | Treatment necessity (§13.f) |
-| **Inactive patient record** (no visit > 5y) | +5y archive then anonymize | Annual review | DOH 10y retention |
-| **Consultation note (locked)** | Same as patient record | None | Clinical record |
-| **Audit log** | 7 years (2555 days) | Daily cron purges past-window rows | NPC §B + tax |
-| **Notification (in-app)** | 90 days from creation | Daily cron | UX-only data, low value at age |
-| **Audio transcript** | 30 days | Worker job (separate from RetentionService) | Privacy minimization (PIA §5) |
-| **Backups (RDS automated)** | 35 days | RDS retention policy | Recovery + audit window |
-| **Backups (cross-region DR)** | 90 days | RDS lifecycle | DR posture |
-| **AI suggestions** | Same as parent consultation | Cascade delete | Clinical context |
-| **Invoice / payment** | 10 years | Manual archive | BIR §235 |
-| **DSR request records** | 7 years | Audit table | NPC compliance |
+| Data                                        | Window                                                   | Mechanism                                   | Rationale                      |
+| ------------------------------------------- | -------------------------------------------------------- | ------------------------------------------- | ------------------------------ |
+| **Active patient record**                   | Indefinite (while clinic-patient relationship is active) | None                                        | Treatment necessity (§13.f)    |
+| **Inactive patient record** (no visit > 5y) | +5y archive then anonymize                               | Annual review                               | DOH 10y retention              |
+| **Consultation note (locked)**              | Same as patient record                                   | None                                        | Clinical record                |
+| **Audit log**                               | 7 years (2555 days)                                      | Daily cron purges past-window rows          | NPC §B + tax                   |
+| **Notification (in-app)**                   | 90 days from creation                                    | Daily cron                                  | UX-only data, low value at age |
+| **Audio transcript**                        | 30 days                                                  | Worker job (separate from RetentionService) | Privacy minimization (PIA §5)  |
+| **Backups (RDS automated)**                 | 35 days                                                  | RDS retention policy                        | Recovery + audit window        |
+| **Backups (cross-region DR)**               | 90 days                                                  | RDS lifecycle                               | DR posture                     |
+| **AI suggestions**                          | Same as parent consultation                              | Cascade delete                              | Clinical context               |
+| **Invoice / payment**                       | 10 years                                                 | Manual archive                              | BIR §235                       |
+| **DSR request records**                     | 7 years                                                  | Audit table                                 | NPC compliance                 |
 
 ## Deletion mode
 

@@ -24,7 +24,7 @@ afterAll(async () => {
 });
 
 describe('Cross-tenant isolation', () => {
-  it('Patients: tenant B cannot read tenant A\'s patient list', async () => {
+  it("Patients: tenant B cannot read tenant A's patient list", async () => {
     const A = await env.makeTenant();
     const B = await env.makeTenant();
 
@@ -94,7 +94,7 @@ describe('Cross-tenant isolation', () => {
     expect(callB.status).toBe(404);
   });
 
-  it('OB pregnancies: tenant B cannot read tenant A\'s', async () => {
+  it("OB pregnancies: tenant B cannot read tenant A's", async () => {
     const A = await env.makeTenant();
     const B = await env.makeTenant();
 

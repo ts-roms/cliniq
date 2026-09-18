@@ -13,7 +13,9 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PrescriptionItemInputDto {
-  @ApiPropertyOptional({ description: 'Drug catalog id (preferred over free-text)' })
+  @ApiPropertyOptional({
+    description: 'Drug catalog id (preferred over free-text)',
+  })
   @IsOptional()
   @IsString()
   drugId?: string;
@@ -78,7 +80,9 @@ export class CreatePrescriptionDto {
   @IsString()
   patientId!: string;
 
-  @ApiPropertyOptional({ description: 'Optional consultation to anchor the Rx' })
+  @ApiPropertyOptional({
+    description: 'Optional consultation to anchor the Rx',
+  })
   @IsOptional()
   @IsString()
   consultationId?: string;
@@ -89,13 +93,19 @@ export class CreatePrescriptionDto {
   @MaxLength(500)
   notes?: string;
 
-  @ApiPropertyOptional({ type: [String], description: 'Patient allergy substances at issue time' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Patient allergy substances at issue time',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   knownAllergies?: string[];
 
-  @ApiPropertyOptional({ type: [String], description: 'Patient active medications at issue time' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Patient active medications at issue time',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -109,7 +119,8 @@ export class CreatePrescriptionDto {
   items!: PrescriptionItemInputDto[];
 
   @ApiPropertyOptional({
-    description: 'Override the safety check. Doctor takes responsibility — recorded in audit.',
+    description:
+      'Override the safety check. Doctor takes responsibility — recorded in audit.',
     default: false,
   })
   @IsOptional()
