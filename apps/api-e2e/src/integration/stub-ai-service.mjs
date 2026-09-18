@@ -10,26 +10,48 @@ const PORT = Number(process.env.AI_STUB_PORT) || 4300;
 const server = createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/ai/drafts/soap') {
     let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
     req.on('end', () => {
       let parsed;
-      try { parsed = JSON.parse(body); } catch { parsed = {}; }
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        parsed = {};
+      }
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({
-        draft: {
-          subjective: { chiefComplaint: 'Itchy red patches on forearm' },
-          objective: { physicalExam: { skin: 'Erythematous papules, no excoriation' } },
-          assessment: [{ problem: 'Allergic contact dermatitis', icd10: 'L23.9', reasoning: 'Acute onset, pruritic, localized' }],
-          plan: [{ problem: 'Allergic contact dermatitis', actions: ['topical corticosteroid', 'avoid suspected allergen'] }],
-          uncertainty: parsed.transcript?.length < 100 ? ['short transcript'] : [],
-        },
-        promptVersion: 'soap_v1',
-        model: 'claude-sonnet-4-6-stub',
-        inputTokens: 1500,
-        outputTokens: 600,
-        cacheReadTokens: 0,
-        latencyMs: 12,
-      }));
+      res.end(
+        JSON.stringify({
+          draft: {
+            subjective: { chiefComplaint: 'Itchy red patches on forearm' },
+            objective: {
+              physicalExam: { skin: 'Erythematous papules, no excoriation' },
+            },
+            assessment: [
+              {
+                problem: 'Allergic contact dermatitis',
+                icd10: 'L23.9',
+                reasoning: 'Acute onset, pruritic, localized',
+              },
+            ],
+            plan: [
+              {
+                problem: 'Allergic contact dermatitis',
+                actions: ['topical corticosteroid', 'avoid suspected allergen'],
+              },
+            ],
+            uncertainty:
+              parsed.transcript?.length < 100 ? ['short transcript'] : [],
+          },
+          promptVersion: 'soap_v1',
+          model: 'claude-sonnet-4-6-stub',
+          inputTokens: 1500,
+          outputTokens: 600,
+          cacheReadTokens: 0,
+          latencyMs: 12,
+        }),
+      );
     });
     return;
   }

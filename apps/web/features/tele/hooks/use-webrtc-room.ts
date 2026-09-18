@@ -56,7 +56,9 @@ export function useWebRtcRoom({
   const [error, setError] = useState<string | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [chat, setChat] = useState<Array<{ from: TeleRole; text: string; at: string }>>([]);
+  const [chat, setChat] = useState<
+    Array<{ from: TeleRole; text: string; at: string }>
+  >([]);
   // Recording-consent flow:
   //   patient sees `pendingConsent=true` when doctor sends CONSENT_REQUEST
   //   doctor sees `consentResponse: boolean | null` after patient replies
@@ -179,7 +181,13 @@ export function useWebRtcRoom({
       alive = false;
       if (pollHandle.current !== null) window.clearTimeout(pollHandle.current);
     };
-  }, [enabled, sessionId, role, auth.kind, auth.kind === 'patient' ? auth.token : '']);
+  }, [
+    enabled,
+    sessionId,
+    role,
+    auth.kind,
+    auth.kind === 'patient' ? auth.token : '',
+  ]);
 
   const drainPending = useCallback(async () => {
     const pc = pcRef.current;
@@ -266,14 +274,17 @@ export function useWebRtcRoom({
       void send('CONSENT_RESPONSE', { granted });
       try {
         const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
-        await fetch(`${base}/api/tele/sessions/${sessionId}/recording-consent`, {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'X-Tele-Token': auth.token,
+        await fetch(
+          `${base}/api/tele/sessions/${sessionId}/recording-consent`,
+          {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              'X-Tele-Token': auth.token,
+            },
+            body: JSON.stringify({ granted }),
           },
-          body: JSON.stringify({ granted }),
-        });
+        );
       } catch (err) {
         console.warn('[tele] consent stamp failed', err);
       }
@@ -353,7 +364,10 @@ export function useWebRtcRoom({
   const sendChat = useCallback(
     (text: string) => {
       if (!text.trim()) return;
-      setChat((prev) => [...prev, { from: role, text, at: new Date().toISOString() }]);
+      setChat((prev) => [
+        ...prev,
+        { from: role, text, at: new Date().toISOString() },
+      ]);
       void send('CHAT', { text });
     },
     [role, send],
@@ -410,4 +424,3 @@ async function fetchSignals(
   if (error || !data) return [];
   return data as unknown as TeleSignal[];
 }
-

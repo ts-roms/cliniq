@@ -90,7 +90,9 @@ export function InvoiceList({ patientId }: { patientId: string }) {
         return (
           <View key={inv.id} className="border-b border-border py-2">
             <View className="flex-row items-center justify-between">
-              <Text className="font-mono text-sm text-foreground">{inv.number}</Text>
+              <Text className="font-mono text-sm text-foreground">
+                {inv.number}
+              </Text>
               <Text className={`text-xs ${STATUS_TONE[inv.status] ?? ''}`}>
                 {inv.status}
               </Text>
@@ -112,7 +114,9 @@ export function InvoiceList({ patientId }: { patientId: string }) {
               onPress={() => {
                 // For now route to the device browser to open the web app —
                 // it has a working blob-download path with auth.
-                void Linking.openURL(`${API_BASE.replace(/\/api$/, '')}/patients/${patientId}`);
+                void Linking.openURL(
+                  `${API_BASE.replace(/\/api$/, '')}/patients/${patientId}`,
+                );
                 pdf.mutate(inv.id);
               }}
               className="mt-1 self-end"

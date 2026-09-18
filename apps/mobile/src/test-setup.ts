@@ -15,6 +15,13 @@ if (typeof global.structuredClone === 'undefined') {
   global.structuredClone = (object) => JSON.parse(JSON.stringify(object));
 }
 
+// @react-native-async-storage/async-storage: use-t.ts persists the language
+// here. The native module is null under jest, so wire the in-memory mock
+// the package ships for exactly this purpose.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 // ── Expo module stubs ────────────────────────────────
 // expo-notifications: the App's usePushNotifications hook calls these on
 // mount. The real implementations require a Native bridge that's absent in

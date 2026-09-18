@@ -6,7 +6,11 @@ import { client, configureAuth, configureAutoRefresh } from '@org/api-client';
 import { LoginScreen } from '../features/auth/login-screen';
 import { useSession } from '../features/auth/use-session';
 import { useHydrated } from '../features/auth/use-hydrated';
-import { clearSession, getSession, saveSession } from '../features/auth/session';
+import {
+  clearSession,
+  getSession,
+  saveSession,
+} from '../features/auth/session';
 import { PatientsScreen } from '../features/patients/patients-screen';
 import { PatientDetailScreen } from '../features/patients/patient-detail-screen';
 import { ScheduleScreen } from '../features/appointments/schedule-screen';
@@ -27,7 +31,10 @@ import { LabTreatmentPlansScreen } from '../features/lab/lab-treatment-plans-scr
 import { TabBar, type Tab } from '../shared/components/tab-bar';
 import { NavRail } from '../shared/components/nav-rail';
 import { LangSwitch } from '../shared/components/lang-switch';
-import { useBreakpoint, useResponsiveValue } from '../shared/hooks/use-breakpoint';
+import {
+  useBreakpoint,
+  useResponsiveValue,
+} from '../shared/hooks/use-breakpoint';
 import { useT } from '../shared/i18n';
 
 // Configure the API client once at module load. process.env on RN is statically
@@ -121,12 +128,14 @@ function ResponsiveShell<T extends string>({
   const { isTablet, isWide } = useBreakpoint();
   // Match the rail variant; on `xl` the content also gets a wider cap and
   // generous gutter, on `lg` it's tighter.
-  const contentMaxClass = useResponsiveValue({
-    xs: 'w-full',
-    lg: 'mx-auto w-full max-w-3xl',
-    xl: 'mx-auto w-full max-w-5xl',
-  }) ?? 'w-full';
-  const contentPad = useResponsiveValue({ xs: '', lg: 'px-4', xl: 'px-6' }) ?? '';
+  const contentMaxClass =
+    useResponsiveValue({
+      xs: 'w-full',
+      lg: 'mx-auto w-full max-w-3xl',
+      xl: 'mx-auto w-full max-w-5xl',
+    }) ?? 'w-full';
+  const contentPad =
+    useResponsiveValue({ xs: '', lg: 'px-4', xl: 'px-6' }) ?? '';
 
   if (isTablet) {
     return (
@@ -139,7 +148,9 @@ function ResponsiveShell<T extends string>({
           variant={isWide ? 'expanded' : 'compact'}
         />
         <View className="flex-1">
-          <View className={`flex-1 ${contentMaxClass} ${contentPad}`}>{children}</View>
+          <View className={`flex-1 ${contentMaxClass} ${contentPad}`}>
+            {children}
+          </View>
           <ShellFooter />
         </View>
       </View>
@@ -164,7 +175,9 @@ function StaffShell() {
   // simple without pulling in react-navigation just for four screens.
   const [labCaseId, setLabCaseId] = useState<string | null>(null);
   const [labInvoiceId, setLabInvoiceId] = useState<string | null>(null);
-  const [labPlansForCaseId, setLabPlansForCaseId] = useState<string | null>(null);
+  const [labPlansForCaseId, setLabPlansForCaseId] = useState<string | null>(
+    null,
+  );
   const unread = useUnreadCount();
   const t = useT();
 
@@ -172,11 +185,21 @@ function StaffShell() {
     { key: 'patients', label: t('tabs.patients'), icon: 'users' },
     { key: 'schedule', label: t('tabs.schedule'), icon: 'calendar' },
     { key: 'lab', label: t('tabs.lab'), icon: 'package' },
-    { key: 'inbox', label: t('tabs.inbox'), badge: unread.data ?? 0, icon: 'bell' },
+    {
+      key: 'inbox',
+      label: t('tabs.inbox'),
+      badge: unread.data ?? 0,
+      icon: 'bell',
+    },
   ];
 
   return (
-    <ResponsiveShell tabs={tabs} active={tab} onChange={setTab} brand={t('app.brand')}>
+    <ResponsiveShell
+      tabs={tabs}
+      active={tab}
+      onChange={setTab}
+      brand={t('app.brand')}
+    >
       {tab === 'patients' &&
         (consultDetailId ? (
           <ConsultDetailScreen
@@ -231,13 +254,22 @@ function PortalShell() {
 
   const tabs: Tab<PortalTabKey>[] = [
     { key: 'home', label: t('portal.tabs.home'), icon: 'home' },
-    { key: 'appointments', label: t('portal.tabs.appointments'), icon: 'calendar' },
+    {
+      key: 'appointments',
+      label: t('portal.tabs.appointments'),
+      icon: 'calendar',
+    },
     { key: 'records', label: t('portal.tabs.records'), icon: 'file-text' },
     { key: 'invoices', label: t('portal.tabs.invoices'), icon: 'credit-card' },
   ];
 
   return (
-    <ResponsiveShell tabs={tabs} active={tab} onChange={setTab} brand={t('app.brand')}>
+    <ResponsiveShell
+      tabs={tabs}
+      active={tab}
+      onChange={setTab}
+      brand={t('app.brand')}
+    >
       {tab === 'home' && <PortalHomeScreen />}
       {tab === 'appointments' && <PortalAppointmentsScreen />}
       {tab === 'records' && <PortalRecordsScreen />}

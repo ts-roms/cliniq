@@ -47,6 +47,9 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    // The lib has no spec files yet; without this vitest exits 1 and fails
+    // `nx affected -t test` whenever @org/ui is in the affected set.
+    passWithNoTests: true,
     reporters: ['default'],
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',

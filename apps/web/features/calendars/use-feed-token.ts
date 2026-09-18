@@ -14,7 +14,9 @@ export interface FeedTokenResponse {
 
 export function useIssueFeedToken() {
   return useMutation({
-    mutationFn: async (providerId: string): Promise<FeedTokenResponse & { feedUrl: string }> => {
+    mutationFn: async (
+      providerId: string,
+    ): Promise<FeedTokenResponse & { feedUrl: string }> => {
       const { data, error } = await calendarsControllerIssueToken({
         path: { id: providerId },
       });

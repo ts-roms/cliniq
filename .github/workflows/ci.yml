@@ -111,8 +111,11 @@ jobs:
       - name: Test (affected, includes RLS leak test)
         run: pnpm exec nx affected -t test --parallel=3
 
+      # @org/mobile:build is `eas build` (Expo cloud build; needs the EAS CLI
+      # and an EXPO_TOKEN) — not a CI concern. Mobile lint/test/typecheck
+      # still run above.
       - name: Build (affected)
-        run: pnpm exec nx affected -t build --parallel=3
+        run: pnpm exec nx affected -t build --parallel=3 --exclude=@org/mobile
 
   # ────────────────────────────────────────────────────────────
   # Boot the built api binary against a real Postgres + run the

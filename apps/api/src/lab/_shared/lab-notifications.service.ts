@@ -90,7 +90,11 @@ export class LabNotificationsService {
     const recipient = await this.lookupOwnerEmail(tenantId);
     if (!recipient) return;
     const msg = builder(recipient);
-    await this.send({ to: recipient.email, subject: msg.subject, text: msg.text });
+    await this.send({
+      to: recipient.email,
+      subject: msg.subject,
+      text: msg.text,
+    });
     // Also create a Notification row + push. Lab events use kind=GENERAL
     // for now — adding LAB_* kinds would mean another migration; the
     // mobile inbox renders all kinds the same way today anyway.
