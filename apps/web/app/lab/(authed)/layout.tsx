@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@org/ui';
-import { useLogout, useSession } from '@/features/auth';
+import { useLogout, useRequiredSession } from '@/features/auth';
 import { useTenantKind } from '@/features/lab';
 
 const NAV = [
@@ -24,19 +24,22 @@ export default function LabAuthedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = useSession();
+  // useRequiredSession, not useSession: the session lives in localStorage and
+  // is read through useSyncExternalStore, whose SERVER snapshot is null. On the
+  // hydration render `session` is therefore null even for a signed-in user, and
+  // the gate below used to redirect on that render — bouncing an authenticated
+  // LAB user to the clinic /login page. The hook only trusts a null once it has
+  // hydrated; the clinic and platform shells already did this, the lab shell
+  // was the one that re-implemented the gate and left the guard out.
+  const session = useRequiredSession();
   const tenantKind = useTenantKind();
   const router = useRouter();
   const pathname = usePathname();
   const signOut = useLogout(() => router.push('/login'));
 
-  // Gate: must be signed in AND a LAB tenant.
+  // Gate: signed in (handled by useRequiredSession) AND a LAB tenant.
   useEffect(() => {
-    if (session === null) {
-      router.replace('/login');
-      return;
-    }
-    if (tenantKind && tenantKind !== 'LAB') {
+    if (session && tenantKind && tenantKind !== 'LAB') {
       // Clinic users land on the regular app; portal users get bounced to portal.
       router.replace('/dashboard');
     }

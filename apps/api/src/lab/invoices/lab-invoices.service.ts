@@ -29,6 +29,7 @@ import type {
   UpdateInvoiceDto,
   UpdateInvoiceItemDto,
 } from './dto/invoice.dto.js';
+import { LabCounterpartyService } from '../_shared/counterparty.service.js';
 
 const TERMINAL_STATUSES: ReadonlySet<LabInvoiceStatus> = new Set([
   LabInvoiceStatus.PAID,
@@ -45,83 +46,100 @@ export class LabInvoicesService {
     private readonly pdf: LabPdfRenderingService,
     private readonly notify: LabNotificationsService,
     private readonly paymongo: PaymongoService,
+    private readonly counterparty: LabCounterpartyService,
   ) {}
 
   // ── Lookups ──────────────────────────────────────────────
 
   async listForLab(user: AuthenticatedUser, filter: InvoiceFilterDto = {}) {
-    return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labInvoice.findMany({
-        where: {
-          labTenantId: user.tenantId,
-          deletedAt: null,
-          ...(filter.status ? { status: filter.status } : {}),
-          ...(filter.clinicTenantId
-            ? { clinicTenantId: filter.clinicTenantId }
-            : {}),
-        },
-        orderBy: [{ createdAt: 'desc' }],
-        take: clampLimit(filter.limit),
-        skip: clampOffset(filter.offset),
-        include: {
-          clinic: { select: { id: true, slug: true, name: true } },
-          _count: { select: { items: true, paymentLinks: true } },
-        },
-      }),
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labInvoice.findMany({
+          where: {
+            labTenantId: user.tenantId,
+            deletedAt: null,
+            ...(filter.status ? { status: filter.status } : {}),
+            ...(filter.clinicTenantId
+              ? { clinicTenantId: filter.clinicTenantId }
+              : {}),
+          },
+          orderBy: [{ createdAt: 'desc' }],
+          take: clampLimit(filter.limit),
+          skip: clampOffset(filter.offset),
+          include: {
+            clinic: { select: { id: true, slug: true, name: true } },
+            _count: { select: { items: true, paymentLinks: true } },
+          },
+        }),
     );
+    // RLS hides the counterparty tenant — see LabCounterpartyService.
+    return this.counterparty.hydrate(rows);
   }
 
   async listForClinic(user: AuthenticatedUser, filter: InvoiceFilterDto = {}) {
-    return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labInvoice.findMany({
-        where: {
-          clinicTenantId: user.tenantId,
-          deletedAt: null,
-          // Clinic side never sees DRAFT (lab is still composing) — shield
-          // them from work-in-progress invoices.
-          status: filter.status ?? {
-            in: [
-              LabInvoiceStatus.ISSUED,
-              LabInvoiceStatus.PAID,
-              LabInvoiceStatus.OVERDUE,
-              LabInvoiceStatus.VOID,
-            ],
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labInvoice.findMany({
+          where: {
+            clinicTenantId: user.tenantId,
+            deletedAt: null,
+            // Clinic side never sees DRAFT (lab is still composing) — shield
+            // them from work-in-progress invoices.
+            status: filter.status ?? {
+              in: [
+                LabInvoiceStatus.ISSUED,
+                LabInvoiceStatus.PAID,
+                LabInvoiceStatus.OVERDUE,
+                LabInvoiceStatus.VOID,
+              ],
+            },
           },
-        },
-        orderBy: [{ createdAt: 'desc' }],
-        take: clampLimit(filter.limit),
-        skip: clampOffset(filter.offset),
-        include: {
-          lab: { select: { id: true, slug: true, name: true } },
-          _count: { select: { items: true } },
-        },
-      }),
+          orderBy: [{ createdAt: 'desc' }],
+          take: clampLimit(filter.limit),
+          skip: clampOffset(filter.offset),
+          include: {
+            lab: { select: { id: true, slug: true, name: true } },
+            _count: { select: { items: true } },
+          },
+        }),
     );
+    // RLS hides the counterparty tenant — see LabCounterpartyService.
+    return this.counterparty.hydrate(rows);
   }
 
   async findById(id: string, user: AuthenticatedUser) {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const invoice = await tx.labInvoice.findFirst({
-        where: { id, deletedAt: null },
-        include: {
-          items: { orderBy: [{ sortOrder: 'asc' }, { description: 'asc' }] },
-          paymentLinks: { orderBy: [{ createdAt: 'desc' }] },
-          lab: { select: { id: true, slug: true, name: true } },
-          clinic: { select: { id: true, slug: true, name: true } },
-        },
-      });
-      if (!invoice) throw new NotFoundException('invoice not found');
-      // Hide DRAFTs from the clinic side. RLS already keeps cross-tenant
-      // peeks out, but a clinic seeing a draft invoice is a leak too.
-      if (
-        invoice.status === LabInvoiceStatus.DRAFT &&
-        invoice.clinicTenantId === user.tenantId &&
-        invoice.labTenantId !== user.tenantId
-      ) {
-        throw new NotFoundException('invoice not found');
-      }
-      return invoice;
-    });
+    const found = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const invoice = await tx.labInvoice.findFirst({
+          where: { id, deletedAt: null },
+          include: {
+            items: { orderBy: [{ sortOrder: 'asc' }, { description: 'asc' }] },
+            paymentLinks: { orderBy: [{ createdAt: 'desc' }] },
+            lab: { select: { id: true, slug: true, name: true } },
+            clinic: { select: { id: true, slug: true, name: true } },
+          },
+        });
+        if (!invoice) throw new NotFoundException('invoice not found');
+        // Hide DRAFTs from the clinic side. RLS already keeps cross-tenant
+        // peeks out, but a clinic seeing a draft invoice is a leak too.
+        if (
+          invoice.status === LabInvoiceStatus.DRAFT &&
+          invoice.clinicTenantId === user.tenantId &&
+          invoice.labTenantId !== user.tenantId
+        ) {
+          throw new NotFoundException('invoice not found');
+        }
+        return invoice;
+      },
+    );
+    // RLS hides the counterparty tenant — see LabCounterpartyService.
+    return this.counterparty.hydrate(found);
   }
 
   // ── Create / update ──────────────────────────────────────
@@ -550,10 +568,14 @@ export class LabInvoicesService {
         reservation.invoice.refNumber !== null
           ? `INV-${reservation.invoice.refNumber}`
           : reservation.invoice.id.slice(-6);
+      // Both names are null under RLS (see LabCounterpartyService) and this
+      // text is what the payer sees on the PayMongo checkout page, so it has
+      // to be the real lab/clinic name, not a placeholder.
+      const named = await this.counterparty.hydrate(reservation.invoice);
       const created = await this.paymongo.createLink({
         amountCents: reservation.amount,
-        description: `${reservation.invoice.lab.name} ${ref}`,
-        remarks: `Bill to ${reservation.invoice.clinic.name}`,
+        description: `${named.lab?.name ?? 'Lab'} ${ref}`,
+        remarks: `Bill to ${named.clinic?.name ?? 'clinic'}`,
       });
       externalId = created.id;
       url = created.checkoutUrl;
@@ -890,7 +912,10 @@ export class LabInvoicesService {
         }),
     );
     if (!invoice) throw new NotFoundException('invoice not found');
-    return this.renderAndPersist(invoice);
+    // drawInvoice() dereferences invoice.lab.name / invoice.clinic.name. Both
+    // arrive null under RLS (see LabCounterpartyService), which made every
+    // lab-invoice PDF a 500 in both directions. Hydrate before rendering.
+    return this.renderAndPersist(await this.counterparty.hydrate(invoice));
   }
 
   /**
@@ -919,7 +944,8 @@ export class LabInvoicesService {
     if (invoice.pdfFileKey && invoice.pdfFilename) {
       return this.pdf.presignDownload(invoice.pdfFileKey, invoice.pdfFilename);
     }
-    return this.renderAndPersist(invoice);
+    // Same null-counterparty trap as generatePdfAsLab above.
+    return this.renderAndPersist(await this.counterparty.hydrate(invoice));
   }
 
   private async renderAndPersist(invoice: InvoiceForPdf) {
