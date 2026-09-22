@@ -40,8 +40,7 @@ COPY libs/api-client/package.json libs/api-client/
 # the whole `docker compose up`. CI explicitly runs the strict
 # form via `pnpm install --frozen-lockfile` before docker build,
 # so we don't silently drift in production.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts \
+RUN pnpm install --frozen-lockfile --ignore-scripts \
  || pnpm install --no-frozen-lockfile --ignore-scripts
 
 FROM deps AS build
@@ -57,8 +56,7 @@ RUN pnpm exec nx sync \
 # web/mobile stack), which is what made this image 2.5 GB. Runtime deps
 # must therefore be declared in apps/ai-service/package.json, not the root.
 FROM build AS deploy
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm --filter=@org/ai-service deploy --prod --frozen-lockfile --ignore-scripts \
+RUN pnpm --filter=@org/ai-service deploy --prod --frozen-lockfile --ignore-scripts \
       --config.inject-workspace-packages=true /deploy
 
 # ── runner ────────────────────────────────────────

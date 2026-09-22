@@ -39,8 +39,7 @@ COPY libs/api-client/package.json libs/api-client/
 # the whole `docker compose up`. CI explicitly runs the strict
 # form via `pnpm install --frozen-lockfile` before docker build,
 # so we don't silently drift in production.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts \
+RUN pnpm install --frozen-lockfile --ignore-scripts \
  || pnpm install --no-frozen-lockfile --ignore-scripts
 
 # ── build ─────────────────────────────────────────
@@ -70,8 +69,7 @@ RUN pnpm exec nx sync \
 # keeps symlinked workspace packages for development. The legacy deploy
 # mode is NOT used: it inherits the root's dependencies (the same 2.6 GB).
 FROM build AS deploy
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm --filter=@org/api deploy --prod --frozen-lockfile --ignore-scripts \
+RUN pnpm --filter=@org/api deploy --prod --frozen-lockfile --ignore-scripts \
       --config.inject-workspace-packages=true /deploy
 
 # ── runner ────────────────────────────────────────

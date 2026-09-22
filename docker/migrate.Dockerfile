@@ -41,8 +41,7 @@ COPY libs/api-client/package.json libs/api-client/
 # the whole `docker compose up`. CI explicitly runs the strict
 # form via `pnpm install --frozen-lockfile` before docker build,
 # so we don't silently drift in production.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts \
+RUN pnpm install --frozen-lockfile --ignore-scripts \
  || pnpm install --no-frozen-lockfile --ignore-scripts
 
 # ── deploy ────────────────────────────────────────
@@ -54,8 +53,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 FROM deps AS deploy
 COPY libs/db/prisma ./libs/db/prisma
 COPY libs/db/prisma.config.ts ./libs/db/
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm --filter=@org/db deploy --prod --frozen-lockfile --ignore-scripts \
+RUN pnpm --filter=@org/db deploy --prod --frozen-lockfile --ignore-scripts \
       --config.inject-workspace-packages=true /deploy
 
 # ── migrate ───────────────────────────────────────
