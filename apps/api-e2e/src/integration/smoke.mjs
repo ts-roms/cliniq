@@ -77,6 +77,29 @@ async function setRole(userId, role) {
   return true;
 }
 
+/**
+ * Plans are platform-only (no signup input). Set it straight in the DB the
+ * way setRole() promotes a user — before the tenant's first authenticated
+ * request, so the api's tenant-context cache never holds STARTER.
+ */
+async function setPlan(tenantId, plan) {
+  if (!DATABASE_URL) {
+    log(`DATABASE_URL unset — tenant stays on STARTER (AI flow is skipped)`);
+    return false;
+  }
+  const client = new pg.Client({ connectionString: DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query(`UPDATE tenants SET plan = $2 WHERE id = $1`, [
+      tenantId,
+      plan,
+    ]);
+  } finally {
+    await client.end();
+  }
+  return true;
+}
+
 async function main() {
   await waitForApi();
 
@@ -96,8 +119,9 @@ async function main() {
         name: 'Pilot Clinic',
         ownerEmail: userEmail,
         ownerName: 'Dr. Integration',
-        // The AI draft step below is feature-gated (ai_soap); STARTER 402s.
-        plan: 'PREMIUM',
+        // No plan: signup always lands on STARTER; only the platform sets
+        // one. The AI draft step below needs ai_soap, so setPlan() below
+        // does what a platform admin would.
       }),
     },
     201,
@@ -108,6 +132,7 @@ async function main() {
     'password-less tenant create must return a bootstrapToken',
   );
   log(`tenant ${tenant.id} created`);
+  if (await setPlan(tenant.id, 'PREMIUM')) log('tenant plan → PREMIUM');
 
   // ── Register is invite-only: slug alone must be refused ──
   await jsonRequest(
