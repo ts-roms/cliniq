@@ -11,14 +11,21 @@ test.describe('@web platform admin', () => {
 
   test('tenant detail page renders for the seeded clinic', async ({ page }) => {
     // The dashboard lists tenants; click into the first one for a detail
-    // smoke check. If the table is empty (race with a parallel test wiping
-    // tenants), skip this case rather than fail.
+    // smoke check.
+    //
+    // This used to read `firstRow.count()` straight after `goto` and skip on
+    // zero — but the table is filled by a TanStack Query that has not
+    // resolved yet at that point, so the count was always 0 and the case
+    // skipped itself on every run. Global setup provisions tenants before
+    // any spec starts, so the row WILL arrive: wait for it instead.
     await page.goto('/platform/dashboard');
     const firstRow = page.locator('table tbody tr').first();
-    if ((await firstRow.count()) === 0) test.skip();
+    await expect(firstRow).toBeVisible({ timeout: 15_000 });
+
     const link = firstRow.getByRole('link').first();
-    if ((await link.count()) === 0) test.skip();
+    await expect(link).toBeVisible({ timeout: 10_000 });
     await link.click();
+
     await expect(page).toHaveURL(/\/platform\/tenants\/.+/);
     await expect(page.locator('h1, h2').first()).toBeVisible({
       timeout: 15_000,

@@ -84,6 +84,13 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
       THROTTLE_AUTH_LIMIT: ${THROTTLE_AUTH_LIMIT:-10}
+      # Session cookies. NODE_ENV=production defaults Secure to on, which is
+      # right for a real deploy but means WebKit/Safari silently drops the
+      # cookie on plain http://localhost — so the local stack can't be driven
+      # from Safari or the webkit Playwright project without this opt-out.
+      # Set COOKIE_SECURE=false ONLY for local http.
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-}
       # Optional integration env. Mailer/Sms/TURN go no-op when unset.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
