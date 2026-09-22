@@ -136,6 +136,41 @@ describe('@org/api-e2e platform module', () => {
       expect(res.status).toBe(404);
     });
 
+    it('platform admin can change a LAB tenant plan via labPlan', async () => {
+      const admin = await env.makePlatformAdmin();
+      const { tenant } = await env.makeTenant({
+        kind: 'LAB',
+        labPlan: 'LAB_BASIC',
+      });
+      const res = await admin.client.axios.patch(
+        `/api/platform/tenants/${tenant.id}`,
+        { labPlan: 'LAB_STANDARD' },
+      );
+      expect(res.status).toBe(200);
+      expect(res.data.labPlan).toBe('LAB_STANDARD');
+      expect(res.data.plan).toBeNull();
+      const detail = await admin.client.axios.get(
+        `/api/platform/tenants/${tenant.id}`,
+      );
+      expect(detail.data.planMeta?.id).toBe('LAB_STANDARD');
+    });
+
+    it('PATCH plan on a LAB tenant, or labPlan on a CLINIC → 400', async () => {
+      const admin = await env.makePlatformAdmin();
+      const lab = await env.makeTenant({ kind: 'LAB', labPlan: 'LAB_BASIC' });
+      const clinic = await env.makeTenant({ plan: 'STARTER' });
+      const a = await admin.client.axios.patch(
+        `/api/platform/tenants/${lab.tenant.id}`,
+        { plan: 'PRO' },
+      );
+      expect(a.status).toBe(400);
+      const b = await admin.client.axios.patch(
+        `/api/platform/tenants/${clinic.tenant.id}`,
+        { labPlan: 'LAB_PREMIUM' },
+      );
+      expect(b.status).toBe(400);
+    });
+
     it('PATCH with an invalid Plan value → 400', async () => {
       const admin = await env.makePlatformAdmin();
       const { tenant } = await env.makeTenant();

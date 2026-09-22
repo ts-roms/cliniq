@@ -15,6 +15,8 @@ import {
   type Feature,
   type LabPlan,
   type Plan,
+  DEFAULT_SIGNUP_LAB_PLAN,
+  DEFAULT_SIGNUP_PLAN,
 } from '@org/shared-types';
 
 type Audience = 'clinic' | 'lab';
@@ -198,8 +200,10 @@ function ClinicCard({ plan }: { plan: Plan }) {
         variant={meta.highlight ? 'default' : 'outline'}
         className="mt-8 w-full"
       >
-        <Link href={`/signup?kind=clinic&plan=${meta.id}`}>
-          {meta.cta ?? 'Start free trial'}
+        <Link href="/signup?kind=clinic">
+          {meta.id === DEFAULT_SIGNUP_PLAN
+            ? (meta.cta ?? 'Start free trial')
+            : 'Start free, upgrade later'}
         </Link>
       </Button>
     </PlanShell>
@@ -291,8 +295,10 @@ function LabCard({ plan }: { plan: LabPlan }) {
         variant={meta.highlight ? 'default' : 'outline'}
         className="mt-8 w-full"
       >
-        <Link href={`/signup?kind=lab&plan=${meta.id}`}>
-          {meta.cta ?? 'Try it for free'}
+        <Link href="/signup?kind=lab">
+          {meta.id === DEFAULT_SIGNUP_LAB_PLAN
+            ? (meta.cta ?? 'Try it for free')
+            : 'Start free, upgrade later'}
         </Link>
       </Button>
     </PlanShell>

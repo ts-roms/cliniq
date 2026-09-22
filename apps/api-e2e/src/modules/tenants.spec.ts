@@ -38,9 +38,10 @@ describe('@org/api-e2e tenants module', () => {
         ownerName: 'Owner',
         ownerPassword: 'TestPassword123!',
         kind: 'CLINIC',
-        plan: 'PREMIUM',
       });
       expect(res.status).toBe(201);
+      // Self-signup lands on the basic tier, never a chosen one.
+      expect(res.data.plan).toBe('STARTER');
       expect(res.data.slug).toBe(slug);
       expect(res.data.id).toBeTruthy();
     });
@@ -62,6 +63,56 @@ describe('@org/api-e2e tenants module', () => {
       const res = await client.axios.get('/api/tenants');
       expect(res.status).toBe(200);
       expect(Array.isArray(res.data)).toBe(true);
+    });
+  });
+
+  describe('plan is platform-only', () => {
+    it('a new clinic starts on STARTER and a new lab on LAB_BASIC', async () => {
+      // makeTenant defaults to PREMIUM (set via the platform api after
+      // signup); asking for the basic tiers means no platform call at all.
+      const clinic = await env.makeTenant({ plan: 'STARTER' });
+      const clinicRow = await clinic.client.axios.get(
+        `/api/tenants/${clinic.tenant.slug}`,
+      );
+      expect(clinicRow.status).toBe(200);
+      expect(clinicRow.data.plan).toBe('STARTER');
+      expect(clinicRow.data.labPlan).toBeNull();
+
+      const lab = await env.makeTenant({ kind: 'LAB', labPlan: 'LAB_BASIC' });
+      const labRow = await lab.client.axios.get(
+        `/api/tenants/${lab.tenant.slug}`,
+      );
+      expect(labRow.status).toBe(200);
+      expect(labRow.data.labPlan).toBe('LAB_BASIC');
+      expect(labRow.data.plan).toBeNull();
+    });
+
+    it('POST /api/tenants refuses a plan / labPlan in the body (400)', async () => {
+      const axiosBare = (await import('axios')).default.create({
+        baseURL: env.baseUrl,
+        validateStatus: () => true,
+      });
+      const base = (slug: string) => ({
+        slug,
+        name: 'Plan Picker',
+        ownerEmail: `${slug}-owner@e2e.local`,
+        ownerName: 'Owner',
+        ownerPassword: 'TestPassword123!',
+      });
+      const s1 = `plan-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+      const withPlan = await axiosBare.post('/api/tenants', {
+        ...base(s1),
+        kind: 'CLINIC',
+        plan: 'PREMIUM',
+      });
+      expect(withPlan.status).toBe(400);
+      const s2 = `plan-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+      const withLabPlan = await axiosBare.post('/api/tenants', {
+        ...base(s2),
+        kind: 'LAB',
+        labPlan: 'LAB_PREMIUM',
+      });
+      expect(withLabPlan.status).toBe(400);
     });
   });
 

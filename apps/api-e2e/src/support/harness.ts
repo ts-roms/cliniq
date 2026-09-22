@@ -80,6 +80,8 @@ export interface E2EEnv {
   makePatient(tenant: E2ETenant): Promise<E2EUser & { patientId: string }>;
   /** Seed a platform admin (no API route exists for self-signup). */
   makePlatformAdmin(): Promise<E2EPlatformAdmin>;
+  /** Shared platform admin (created once); used to set tenant plans. */
+  platformAdmin(): Promise<E2EPlatformAdmin>;
   /** Tear down all rows this env created. Best-effort. */
   cleanup(): Promise<void>;
 }
@@ -105,6 +107,7 @@ export async function bootEnv(): Promise<E2EEnv> {
   const trackedTenantIds: string[] = [];
   const trackedUserIds: string[] = [];
   const trackedPlatformAdminIds: string[] = [];
+  let sharedPlatformAdmin: E2EPlatformAdmin | null = null;
 
   /**
    * Add a staff member the way a clinic does: the OWNER (whose password the
@@ -215,8 +218,6 @@ export async function bootEnv(): Promise<E2EEnv> {
           ownerName,
           ownerPassword,
           kind,
-          plan: kind === 'CLINIC' ? plan : undefined,
-          labPlan: kind === 'LAB' ? (labPlan ?? 'LAB_PREMIUM') : undefined,
         },
         { validateStatus: () => true, timeout: 20_000 },
       );
@@ -227,6 +228,31 @@ export async function bootEnv(): Promise<E2EEnv> {
       }
       const tenantId = tenantRes.data.id as string;
       trackedTenantIds.push(tenantId);
+
+      // Signup always lands on the basic tier; a plan is set the only way
+      // production sets one — by a platform admin. Most specs want every
+      // feature unlocked, hence the PREMIUM defaults above.
+      const wantLabPlan = labPlan ?? 'LAB_PREMIUM';
+      const upgrade =
+        kind === 'CLINIC'
+          ? plan !== 'STARTER'
+            ? { plan }
+            : null
+          : wantLabPlan !== 'LAB_BASIC'
+            ? { labPlan: wantLabPlan }
+            : null;
+      if (upgrade) {
+        const admin = await env.platformAdmin();
+        const up = await admin.client.axios.patch(
+          `/api/platform/tenants/${tenantId}`,
+          upgrade,
+        );
+        if (up.status !== 200) {
+          throw new Error(
+            `tenant plan setup failed: ${up.status} ${JSON.stringify(up.data).slice(0, 300)}`,
+          );
+        }
+      }
 
       const loginRes = await axios.post(
         `${API_URL}/api/auth/login`,
@@ -342,6 +368,14 @@ export async function bootEnv(): Promise<E2EEnv> {
         client,
       };
     },
+    /** One platform admin per harness, created on first use. */
+    async platformAdmin() {
+      if (!sharedPlatformAdmin) {
+        sharedPlatformAdmin = await env.makePlatformAdmin();
+      }
+      return sharedPlatformAdmin;
+    },
+
     async makePlatformAdmin() {
       const rand = randomUUID().slice(0, 8);
       const email = `platform-${rand}@e2e.local`;

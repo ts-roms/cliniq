@@ -1,11 +1,17 @@
 /**
  * Idempotent dev seed. Wipes and recreates the `demo` tenant with one user
- * per role (all sharing password `P@ssw0rd123`) and a few patients, one of
+ * per role (all sharing DEMO_PASSWORD, default `P@ssw0rd123`) and a few patients, one of
  * which has a linked portal login (`patient1@demo.local`). Also seeds a
  * platform-console admin (`platform@cliniq.local`) — separate identity table,
  * not tenant-scoped.
  *
  * Run with:  pnpm db:seed
+ *
+ * Env:
+ *   DEMO_PASSWORD        password for every seeded account (default P@ssw0rd123;
+ *                        set a strong one on any shared / public deployment)
+ *   SEED_PLATFORM_ADMIN  '0' skips the platform@cliniq.local admin (use
+ *                        seed:platform-admin for real operators instead)
  *
  * Re-runs are safe — anything tied to the `demo` slug is deleted first via
  * onDelete: Cascade on Tenant.id, so all child rows go with it. Platform
@@ -15,7 +21,8 @@ import { prisma, Role, MemberStatus, TenantStatus, Plan, Sex } from '@org/db';
 import { hashPassword } from '@org/auth';
 
 const TENANT_SLUG = 'demo';
-const PASSWORD = 'P@ssw0rd123';
+const PASSWORD = process.env.DEMO_PASSWORD || 'P@ssw0rd123';
+const SEED_PLATFORM_ADMIN = process.env.SEED_PLATFORM_ADMIN !== '0';
 
 interface PlatformAdminSpec {
   email: string;
@@ -90,8 +97,9 @@ async function main() {
 
   // Platform-console admins. Lives in its own table — no tenant link, no
   // TenantUser membership. Upsert by email so re-runs don't duplicate.
-  console.log(`→ Seeding ${PLATFORM_ADMINS.length} platform admin(s)`);
-  for (const spec of PLATFORM_ADMINS) {
+  const platformAdmins = SEED_PLATFORM_ADMIN ? PLATFORM_ADMINS : [];
+  console.log(`→ Seeding ${platformAdmins.length} platform admin(s)`);
+  for (const spec of platformAdmins) {
     await prisma.platformAdmin.upsert({
       where: { email: spec.email },
       update: { name: spec.name, passwordHash },
@@ -210,7 +218,7 @@ async function main() {
   console.log(`  Tenant slug: ${TENANT_SLUG}`);
   console.log(`  Password   : ${PASSWORD}`);
   console.log('  Logins     :');
-  for (const a of PLATFORM_ADMINS) console.log(`    PLATFORM     ${a.email}`);
+  for (const a of platformAdmins) console.log(`    PLATFORM     ${a.email}`);
   for (const s of STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
   for (const p of PATIENTS) {
     if (p.portalLogin) console.log(`    PATIENT      ${p.portalLogin.email}`);

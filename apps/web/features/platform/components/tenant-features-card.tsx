@@ -26,18 +26,32 @@ const ALL_FEATURES = [
 ];
 
 export function TenantFeaturesCard({ tenant }: Props) {
-  const enabled = new Set(tenant.planMeta.features);
+  const meta = tenant.planMeta;
+  // A tenant mid-transition (cancelled subscription) has no plan at all.
+  if (!meta) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">No plan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">
+            This tenant has no active plan; assign one in the form above.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  const enabled = new Set(meta.features);
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">
-          {tenant.planMeta.label} plan — what's included
+          {meta.label} plan — what's included
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p className="text-xs text-muted-foreground">
-          {tenant.planMeta.tagline}
-        </p>
+        <p className="text-xs text-muted-foreground">{meta.tagline}</p>
         <ul className="space-y-1.5 text-sm">
           {ALL_FEATURES.map((f) => {
             const on = enabled.has(f.id);
@@ -58,8 +72,8 @@ export function TenantFeaturesCard({ tenant }: Props) {
         <p className="pt-2 text-xs text-muted-foreground">
           Max locations:{' '}
           <span className="font-medium text-foreground">
-            {Number.isFinite(tenant.planMeta.maxLocations)
-              ? tenant.planMeta.maxLocations
+            {Number.isFinite(meta.maxLocations)
+              ? meta.maxLocations
               : 'Unlimited'}
           </span>
         </p>

@@ -7,7 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { LabPlan, Plan, TenantKind } from '@org/db';
+import { TenantKind } from '@org/db';
 
 export class CreateTenantDto {
   @IsString()
@@ -45,11 +45,8 @@ export class CreateTenantDto {
   @IsEnum(TenantKind)
   kind?: TenantKind;
 
-  @IsOptional()
-  @IsEnum(Plan)
-  plan?: Plan;
-
-  @IsOptional()
-  @IsEnum(LabPlan)
-  labPlan?: LabPlan;
+  // No `plan` / `labPlan` here on purpose: self-signup always starts on
+  // the basic tier (DEFAULT_SIGNUP_PLAN / DEFAULT_SIGNUP_LAB_PLAN) and
+  // only the platform console changes it. The ValidationPipe's
+  // forbidNonWhitelisted turns a client that still sends one into a 400.
 }

@@ -73,7 +73,9 @@ export class PlatformTenantsService {
           name: true,
           type: true,
           status: true,
+          kind: true,
           plan: true,
+          labPlan: true,
           country: true,
           timezone: true,
           currency: true,
@@ -95,7 +97,9 @@ export class PlatformTenantsService {
         name: t.name,
         type: t.type,
         status: t.status,
+        kind: t.kind,
         plan: t.plan,
+        labPlan: t.labPlan,
         country: t.country,
         timezone: t.timezone,
         currency: t.currency,
@@ -152,11 +156,23 @@ export class PlatformTenantsService {
         const existing = await tx.tenant.findUnique({ where: { id } });
         if (!existing || existing.deletedAt)
           throw new NotFoundException('tenant not found');
+        // A tenant has exactly one plan column that applies to its kind.
+        if (dto.plan && existing.kind !== 'CLINIC') {
+          throw new BadRequestException(
+            'plan applies to CLINIC tenants; use labPlan for a LAB tenant',
+          );
+        }
+        if (dto.labPlan && existing.kind !== 'LAB') {
+          throw new BadRequestException(
+            'labPlan applies to LAB tenants; use plan for a CLINIC tenant',
+          );
+        }
 
         const next = await tx.tenant.update({
           where: { id },
           data: {
             ...(dto.plan ? { plan: dto.plan } : {}),
+            ...(dto.labPlan ? { labPlan: dto.labPlan } : {}),
             ...(dto.status ? { status: dto.status } : {}),
             ...(dto.name ? { name: dto.name } : {}),
             ...(dto.trialEndsAt !== undefined
@@ -186,6 +202,7 @@ export class PlatformTenantsService {
               changes: dto as object,
               before: {
                 plan: existing.plan,
+                labPlan: existing.labPlan,
                 status: existing.status,
                 trialEndsAt: existing.trialEndsAt,
                 name: existing.name,

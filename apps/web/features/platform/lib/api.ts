@@ -92,6 +92,8 @@ export type TenantStatus =
   | 'SUSPENDED'
   | 'CANCELLED';
 export type TenantPlan = 'STARTER' | 'PRO' | 'PREMIUM';
+export type TenantLabPlan = 'LAB_BASIC' | 'LAB_STANDARD' | 'LAB_PREMIUM';
+export type TenantKind = 'CLINIC' | 'LAB';
 
 export interface TenantSummary {
   id: string;
@@ -99,7 +101,11 @@ export interface TenantSummary {
   name: string;
   type: string;
   status: TenantStatus;
-  plan: TenantPlan;
+  kind: TenantKind;
+  /** CLINIC tenants; null for a LAB. */
+  plan: TenantPlan | null;
+  /** LAB tenants; null for a CLINIC. */
+  labPlan: TenantLabPlan | null;
   country: string;
   timezone: string;
   currency: string;
@@ -111,8 +117,8 @@ export interface TenantSummary {
 }
 
 export interface TenantDetail extends TenantSummary {
-  planMeta: {
-    id: TenantPlan;
+  planMeta: null | {
+    id: TenantPlan | TenantLabPlan;
     label: string;
     tagline: string;
     features: string[];
@@ -158,6 +164,7 @@ export function getTenant(id: string) {
 
 export interface UpdateTenantInput {
   plan?: TenantPlan;
+  labPlan?: TenantLabPlan;
   status?: TenantStatus;
   trialEndsAt?: string | null;
   name?: string;

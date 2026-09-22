@@ -33,6 +33,8 @@ export interface SeedPlatform {
   adminId: string;
   email: string;
   password: string;
+  /** Platform JWT from the sanity-check login; used to set tenant plans. */
+  accessToken: string;
 }
 
 export interface ProvisionedSeed {
@@ -56,9 +58,14 @@ export async function provisionTenants(
   await pg.connect();
 
   try {
+    const platform = await provisionPlatformAdmin(api, pg);
     const clinic = await provisionClinic(api);
     const lab = await provisionLab(api);
-    const platform = await provisionPlatformAdmin(api, pg);
+    // Signup lands every tenant on the basic tier; the specs exercise the
+    // gated modules, so upgrade them the way production does — as the
+    // platform admin.
+    await setPlanAsPlatform(api, platform, clinic.id, { plan: 'PREMIUM' });
+    await setPlanAsPlatform(api, platform, lab.id, { labPlan: 'LAB_PREMIUM' });
     return { clinic, lab, platform };
   } finally {
     await pg.end().catch(() => undefined);
@@ -114,7 +121,6 @@ async function createTenantWithOwner(
       ownerName: 'E2E Owner',
       ownerPassword: PASSWORD,
       kind,
-      ...(kind === 'CLINIC' ? { plan: 'PREMIUM' } : { labPlan: 'LAB_PREMIUM' }),
     },
   });
   if (tenantRes.status() !== 201) {
@@ -254,6 +260,23 @@ async function registerPatient(
   };
 }
 
+async function setPlanAsPlatform(
+  api: APIRequestContext,
+  platform: SeedPlatform,
+  tenantId: string,
+  body: { plan?: string; labPlan?: string },
+): Promise<void> {
+  const res = await api.patch(`/api/platform/tenants/${tenantId}`, {
+    headers: { authorization: `Bearer ${platform.accessToken}` },
+    data: body,
+  });
+  if (!res.ok()) {
+    throw new Error(
+      `tenant plan setup failed: ${res.status()} ${await res.text()}`,
+    );
+  }
+}
+
 async function provisionPlatformAdmin(
   api: APIRequestContext,
   pg: PgClient,
@@ -276,5 +299,11 @@ async function provisionPlatformAdmin(
       `platform login failed: ${loginRes.status()} ${await loginRes.text()}`,
     );
   }
-  return { adminId: id, email, password: PASSWORD };
+  const login = (await loginRes.json()) as { accessToken: string };
+  return {
+    adminId: id,
+    email,
+    password: PASSWORD,
+    accessToken: login.accessToken,
+  };
 }

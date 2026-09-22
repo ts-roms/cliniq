@@ -6,12 +6,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, PasswordInput } from '@org/ui';
 import {
-  ALL_LAB_PLANS,
-  ALL_PLANS,
+  DEFAULT_SIGNUP_LAB_PLAN,
+  DEFAULT_SIGNUP_PLAN,
   LAB_PLAN_META,
   PLAN_META,
-  type LabPlan,
-  type Plan,
 } from '@org/shared-types';
 import { FormField } from '@/shared/components/forms/form-field';
 import {
@@ -25,34 +23,15 @@ import { useSignup } from '../hooks/use-signup';
 type Step = 'clinic' | 'owner';
 type Kind = 'CLINIC' | 'LAB';
 
-function planFromQuery(value: string | null): Plan | null {
-  if (!value) return null;
-  return (ALL_PLANS as readonly string[]).includes(value)
-    ? (value as Plan)
-    : null;
-}
-function labPlanFromQuery(value: string | null): LabPlan | null {
-  if (!value) return null;
-  return (ALL_LAB_PLANS as readonly string[]).includes(value)
-    ? (value as LabPlan)
-    : null;
-}
-
 export function SignupForm() {
   const router = useRouter();
   const search = useSearchParams();
   const initialKind: Kind =
     search?.get('kind')?.toLowerCase() === 'lab' ? 'LAB' : 'CLINIC';
-  const initialClinicPlan = planFromQuery(search?.get('plan') ?? null);
-  const initialLabPlan = labPlanFromQuery(search?.get('plan') ?? null);
 
   const [kind, setKind] = useState<Kind>(initialKind);
   const [step, setStep] = useState<Step>('clinic');
   const [clinic, setClinic] = useState<ClinicStepInput | null>(null);
-  const [plan, setPlan] = useState<Plan>(initialClinicPlan ?? 'STARTER');
-  const [labPlan, setLabPlan] = useState<LabPlan>(
-    initialLabPlan ?? 'LAB_BASIC',
-  );
 
   const signup = useSignup({
     onSuccess: () => router.push(kind === 'LAB' ? '/lab/cases' : '/patients'),
@@ -60,14 +39,7 @@ export function SignupForm() {
 
   return (
     <>
-      <SelectedPlanPill
-        kind={kind}
-        onKindChange={setKind}
-        clinicPlan={plan}
-        onClinicPlanChange={setPlan}
-        labPlan={labPlan}
-        onLabPlanChange={setLabPlan}
-      />
+      <KindPill kind={kind} onKindChange={setKind} />
       {step === 'clinic' || !clinic ? (
         <ClinicStep
           kind={kind}
@@ -91,8 +63,6 @@ export function SignupForm() {
               ownerEmail: owner.ownerEmail,
               password: owner.password,
               kind,
-              plan: kind === 'CLINIC' ? plan : undefined,
-              labPlan: kind === 'LAB' ? labPlan : undefined,
             })
           }
         />
@@ -101,23 +71,22 @@ export function SignupForm() {
   );
 }
 
-function SelectedPlanPill({
+/**
+ * Clinic / Lab toggle plus what the new tenant starts on. There is no plan
+ * picker: every tenant starts on the basic tier of its kind and only the
+ * ClinIQ platform team moves it (platform console).
+ */
+function KindPill({
   kind,
   onKindChange,
-  clinicPlan,
-  onClinicPlanChange,
-  labPlan,
-  onLabPlanChange,
 }: {
   kind: Kind;
   onKindChange: (k: Kind) => void;
-  clinicPlan: Plan;
-  onClinicPlanChange: (p: Plan) => void;
-  labPlan: LabPlan;
-  onLabPlanChange: (p: LabPlan) => void;
 }) {
   const isLab = kind === 'LAB';
-  const meta = isLab ? LAB_PLAN_META[labPlan] : PLAN_META[clinicPlan];
+  const meta = isLab
+    ? LAB_PLAN_META[DEFAULT_SIGNUP_LAB_PLAN]
+    : PLAN_META[DEFAULT_SIGNUP_PLAN];
   return (
     <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-3">
       <div className="flex justify-center">
@@ -130,44 +99,16 @@ function SelectedPlanPill({
           </SmallTab>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            Selected plan
-          </p>
-          <p className="text-sm font-medium">{meta.label}</p>
-          <p className="text-xs text-muted-foreground">{meta.tagline}</p>
-        </div>
-        {isLab ? (
-          <select
-            value={labPlan}
-            onChange={(e) => onLabPlanChange(e.target.value as LabPlan)}
-            className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-            aria-label="Change lab plan"
-          >
-            {ALL_LAB_PLANS.map((id) => (
-              <option key={id} value={id}>
-                {LAB_PLAN_META[id].label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <select
-            value={clinicPlan}
-            onChange={(e) => onClinicPlanChange(e.target.value as Plan)}
-            className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-            aria-label="Change clinic plan"
-          >
-            {ALL_PLANS.map((id) => (
-              <option key={id} value={id}>
-                {PLAN_META[id].label}
-              </option>
-            ))}
-          </select>
-        )}
+      <div>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          You start on
+        </p>
+        <p className="text-sm font-medium">{meta.label}</p>
+        <p className="text-xs text-muted-foreground">{meta.tagline}</p>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Free 30-day trial. Switch tiers any time from the platform console.
+        Free 30-day trial. Higher tiers are activated for you by the ClinIQ team
+        — nothing to pick here.
       </p>
     </div>
   );

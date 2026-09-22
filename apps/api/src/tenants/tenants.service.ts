@@ -58,16 +58,11 @@ export class TenantsService {
           slug: dto.slug,
           name: dto.name,
           kind,
-          // Clinic tenants get a Plan; lab tenants get a LabPlan. The
-          // defaults are the provisional top tiers (see DEFAULT_SIGNUP_PLAN).
-          plan:
-            kind === TenantKind.CLINIC
-              ? (dto.plan ?? DEFAULT_SIGNUP_PLAN)
-              : null,
-          labPlan:
-            kind === TenantKind.LAB
-              ? (dto.labPlan ?? DEFAULT_SIGNUP_LAB_PLAN)
-              : null,
+          // Clinic tenants get a Plan; lab tenants get a LabPlan. Always the
+          // basic tier — the caller has no say (see CreateTenantDto); the
+          // platform console is the only place a plan changes.
+          plan: kind === TenantKind.CLINIC ? DEFAULT_SIGNUP_PLAN : null,
+          labPlan: kind === TenantKind.LAB ? DEFAULT_SIGNUP_LAB_PLAN : null,
           status: TenantStatus.TRIAL,
           trialEndsAt: this.addDays(new Date(), 30),
         },

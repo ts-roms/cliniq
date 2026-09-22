@@ -11,8 +11,8 @@
  * `demo-clinic`) is wiped first via Tenant cascade, then recreated.
  *
  * Login credentials after seeding:
- *   Lab owner:    lab-owner@demo.local    / P@ssw0rd123
- *   Clinic owner: clinic-owner@demo.local / P@ssw0rd123
+ *   Lab owner:    lab-owner@demo.local    / DEMO_PASSWORD (default P@ssw0rd123)
+ *   Clinic owner: clinic-owner@demo.local / DEMO_PASSWORD (default P@ssw0rd123)
  */
 import {
   prisma,
@@ -33,7 +33,8 @@ import { hashPassword } from '@org/auth';
 
 const LAB_SLUG = 'demo-lab';
 const CLINIC_SLUG = 'demo-clinic';
-const PASSWORD = 'P@ssw0rd123';
+// DEMO_PASSWORD overrides the shared dev password (set one on public envs).
+const PASSWORD = process.env.DEMO_PASSWORD || 'P@ssw0rd123';
 
 async function main() {
   const passwordHash = await hashPassword(PASSWORD);
