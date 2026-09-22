@@ -2,10 +2,12 @@
 // tenant data. Use this on Railway (or any prod-like env) to bootstrap the
 // first SaaS-side superadmin so they can sign in at `/platform/login`.
 //
-// Inputs (all required, read from env):
-//   PLATFORM_ADMIN_EMAIL
-//   PLATFORM_ADMIN_NAME
-//   PLATFORM_ADMIN_PASSWORD   (12+ chars enforced)
+// Inputs (read from env):
+//   PLATFORM_ADMIN_EMAIL      (required)
+//   PLATFORM_ADMIN_NAME       (required)
+//   PLATFORM_ADMIN_PASSWORD   (optional, 12+ chars; defaults to
+//                              DEFAULT_PLATFORM_PASSWORD below — a
+//                              change-me placeholder, never a real secret)
 //
 // Behavior:
 //   - If a row with that email exists: name + passwordHash are UPDATED
@@ -27,6 +29,13 @@
 import { hashPassword } from '@org/auth';
 import { prisma } from '@org/db';
 
+/**
+ * Placeholder password for a freshly seeded operator. It is deliberately
+ * memorable and deliberately obvious: change it (re-run this script with
+ * the same email) before the console is reachable by anyone else.
+ */
+const DEFAULT_PLATFORM_PASSWORD = 'ChangeMe@123';
+
 function requireEnv(name: string): string {
   const v = process.env[name];
   if (!v) {
@@ -39,7 +48,8 @@ function requireEnv(name: string): string {
 async function main() {
   const email = requireEnv('PLATFORM_ADMIN_EMAIL').toLowerCase().trim();
   const name = requireEnv('PLATFORM_ADMIN_NAME').trim();
-  const password = requireEnv('PLATFORM_ADMIN_PASSWORD');
+  const password =
+    process.env['PLATFORM_ADMIN_PASSWORD'] || DEFAULT_PLATFORM_PASSWORD;
 
   if (password.length < 12) {
     console.error('✗ PLATFORM_ADMIN_PASSWORD must be at least 12 characters');

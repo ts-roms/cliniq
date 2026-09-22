@@ -1,6 +1,12 @@
 # Seeded Accounts
 
-All seeded accounts share the same password: **`P@ssw0rd123`**
+Seeded **tenant users** (staff and patients) share the password **`P@ssw0rd123`**.
+Seeded **platform operators** use **`ChangeMe@123`** — a change-me placeholder, not a secret.
+
+Both are overridable, and should be on anything reachable by other people:
+`DEMO_PASSWORD` for the tenant users, `PLATFORM_PASSWORD` (or
+`PLATFORM_ADMIN_PASSWORD` for `seed:platform-admin`) for the operators.
+`SEED_PLATFORM_ADMIN=0` skips the operator account entirely.
 
 Three seed scripts exist:
 
@@ -16,7 +22,7 @@ Runs the Prisma catalog seed (drugs, ICD-10) first, then `seed-dev.ts`.
 
 ### Platform Console
 
-Operator-side admins managing the SaaS itself. Stored in the `platform_admins` table — not tenant-scoped, no `TenantUser` membership. Upserted by email (survives re-seed; password reset to default).
+Operator-side admins managing the SaaS itself. Stored in the `platform_admins` table — not tenant-scoped, no `TenantUser` membership. Upserted by email (survives re-seed; password reset to default). Password: `ChangeMe@123` (`PLATFORM_PASSWORD`), not the tenant-user password.
 
 | Email                   | Name              | Notes                        |
 | ----------------------- | ----------------- | ---------------------------- |
@@ -60,7 +66,7 @@ Opt-in; not part of `pnpm db:seed`. Creates a LAB tenant and a CLINIC tenant wit
 
 ## `pnpm seed:platform-admin` — production bootstrap
 
-No fixed account. Reads `PLATFORM_ADMIN_EMAIL`, `PLATFORM_ADMIN_NAME`, and `PLATFORM_ADMIN_PASSWORD` (12+ chars) from env and upserts a single `platform_admins` row. Does not touch tenant data, so it is safe to run on Railway to create the first superadmin. On an existing row the name and password are updated; MFA state and `lastLogin` are preserved.
+No fixed account. Reads `PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_NAME` from env (both required) plus `PLATFORM_ADMIN_PASSWORD` (12+ chars, defaults to `ChangeMe@123`) and upserts a single `platform_admins` row. Does not touch tenant data, so it is safe to run on Railway to create the first superadmin. On an existing row the name and password are updated; MFA state and `lastLogin` are preserved.
 
 ```bash
 railway run --service api \
