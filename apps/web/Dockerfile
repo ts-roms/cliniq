@@ -39,8 +39,7 @@ COPY libs/api-client/package.json libs/api-client/
 # the whole `docker compose up`. CI explicitly runs the strict
 # form via `pnpm install --frozen-lockfile` before docker build,
 # so we don't silently drift in production.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts \
+RUN pnpm install --frozen-lockfile --ignore-scripts \
  || pnpm install --no-frozen-lockfile --ignore-scripts
 
 FROM deps AS build

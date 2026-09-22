@@ -31,143 +31,135 @@ between services.
 
 ## Prerequisites
 
-- Railway account + CLI: `npm i -g @railway/cli`
-- This repo pushed to GitHub (Railway pulls from GitHub for builds).
+- Railway account + CLI **5.42 or newer** (`npm i -g @railway/cli`; older
+  builds cannot evaluate the IaC file).
+- The repo pushed to GitHub and the **Railway GitHub App** authorised for
+  `ts-roms/cliniq` (Railway → Account → Integrations → GitHub). Without it
+  Railway can create the services but every build dies at "scheduling build"
+  with no log; `railway up` (upload from a checkout) still works.
 
-## One-time setup
+## Project layout — `.railway/railway.ts`
 
-> **Quick path:** after `railway login` + `railway init`, run
-> [`tools/scripts/railway-setup.sh`](../tools/scripts/railway-setup.sh) to
-> create all four services + Postgres in one shot. Then jump to step 5
-> ([Service env vars](#service-env-vars)).
+The project is defined in [`.railway/railway.ts`](../.railway/railway.ts)
+(Railway Infrastructure as Code; the per-service `railway.json` files were
+removed — Railway now rejects config-as-code on new services). It declares:
 
-### 1. Create the project
-
-```bash
-railway login
-railway init                # creates a new project
-```
-
-Or do it in the dashboard: **New Project → Empty Project**, name it `cliniq`.
-
-### 2. Add Postgres
-
-Dashboard: **+ New → Database → Add PostgreSQL**.
-
-This auto-creates these reference variables you can use elsewhere:
-
-- `${{Postgres.DATABASE_URL}}` — connection string
-- `${{Postgres.PGUSER}}`, `${{Postgres.PGPASSWORD}}`, etc.
-
-### 3. Apply the SQL bootstrap (`cliniq_app` role + RLS)
-
-`docker/postgres-init.sql` creates the `cliniq_app` role used by the api at
-runtime so RLS policies engage. Railway's managed Postgres runs no init
-scripts, so apply this manually once:
+- `Postgres` (managed, 5 GB volume, TCP proxy for migrations from a laptop)
+- `api`, `ai-service`, `web` — GitHub source `ts-roms/cliniq@main`, root
+  directory `/` (the Dockerfiles need the whole workspace as context),
+  Dockerfile path, start command, healthcheck, watch patterns, and the
+  **names** of every variable. Values are `preserve()` so nothing secret is in
+  git; the tables below say what each value is.
 
 ```bash
-railway connect Postgres                  # opens psql
-\i docker/postgres-init.sql               # paste/execute the file
+railway link                  # once per checkout → project cliniq / production
+railway config plan           # diff the file against Railway (should be clean)
+railway config apply          # after reviewing the plan
+railway config pull --force   # import dashboard edits back into the file
 ```
 
-Or pipe it:
+> On Windows/Git Bash the SDK locates the CLI through `$_`; if `plan` claims
+> the CLI is too old, run it as `env -u _ railway.exe config plan`.
+
+## One-time setup (already done for `cliniq`, kept for a rebuild)
+
+1. `railway.exe` → create the project, add Postgres, create the three
+   services from the GitHub repo (the MCP/CLI/dashboard all work), then
+   `railway config pull` to capture it — or write the file first and
+   `railway config apply`.
+2. Generate public domains for `api` (target port 4000) and `web` (3000).
+   `ai-service` stays private.
+3. Set the variables below. Secrets: `openssl rand -hex 32`.
+4. Bootstrap the database (next section).
+5. Deploy: push to `main`, or `railway up --service <name>` from a checkout.
+
+### Database bootstrap
+
+Railway's Postgres runs no init scripts, so create the RLS role and apply
+migrations from your machine through the TCP proxy (`Postgres → Variables →
+DATABASE_PUBLIC_URL`, or build it from `PGUSER/PGPASSWORD/PGDATABASE` + the
+proxy host:port):
 
 ```bash
-railway run --service Postgres psql "$DATABASE_URL" -f docker/postgres-init.sql
+PUB='postgresql://postgres:<pw>@<proxy-host>:<port>/railway'
+
+# 1. cliniq_app role with the password you put in api.CLINIQ_APP_DB_PASSWORD
+#    (the file grants on database "cliniq"; Railway's is "railway").
+sed -e "s/PASSWORD 'cliniq_app'/PASSWORD '<app-password>'/" \
+    -e "s/ON DATABASE cliniq TO/ON DATABASE railway TO/" docker/postgres-init.sql \
+  | psql "$PUB" -v ON_ERROR_STOP=1
+
+# 2. schema + RLS policies
+DATABASE_URL="$PUB?schema=public" pnpm --dir libs/db exec prisma migrate deploy
+
+# 3. grants on the tables the migrations just created (default privileges
+#    only cover tables created *after* the ALTER DEFAULT PRIVILEGES)
+psql "$PUB" -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;
+                GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
 ```
 
-> The repo also exposes `DATABASE_URL_APP` in `.env.example` pointing at the
-> `cliniq_app` role. On Railway, set the api's `DATABASE_URL` to the
-> `cliniq_app` role connection string (see [Service env vars](#service-env-vars)).
+Repeat steps 2–3 whenever a PR adds files under `libs/db/prisma/migrations/`
+(idempotent). Migrations do not run on deploy — see
+[Run migrations](#run-migrations) for why.
 
-### 4. Create the three app services
+### Service env vars
 
-For each service (`api`, `ai-service`, `web`), in the dashboard:
-
-1. **+ New → GitHub Repo → cliniq** (or `railway up` from the CLI).
-2. **Settings → Source** — set:
-   - **Root Directory**: `/` (repo root — Dockerfiles need full workspace context)
-   - **Config-as-Code Path**: `apps/<service>/railway.json`
-3. **Settings → Networking** — add a public domain for `api` and `web`. Leave
-   `ai-service` private (no public domain).
-
-That's it for service creation. The `railway.json` files in this repo pin the
-Dockerfile path, start command, healthcheck, and (for api) the pre-deploy
-`prisma migrate deploy`.
-
-### 5. Service env vars
-
-Set these in the dashboard (**Variables** tab) for each service. Reference
-variables (`${{...}}`) resolve at deploy time — use them instead of pasting
-literal values across services.
+Reference variables (`${{...}}`) resolve at deploy time.
 
 #### `api`
 
-| Var                                                          | Value                                                                                                                 |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                               | `postgresql://cliniq_app:<password>@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}?schema=public` |
-| `JWT_SECRET`                                                 | 32+ random chars (generate: `openssl rand -hex 32`)                                                                   |
-| `JWT_EXPIRES_IN`                                             | `15m`                                                                                                                 |
-| `REFRESH_TOKEN_EXPIRES_IN`                                   | `7d`                                                                                                                  |
-| `AI_SERVICE_URL`                                             | `http://${{ai-service.RAILWAY_PRIVATE_DOMAIN}}:4100`                                                                  |
-| `AI_SERVICE_TOKEN`                                           | 32+ random chars, **same value on `ai-service`** (it refuses to boot in production without one)                       |
-| `TRUST_PROXY`                                                | `1` (Railway terminates TLS in front of the api; needed so rate limits see the real client ip)                        |
-| `THROTTLE_AUTH_LIMIT` / `THROTTLE_LIMIT`                     | optional; defaults 10 / 300 per minute per ip                                                                         |
-| `PORTAL_BASE_URL`                                            | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}`                                                                              |
-| `CORS_ORIGINS`                                               | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}`                                                                              |
-| `PUBLIC_API_URL`                                             | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}`                                                                              |
-| `RESEND_API_KEY`                                             | from Resend (or leave unset for no-op)                                                                                |
-| `MAIL_FROM`                                                  | `ClinIQ <noreply@yourdomain>`                                                                                         |
-| `SMS_PROVIDER`                                               | `semaphore` / `twilio` / unset                                                                                        |
-| `SEMAPHORE_API_KEY` / `TWILIO_*`                             | as applicable                                                                                                         |
-| `TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL`            | from your TURN provider                                                                                               |
-| `APPT_REMINDERS_ENABLED`                                     | `false` (set `true` only on one replica)                                                                              |
-| `APPT_AUTO_NOSHOW_ENABLED` / `APPT_NOSHOW_GRACE_MINUTES`     | `false` / `30` — auto-mark stale SCHEDULED slots NO_SHOW; same single-replica caveat                                  |
-| `S3_BUCKET_PHI` / `S3_BUCKET_PUBLIC`                         | from AWS                                                                                                              |
-| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | from AWS                                                                                                              |
-
-> **Why a hand-built `DATABASE_URL`?** The api needs to connect as
-> `cliniq_app` (not `postgres`) so RLS policies engage. The `<password>` is
-> whatever you set in `docker/postgres-init.sql` (default: `cliniq_app`) — change
-> it in that file before applying it on prod, then reflect the change here.
-
-> Railway sets `PORT` automatically — the api binds to `process.env.PORT`. Don't
-> override it.
+| Var                                                                       | Value                                                                                                                                  |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                                                                    | `4000` (matches the Dockerfile `EXPOSE` and the domain's target port)                                                                  |
+| `NODE_ENV`                                                                | `production`                                                                                                                           |
+| `CLINIQ_APP_DB_PASSWORD`                                                  | the `cliniq_app` password you created above                                                                                            |
+| `DATABASE_URL`                                                            | `postgresql://cliniq_app:${{CLINIQ_APP_DB_PASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}?schema=public` |
+| `JWT_SECRET`                                                              | 32+ random chars                                                                                                                       |
+| `JWT_EXPIRES_IN` / `REFRESH_TOKEN_EXPIRES_IN`                             | `15m` / `7d`                                                                                                                           |
+| `AI_SERVICE_URL`                                                          | `http://${{ai-service.RAILWAY_PRIVATE_DOMAIN}}:4100`                                                                                   |
+| `AI_SERVICE_TOKEN`                                                        | 32+ random chars, **same value on `ai-service`**                                                                                       |
+| `TRUST_PROXY`                                                             | `1` (Railway terminates TLS; rate limits need the real client ip)                                                                      |
+| `COOKIE_SAMESITE` / `COOKIE_SECURE`                                       | `none` / `true` — web and api are on different `*.up.railway.app` hosts, so the auth cookies must be cross-site                        |
+| `PORTAL_BASE_URL`                                                         | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}`                                                                                               |
+| `CORS_ORIGINS`                                                            | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}`                                                                                               |
+| `PUBLIC_API_URL`                                                          | `https://${{RAILWAY_PUBLIC_DOMAIN}}`                                                                                                   |
+| `APPT_REMINDERS_ENABLED` / `APPT_AUTO_NOSHOW_ENABLED` / `JANITOR_ENABLED` | `false` (turn on for exactly one replica)                                                                                              |
+| `THROTTLE_AUTH_LIMIT` / `THROTTLE_LIMIT`                                  | optional; defaults 10 / 300 per minute per ip                                                                                          |
+| `RESEND_API_KEY` / `MAIL_FROM`                                            | from Resend (unset = no-op mail)                                                                                                       |
+| `SMS_PROVIDER` + `SEMAPHORE_API_KEY` / `TWILIO_*`                         | as applicable                                                                                                                          |
+| `TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL`                         | from your TURN provider (tele)                                                                                                         |
+| `S3_BUCKET_PHI` / `S3_BUCKET_PUBLIC` / `AWS_*`                            | from AWS (file uploads answer 503 until set)                                                                                           |
 
 #### `ai-service`
 
-| Var                     | Value                                                                   |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `AWS_REGION`            | e.g. `ap-southeast-1`                                                   |
-| `AWS_ACCESS_KEY_ID`     | from AWS                                                                |
-| `AWS_SECRET_ACCESS_KEY` | from AWS                                                                |
-| `BEDROCK_MODEL_SOAP`    | Bedrock model id (or unset for stub responses)                          |
-| `BEDROCK_MODEL_DERM`    | Bedrock model id (or unset for stub responses)                          |
-| `AI_SERVICE_TOKEN`      | same value as on `api` — required, the service exits at boot without it |
-| `CORS_ORIGINS`          | `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}`                  |
-
-> Without `AWS_*` and `BEDROCK_MODEL_*` set, ai-service falls back to stub
-> responses — fine for staging.
+| Var                                                          | Value                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------- |
+| `PORT`                                                       | `4100`                                                        |
+| `NODE_ENV`                                                   | `production`                                                  |
+| `AI_SERVICE_TOKEN`                                           | same value as on `api` — the service exits at boot without it |
+| `CORS_ORIGINS`                                               | `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:4000`                 |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | from AWS                                                      |
+| `BEDROCK_MODEL_SOAP` / `BEDROCK_MODEL_DERM`                  | Bedrock model ids (unset = stub responses, fine for staging)  |
 
 #### `web`
 
 | Var                   | Value                                    | Scope                                     |
 | --------------------- | ---------------------------------------- | ----------------------------------------- |
+| `PORT` / `HOSTNAME`   | `3000` / `0.0.0.0`                       | runtime                                   |
+| `NODE_ENV`            | `production`                             |                                           |
 | `NEXT_PUBLIC_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` | **build-time** (baked into client bundle) |
 
-> `NEXT_PUBLIC_*` is read by Next.js at build time. After changing it,
-> redeploy the web service so the bundle picks up the new value.
+> `NEXT_PUBLIC_*` is read by Next.js at build time (the Dockerfile declares it
+> as an `ARG`; Railway passes service variables as build args). After changing
+> it, redeploy `web`.
 
-### 6. Deploy
+### Dockerfile rules Railway enforces
 
-Push to the branch tracked by Railway (default `main`). Railway will:
-
-1. Build all three services in parallel using their respective Dockerfiles.
-2. Run the api's `preDeployCommand` (`prisma migrate deploy`) against
-   `DATABASE_URL`.
-3. Promote each new container once its healthcheck passes.
-
-Or trigger from the CLI: `railway up --service api` (etc.).
+- No BuildKit cache mounts. Railway only accepts
+  `--mount=type=cache,id=s/<service-uuid>-<path>` (the id cannot come from an
+  ARG), which would pin each Dockerfile to one Railway service. Docker's layer
+  cache still skips `pnpm install` while the lockfile is unchanged.
+- Root directory stays `/`; the Dockerfiles copy the workspace manifests.
 
 ## Verifying
 
