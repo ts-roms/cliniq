@@ -9,6 +9,7 @@ import {
 import { LabClinicLinkStatus, PrismaService } from '@org/db';
 import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
 import type { InviteClinicDto } from './dto/invite.dto.js';
+import { LabCounterpartyService } from '../_shared/counterparty.service.js';
 
 /**
  * Manages the many-to-many association between LAB tenants and CLINIC tenants.
@@ -23,7 +24,10 @@ import type { InviteClinicDto } from './dto/invite.dto.js';
 export class LabClinicLinksService {
   private readonly logger = new Logger(LabClinicLinksService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly counterparty: LabCounterpartyService,
+  ) {}
 
   /** Lab → invites a clinic by slug. */
   async invite(dto: InviteClinicDto, user: AuthenticatedUser) {
@@ -107,33 +111,45 @@ export class LabClinicLinksService {
   }
 
   /** Lab → list of all links the lab has. */
-  listForLab(user: AuthenticatedUser) {
-    return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labClinicLink.findMany({
-        where: { labTenantId: user.tenantId, deletedAt: null },
-        orderBy: [{ invitedAt: 'desc' }],
-        include: {
-          clinic: {
-            select: { id: true, slug: true, name: true, type: true },
+  async listForLab(user: AuthenticatedUser) {
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labClinicLink.findMany({
+          where: { labTenantId: user.tenantId, deletedAt: null },
+          orderBy: [{ invitedAt: 'desc' }],
+          include: {
+            clinic: {
+              select: { id: true, slug: true, name: true, type: true },
+            },
           },
-        },
-      }),
+        }),
     );
+    // RLS hides the counterparty tenant, so `clinic` above always comes back
+    // null — see LabCounterpartyService for the full explanation.
+    return this.counterparty.hydrate(rows);
   }
 
   /** Clinic → list of incoming invitations + active links. */
-  listForClinic(user: AuthenticatedUser) {
-    return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labClinicLink.findMany({
-        where: { clinicTenantId: user.tenantId, deletedAt: null },
-        orderBy: [{ invitedAt: 'desc' }],
-        include: {
-          lab: {
-            select: { id: true, slug: true, name: true, labSpecialty: true },
+  async listForClinic(user: AuthenticatedUser) {
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labClinicLink.findMany({
+          where: { clinicTenantId: user.tenantId, deletedAt: null },
+          orderBy: [{ invitedAt: 'desc' }],
+          include: {
+            lab: {
+              select: { id: true, slug: true, name: true, labSpecialty: true },
+            },
           },
-        },
-      }),
+        }),
     );
+    // RLS hides the counterparty tenant, so `lab` above always comes back
+    // null — see LabCounterpartyService for the full explanation.
+    return this.counterparty.hydrate(rows);
   }
 
   /** Lab → revoke a pending invitation. */

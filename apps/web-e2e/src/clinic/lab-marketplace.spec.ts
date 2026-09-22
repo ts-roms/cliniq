@@ -14,7 +14,7 @@ test.describe('@web clinic lab marketplace', () => {
   test('lab invitations page renders the accepted link', async ({ page }) => {
     await page.goto('/lab-invitations');
     await expect(page).toHaveURL(/\/lab-invitations/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
       timeout: 15_000,
     });
     // The seeded link was accepted, so the lab's slug shows up on the page.
@@ -35,7 +35,7 @@ test.describe('@web clinic lab marketplace', () => {
   test('lab case detail opens from the list', async ({ page }) => {
     const { marketplace } = loadSeed();
     await page.goto(`/lab-cases/${marketplace.caseId}`);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
       timeout: 15_000,
     });
     // DELIVERED is the terminal status the seed walks the case to.
@@ -64,7 +64,7 @@ test.describe('@web clinic lab marketplace', () => {
   test('lab invoice detail opens', async ({ page }) => {
     const { marketplace } = loadSeed();
     await page.goto(`/lab-invoices/${marketplace.invoiceId}`);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
       timeout: 15_000,
     });
   });

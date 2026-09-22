@@ -15,6 +15,7 @@ import type {
   CreateTemplateDto,
   UpdateTemplateDto,
 } from './dto/compliance.dto.js';
+import { LabCounterpartyService } from '../_shared/counterparty.service.js';
 
 /**
  * Compliance templates + e-signature capture. Conformity templates are
@@ -26,6 +27,7 @@ export class LabComplianceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdf: LabPdfRenderingService,
+    private readonly counterparty: LabCounterpartyService,
   ) {}
 
   // ── Conformity templates (lab-only) ──────────────────────
@@ -223,6 +225,27 @@ export class LabComplianceService {
     user: AuthenticatedUser,
   ) {
     await this.requireLab(user);
+
+    // The clinic's name goes on the document, but `clinic` in the include
+    // below is null under RLS (see LabCounterpartyService) — dereferencing it
+    // made every conformity PDF a 500. Resolve it up front, in its own
+    // round-trip: doing it inside the transaction below would hold a pool
+    // connection while acquiring a second one.
+    const owning = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labCase.findFirst({
+          where: { id: caseId, labTenantId: user.tenantId, deletedAt: null },
+          select: { clinicTenantId: true },
+        }),
+    );
+    if (!owning) throw new NotFoundException('case not found');
+    const clinicName =
+      (await this.counterparty.profiles([owning.clinicTenantId])).get(
+        owning.clinicTenantId,
+      )?.name ?? '—';
+
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const labCase = await tx.labCase.findFirst({
         where: { id: caseId, labTenantId: user.tenantId, deletedAt: null },
@@ -266,7 +289,7 @@ export class LabComplianceService {
         patient: labCase.patientLabel ?? '—',
         doctor: labCase.doctorLabel ?? '—',
         labName: labCase.lab.name,
-        clinicName: labCase.clinic.name,
+        clinicName,
         product: labCase.product.name,
         date: new Date().toLocaleDateString(),
         lotNumbers: lots,

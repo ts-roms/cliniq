@@ -32,6 +32,7 @@ import type {
   TransitionLabCaseDto,
   UpdateLabCaseDto,
 } from './dto/case.dto.js';
+import { LabCounterpartyService } from '../_shared/counterparty.service.js';
 
 /**
  * Allowed status transitions. Both sides can drive depending on phase:
@@ -71,6 +72,7 @@ export class LabCasesService {
     private readonly config: ConfigService,
     private readonly links: LabClinicLinksService,
     private readonly notify: LabNotificationsService,
+    private readonly counterparty: LabCounterpartyService,
   ) {
     this.s3 = new S3Client({
       region: this.config.get<string>('AWS_REGION') ?? 'ap-southeast-1',
@@ -189,71 +191,87 @@ export class LabCasesService {
       offset?: number;
     },
   ) {
-    return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labCase.findMany({
-        where: {
-          labTenantId: user.tenantId,
-          deletedAt: null,
-          ...(opts?.status ? { status: opts.status } : {}),
-          ...(opts?.tagId
-            ? { tagAssignments: { some: { tagId: opts.tagId } } }
-            : {}),
-        },
-        orderBy: [{ createdAt: 'desc' }],
-        take: clampLimit(opts?.limit),
-        skip: clampOffset(opts?.offset),
-        include: {
-          product: { select: { id: true, name: true } },
-          clinic: { select: { id: true, slug: true, name: true } },
-          _count: { select: { files: true } },
-          tagAssignments: {
-            include: { tag: true },
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labCase.findMany({
+          where: {
+            labTenantId: user.tenantId,
+            deletedAt: null,
+            ...(opts?.status ? { status: opts.status } : {}),
+            ...(opts?.tagId
+              ? { tagAssignments: { some: { tagId: opts.tagId } } }
+              : {}),
           },
-        },
-      }),
+          orderBy: [{ createdAt: 'desc' }],
+          take: clampLimit(opts?.limit),
+          skip: clampOffset(opts?.offset),
+          include: {
+            product: { select: { id: true, name: true } },
+            clinic: { select: { id: true, slug: true, name: true } },
+            _count: { select: { files: true } },
+            tagAssignments: {
+              include: { tag: true },
+            },
+          },
+        }),
     );
+    // RLS hides the counterparty tenant — see LabCounterpartyService.
+    return this.counterparty.hydrate(rows);
   }
 
   async listForClinic(
     user: AuthenticatedUser,
     opts?: { status?: LabCaseStatus; limit?: number; offset?: number },
   ) {
-    return this.prisma.withTenant(user.tenantId, user.userId, (tx) =>
-      tx.labCase.findMany({
-        where: {
-          clinicTenantId: user.tenantId,
-          deletedAt: null,
-          ...(opts?.status ? { status: opts.status } : {}),
-        },
-        orderBy: [{ createdAt: 'desc' }],
-        take: clampLimit(opts?.limit),
-        skip: clampOffset(opts?.offset),
-        include: {
-          product: { select: { id: true, name: true } },
-          lab: { select: { id: true, slug: true, name: true } },
-          _count: { select: { files: true } },
-        },
-      }),
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.labCase.findMany({
+          where: {
+            clinicTenantId: user.tenantId,
+            deletedAt: null,
+            ...(opts?.status ? { status: opts.status } : {}),
+          },
+          orderBy: [{ createdAt: 'desc' }],
+          take: clampLimit(opts?.limit),
+          skip: clampOffset(opts?.offset),
+          include: {
+            product: { select: { id: true, name: true } },
+            lab: { select: { id: true, slug: true, name: true } },
+            _count: { select: { files: true } },
+          },
+        }),
     );
+    // RLS hides the counterparty tenant — see LabCounterpartyService.
+    return this.counterparty.hydrate(rows);
   }
 
   async findById(id: string, user: AuthenticatedUser) {
-    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
-      const labCase = await tx.labCase.findFirst({
-        where: { id, deletedAt: null },
-        include: {
-          product: true,
-          lab: { select: { id: true, slug: true, name: true } },
-          clinic: { select: { id: true, slug: true, name: true } },
-          files: {
-            where: { deletedAt: null },
-            orderBy: [{ createdAt: 'asc' }],
+    const found = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      async (tx) => {
+        const labCase = await tx.labCase.findFirst({
+          where: { id, deletedAt: null },
+          include: {
+            product: true,
+            lab: { select: { id: true, slug: true, name: true } },
+            clinic: { select: { id: true, slug: true, name: true } },
+            files: {
+              where: { deletedAt: null },
+              orderBy: [{ createdAt: 'asc' }],
+            },
           },
-        },
-      });
-      if (!labCase) throw new NotFoundException('case not found');
-      return labCase;
-    });
+        });
+        if (!labCase) throw new NotFoundException('case not found');
+        return labCase;
+      },
+    );
+    // RLS hides the counterparty tenant — see LabCounterpartyService.
+    return this.counterparty.hydrate(found);
   }
 
   // ── Transitions ──────────────────────────────────────────

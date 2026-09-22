@@ -16,6 +16,7 @@ import { LabInvoicesService } from './invoices/lab-invoices.service.js';
 import { PaymongoService } from './invoices/paymongo.service.js';
 import { PaymongoWebhookController } from './invoices/paymongo-webhook.controller.js';
 import { LabPdfRenderingService } from './_shared/pdf-rendering.service.js';
+import { LabCounterpartyService } from './_shared/counterparty.service.js';
 import { LabNotificationsService } from './_shared/lab-notifications.service.js';
 import { LabStatsController } from './stats/lab-stats.controller.js';
 import { LabStatsService } from './stats/lab-stats.service.js';
@@ -75,6 +76,7 @@ import { ClinicLabDisputesController } from '../clinic/lab-disputes/clinic-lab-d
     LabComplianceService,
     LabInvoicesService,
     LabPdfRenderingService,
+    LabCounterpartyService,
     LabNotificationsService,
     PaymongoService,
     LabStatsService,

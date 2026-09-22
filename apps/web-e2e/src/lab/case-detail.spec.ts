@@ -9,11 +9,23 @@ import { loadSeed } from '../utils/seed';
  * The seeded case is DELIVERED and its invoice ISSUED — see
  * fixtures/provision.ts `provisionMarketplace`.
  */
+/**
+ * The clinic /login page the lab shell bounces to also has an <h3>, so a
+ * heading assertion alone passes on a failed session gate. Every case proves
+ * it is inside the authed lab console first.
+ */
+async function expectLabShell(page: import('@playwright/test').Page) {
+  await expect(page.getByText('ClinIQ Lab').first()).toBeVisible({
+    timeout: 15_000,
+  });
+}
+
 test.describe('@web lab case + billing detail', () => {
   test('case detail renders the seeded case', async ({ page }) => {
     const { marketplace } = loadSeed();
     await page.goto(`/lab/cases/${marketplace.caseId}`);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
+    await expectLabShell(page);
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
       timeout: 15_000,
     });
     await expect(
@@ -23,13 +35,15 @@ test.describe('@web lab case + billing detail', () => {
 
   test('case list links through to the detail page', async ({ page }) => {
     await page.goto('/lab/cases');
+    await expectLabShell(page);
     const row = page.locator('table tbody tr').first();
     await expect(row).toBeVisible({ timeout: 15_000 });
     const link = row.getByRole('link').first();
     await expect(link).toBeVisible({ timeout: 10_000 });
     await link.click();
     await expect(page).toHaveURL(/\/lab\/cases\/.+/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
+    await expectLabShell(page);
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -37,7 +51,8 @@ test.describe('@web lab case + billing detail', () => {
   test('billing detail renders the issued invoice', async ({ page }) => {
     const { marketplace } = loadSeed();
     await page.goto(`/lab/billing/${marketplace.invoiceId}`);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
+    await expectLabShell(page);
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
       timeout: 15_000,
     });
     // ₱3,500.00 seeded total — assert the money rendered, in any format.
@@ -48,6 +63,7 @@ test.describe('@web lab case + billing detail', () => {
 
   test('catalog shows the seeded product', async ({ page }) => {
     await page.goto('/lab/catalog');
+    await expectLabShell(page);
     await expect(
       page.getByText('PFM crown', { exact: false }).first(),
     ).toBeVisible({ timeout: 15_000 });
@@ -56,6 +72,7 @@ test.describe('@web lab case + billing detail', () => {
   test('clinics page shows the linked clinic', async ({ page }) => {
     const { clinic } = loadSeed();
     await page.goto('/lab/clinics');
+    await expectLabShell(page);
     await expect(
       page.getByText(clinic.slug, { exact: false }).first(),
     ).toBeVisible({ timeout: 15_000 });

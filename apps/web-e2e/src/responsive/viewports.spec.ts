@@ -92,7 +92,10 @@ test.describe('@responsive interactive controls', () => {
     const trigger = page
       .getByRole('button', { name: /new patient|add patient|create/i })
       .first();
-    if ((await trigger.count()) === 0) test.skip();
+    // `.count()` straight after goto() reads the DOM before the page has
+    // settled, so this used to skip itself instead of running — the test above
+    // proves the button is reachable at every viewport. Wait for it.
+    await expect(trigger).toBeVisible({ timeout: 10_000 });
     await trigger.click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5_000 });

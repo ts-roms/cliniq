@@ -1,55 +1,38 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * Lab console shell smoke.
+ *
+ * Every case here used to assert `expect(page.locator('body')).toBeVisible()`,
+ * which is true of literally any page — including the clinic /login form the
+ * lab shell bounces to when the session gate misfires. The suite was green
+ * while the lab console was showing a login screen. Assert something only the
+ * lab shell renders instead: its "ClinIQ Lab" header, which sits inside the
+ * authed layout and cannot appear on a login page.
+ */
+const LAB_PAGES = [
+  ['cases', '/lab/cases'],
+  ['billing', '/lab/billing'],
+  ['catalog', '/lab/catalog'],
+  ['clinics', '/lab/clinics'],
+  ['materials', '/lab/materials'],
+  ['compliance', '/lab/compliance'],
+  ['tags', '/lab/tags'],
+  ['stats', '/lab/stats'],
+] as const;
+
 test.describe('@web lab marketplace', () => {
-  test('cases page renders for LAB tenant', async ({ page }) => {
-    await page.goto('/lab/cases');
-    await expect(page).toHaveURL(/\/lab\/cases/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
-      timeout: 15_000,
+  for (const [label, path] of LAB_PAGES) {
+    test(`${label} page renders inside the lab shell`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page).toHaveURL(new RegExp(path.replace(/\//gu, '\\/')));
+      // Proof we are in the authed lab console, not on a login screen.
+      await expect(page.getByText('ClinIQ Lab').first()).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(page.locator('h1, h2, h3').first()).toBeVisible({
+        timeout: 15_000,
+      });
     });
-  });
-
-  test('billing list renders', async ({ page }) => {
-    await page.goto('/lab/billing');
-    await expect(page).toHaveURL(/\/lab\/billing/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('catalog renders', async ({ page }) => {
-    await page.goto('/lab/catalog');
-    await expect(page).toHaveURL(/\/lab\/catalog/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('clinics page renders', async ({ page }) => {
-    await page.goto('/lab/clinics');
-    await expect(page).toHaveURL(/\/lab\/clinics/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('materials page renders', async ({ page }) => {
-    await page.goto('/lab/materials');
-    await expect(page).toHaveURL(/\/lab\/materials/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('compliance page renders', async ({ page }) => {
-    await page.goto('/lab/compliance');
-    await expect(page).toHaveURL(/\/lab\/compliance/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('tags page renders', async ({ page }) => {
-    await page.goto('/lab/tags');
-    await expect(page).toHaveURL(/\/lab\/tags/);
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('stats page renders charts', async ({ page }) => {
-    await page.goto('/lab/stats');
-    await expect(page).toHaveURL(/\/lab\/stats/);
-    await expect(page.locator('h1, h2').first()).toBeVisible({
-      timeout: 15_000,
-    });
-  });
+  }
 });
