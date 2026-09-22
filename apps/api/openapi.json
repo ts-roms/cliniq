@@ -10552,13 +10552,27 @@
         "type": "string",
         "enum": ["STARTER", "PRO", "PREMIUM"]
       },
+      "LabPlan": {
+        "type": "string",
+        "enum": ["LAB_BASIC", "LAB_STANDARD", "LAB_PREMIUM"],
+        "description": "LAB tenants only (400 on a CLINIC tenant)"
+      },
       "PlatformUpdateTenantDto": {
         "type": "object",
         "properties": {
           "plan": {
+            "description": "CLINIC tenants only (400 on a LAB tenant)",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "labPlan": {
+            "description": "LAB tenants only (400 on a CLINIC tenant)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LabPlan"
               }
             ]
           },

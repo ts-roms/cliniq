@@ -37,6 +37,8 @@ const PLAN_COLOR: Record<TenantPlan, string> = {
   PREMIUM:
     'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
 };
+const LAB_PLAN_COLOR =
+  'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300';
 
 export function TenantsTable() {
   const [search, setSearch] = useState('');
@@ -141,9 +143,13 @@ export function TenantsTable() {
                   </td>
                   <td className="py-2 pr-3">
                     <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${PLAN_COLOR[t.plan]}`}
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                        t.kind === 'LAB' || !t.plan
+                          ? LAB_PLAN_COLOR
+                          : PLAN_COLOR[t.plan]
+                      }`}
                     >
-                      {t.plan}
+                      {(t.kind === 'LAB' ? t.labPlan : t.plan) ?? '—'}
                     </span>
                   </td>
                   <td className="py-2 pr-3">

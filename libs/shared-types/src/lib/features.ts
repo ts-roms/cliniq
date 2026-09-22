@@ -152,15 +152,12 @@ export const PLAN_FEATURES: Record<Plan, ReadonlySet<Feature>> = {
 };
 
 /**
- * PROVISIONAL — pricing tiers are not final. Until they are, every new
- * tenant starts on the top tier so no module (inventory, HMO claims,
- * queueing, tele, AI, OB, …) is locked behind a plan nobody can buy yet.
- * The PRO / PREMIUM ladders above stay as the intended shape; when the
- * tiers are decided, set these back to 'STARTER' / 'LAB_BASIC' and
- * downgrade the tenants that should not keep the top tier.
+ * Every new tenant starts on the basic tier of its kind. Self-signup
+ * cannot choose a plan; the only way a plan changes is the platform
+ * console (PATCH /platform/tenants/:id, platform admins only).
  */
-export const DEFAULT_SIGNUP_PLAN: Plan = 'PREMIUM';
-export const DEFAULT_SIGNUP_LAB_PLAN: LabPlan = 'LAB_PREMIUM';
+export const DEFAULT_SIGNUP_PLAN: Plan = 'STARTER';
+export const DEFAULT_SIGNUP_LAB_PLAN: LabPlan = 'LAB_BASIC';
 
 export function planHasFeature(plan: Plan, feature: Feature): boolean {
   return PLAN_FEATURES[plan]?.has(feature) ?? false;

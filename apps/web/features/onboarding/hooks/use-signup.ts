@@ -13,9 +13,9 @@ export function useSignup(opts?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (input: SignupInput): Promise<Session> => {
       // 1. Create the tenant + owner shell user (no password yet).
-      //    Forwards `kind` (CLINIC | LAB), and either `plan` or `labPlan`
-      //    depending on the audience the user came in through. Omitted =
-      //    api defaults to CLINIC + Plan.STARTER.
+      //    Forwards `kind` (CLINIC | LAB). The plan is not a signup input:
+      //    every tenant starts on STARTER / LAB_BASIC and only the platform
+      //    console changes it.
       const { data: tenant, error: tErr } = await tenantsControllerCreate({
         body: {
           slug: input.slug,
@@ -23,8 +23,6 @@ export function useSignup(opts?: { onSuccess?: () => void }) {
           ownerEmail: input.ownerEmail,
           ownerName: input.ownerName,
           ...(input.kind ? { kind: input.kind } : {}),
-          ...(input.plan ? { plan: input.plan } : {}),
-          ...(input.labPlan ? { labPlan: input.labPlan } : {}),
         },
       });
       if (tErr || !tenant) {

@@ -6,6 +6,7 @@ import { FormField } from '@/shared/components/forms/form-field';
 import { useUpdateTenant } from '../hooks/use-tenants';
 import type {
   TenantDetail,
+  TenantLabPlan,
   TenantPlan,
   TenantStatus,
   UpdateTenantInput,
@@ -19,14 +20,20 @@ const STATUSES: TenantStatus[] = [
   'CANCELLED',
 ];
 const PLANS: TenantPlan[] = ['STARTER', 'PRO', 'PREMIUM'];
+const LAB_PLANS: TenantLabPlan[] = ['LAB_BASIC', 'LAB_STANDARD', 'LAB_PREMIUM'];
 
 interface Props {
   tenant: TenantDetail;
 }
 
 export function TenantEditForm({ tenant }: Props) {
+  const isLab = tenant.kind === 'LAB';
   const [name, setName] = useState(tenant.name);
-  const [plan, setPlan] = useState<TenantPlan>(tenant.plan);
+  // A tenant has one plan column for its kind; the other stays null.
+  const [plan, setPlan] = useState<TenantPlan>(tenant.plan ?? 'STARTER');
+  const [labPlan, setLabPlan] = useState<TenantLabPlan>(
+    tenant.labPlan ?? 'LAB_BASIC',
+  );
   const [status, setStatus] = useState<TenantStatus>(tenant.status);
   const [trialEndsAt, setTrialEndsAt] = useState(
     tenant.trialEndsAt ? tenant.trialEndsAt.slice(0, 10) : '',
@@ -36,7 +43,7 @@ export function TenantEditForm({ tenant }: Props) {
 
   const dirty =
     name !== tenant.name ||
-    plan !== tenant.plan ||
+    (isLab ? labPlan !== tenant.labPlan : plan !== tenant.plan) ||
     status !== tenant.status ||
     (trialEndsAt || null) !== (tenant.trialEndsAt?.slice(0, 10) || null);
 
@@ -44,7 +51,11 @@ export function TenantEditForm({ tenant }: Props) {
     e.preventDefault();
     const dto: UpdateTenantInput = {};
     if (name !== tenant.name) dto.name = name;
-    if (plan !== tenant.plan) dto.plan = plan;
+    if (isLab) {
+      if (labPlan !== tenant.labPlan) dto.labPlan = labPlan;
+    } else if (plan !== tenant.plan) {
+      dto.plan = plan;
+    }
     if (status !== tenant.status) dto.status = status;
     if ((trialEndsAt || null) !== (tenant.trialEndsAt?.slice(0, 10) || null)) {
       dto.trialEndsAt = trialEndsAt
@@ -61,17 +72,30 @@ export function TenantEditForm({ tenant }: Props) {
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Plan">
-          <Select
-            value={plan}
-            onChange={(e) => setPlan(e.target.value as TenantPlan)}
-          >
-            {PLANS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </Select>
+        <FormField label={isLab ? 'Lab plan' : 'Plan'}>
+          {isLab ? (
+            <Select
+              value={labPlan}
+              onChange={(e) => setLabPlan(e.target.value as TenantLabPlan)}
+            >
+              {LAB_PLANS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <Select
+              value={plan}
+              onChange={(e) => setPlan(e.target.value as TenantPlan)}
+            >
+              {PLANS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Select>
+          )}
           <p className="text-xs text-muted-foreground">
             Determines unlocked features.
           </p>
