@@ -2815,6 +2815,40 @@
         "tags": ["retention"]
       }
     },
+    "/api/platform/retention/run-now": {
+      "post": {
+        "operationId": "PlatformRetentionController_runNow",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["platform-retention"]
+      }
+    },
     "/api/services": {
       "get": {
         "operationId": "BillingController_listServices",

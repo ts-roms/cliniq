@@ -6,6 +6,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   Max,
   MaxLength,
@@ -104,6 +105,17 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
+  // Shape-only. Whether the host is actually reachable/public is decided at
+  // dispatch time by WebhooksService (see apps/api/src/webhooks/webhook-target.ts),
+  // because DNS can change between saving the setting and firing the event.
+  @IsUrl(
+    {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+      require_tld: false,
+    },
+    { message: 'appointmentWebhookUrl must be an absolute http(s) URL' },
+  )
   appointmentWebhookUrl?: string;
 
   @ApiPropertyOptional({

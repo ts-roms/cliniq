@@ -31,7 +31,12 @@ The DSR module's `EraseProcessor` performs anonymize-mode deletion; `RetentionSe
 ## Implementation
 
 - `apps/api/src/retention/retention.service.ts` runs at 03:15 Asia/Manila (= 19:15 UTC).
-- An OWNER may trigger ad-hoc via `POST /api/retention/run-now` (audit-logged).
+- An OWNER/ADMIN may trigger an ad-hoc purge of **their own tenant** via
+  `POST /api/retention/run-now` (audit-logged).
+- The nightly scheduler uses the platform-admin route
+  `POST /api/platform/retention/run-now`, which sweeps the estate in
+  bounded batches — follow the `nextCursor` in the response until it is
+  `null` to cover every tenant in one pass.
 - Deletes per category are logged to CloudWatch + recorded as a single audit entry under `action=retention.purge` per run.
 
 ## Drift detection

@@ -37,10 +37,26 @@ export interface SeedPlatform {
   accessToken: string;
 }
 
+/**
+ * The clinic<->lab marketplace fixture: an accepted link plus one case that
+ * has been walked all the way to an issued invoice. Without this the lab and
+ * clinic lab-* pages render empty shells and the specs can only assert that
+ * the chrome painted.
+ */
+export interface SeedMarketplace {
+  categoryId: string;
+  productId: string;
+  /** Case walked to DELIVERED; visible from both the clinic and the lab. */
+  caseId: string;
+  /** Invoice generated from that case and ISSUED (so the clinic sees it). */
+  invoiceId: string;
+}
+
 export interface ProvisionedSeed {
   clinic: SeedTenant;
   lab: SeedLab;
   platform: SeedPlatform;
+  marketplace: SeedMarketplace;
 }
 
 const PASSWORD = 'WebE2EPassword123!';
@@ -66,7 +82,10 @@ export async function provisionTenants(
     // platform admin.
     await setPlanAsPlatform(api, platform, clinic.id, { plan: 'PREMIUM' });
     await setPlanAsPlatform(api, platform, lab.id, { labPlan: 'LAB_PREMIUM' });
-    return { clinic, lab, platform };
+    // Must come after the plan upgrade — the lab catalog and case routes are
+    // gated on LAB_CATALOG / LAB_ORDERS, which LAB_BASIC signup doesn't carry.
+    const marketplace = await provisionMarketplace(api, clinic, lab);
+    return { clinic, lab, platform, marketplace };
   } finally {
     await pg.end().catch(() => undefined);
   }
@@ -306,4 +325,93 @@ async function provisionPlatformAdmin(
     password: PASSWORD,
     accessToken: login.accessToken,
   };
+}
+
+/**
+ * Walk the full clinic<->lab flow once, via the same public routes a real
+ * lab and clinic use, so every lab-* page has a row to render:
+ *
+ *   lab: category -> product -> invite clinic
+ *   clinic: accept invite -> draft case -> SUBMITTED
+ *   lab: IN_PROGRESS -> AWAITING_PICKUP -> DELIVERED -> invoice -> ISSUED
+ */
+async function provisionMarketplace(
+  api: APIRequestContext,
+  clinic: SeedTenant,
+  lab: SeedLab,
+): Promise<SeedMarketplace> {
+  const labToken = await loginToken(api, lab.owner.email);
+  const clinicToken = await loginToken(api, clinic.owner.email);
+  const asLab = { authorization: `Bearer ${labToken}` };
+  const asClinic = { authorization: `Bearer ${clinicToken}` };
+
+  const category = await post(api, '/api/lab/categories', asLab, {
+    name: 'Crowns',
+  });
+  const product = await post(api, '/api/lab/products', asLab, {
+    name: 'PFM crown',
+    categoryId: category.id,
+    defaultPrice: 350000,
+    currency: 'PHP',
+    pricingMode: 'FIXED',
+    phases: ['Wax-up', 'Casting', 'Porcelain'],
+  });
+
+  const invite = await post(api, '/api/lab/clinic-links/invite', asLab, {
+    clinicSlug: clinic.slug,
+  });
+  await post(
+    api,
+    `/api/clinic/lab-invitations/${invite.id}/accept`,
+    asClinic,
+    {},
+  );
+
+  const labCase = await post(api, '/api/clinic/lab-cases', asClinic, {
+    labTenantId: lab.id,
+    productId: product.id,
+    patientLabel: 'Maria Cruz',
+    doctorLabel: 'Dr. Reyes',
+    urgency: 'STANDARD',
+  });
+  await post(api, `/api/clinic/lab-cases/${labCase.id}/transitions`, asClinic, {
+    status: 'SUBMITTED',
+  });
+  for (const status of ['IN_PROGRESS', 'AWAITING_PICKUP', 'DELIVERED']) {
+    await post(api, `/api/lab/cases/${labCase.id}/transitions`, asLab, {
+      status,
+    });
+  }
+
+  const invoice = await post(
+    api,
+    '/api/lab/invoices/generate-from-cases',
+    asLab,
+    { clinicTenantId: clinic.id, caseIds: [labCase.id] },
+  );
+  await post(api, `/api/lab/invoices/${invoice.id}/issue`, asLab, {});
+
+  return {
+    categoryId: category.id as string,
+    productId: product.id as string,
+    caseId: labCase.id as string,
+    invoiceId: invoice.id as string,
+  };
+}
+
+/** POST that throws with the server's own message — a silent seed failure
+ *  turns into a dozen confusing spec failures later. */
+async function post(
+  api: APIRequestContext,
+  path: string,
+  headers: Record<string, string>,
+  data: unknown,
+): Promise<Record<string, unknown> & { id: string }> {
+  const res = await api.post(path, { headers, data });
+  if (!res.ok()) {
+    throw new Error(
+      `seed POST ${path} failed: ${res.status()} ${await res.text()}`,
+    );
+  }
+  return res.json();
 }
