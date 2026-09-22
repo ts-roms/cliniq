@@ -8,8 +8,10 @@
  * Run with:  pnpm db:seed
  *
  * Env:
- *   DEMO_PASSWORD        password for every seeded account (default P@ssw0rd123;
- *                        set a strong one on any shared / public deployment)
+ *   DEMO_PASSWORD        password for the seeded tenant users (default
+ *                        P@ssw0rd123; set a strong one on any shared env)
+ *   PLATFORM_PASSWORD    password for the seeded platform operator (default
+ *                        ChangeMe@123 — a change-me placeholder)
  *   SEED_PLATFORM_ADMIN  '0' skips the platform@cliniq.local admin (use
  *                        seed:platform-admin for real operators instead)
  *
@@ -22,6 +24,9 @@ import { hashPassword } from '@org/auth';
 
 const TENANT_SLUG = 'demo';
 const PASSWORD = process.env.DEMO_PASSWORD || 'P@ssw0rd123';
+// The console can change any tenant's plan, so it gets its own password
+// (and its own change-me default) rather than the shared demo one.
+const PLATFORM_PASSWORD = process.env.PLATFORM_PASSWORD || 'ChangeMe@123';
 const SEED_PLATFORM_ADMIN = process.env.SEED_PLATFORM_ADMIN !== '0';
 
 interface PlatformAdminSpec {
@@ -94,6 +99,10 @@ const PATIENTS: PatientSpec[] = [
 async function main() {
   // bcrypt is the bottleneck — hash once, reuse for every user.
   const passwordHash = await hashPassword(PASSWORD);
+  const platformHash =
+    PLATFORM_PASSWORD === PASSWORD
+      ? passwordHash
+      : await hashPassword(PLATFORM_PASSWORD);
 
   // Platform-console admins. Lives in its own table — no tenant link, no
   // TenantUser membership. Upsert by email so re-runs don't duplicate.
@@ -102,8 +111,12 @@ async function main() {
   for (const spec of platformAdmins) {
     await prisma.platformAdmin.upsert({
       where: { email: spec.email },
-      update: { name: spec.name, passwordHash },
-      create: { email: spec.email, name: spec.name, passwordHash },
+      update: { name: spec.name, passwordHash: platformHash },
+      create: {
+        email: spec.email,
+        name: spec.name,
+        passwordHash: platformHash,
+      },
     });
     console.log(`  PLATFORM     ${spec.email}`);
   }
@@ -216,7 +229,10 @@ async function main() {
 
   console.log('\n✓ Seed complete\n');
   console.log(`  Tenant slug: ${TENANT_SLUG}`);
-  console.log(`  Password   : ${PASSWORD}`);
+  console.log(`  Password   : ${PASSWORD}` + ' (tenant users)');
+  if (platformAdmins.length > 0) {
+    console.log(`  Platform   : ${PLATFORM_PASSWORD}`);
+  }
   console.log('  Logins     :');
   for (const a of platformAdmins) console.log(`    PLATFORM     ${a.email}`);
   for (const s of STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
