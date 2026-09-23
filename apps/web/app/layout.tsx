@@ -13,7 +13,7 @@ const sourceSans = Source_Sans_3({
 
 export const metadata = {
   title: 'ClinIQ',
-  description: 'The clinic management system with a brain.',
+  description: 'The clinic and dental-lab system with a brain.',
 };
 
 export default function RootLayout({

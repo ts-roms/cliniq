@@ -3,9 +3,9 @@ import { Button } from '@org/ui';
 import { AuthAwareCta } from '@/features/marketing/auth-aware-cta';
 import { SignupChoiceCta } from '@/features/marketing/signup-choice-cta';
 
-const TITLE = 'ClinIQ — The clinic management system with a brain';
+const TITLE = 'ClinIQ — The clinic and dental-lab system with a brain';
 const DESCRIPTION =
-  'Patients, consultations, prescriptions, telemedicine, HMO claims, and inventory — built for Philippine clinics. Free 30-day trial.';
+  'Patients, consultations, prescriptions, telemedicine, HMO claims and inventory for clinics; digital case orders, manufacturing phases and invoicing for dental labs. Built for the Philippines. Free 30-day trial.';
 
 export const metadata = {
   title: TITLE,
@@ -130,13 +130,14 @@ export default function LandingPage() {
       <section className="container mx-auto px-4 pt-12 pb-20 sm:px-6 sm:pt-20 sm:pb-28">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-4xl font-extralight tracking-tight sm:text-5xl md:text-6xl">
-            The clinic management system{' '}
+            The clinic and dental-lab system{' '}
             <span className="text-primary">with a brain.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Patients, consultations, prescriptions, telemedicine, HMO claims,
-            and inventory — in one place, with an AI scribe that drafts the note
-            so you can focus on the patient.
+            Clinics get patients, consultations, prescriptions, telemedicine,
+            HMO claims and inventory, with an AI scribe that drafts the note.
+            Dental labs get digital case orders, manufacturing phases and
+            invoicing. One system, both sides of the referral.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <SignupChoiceCta className="h-11 w-full px-6 text-base sm:w-auto" />
