@@ -361,9 +361,22 @@ jobs:
           pnpm exec openapi-ts
           node scripts/strip-js-extensions.mjs
 
+      # Same-origin, matching how the app is deployed: the browser calls the
+      # web's own origin and a Next rewrite forwards /api/* to the api. Both
+      # values are needed at BUILD time — Next resolves rewrites during
+      # `next build` and bakes them into routes-manifest.json, so a
+      # runtime-only API_PROXY_TARGET is read too late and the proxy 404s.
+      #
+      # Pointing the browser straight at the api instead (the old setting)
+      # passes locally for a reason that does not hold in production: web and
+      # api are both `localhost` here and cookies ignore the PORT, so the
+      # api's session cookie reaches the web anyway. On separate hostnames it
+      # does not, and apps/web/proxy.ts bounces every authed route back to
+      # /login — a live outage this suite could not see.
       - name: Build web (production)
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4005
+          NEXT_PUBLIC_API_URL: same-origin
+          API_PROXY_TARGET: http://localhost:4005
         run: pnpm exec nx run @org/web:build
 
       # The api must run as the RLS role: PrismaService refuses to boot as a
@@ -380,7 +393,10 @@ jobs:
       - name: Boot web in background
         env:
           PORT: '4000'
-          NEXT_PUBLIC_API_URL: http://localhost:4005
+          # Baked at build time above; repeated so `next start` reads the same
+          # config it was built with.
+          NEXT_PUBLIC_API_URL: same-origin
+          API_PROXY_TARGET: http://localhost:4005
           HOSTNAME: '0.0.0.0'
         run: |
           # `next start` runs the production server. We launch from the web
