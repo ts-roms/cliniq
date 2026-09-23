@@ -31,7 +31,14 @@ interface Feature {
   body: string;
 }
 
-const FEATURES: Feature[] = [
+/**
+ * Two tenant kinds, two feature sets — rendered as labelled groups rather
+ * than one blended list, because a clinic never sees the lab half and vice
+ * versa. Both lists describe what actually ships (see apps/api/src/lab and
+ * libs/shared-types/src/lib/features.ts); marketing copy that outruns the
+ * product is how a signup ends in a refund.
+ */
+const CLINIC_FEATURES: Feature[] = [
   {
     title: 'Patient records',
     body: 'MRN-keyed charts, demographics, allergies, vitals, conditions, and medications — searchable in one place.',
@@ -58,12 +65,45 @@ const FEATURES: Feature[] = [
   },
 ];
 
+const LAB_FEATURES: Feature[] = [
+  {
+    title: 'Digital case orders',
+    body: 'Clinics you are linked to submit cases with the product, patient label, and urgency — no more paper slips or phone calls.',
+  },
+  {
+    title: 'Manufacturing phases',
+    body: 'Track each case from submitted through in-progress, awaiting pickup, and delivered, with the phases your product actually uses.',
+  },
+  {
+    title: 'Product catalog',
+    body: 'Your own categories, products, and pricing — what the clinic picks from when they order, priced the way you quote.',
+  },
+  {
+    title: 'Materials & lot traceability',
+    body: 'Record which material lots went into a case, so a conformity question years later has an answer.',
+  },
+  {
+    title: 'Conformity & consent docs',
+    body: 'Generate declarations of conformity from your own templates, with e-signature capture on the clinic side.',
+  },
+  {
+    title: 'Invoicing & payment links',
+    body: 'Build invoices straight from delivered cases, issue them to the clinic, and collect via PayMongo payment links.',
+  },
+];
+
 interface Audience {
   title: string;
   body: string;
 }
 
-const AUDIENCES: Audience[] = [
+/**
+ * Same split as the features section: a clinic and a dental lab are different
+ * tenant kinds with different shapes of business. The lab entries track the
+ * LabSpecialty enum (single-craft through full-service) and the per-plan
+ * limits in libs/shared-types — not invented segments.
+ */
+const CLINIC_AUDIENCES: Audience[] = [
   {
     title: 'Solo practitioners',
     body: 'Bring your records, scribe, and Rx into one place. No IT team required.',
@@ -75,6 +115,21 @@ const AUDIENCES: Audience[] = [
   {
     title: 'Specialty practices',
     body: 'Built-in flows for dental charting, pediatrics, OB-GYN, dermatology, cardiology, and psych.',
+  },
+];
+
+const LAB_AUDIENCES: Audience[] = [
+  {
+    title: 'Single-craft labs',
+    body: 'Crown & bridge, orthodontics, implantology, removable prosthesis, or clear aligners — a catalog shaped around the one thing you do.',
+  },
+  {
+    title: 'Full-service labs',
+    body: 'Many products and technicians under one roof, with phase tracking so nobody has to ask where a case is.',
+  },
+  {
+    title: 'Labs with clinic networks',
+    body: 'Invite the clinics you already work with; they order, you deliver and invoice, both sides watching the same case.',
   },
 ];
 
@@ -160,24 +215,15 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 py-20 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-extralight tracking-tight sm:text-4xl">
-              Everything your clinic runs on, in one place
+              Everything your clinic or lab runs on, in one place
             </h2>
             <p className="mt-4 text-muted-foreground">
-              No more juggling spreadsheets, paper charts, and a separate
-              prescription pad.
+              No more juggling spreadsheets, paper charts, prescription pads —
+              or paper case slips between the two.
             </p>
           </div>
-          <ul className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <li
-                key={f.title}
-                className="flex flex-col gap-2 bg-background p-6"
-              >
-                <h3 className="text-base font-semibold">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.body}</p>
-              </li>
-            ))}
-          </ul>
+          <FeatureGroup label="For clinics" features={CLINIC_FEATURES} />
+          <FeatureGroup label="For dental labs" features={LAB_FEATURES} />
         </div>
       </section>
 
@@ -185,20 +231,11 @@ export default function LandingPage() {
       <section className="container mx-auto px-4 py-20 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-extralight tracking-tight sm:text-4xl">
-            Built for the clinic you actually run
+            Built for the clinic or lab you actually run
           </h2>
         </div>
-        <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
-          {AUDIENCES.map((a) => (
-            <div
-              key={a.title}
-              className="rounded-xl border border-border/60 bg-background p-6 shadow-sm"
-            >
-              <h3 className="text-base font-semibold">{a.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{a.body}</p>
-            </div>
-          ))}
-        </div>
+        <AudienceGroup label="For clinics" audiences={CLINIC_AUDIENCES} />
+        <AudienceGroup label="For dental labs" audiences={LAB_AUDIENCES} />
       </section>
 
       {/* Trust strip */}
@@ -264,5 +301,58 @@ export default function LandingPage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+/** One labelled half of the features section — see CLINIC_FEATURES. */
+function FeatureGroup({
+  label,
+  features,
+}: {
+  label: string;
+  features: Feature[];
+}) {
+  return (
+    <div className="mx-auto mt-12 max-w-5xl">
+      <h3 className="mb-4 text-center text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+        {label}
+      </h3>
+      <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 sm:grid-cols-2 lg:grid-cols-3">
+        {features.map((f) => (
+          <li key={f.title} className="flex flex-col gap-2 bg-background p-6">
+            <h4 className="text-base font-semibold">{f.title}</h4>
+            <p className="text-sm text-muted-foreground">{f.body}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** One labelled half of the "who it's for" section — see CLINIC_AUDIENCES. */
+function AudienceGroup({
+  label,
+  audiences,
+}: {
+  label: string;
+  audiences: Audience[];
+}) {
+  return (
+    <div className="mx-auto mt-12 max-w-5xl">
+      <h3 className="mb-4 text-center text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+        {label}
+      </h3>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {audiences.map((a) => (
+          <div
+            key={a.title}
+            className="rounded-xl border border-border/60 bg-background p-6 shadow-sm"
+          >
+            <h4 className="text-base font-semibold">{a.title}</h4>
+            <p className="mt-2 text-sm text-muted-foreground">{a.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

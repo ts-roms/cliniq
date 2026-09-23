@@ -49,7 +49,10 @@ export function SignupChoiceCta({ className, labVariant = 'outline' }: Props) {
         className={className}
         data-test="signup-lab"
       >
-        <Link href="/signup?kind=lab">Sign up for Lab</Link>
+        {/* "Dental Lab", not "Lab": Features.LABS is in-clinic diagnostics
+            ordered against a patient chart, while the LAB tenant kind is a
+            dental laboratory. Same reason the hero says "dental-lab". */}
+        <Link href="/signup?kind=lab">Sign up for Dental Lab</Link>
       </Button>
     </>
   );
