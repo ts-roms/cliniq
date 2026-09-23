@@ -11,8 +11,8 @@
 //
 // Behavior:
 //   - If a row with that email exists: name + passwordHash are UPDATED
-//     (effectively a password reset). `lastLogin`, `mfaEnabled`,
-//     `mfaSecret`, `mfaBackupCodes` are preserved.
+//     (effectively a password reset) and any lockout is cleared.
+//     `lastLogin`, `mfaEnabled`, `mfaSecret`, `mfaBackupCodes` are preserved.
 //   - If not: a new row is created with the given email/name and
 //     mfaEnabled=false. The admin should enroll MFA on first login.
 //
@@ -81,12 +81,18 @@ async function main() {
           name,
           passwordHash,
           deletedAt: null, // un-soft-delete if it was deleted
+          // Clear the lockout, same as the tenant reset-password path
+          // (auth.service.ts). Without this a locked-out operator cannot be
+          // rescued by a password reset: the new password is correct and
+          // login still refuses it until lockedUntil expires.
+          failedLoginCount: 0,
+          lockedUntil: null,
         },
       });
       console.log(
         `✓ Updated platform admin ${updated.email} (id=${updated.id})`,
       );
-      console.log('  Password reset. MFA state preserved.');
+      console.log('  Password reset, lockout cleared. MFA state preserved.');
     } else {
       const created = await prisma.platformAdmin.create({
         data: { email, name, passwordHash },
