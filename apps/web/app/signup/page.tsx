@@ -1,24 +1,18 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@org/ui';
-import { SignupEntry } from '@/features/onboarding';
+import { Card, CardContent, CardHeader } from '@org/ui';
+import { SignupEntry, SignupHeading } from '@/features/onboarding';
 
 export default function SignupPage() {
   return (
     <main className="container mx-auto flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="font-extralight">Start your clinic</CardTitle>
-          <CardDescription>
-            Free 30-day trial. Add patients, scribe consultations, prescribe —
-            all in one place.
-          </CardDescription>
+          {/* Reads ?kind= / ?invite= like SignupEntry below, so the heading
+              matches what the visitor actually clicked. */}
+          <Suspense fallback={<HeadingSkeleton />}>
+            <SignupHeading />
+          </Suspense>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* SignupEntry reads ?plan= / ?invite= via useSearchParams, which
@@ -29,7 +23,7 @@ export default function SignupPage() {
             <SignupEntry />
           </Suspense>
           <p className="text-center text-xs text-muted-foreground">
-            Already have a clinic?{' '}
+            Already have an account?{' '}
             <Link href="/login" className="text-primary hover:underline">
               Sign in
             </Link>
@@ -37,6 +31,15 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+function HeadingSkeleton() {
+  return (
+    <div className="space-y-2" aria-hidden>
+      <div className="h-6 w-40 rounded bg-muted/40" />
+      <div className="h-4 w-full rounded bg-muted/30" />
+    </div>
   );
 }
 

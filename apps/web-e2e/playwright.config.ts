@@ -47,6 +47,14 @@ function authed(
   };
 }
 
+/**
+ * Specs that must run signed OUT: login, signup, and anything named after
+ * them (signup-choice.spec.ts). They run in `chromium-public`, which carries
+ * no storageState, and are excluded from every authed clinic project — a
+ * session there would turn the signup CTAs into "Go to dashboard".
+ */
+const ANON_SPECS = /(login|signup)(-[a-z0-9-]+)?\.spec\.ts$/;
+
 /** Clinic specs run as the owner, and patient-roles.spec also as reception. */
 const CLINIC_ROLES = ['clinicOwner', 'clinicReceptionist'] as const;
 
@@ -90,7 +98,7 @@ export default defineConfig({
     {
       name: 'chromium-public',
       testDir: './src/clinic',
-      testMatch: /(login|signup)\.spec\.ts$/,
+      testMatch: ANON_SPECS,
       use: { ...devices['Desktop Chrome'] },
     },
 
@@ -98,7 +106,7 @@ export default defineConfig({
     {
       ...authed('chromium-clinic', CLINIC_ROLES, devices['Desktop Chrome']),
       testDir: './src/clinic',
-      testIgnore: /(login|signup)\.spec\.ts$/,
+      testIgnore: ANON_SPECS,
     },
     {
       ...authed('chromium-portal', ['patient'], devices['Desktop Chrome']),
@@ -121,12 +129,12 @@ export default defineConfig({
     {
       ...authed('firefox-clinic', CLINIC_ROLES, devices['Desktop Firefox']),
       testDir: './src/clinic',
-      testIgnore: /(login|signup)\.spec\.ts$/,
+      testIgnore: ANON_SPECS,
     },
     {
       ...authed('webkit-clinic', CLINIC_ROLES, devices['Desktop Safari']),
       testDir: './src/clinic',
-      testIgnore: /(login|signup)\.spec\.ts$/,
+      testIgnore: ANON_SPECS,
     },
 
     // Responsive viewport sweeps. These specs read a viewport size from a
