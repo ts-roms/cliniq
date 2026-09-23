@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loadSeed } from '../utils/seed';
+import { testAs } from '../fixtures/sessions';
+
+// Sessions are per (project, role), so the receptionist's storageState path
+// depends on which project is running and cannot be a literal in test.use().
+const asReceptionist = testAs('clinicReceptionist');
 
 /**
  * The patient page renders only what the signed-in role may read, and only
@@ -44,10 +49,8 @@ test.describe('@web patient page — owner', () => {
   });
 });
 
-test.describe('@web patient page — receptionist', () => {
-  test.use({ storageState: 'storage/clinic-receptionist.json' });
-
-  test('gets no forbidden sections and no 403s', async ({ page }) => {
+asReceptionist.describe('@web patient page — receptionist', () => {
+  asReceptionist('gets no forbidden sections and no 403s', async ({ page }) => {
     const { clinic } = loadSeed();
     const forbidden = watchForbidden(page);
     await page.goto(`/patients/${clinic.patient.patientId}`);

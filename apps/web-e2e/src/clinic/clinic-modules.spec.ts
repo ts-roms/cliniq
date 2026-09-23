@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loadSeed } from '../utils/seed';
+import { sessionPath } from '../fixtures/sessions';
 
 /**
  * Clinical module configuration, end to end.
@@ -28,10 +29,11 @@ async function setModules(page: Page, modules: string[]) {
 }
 
 test.describe('@web clinical modules', () => {
-  test.afterAll(async ({ browser }) => {
-    // Leave the tenant as every other spec expects to find it.
+  test.afterAll(async ({ browser }, testInfo) => {
+    // Leave the tenant as every other spec expects to find it. Sessions are
+    // per (project, role), so take this project's own rather than a literal.
     const ctx = await browser.newContext({
-      storageState: 'storage/clinic-owner.json',
+      storageState: sessionPath(testInfo.project.name, 'clinicOwner'),
     });
     const page = await ctx.newPage();
     await setModules(page, ALL);

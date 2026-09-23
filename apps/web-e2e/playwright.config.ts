@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { sessionPath, type SessionRole } from './src/fixtures/sessions';
 
 /**
  * Playwright config for ClinIQ web e2e.
@@ -28,14 +29,26 @@ import { defineConfig, devices } from '@playwright/test';
 const BASE_URL = process.env.WEB_E2E_BASE_URL ?? 'http://localhost:4000';
 const isCI = !!process.env.CI;
 
-const STORAGE = {
-  clinicOwner: 'storage/clinic-owner.json',
-  clinicDoctor: 'storage/clinic-doctor.json',
-  clinicReceptionist: 'storage/clinic-receptionist.json',
-  patient: 'storage/patient.json',
-  labOwner: 'storage/lab-owner.json',
-  platformAdmin: 'storage/platform-admin.json',
-} as const;
+/**
+ * Sessions are per (project, role) rather than per role — see
+ * src/fixtures/sessions.ts. `roles` lists every role a project's specs sign
+ * in as, including ones reached via `testAs(...)`; globalSetup reads it to
+ * decide which sessions to create, so a role missing here has no file.
+ */
+function authed(
+  name: string,
+  roles: readonly SessionRole[],
+  use: Record<string, unknown>,
+) {
+  return {
+    name,
+    metadata: { roles: [...roles] },
+    use: { ...use, storageState: sessionPath(name, roles[0]) },
+  };
+}
+
+/** Clinic specs run as the owner, and patient-roles.spec also as reception. */
+const CLINIC_ROLES = ['clinicOwner', 'clinicReceptionist'] as const;
 
 export default defineConfig({
   testDir: './src',
@@ -83,88 +96,74 @@ export default defineConfig({
 
     // Per-portal authed shells. Each picks up the appropriate storageState.
     {
-      name: 'chromium-clinic',
+      ...authed('chromium-clinic', CLINIC_ROLES, devices['Desktop Chrome']),
       testDir: './src/clinic',
       testIgnore: /(login|signup)\.spec\.ts$/,
-      use: { ...devices['Desktop Chrome'], storageState: STORAGE.clinicOwner },
     },
     {
-      name: 'chromium-portal',
+      ...authed('chromium-portal', ['patient'], devices['Desktop Chrome']),
       testDir: './src/portal',
-      use: { ...devices['Desktop Chrome'], storageState: STORAGE.patient },
     },
     {
-      name: 'chromium-lab',
+      ...authed('chromium-lab', ['labOwner'], devices['Desktop Chrome']),
       testDir: './src/lab',
-      use: { ...devices['Desktop Chrome'], storageState: STORAGE.labOwner },
     },
     {
-      name: 'chromium-platform',
+      ...authed(
+        'chromium-platform',
+        ['platformAdmin'],
+        devices['Desktop Chrome'],
+      ),
       testDir: './src/platform',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: STORAGE.platformAdmin,
-      },
     },
 
     // Cross-browser repeat for clinic only — the highest-value surface.
     {
-      name: 'firefox-clinic',
+      ...authed('firefox-clinic', CLINIC_ROLES, devices['Desktop Firefox']),
       testDir: './src/clinic',
       testIgnore: /(login|signup)\.spec\.ts$/,
-      use: { ...devices['Desktop Firefox'], storageState: STORAGE.clinicOwner },
     },
     {
-      name: 'webkit-clinic',
+      ...authed('webkit-clinic', CLINIC_ROLES, devices['Desktop Safari']),
       testDir: './src/clinic',
       testIgnore: /(login|signup)\.spec\.ts$/,
-      use: { ...devices['Desktop Safari'], storageState: STORAGE.clinicOwner },
     },
 
     // Responsive viewport sweeps. These specs read a viewport size from a
     // shared util and assert no horizontal overflow + nav is reachable.
     {
-      name: 'mobile-375',
-      testDir: './src/responsive',
-      use: {
+      ...authed('mobile-375', ['clinicOwner'], {
         ...devices['Pixel 5'], // 393×851
         viewport: { width: 375, height: 812 },
-        storageState: STORAGE.clinicOwner,
-      },
+      }),
+      testDir: './src/responsive',
     },
     {
-      name: 'tablet-768',
-      testDir: './src/responsive',
-      use: {
+      ...authed('tablet-768', ['clinicOwner'], {
         ...devices['iPad (gen 7)'],
         viewport: { width: 768, height: 1024 },
-        storageState: STORAGE.clinicOwner,
-      },
+      }),
+      testDir: './src/responsive',
     },
     {
-      name: 'desktop-1280',
-      testDir: './src/responsive',
-      use: {
+      ...authed('desktop-1280', ['clinicOwner'], {
         ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 800 },
-        storageState: STORAGE.clinicOwner,
-      },
+      }),
+      testDir: './src/responsive',
     },
     {
-      name: 'wide-1920',
-      testDir: './src/responsive',
-      use: {
+      ...authed('wide-1920', ['clinicOwner'], {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
-        storageState: STORAGE.clinicOwner,
-      },
+      }),
+      testDir: './src/responsive',
     },
 
     // a11y smoke — chromium only, top 5 pages.
     {
-      name: 'a11y',
+      ...authed('a11y', ['clinicOwner'], devices['Desktop Chrome']),
       testDir: './src/a11y',
-      use: { ...devices['Desktop Chrome'], storageState: STORAGE.clinicOwner },
     },
   ],
 
