@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Actions } from '@org/auth';
 import { Requires } from '../auth/decorators/requires.decorator.js';
+import { PortalRoute } from '../auth/decorators/portal-route.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,8 +17,13 @@ import { Audit } from '../audit/audit.decorator.js';
  * derived from JWT (`pid` claim) — never from a path/body param. Staff JWTs
  * (no `pid`) get 403 from MeService.
  *
- * `Requires(PATIENT_READ)` is a coarse gate (PATIENT role has it); the real
- * scoping happens in MeService.requirePatientId.
+ * `Requires(PORTAL_READ)` admits portal accounts and only portal accounts —
+ * PORTAL_READ is held by the PATIENT role alone. The real scoping happens in
+ * MeService.requirePatientId, which reads the JWT `pid` claim.
+ *
+ * The two `staff-profile` routes are the exception: they are for clinicians,
+ * not patients, so they keep PATIENT_READ (every staff role holds it, no
+ * portal account does) and MeService.requireStaff does the rest.
  */
 @ApiTags('me')
 @ApiBearerAuth('jwt')
@@ -26,14 +32,17 @@ export class MeController {
   constructor(private readonly me: MeService) {}
 
   @Get('profile')
-  @Requires(Actions.PATIENT_READ)
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
   profile(@CurrentUser() user: AuthenticatedUser) {
     return this.me.profile(user);
   }
 
   // ── Staff (non-portal): own account + PRC licence ─────────────
-  // PATIENT_READ is held by every role, so it is just the "signed in"
-  // gate; MeService.requireStaff does the actual staff-vs-patient check.
+  // PATIENT_READ is held by every staff role and by no portal account, so
+  // it is the "signed-in staff" gate here; MeService.requireStaff does the
+  // real check (and also rejects a delegate acting on someone's behalf).
+  // No @PortalRoute() — PortalScopeGuard keeps portal accounts out.
 
   @Get('staff-profile')
   @Requires(Actions.PATIENT_READ)
@@ -56,31 +65,36 @@ export class MeController {
   }
 
   @Get('appointments')
-  @Requires(Actions.PATIENT_READ)
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
   appointments(@CurrentUser() user: AuthenticatedUser) {
     return this.me.appointments(user);
   }
 
   @Get('invoices')
-  @Requires(Actions.PATIENT_READ)
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
   invoices(@CurrentUser() user: AuthenticatedUser) {
     return this.me.invoices(user);
   }
 
   @Get('records')
-  @Requires(Actions.PATIENT_READ)
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
   records(@CurrentUser() user: AuthenticatedUser) {
     return this.me.records(user);
   }
 
   @Get('tele/active')
-  @Requires(Actions.PATIENT_READ)
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
   teleActive(@CurrentUser() user: AuthenticatedUser) {
     return this.me.teleActive(user);
   }
 
   @Get('invoices/:id/pdf')
-  @Requires(Actions.PATIENT_READ)
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
   async invoicePdf(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,

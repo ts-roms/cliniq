@@ -45,12 +45,17 @@ describe('@org/api-e2e icd-codes module', () => {
       expect(Array.isArray(res.data)).toBe(true);
     });
 
-    it('PATIENT can search ICD codes (no @Requires guard on route)', async () => {
+    // The route carries no @Requires, so JWT alone used to be enough and a
+    // portal account could search the catalog. PortalScopeGuard closes it:
+    // the diagnosis picker is a clinician tool and no portal screen calls it.
+    // (ICD-10 is a public code list, so this was never a PHI leak — it is
+    // surface reduction. Mark the route @PortalRoute() if the portal ever
+    // needs it.) See portal-boundary.spec.ts.
+    it('PATIENT cannot search ICD codes — staff surface', async () => {
       const { tenant } = await env.makeTenant();
       const patient = await env.makePatient(tenant);
       const res = await patient.client.axios.get('/api/icd-codes/search?q=hyp');
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.data)).toBe(true);
+      expect(res.status).toBe(403);
     });
 
     it('search with <2 chars returns empty list', async () => {
