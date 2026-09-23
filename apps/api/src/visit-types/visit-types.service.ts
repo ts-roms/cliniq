@@ -141,5 +141,4 @@ export class VisitTypesService {
       return { id, deleted: true };
     });
   }
-
 }
