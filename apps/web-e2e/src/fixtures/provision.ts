@@ -52,11 +52,26 @@ export interface SeedMarketplace {
   invoiceId: string;
 }
 
+/**
+ * The clinic's checkup catalogue. Both the booking dialog's visit-type field
+ * and the consult's "Visit focus" panel render nothing when a clinic has none,
+ * so without this the specs could only assert their absence.
+ */
+export interface SeedVisitTypes {
+  /** "Dental cleaning" — focuses the dental module. */
+  dentalId: string;
+  dentalName: string;
+  /** "General consultation" — the clinic default, focuses nothing. */
+  generalId: string;
+  generalName: string;
+}
+
 export interface ProvisionedSeed {
   clinic: SeedTenant;
   lab: SeedLab;
   platform: SeedPlatform;
   marketplace: SeedMarketplace;
+  visitTypes: SeedVisitTypes;
 }
 
 const PASSWORD = 'WebE2EPassword123!';
@@ -85,7 +100,8 @@ export async function provisionTenants(
     // Must come after the plan upgrade — the lab catalog and case routes are
     // gated on LAB_CATALOG / LAB_ORDERS, which LAB_BASIC signup doesn't carry.
     const marketplace = await provisionMarketplace(api, clinic, lab);
-    return { clinic, lab, platform, marketplace };
+    const visitTypes = await provisionVisitTypes(api, clinic);
+    return { clinic, lab, platform, marketplace, visitTypes };
   } finally {
     await pg.end().catch(() => undefined);
   }
@@ -414,4 +430,37 @@ async function post(
     );
   }
   return res.json();
+}
+
+/**
+ * A two-entry checkup catalogue for the clinic: one default that focuses no
+ * particular module, and one that focuses dental so the consult's focus panel
+ * has something concrete to link to.
+ */
+async function provisionVisitTypes(
+  api: APIRequestContext,
+  clinic: SeedTenant,
+): Promise<SeedVisitTypes> {
+  const token = await loginToken(api, clinic.owner.email);
+  const asClinic = { authorization: `Bearer ${token}` };
+
+  const general = await post(api, '/api/visit-types', asClinic, {
+    name: 'General consultation',
+    modules: [],
+    isDefault: true,
+    sortOrder: 0,
+  });
+  const dental = await post(api, '/api/visit-types', asClinic, {
+    name: 'Dental cleaning',
+    modules: ['dental'],
+    description: 'Routine scale and polish',
+    sortOrder: 1,
+  });
+
+  return {
+    generalId: general.id as string,
+    generalName: 'General consultation',
+    dentalId: dental.id as string,
+    dentalName: 'Dental cleaning',
+  };
 }

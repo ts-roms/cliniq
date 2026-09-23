@@ -21,6 +21,7 @@
  */
 import { prisma, Role, MemberStatus, TenantStatus, Plan, Sex } from '@org/db';
 import { hashPassword } from '@org/auth';
+import { assertLocalDatabase } from './guard-destructive-seed.js';
 
 const TENANT_SLUG = 'demo';
 const PASSWORD = process.env.DEMO_PASSWORD || 'P@ssw0rd123';
@@ -97,6 +98,10 @@ const PATIENTS: PatientSpec[] = [
 ];
 
 async function main() {
+  // Deletes its tenants and everything under them — never against a
+  // deployed database. See guard-destructive-seed.ts.
+  assertLocalDatabase('seed-dev.ts');
+
   // bcrypt is the bottleneck — hash once, reuse for every user.
   const passwordHash = await hashPassword(PASSWORD);
   const platformHash =

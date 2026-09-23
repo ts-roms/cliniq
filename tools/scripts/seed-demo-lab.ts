@@ -30,6 +30,7 @@ import {
   TenantStatus,
 } from '@org/db';
 import { hashPassword } from '@org/auth';
+import { assertLocalDatabase } from './guard-destructive-seed.js';
 
 const LAB_SLUG = 'demo-lab';
 const CLINIC_SLUG = 'demo-clinic';
@@ -37,6 +38,10 @@ const CLINIC_SLUG = 'demo-clinic';
 const PASSWORD = process.env.DEMO_PASSWORD || 'P@ssw0rd123';
 
 async function main() {
+  // Deletes its tenants and everything under them — never against a
+  // deployed database. See guard-destructive-seed.ts.
+  assertLocalDatabase('seed-demo-lab.ts');
+
   const passwordHash = await hashPassword(PASSWORD);
 
   // ── Wipe any existing demo tenants ─────────────────────
