@@ -74,6 +74,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (32+ chars)}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      # Platform-operator tokens have their own lifetimes so the console can
+      # be held to a shorter leash than the clinic app.
+      PLATFORM_JWT_EXPIRES_IN: ${PLATFORM_JWT_EXPIRES_IN:-15m}
+      PLATFORM_REFRESH_TOKEN_EXPIRES_IN: ${PLATFORM_REFRESH_TOKEN_EXPIRES_IN:-7d}
       AI_SERVICE_URL: http://ai-service:4100
       # Shared secret for ai-service (its ServiceAuthGuard). Same value on
       # both services. The dev default is fine on a laptop, not anywhere else.

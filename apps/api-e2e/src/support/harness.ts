@@ -60,6 +60,8 @@ export interface E2EUser {
 export interface E2EPlatformAdmin {
   adminId: string;
   email: string;
+  /** The plaintext the admin was seeded with — lockout tests need it. */
+  password: string;
   client: E2EClient;
 }
 
@@ -413,7 +415,7 @@ export async function bootEnv(): Promise<E2EEnv> {
           timeout: 20_000,
         }),
       };
-      return { adminId: id, email, client };
+      return { adminId: id, email, password, client };
     },
 
     async cleanup() {

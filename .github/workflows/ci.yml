@@ -314,6 +314,10 @@ jobs:
       # refresh path does not recover it, because several projects present the
       # same on-disk refresh token. Outlast the run instead of relying on it.
       JWT_EXPIRES_IN: 8h
+      # Same reason, for the platform console: its access token has its own
+      # key, and the platform project would otherwise ride a 15m token
+      # through a run that can take longer than that.
+      PLATFORM_JWT_EXPIRES_IN: 8h
       AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
       WEB_E2E_BASE_URL: http://localhost:4000
       API_E2E_URL: http://localhost:4005

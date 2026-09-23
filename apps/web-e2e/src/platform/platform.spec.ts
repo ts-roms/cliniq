@@ -31,4 +31,26 @@ test.describe('@web platform admin', () => {
       timeout: 15_000,
     });
   });
+
+  // Sign-out used to clear localStorage and nothing else: the httpOnly
+  // cookies stayed put and the refresh token stayed valid for its full TTL,
+  // so "signed out" meant "nav hidden". Assert the session is actually gone
+  // by going back to a guarded route — the proxy has to bounce it.
+  //
+  // Runs in its own context (Playwright re-reads storageState per test), so
+  // revoking this session does not disturb the other platform specs.
+  test('sign out ends the session, not just the local shell', async ({
+    page,
+  }) => {
+    await page.goto('/platform/dashboard');
+    await expect(page.locator('table tbody tr').first()).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByRole('button', { name: /sign out/i }).click();
+    await expect(page).toHaveURL(/\/platform\/login/, { timeout: 15_000 });
+
+    await page.goto('/platform/dashboard');
+    await expect(page).toHaveURL(/\/platform\/login/, { timeout: 15_000 });
+  });
 });
