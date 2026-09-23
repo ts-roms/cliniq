@@ -1,0 +1,52 @@
+name: Login smoke
+
+# Signs in for real against the deployed app and then USES the session.
+#
+# This exists because on 2026-09-23 login was broken for every authed user on
+# Railway — clinic and platform — and nothing noticed. /api/health returned
+# 200 throughout, because the api was healthy; what was broken was the session
+# cookie landing on the wrong host, so every protected route bounced to
+# /login. A person trying to sign in was the detection mechanism.
+#
+# A liveness probe cannot catch that. Only using the session can.
+
+on:
+  schedule:
+    # Every 30 minutes. The auth throttle bucket is per-ip and far above this.
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Override the target (defaults to the SMOKE_BASE_URL secret)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  login:
+    name: Sign in and use the session
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          filter: tree:0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      # No install step: the script is dependency-free on purpose, so a
+      # broken lockfile or a registry outage cannot stop the check that tells
+      # us production is down.
+      - name: Run login smoke
+        env:
+          SMOKE_BASE_URL: ${{ inputs.base_url || secrets.SMOKE_BASE_URL }}
+          SMOKE_EMAIL: ${{ secrets.SMOKE_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
+          SMOKE_PLATFORM_EMAIL: ${{ secrets.SMOKE_PLATFORM_EMAIL }}
+          SMOKE_PLATFORM_PASSWORD: ${{ secrets.SMOKE_PLATFORM_PASSWORD }}
+        run: node tools/scripts/smoke-login.mjs
