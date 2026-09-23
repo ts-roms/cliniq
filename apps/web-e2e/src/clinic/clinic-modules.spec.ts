@@ -40,11 +40,15 @@ test.describe('@web clinical modules', () => {
 
   test('settings exposes the clinical modules card', async ({ page }) => {
     await page.goto('/admin/settings');
-    await expect(page.getByText('Clinical modules')).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByText('Dental charting')).toBeVisible();
-    await expect(page.getByText('Obstetrics')).toBeVisible();
+    // Scoped to the card: the module labels come from one shared catalogue, so
+    // the visit-types card on the same page renders the same strings and an
+    // unscoped getByText is a strict-mode violation.
+    const card = page.locator('[data-test="clinic-modules-card"]');
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await expect(card.getByText('Dental charting')).toBeVisible();
+    await expect(card.getByText('Obstetrics')).toBeVisible();
+    // Every module in the catalogue gets a toggle.
+    await expect(card.locator('input[type="checkbox"]')).toHaveCount(5);
   });
 
   test('an enabled module renders on the chart un-flagged', async ({

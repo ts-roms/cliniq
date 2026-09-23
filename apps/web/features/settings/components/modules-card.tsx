@@ -71,7 +71,7 @@ export function ModulesCard({
   }
 
   return (
-    <Card>
+    <Card data-test="clinic-modules-card">
       <CardHeader>
         <CardTitle>Clinical modules</CardTitle>
       </CardHeader>
