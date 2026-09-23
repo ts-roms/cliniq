@@ -143,11 +143,12 @@ Reference variables (`${{...}}`) resolve at deploy time.
 
 #### `web`
 
-| Var                   | Value                                    | Scope                                     |
-| --------------------- | ---------------------------------------- | ----------------------------------------- |
-| `PORT` / `HOSTNAME`   | `3000` / `0.0.0.0`                       | runtime                                   |
-| `NODE_ENV`            | `production`                             |                                           |
-| `NEXT_PUBLIC_API_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` | **build-time** (baked into client bundle) |
+| Var                   | Value                              | Scope                                     |
+| --------------------- | ---------------------------------- | ----------------------------------------- |
+| `PORT` / `HOSTNAME`   | `3000` / `0.0.0.0`                 | runtime                                   |
+| `NODE_ENV`            | `production`                       |                                           |
+| `NEXT_PUBLIC_API_URL` | `same-origin`                      | **build-time** (baked into client bundle) |
+| `API_PROXY_TARGET`    | `http://api.railway.internal:4000` | **build-time** (Next bakes rewrites)      |
 
 > `NEXT_PUBLIC_*` is read by Next.js at build time (the Dockerfile declares it
 > as an `ARG`; Railway passes service variables as build args). After changing

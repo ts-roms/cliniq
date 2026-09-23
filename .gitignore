@@ -61,6 +61,10 @@ vitest.config.*.timestamp*
 .env
 .env.local
 .env.*.local
+# Backups of a real .env carry real secrets; the patterns above do not catch
+# them (.env.bak, .env.bak-preexisting, .env.save...) and one nearly went in.
+.env.bak*
+.env.save*
 
 # Prisma generated client
 libs/db/src/generated/
