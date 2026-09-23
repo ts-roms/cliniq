@@ -20,6 +20,7 @@ import {
   queueControllerIssue,
   queueControllerListQueues,
 } from '@org/api-client';
+import { API_BASE } from '@/shared/lib/api-base';
 
 interface Queue {
   id: string;
@@ -75,10 +76,9 @@ export default function QueuePage() {
       // 'include'` makes the browser attach it. Token is no longer pulled
       // from localStorage (was XSS-readable). TODO: migrate this to the
       // generated api-client (queueControllerDisplay) for type safety.
-      const res = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4005'}/api/queue/display`,
-        { credentials: 'include' },
-      );
+      const res = await fetch(`${API_BASE}/api/queue/display`, {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error(`feed ${res.status}`);
       return (await res.json()) as Array<{ queue: Queue; tickets: Ticket[] }>;
     },

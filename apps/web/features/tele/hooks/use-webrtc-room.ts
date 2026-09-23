@@ -13,6 +13,7 @@ import type {
   TeleSignal,
   TeleSignalKind,
 } from '../schemas/tele';
+import { API_BASE } from '@/shared/lib/api-base';
 
 type Auth = { kind: 'provider' } | { kind: 'patient'; token: string };
 
@@ -273,7 +274,7 @@ export function useWebRtcRoom({
       setPendingConsent(false);
       void send('CONSENT_RESPONSE', { granted });
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
+        const base = API_BASE;
         await fetch(
           `${base}/api/tele/sessions/${sessionId}/recording-consent`,
           {

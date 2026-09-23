@@ -11,17 +11,15 @@ import {
 import { useState, type ReactNode } from 'react';
 import { clearSession } from '@/features/auth/session';
 import { getActingAs } from '@/features/delegations/acting-as';
+import { resolveApiBase } from '@/shared/lib/api-base';
 
 // Configure the API client once at module load (runs in browser only because
 // 'use client'). The web client uses httpOnly cookies — `configureCookies()`
 // sets `credentials: 'include'` on every request so the browser sends the
 // session cookies automatically. We no longer pass tokens via JS.
-// Use `||` (not `??`) so an empty-string NEXT_PUBLIC_API_URL also falls back
-// to the default. An empty value silently produces same-origin requests
-// (page on :4000 → /api/auth/login → 404), which is hard to spot.
-client.setConfig({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4005',
-});
+// Base URL resolution (including the explicit `same-origin` opt-in) lives in
+// one place so every caller agrees — see shared/lib/api-base.ts.
+client.setConfig({ baseUrl: resolveApiBase() });
 configureCookies();
 configureActingAs(() => getActingAs());
 

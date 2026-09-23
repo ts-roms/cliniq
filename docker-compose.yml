@@ -140,6 +140,8 @@ services:
       # to the web's own origin (404 on /api/auth/login).
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4005}
+        # Baked, not runtime — see the ARG comment in apps/web/Dockerfile.
+        API_PROXY_TARGET: ${API_PROXY_TARGET:-}
     container_name: cliniq-web
     depends_on:
       api:
@@ -150,6 +152,13 @@ services:
       # Kept for SSR / server components that may read process.env at runtime.
       # The client bundle was already baked at build time via build.args above.
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4005}
+      # Where the /api/* rewrite forwards to (see apps/web/next.config.js).
+      # Only used when NEXT_PUBLIC_API_URL=same-origin, which is what a
+      # deployment with web and api on DIFFERENT hostnames needs: the api's
+      # httpOnly cookie must be set by the web's own origin or proxy.ts can
+      # never see it. Unset here by default so the local stack keeps talking
+      # to the api directly.
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-}
     ports:
       - '${WEB_PORT:-4000}:3000'
 

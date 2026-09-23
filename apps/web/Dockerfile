@@ -50,6 +50,12 @@ COPY . .
 # them with ARG — runtime-only env wouldn't reach Next.js's compiler.
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Where the /api/* rewrite forwards to. Also build-time: with
+# output: 'standalone' Next resolves rewrites during `next build` and bakes
+# them into required-server-files.json, so a runtime-only value is read too
+# late and the proxy silently 404s.
+ARG API_PROXY_TARGET
+ENV API_PROXY_TARGET=$API_PROXY_TARGET
 # Emit .next/standalone (see next.config.js) — the runner ships only that.
 ENV NEXT_OUTPUT_STANDALONE=1
 

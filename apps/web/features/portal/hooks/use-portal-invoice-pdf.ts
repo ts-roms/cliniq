@@ -1,8 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
+import { API_BASE } from '@/shared/lib/api-base';
 
 /**
  * Fetches the patient-portal invoice PDF (`/api/me/invoices/:id/pdf` —

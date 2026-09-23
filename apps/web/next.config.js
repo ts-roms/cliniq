@@ -32,6 +32,35 @@ const nextConfig = {
     resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json'],
   },
 
+  /**
+   * Proxy `/api/*` to the api service from the web's OWN origin.
+   *
+   * The api sets httpOnly session cookies with no Domain attribute, so they
+   * are host-only to whoever answered the login. With the browser calling the
+   * api on its own hostname, the cookie lands there — and apps/web/proxy.ts,
+   * which gates the protected routes, only sees cookies sent to the WEB host.
+   * It finds none and redirects straight back to /login. Routing the calls
+   * through here puts the cookie where the guard can read it, and drops the
+   * need for SameSite=None.
+   *
+   * `afterFiles`: the app's own routes (apps/web/app/api/*) still win, and
+   * anything unmatched falls through to the api.
+   *
+   * Only active when API_PROXY_TARGET is set, so a plain `next dev` against a
+   * directly-addressable api is unaffected.
+   */
+  async rewrites() {
+    const target = process.env.API_PROXY_TARGET;
+    if (!target) return [];
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        { source: '/api/:path*', destination: `${target}/api/:path*` },
+      ],
+      fallback: [],
+    };
+  },
+
   webpack(config) {
     config.resolve = config.resolve ?? {};
     config.resolve.extensionAlias = {
