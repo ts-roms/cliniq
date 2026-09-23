@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@org/ui';
 import { AuthAwareCta } from '@/features/marketing/auth-aware-cta';
+import { SignupChoiceCta } from '@/features/marketing/signup-choice-cta';
 
 const TITLE = 'ClinIQ — The clinic management system with a brain';
 const DESCRIPTION =
@@ -138,10 +139,10 @@ export default function LandingPage() {
             so you can focus on the patient.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <AuthAwareCta className="h-11 w-full px-6 text-base sm:w-auto" />
+            <SignupChoiceCta className="h-11 w-full px-6 text-base sm:w-auto" />
             <Button
               asChild
-              variant="outline"
+              variant="ghost"
               className="h-11 w-full px-6 text-base sm:w-auto"
             >
               <Link href="/login">Sign in</Link>
@@ -225,14 +226,14 @@ export default function LandingPage() {
       <section className="container mx-auto px-4 py-20 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-3xl rounded-2xl border border-border/60 bg-background p-10 text-center shadow-sm sm:p-14">
           <h2 className="text-3xl font-extralight tracking-tight sm:text-4xl">
-            Start your clinic on ClinIQ today
+            Start your clinic or lab on ClinIQ today
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             30 days, full access, no credit card. Bring your team and your
             patients in minutes.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <AuthAwareCta className="h-11 w-full px-6 text-base sm:w-auto" />
+            <SignupChoiceCta className="h-11 w-full px-6 text-base sm:w-auto" />
             <Button
               asChild
               variant="ghost"

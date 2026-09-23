@@ -11,3 +11,4 @@ export {
   type OwnerStepInput,
   type SignupInput,
 } from './schemas/signup';
+export { SignupHeading } from './components/signup-heading';

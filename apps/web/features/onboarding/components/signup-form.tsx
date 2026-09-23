@@ -26,8 +26,12 @@ type Kind = 'CLINIC' | 'LAB';
 export function SignupForm() {
   const router = useRouter();
   const search = useSearchParams();
-  const initialKind: Kind =
-    search?.get('kind')?.toLowerCase() === 'lab' ? 'LAB' : 'CLINIC';
+  // `?kind=` is how the landing page's two CTAs say which product the visitor
+  // picked. When it names one, that choice is already made and the toggle is
+  // noise — it only renders for someone who reached /signup without one.
+  const requested = search?.get('kind')?.toLowerCase();
+  const chosenUpFront = requested === 'lab' || requested === 'clinic';
+  const initialKind: Kind = requested === 'lab' ? 'LAB' : 'CLINIC';
 
   const [kind, setKind] = useState<Kind>(initialKind);
   const [step, setStep] = useState<Step>('clinic');
@@ -39,7 +43,11 @@ export function SignupForm() {
 
   return (
     <>
-      <KindPill kind={kind} onKindChange={setKind} />
+      <KindPill
+        kind={kind}
+        onKindChange={setKind}
+        showToggle={!chosenUpFront}
+      />
       {step === 'clinic' || !clinic ? (
         <ClinicStep
           kind={kind}
@@ -79,9 +87,12 @@ export function SignupForm() {
 function KindPill({
   kind,
   onKindChange,
+  showToggle,
 }: {
   kind: Kind;
   onKindChange: (k: Kind) => void;
+  /** False once the visitor chose on the landing page — see SignupForm. */
+  showToggle: boolean;
 }) {
   const isLab = kind === 'LAB';
   const meta = isLab
@@ -89,16 +100,27 @@ function KindPill({
     : PLAN_META[DEFAULT_SIGNUP_PLAN];
   return (
     <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-3">
-      <div className="flex justify-center">
-        <div className="inline-flex rounded-full border border-border/60 bg-background p-0.5">
-          <SmallTab active={!isLab} onClick={() => onKindChange('CLINIC')}>
-            Clinic
-          </SmallTab>
-          <SmallTab active={isLab} onClick={() => onKindChange('LAB')}>
-            Lab
-          </SmallTab>
+      {showToggle ? (
+        <div className="flex justify-center">
+          <div className="inline-flex rounded-full border border-border/60 bg-background p-0.5">
+            <SmallTab active={!isLab} onClick={() => onKindChange('CLINIC')}>
+              Clinic
+            </SmallTab>
+            <SmallTab active={isLab} onClick={() => onKindChange('LAB')}>
+              Lab
+            </SmallTab>
+          </div>
         </div>
-      </div>
+      ) : (
+        // Still say which one they are signing up for — removing the control
+        // should not also remove the confirmation that it was understood.
+        <p
+          className="text-center text-sm font-medium"
+          data-test="signup-kind-label"
+        >
+          {isLab ? 'Dental laboratory' : 'Clinic'}
+        </p>
+      )}
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
           You start on
