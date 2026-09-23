@@ -1106,6 +1106,32 @@
         "tags": ["patients"]
       }
     },
+    "/api/patients/{id}/modules": {
+      "get": {
+        "operationId": "PatientsController_moduleData",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["patients"]
+      }
+    },
     "/api/patients/{id}/export": {
       "get": {
         "operationId": "PatientsController_exportRecord",
@@ -8984,6 +9010,141 @@
         ],
         "tags": ["ob"]
       }
+    },
+    "/api/visit-types": {
+      "get": {
+        "operationId": "VisitTypesController_list",
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["visit-types"]
+      },
+      "post": {
+        "operationId": "VisitTypesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVisitTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["visit-types"]
+      }
+    },
+    "/api/visit-types/{id}": {
+      "get": {
+        "operationId": "VisitTypesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["visit-types"]
+      },
+      "patch": {
+        "operationId": "VisitTypesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVisitTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["visit-types"]
+      },
+      "delete": {
+        "operationId": "VisitTypesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["visit-types"]
+      }
     }
   },
   "info": {
@@ -9313,6 +9474,10 @@
           "appointmentId": {
             "type": "string",
             "description": "Open the consult from a booked slot: the appointment moves to IN_PROGRESS and completes with the consult."
+          },
+          "visitTypeId": {
+            "type": "string",
+            "description": "What this consult is for (VisitType id). Ignored when appointmentId is given and that appointment already carries one — the booking wins."
           }
         }
       },
@@ -9552,6 +9717,10 @@
             "type": "string",
             "enum": ["CONSULT", "FOLLOWUP", "PROCEDURE", "TELEMED"],
             "default": "CONSULT"
+          },
+          "visitTypeId": {
+            "type": "string",
+            "description": "What the patient is coming in FOR (VisitType id). `type` above is the modality; this is the clinical domain and drives which forms the consult screen opens."
           },
           "reason": {
             "type": "string"
@@ -10519,6 +10688,14 @@
           "appointmentWebhookUrl": {
             "type": "string",
             "description": "HTTPS URL to receive POST events on appointment lifecycle (create / check-in / cancel). Use Zapier/Make/n8n to bridge into Google or Microsoft Calendar."
+          },
+          "modules": {
+            "type": "array",
+            "description": "Clinical modules this clinic practises. Omit to keep whatever is stored; send an explicit array (including []) to set it. Unset falls back to the defaults for the tenant type. The plan narrows the result but never widens it.",
+            "items": {
+              "type": "string",
+              "enum": ["dental", "ob", "ultrasound", "lab_orders", "hmo"]
+            }
           },
           "extras": {
             "type": "object",
@@ -11849,6 +12026,75 @@
           }
         },
         "required": ["filename", "mimeType", "sizeBytes"]
+      },
+      "CreateVisitTypeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Dental cleaning"
+          },
+          "code": {
+            "type": "string",
+            "description": "Short internal code, e.g. DENT-CLN"
+          },
+          "modules": {
+            "type": "array",
+            "description": "Clinical modules this visit focuses. Empty means a general visit with no emphasis. Validated against the module catalogue, not stored blindly — an unknown id here would silently focus nothing.",
+            "items": {
+              "type": "string",
+              "enum": ["dental", "ob", "ultrasound", "lab_orders", "hmo"]
+            }
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Pre-selected in the picker; at most one per tenant."
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdateVisitTypeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["dental", "ob", "ultrasound", "lab_orders", "hmo"]
+            }
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "description": {
+            "type": "string"
+          }
+        }
       }
     }
   }

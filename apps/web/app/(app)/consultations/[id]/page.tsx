@@ -16,6 +16,7 @@ import {
 import { DermatologyPanel } from '@/features/dermatology';
 import { ConsultLabsPanel } from '@/features/labs';
 import { StartTelePanel } from '@/features/tele';
+import { VisitFocusPanel } from '@/features/visit-types';
 import { useElapsedSeconds, formatDuration } from '@/shared/hooks/use-elapsed';
 
 export default function ConsultationDetailPage({
@@ -90,6 +91,10 @@ export default function ConsultationDetailPage({
           />
         </div>
         <div className="space-y-6">
+          <VisitFocusPanel
+            visitTypeId={(c as { visitTypeId?: string | null }).visitTypeId}
+            patientId={c.patientId}
+          />
           <SoapDraftPanel
             suggestions={suggestions.data}
             isLoading={suggestions.isLoading}

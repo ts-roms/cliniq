@@ -52,6 +52,7 @@ import { PlatformModule } from '../platform/platform.module.js';
 import { LabModule } from '../lab/lab.module.js';
 import { QueueModule } from '../queue/queue.module.js';
 import { ObModule } from '../ob/ob.module.js';
+import { VisitTypesModule } from '../visit-types/visit-types.module.js';
 import { TenantContextMiddleware } from '../common/tenant-context.middleware.js';
 import { buildThrottlerOptions } from '../common/throttle.config.js';
 
@@ -104,6 +105,7 @@ import { buildThrottlerOptions } from '../common/throttle.config.js';
     LabModule,
     QueueModule,
     ObModule,
+    VisitTypesModule,
   ],
   controllers: [AppController],
   providers: [

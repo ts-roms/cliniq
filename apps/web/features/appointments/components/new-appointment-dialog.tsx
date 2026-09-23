@@ -16,6 +16,7 @@ import {
   Select,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { VisitTypeSelect } from '@/features/visit-types';
 import {
   SearchSelect,
   type SearchSelectItem,
@@ -280,6 +281,12 @@ function NewAppointmentForm({
           <option value="TELEMED">Telemedicine</option>
         </Select>
       </FormField>
+      <VisitTypeSelect
+        value={watch('visitTypeId')}
+        onChange={(next) =>
+          setValue('visitTypeId', next, { shouldValidate: true })
+        }
+      />
       <FormField label="Reason" error={errors.reason?.message}>
         <Input placeholder="e.g. sore throat 3 days" {...register('reason')} />
       </FormField>

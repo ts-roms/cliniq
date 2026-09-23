@@ -30,6 +30,9 @@ export const createAppointmentSchema = z
     startsAt: localDateTime,
     endsAt: localDateTime,
     type: appointmentTypeEnum.default('CONSULT'),
+    // What the patient is coming in FOR. `type` above is the modality; this
+    // is the clinical domain and drives the consult's forms.
+    visitTypeId: z.string().optional(),
     reason: z.string().max(200).optional(),
     notes: z.string().max(500).optional(),
   })
@@ -49,6 +52,7 @@ export interface Appointment {
   endsAt: string;
   type: AppointmentType;
   status: AppointmentStatus;
+  visitTypeId?: string | null;
   reason: string | null;
   notes: string | null;
   checkedInAt?: string | null;

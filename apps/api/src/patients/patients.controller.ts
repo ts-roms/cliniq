@@ -67,6 +67,19 @@ export class PatientsController {
     return this.patients.findById(id, user);
   }
 
+  /**
+   * Which specialty modules hold records for this patient.
+   *
+   * Declared BEFORE @Patch(':id') is irrelevant (different verb), but it must
+   * stay below @Get(':id') only because that route is a different path — Nest
+   * matches ':id/modules' distinctly. Read-only, so PATIENT_READ.
+   */
+  @Get(':id/modules')
+  @Requires(Actions.PATIENT_READ)
+  moduleData(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.patients.moduleData(id, user);
+  }
+
   @Patch(':id')
   @Requires(Actions.PATIENT_WRITE)
   @Audit({

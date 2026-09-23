@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@org/db';
+import { ClinicModules, type ClinicModule } from '@org/shared-types';
 import type { CreatePatientDto } from './dto/create-patient.dto.js';
 import type { UpdatePatientDto } from './dto/update-patient.dto.js';
 import type { PatientFilterDto } from './dto/patient-filter.dto.js';
@@ -15,6 +16,53 @@ export class PatientsService {
   private readonly logger = new Logger(PatientsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Which specialty modules actually hold records for this patient.
+   *
+   * The chart hides modules the clinic does not practise, but a module that
+   * is switched off can still hold real clinical history — a general clinic
+   * that later narrows its configuration does not stop having charted teeth.
+   * Hiding that data is the failure mode that hurts someone, so the chart
+   * keeps rendering any module this returns true for, flagged as outside the
+   * clinic's configured scope.
+   *
+   * One request instead of the client firing five module queries and
+   * throwing four of them away.
+   */
+  async moduleData(
+    patientId: string,
+    user: AuthenticatedUser,
+  ): Promise<Record<ClinicModule, boolean>> {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const patient = await tx.patient.findFirst({
+        where: { id: patientId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!patient) throw new NotFoundException('patient not found');
+
+      // Written out per model rather than sharing one `where` object:
+      // HmoMembership is the one model here that is not soft-deletable, and a
+      // shared `as const` literal widens enough that Prisma's per-model types
+      // stop rejecting `deletedAt` on it (it only failed at runtime).
+      const live = { deletedAt: null };
+      const [dental, ob, ultrasound, labOrders, hmo] = await Promise.all([
+        tx.dentalChart.count({ where: { patientId, ...live }, take: 1 }),
+        tx.obPregnancy.count({ where: { patientId, ...live }, take: 1 }),
+        tx.ultrasoundReport.count({ where: { patientId, ...live }, take: 1 }),
+        tx.labOrder.count({ where: { patientId, ...live }, take: 1 }),
+        tx.hmoMembership.count({ where: { patientId }, take: 1 }),
+      ]);
+
+      return {
+        [ClinicModules.DENTAL]: dental > 0,
+        [ClinicModules.OB]: ob > 0,
+        [ClinicModules.ULTRASOUND]: ultrasound > 0,
+        [ClinicModules.LAB_ORDERS]: labOrders > 0,
+        [ClinicModules.HMO]: hmo > 0,
+      };
+    });
+  }
 
   async create(dto: CreatePatientDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {

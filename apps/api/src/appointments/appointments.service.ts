@@ -259,6 +259,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
               startsAt: dto.startsAt,
               endsAt: dto.endsAt,
               type: dto.type ?? AppointmentType.CONSULT,
+              visitTypeId: dto.visitTypeId ?? null,
               reason: dto.reason,
               notes: dto.notes,
             },

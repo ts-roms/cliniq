@@ -164,6 +164,137 @@ describe('@org/api-e2e settings module', () => {
     });
   });
 
+  describe('clinical modules', () => {
+    it('defaults come from the tenant type, narrowed by plan', async () => {
+      // makeTenant() creates a GENERAL clinic; the harness puts it on PREMIUM,
+      // so every module in the catalog resolves.
+      const { client } = await env.makeTenant();
+      const res = await client.axios.get('/api/tenants/me/settings');
+      expect(res.status).toBe(200);
+      expect([...res.data.modules].sort()).toEqual(
+        ['dental', 'hmo', 'lab_orders', 'ob', 'ultrasound'].sort(),
+      );
+    });
+
+    it('an explicit selection replaces the defaults', async () => {
+      const { client } = await env.makeTenant();
+      const patch = await client.axios.patch('/api/tenants/me/settings', {
+        modules: ['dental'],
+      });
+      expect(patch.status).toBe(200);
+      const res = await client.axios.get('/api/tenants/me/settings');
+      expect(res.data.modules).toEqual(['dental']);
+    });
+
+    it('an explicitly empty selection means none, not "use the defaults"', async () => {
+      const { client } = await env.makeTenant();
+      await client.axios.patch('/api/tenants/me/settings', { modules: [] });
+      const res = await client.axios.get('/api/tenants/me/settings');
+      expect(res.data.modules).toEqual([]);
+    });
+
+    it('rejects a module outside the catalog', async () => {
+      const { client } = await env.makeTenant();
+      const res = await client.axios.patch('/api/tenants/me/settings', {
+        modules: ['dental', 'telemedicine'],
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('saving unrelated settings does not wipe the module selection', async () => {
+      // The settings PATCH shallow-merges, and the web's main settings form
+      // submits without `modules` — that must not reset the clinic's choice.
+      const { client } = await env.makeTenant();
+      await client.axios.patch('/api/tenants/me/settings', {
+        modules: ['dental', 'hmo'],
+      });
+      await client.axios.patch('/api/tenants/me/settings', {
+        branding: { tagline: 'unrelated change' },
+      });
+      const res = await client.axios.get('/api/tenants/me/settings');
+      expect([...res.data.modules].sort()).toEqual(['dental', 'hmo']);
+    });
+
+    it('another tenant’s selection does not leak', async () => {
+      const a = await env.makeTenant();
+      const b = await env.makeTenant();
+      await a.client.axios.patch('/api/tenants/me/settings', {
+        modules: ['dental'],
+      });
+      const res = await b.client.axios.get('/api/tenants/me/settings');
+      expect(res.data.modules).not.toEqual(['dental']);
+    });
+  });
+
+  describe('per-patient module data', () => {
+    it('reports which modules hold records for a patient', async () => {
+      const { tenant, client } = await env.makeTenant();
+      const doctor = await env.makeDoctor(tenant);
+      const created = await client.axios.post('/api/patients', {
+        mrn: `MRN-${Date.now()}`,
+        firstName: 'Mod',
+        lastName: 'Probe',
+        dateOfBirth: '1990-01-01',
+        sex: 'FEMALE',
+      });
+      expect(created.status).toBe(201);
+      const patientId = created.data.id;
+
+      const before = await client.axios.get(
+        `/api/patients/${patientId}/modules`,
+      );
+      expect(before.status).toBe(200);
+      expect(before.data.dental).toBe(false);
+
+      // A chart written now must flip the flag — that is what keeps the card
+      // on the chart after the clinic switches dental off.
+      const chart = await doctor.client.axios.post(
+        `/api/patients/${patientId}/dental-chart`,
+        {
+          dentition: 'ADULT',
+          teeth: [
+            {
+              toothCode: '11',
+              status: 'PRESENT',
+              surfaces: [{ surface: 'O', finding: 'CARIES' }],
+            },
+          ],
+        },
+      );
+      expect(chart.status).toBe(201);
+
+      const after = await client.axios.get(
+        `/api/patients/${patientId}/modules`,
+      );
+      expect(after.data.dental).toBe(true);
+      expect(after.data.ob).toBe(false);
+    });
+
+    it('404s for a patient in another tenant', async () => {
+      const a = await env.makeTenant();
+      const b = await env.makeTenant();
+      const created = await a.client.axios.post('/api/patients', {
+        mrn: `MRN-${Date.now()}-x`,
+        firstName: 'Cross',
+        lastName: 'Tenant',
+        dateOfBirth: '1990-01-01',
+        sex: 'MALE',
+      });
+      expect(created.status).toBe(201);
+      // Sanity: the owning tenant can read it, so a 404 for B is isolation
+      // rather than a bad id.
+      const own = await a.client.axios.get(
+        `/api/patients/${created.data.id}/modules`,
+      );
+      expect(own.status).toBe(200);
+
+      const res = await b.client.axios.get(
+        `/api/patients/${created.data.id}/modules`,
+      );
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe('authentication', () => {
     it('unauthenticated GET → 401', async () => {
       const axiosBare = (await import('axios')).default.create({
