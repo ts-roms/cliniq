@@ -19,7 +19,7 @@ test.describe('@web signup choice', () => {
     await expect(clinic).toBeVisible({ timeout: 15_000 });
     await expect(lab).toBeVisible();
     await expect(clinic).toContainText(/sign up for clin/i);
-    await expect(lab).toContainText(/sign up for lab/i);
+    await expect(lab).toContainText(/sign up for dental lab/i);
     await expect(clinic).toHaveAttribute('href', '/signup?kind=clinic');
     await expect(lab).toHaveAttribute('href', '/signup?kind=lab');
   });
