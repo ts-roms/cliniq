@@ -231,6 +231,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get labOrderItem() {
     return this.client.labOrderItem;
   }
+  get criticalValueRule() {
+    return this.client.criticalValueRule;
+  }
   get teleSession() {
     return this.client.teleSession;
   }
