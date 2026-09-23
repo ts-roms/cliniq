@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { API_BASE } from '@/shared/lib/api-base';
 
 interface Queue {
   id: string;
@@ -40,10 +41,9 @@ export default function QueueDisplayPage() {
       // it. This page is meant to live on a fullscreen TV — the cookie is set
       // when staff opens the queue page on the same machine; no JS token
       // handling required.
-      const res = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4005'}/api/queue/display`,
-        { credentials: 'include' },
-      );
+      const res = await fetch(`${API_BASE}/api/queue/display`, {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error(`feed ${res.status}`);
       return (await res.json()) as Array<{ queue: Queue; tickets: Ticket[] }>;
     },

@@ -3,8 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { calendarsControllerIssueToken } from '@org/api-client';
 import { loadSession } from '@/features/auth/session';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4005';
+import { API_BASE } from '@/shared/lib/api-base';
 
 export interface FeedTokenResponse {
   providerId: string;

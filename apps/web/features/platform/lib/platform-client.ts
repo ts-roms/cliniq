@@ -18,10 +18,13 @@
 
 import { createClient, createConfig } from '@org/api-client';
 import { clearPlatformSession } from '../session';
+import { resolveApiBase } from '@/shared/lib/api-base';
 
-const BASE_URL =
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
-  'http://localhost:4005';
+// Same resolution as the tenant client — the platform console is the shell
+// that surfaced the split-origin cookie bug, so it must not diverge here.
+const BASE_URL = resolveApiBase(
+  typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_API_URL : undefined,
+);
 
 export const platformClient = createClient(
   createConfig({
