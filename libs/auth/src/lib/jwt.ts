@@ -39,6 +39,10 @@ export interface PlatformJwtPayload extends JosePayload {
   sub: string; // PlatformAdmin id
   email: string;
   typ: 'platform'; // sentinel — defense in depth alongside the audience check
+  // Refresh tokens only — id of the PlatformRefreshSession backing this
+  // token, so a specific operator session can be rotated or revoked instead
+  // of trusting the JWT's own expiry. Mirrors `sid` on the tenant payload.
+  sid?: string;
 }
 
 const ISSUER = 'cliniq';

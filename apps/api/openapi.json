@@ -4637,12 +4637,40 @@
       "post": {
         "operationId": "PlatformAuthController_logout",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformLogoutDto"
+              }
+            }
+          }
+        },
         "responses": {
-          "204": {
+          "200": {
             "description": ""
           }
         },
-        "summary": "Platform logout — clears the platform session cookies",
+        "summary": "Platform logout — revokes the refresh session and clears cookies",
+        "tags": ["platform-auth"]
+      }
+    },
+    "/api/platform/auth/logout-all": {
+      "post": {
+        "operationId": "PlatformAuthController_logoutAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "summary": "Revoke every platform refresh session for the current admin",
         "tags": ["platform-auth"]
       }
     },
@@ -10748,6 +10776,14 @@
         "required": ["email", "password"]
       },
       "PlatformRefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PlatformLogoutDto": {
         "type": "object",
         "properties": {
           "refreshToken": {

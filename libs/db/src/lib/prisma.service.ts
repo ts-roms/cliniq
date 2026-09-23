@@ -138,6 +138,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get refreshSession() {
     return this.client.refreshSession;
   }
+  get platformRefreshSession() {
+    return this.client.platformRefreshSession;
+  }
   get passwordResetToken() {
     return this.client.passwordResetToken;
   }

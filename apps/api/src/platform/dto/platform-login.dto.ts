@@ -1,4 +1,10 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PlatformLoginDto {
@@ -24,4 +30,13 @@ export class PlatformRefreshDto {
   @IsOptional()
   @IsString()
   refreshToken!: string;
+}
+
+export class PlatformLogoutDto {
+  /** The refresh token to revoke. Omit to just drop the client-side session. */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  refreshToken?: string;
 }

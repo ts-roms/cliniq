@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { Button } from '@org/ui';
-import { clearPlatformSession } from '../session';
+import { usePlatformLogout } from '../hooks/use-platform-logout';
 import { usePlatformSession } from '../hooks/use-platform-session';
 
 export function PlatformNav() {
   const pathname = usePathname();
   const router = useRouter();
   const session = usePlatformSession();
+  const logout = usePlatformLogout(() => router.push('/platform/login'));
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -50,8 +51,7 @@ export function PlatformNav() {
             variant="ghost"
             size="sm"
             onClick={() => {
-              clearPlatformSession();
-              router.push('/platform/login');
+              void logout();
             }}
           >
             <LogOut className="mr-2 h-4 w-4" aria-hidden />

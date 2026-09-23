@@ -19,14 +19,25 @@ import {
   CurrentPlatformAdmin,
   type AuthenticatedPlatformAdmin,
 } from './decorators/current-platform-admin.decorator.js';
-import { PlatformAuthService } from './platform-auth.service.js';
+import { parseDurationMs } from '@org/auth';
+import {
+  PlatformAuthService,
+  type PlatformClientMeta,
+} from './platform-auth.service.js';
 import {
   PlatformLoginDto,
+  PlatformLogoutDto,
   PlatformRefreshDto,
 } from './dto/platform-login.dto.js';
 
 const PLATFORM_ACCESS_COOKIE = 'cliniq.platform.access';
 const PLATFORM_REFRESH_COOKIE = 'cliniq.platform.refresh';
+
+/** Recorded on the session row so a revoked session says where it came from. */
+function clientMeta(req: Request): PlatformClientMeta {
+  const ua = req.headers['user-agent'];
+  return { ip: req.ip, userAgent: Array.isArray(ua) ? ua[0] : ua };
+}
 
 @ApiTags('platform-auth')
 @PlatformAuth()
@@ -43,9 +54,10 @@ export class PlatformAuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() dto: PlatformLoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.auth.login(dto);
+    const result = await this.auth.login(dto, clientMeta(req));
     this.setCookies(res, result);
     return result;
   }
@@ -65,24 +77,44 @@ export class PlatformAuthController {
     if ((!dto.refreshToken || dto.refreshToken.length === 0) && fromCookie) {
       dto.refreshToken = fromCookie;
     }
-    const result = await this.auth.refresh(dto);
+    const result = await this.auth.refresh(dto, clientMeta(req));
     this.setCookies(res, result);
     return result;
   }
 
+  // Public so a client whose ACCESS token already expired can still end its
+  // session — the refresh token it presents is the authorization.
   @Public()
   @Post('logout')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  // Forces NestJS Swagger to register the operation in openapi.json. Without
-  // it, void returns + no @Body fall outside the auto-detection heuristics
-  // and the route is silently omitted from the SDK.
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Platform logout — clears the platform session cookies',
+    summary: 'Platform logout — revokes the refresh session and clears cookies',
   })
-  logout(@Res({ passthrough: true }) res: Response): void {
-    const opts = this.clearOptions();
-    res.clearCookie(PLATFORM_ACCESS_COOKIE, opts);
-    res.clearCookie(PLATFORM_REFRESH_COOKIE, opts);
+  async logout(
+    @Body() dto: PlatformLogoutDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = dto?.refreshToken || req.cookies?.[PLATFORM_REFRESH_COOKIE];
+    const result = await this.auth.logoutByToken(token);
+    this.clearSessionCookies(res);
+    return result;
+  }
+
+  /** "Sign out everywhere" — revoke every live session for this admin. */
+  @ApiBearerAuth('jwt')
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Revoke every platform refresh session for the current admin',
+  })
+  async logoutAll(
+    @CurrentPlatformAdmin() admin: AuthenticatedPlatformAdmin,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.auth.logoutAll(admin.adminId);
+    this.clearSessionCookies(res);
+    return result;
   }
 
   @ApiBearerAuth('jwt')
@@ -116,11 +148,14 @@ export class PlatformAuthController {
       path: '/',
       ...(domain ? { domain } : {}),
     };
+    // These must be the same keys issueTokensIn signs with, or the cookie
+    // outlives the JWT (dead session that looks alive to the proxy) or dies
+    // first (signed-out admin holding a still-valid refresh token).
     const accessTtlMs = parseDurationMs(
-      this.config.get<string>('JWT_EXPIRES_IN') ?? '15m',
+      this.config.get<string>('PLATFORM_JWT_EXPIRES_IN') ?? '15m',
     );
     const refreshTtlMs = parseDurationMs(
-      this.config.get<string>('REFRESH_TOKEN_EXPIRES_IN') ?? '7d',
+      this.config.get<string>('PLATFORM_REFRESH_TOKEN_EXPIRES_IN') ?? '7d',
     );
 
     res.cookie(PLATFORM_ACCESS_COOKIE, tokens.accessToken, {
@@ -130,39 +165,30 @@ export class PlatformAuthController {
     res.cookie(PLATFORM_REFRESH_COOKIE, tokens.refreshToken, {
       ...base,
       maxAge: refreshTtlMs,
-      path:
-        this.config.get<string>('REFRESH_COOKIE_PATH') ?? '/api/platform/auth',
+      path: this.refreshCookiePath(),
     });
   }
 
-  private clearOptions(): CookieOptions {
+  private clearSessionCookies(res: Response): void {
     const domain = this.config.get<string>('COOKIE_DOMAIN');
-    return {
+    const base: CookieOptions = {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
       ...(domain ? { domain } : {}),
     };
+    res.clearCookie(PLATFORM_ACCESS_COOKIE, base);
+    // Must match the path it was set with, or the browser keeps it and the
+    // next refresh replays a token we just revoked.
+    res.clearCookie(PLATFORM_REFRESH_COOKIE, {
+      ...base,
+      path: this.refreshCookiePath(),
+    });
   }
-}
 
-function parseDurationMs(input: string): number {
-  const m = /^(\d+)(ms|s|m|h|d)?$/i.exec(input.trim());
-  if (!m) return 15 * 60 * 1000;
-  const n = Number(m[1]);
-  const unit = (m[2] ?? 'ms').toLowerCase();
-  switch (unit) {
-    case 'ms':
-      return n;
-    case 's':
-      return n * 1000;
-    case 'm':
-      return n * 60 * 1000;
-    case 'h':
-      return n * 60 * 60 * 1000;
-    case 'd':
-      return n * 24 * 60 * 60 * 1000;
-    default:
-      return 15 * 60 * 1000;
+  private refreshCookiePath(): string {
+    return (
+      this.config.get<string>('REFRESH_COOKIE_PATH') ?? '/api/platform/auth'
+    );
   }
 }

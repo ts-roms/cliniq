@@ -86,8 +86,17 @@ matters for context)
 
 - [ ] Multi-tenant users: an invite to an email that already has an account is
       refused (409). Needs an "accept while signed in" path + tenant switcher.
-- [ ] Platform-admin login has no lockout / refresh-session table (only the
+- [x] Platform-admin login has no lockout / refresh-session table (only the
       throttle bucket). Mirror the tenant-side treatment.
+      → `platform_refresh_sessions` + `failedLoginCount`/`lockedUntil` on
+      `platform_admins` (migration `20260923160000_platform_auth_hardening`).
+      Lockout counts bad TOTP codes too, so a known password cannot be used to
+      brute-force the second factor. Refresh rotates with replay detection,
+      `POST /platform/auth/logout` revokes server-side (it used to only clear
+      the cookie, leaving the token good for its full 7 days) and
+      `logout-all` ends every session. The console's "Sign out" now calls it —
+      before, it cleared localStorage and hid the nav, nothing more.
+      Not covered: no sweep of expired session rows, matching the tenant side.
 - [ ] Access tokens keep working for up to `JWT_EXPIRES_IN` after suspension /
       removal. Either accept the 15-min window or add a per-request membership
       check in `JwtAuthGuard` (one indexed query, must run inside `withTenant`).

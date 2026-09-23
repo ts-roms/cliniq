@@ -1013,12 +1013,45 @@ model PlatformAdmin {
   mfaBackupCodes String[]  @default([])
   lastLogin      DateTime?
 
+  // Same brute-force treatment as User. These accounts can change any
+  // tenant's plan and status, so leaving them on an ip-keyed throttle alone
+  // was the weakest control on the strongest credential in the system.
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  refreshSessions PlatformRefreshSession[]
+
   @@index([email])
   @@map("platform_admins")
+}
+
+// Platform-side mirror of RefreshSession. Without it a platform refresh token
+// was a bare JWT: valid for its full TTL, unrevocable, and `logout` only
+// cleared the cookie client-side — so a captured token kept minting access
+// tokens for a week after the operator thought they had signed out.
+model PlatformRefreshSession {
+  id           String    @id @default(cuid())
+  adminId      String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  // Set when this session was rotated. Re-presenting a token that already has
+  // a successor is a replay: the whole family is revoked.
+  replacedById String?
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime  @default(now())
+
+  admin PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("platform_refresh_sessions")
 }
 
 enum Role {
