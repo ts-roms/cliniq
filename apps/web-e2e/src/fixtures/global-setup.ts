@@ -7,6 +7,7 @@ import {
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { provisionTenants, type ProvisionedSeed } from './provision';
+import { sessionPath, type SessionRole } from './sessions';
 
 /**
  * One-time bootstrap before any spec runs. Two responsibilities:
@@ -38,22 +39,21 @@ export default async function globalSetup(config: FullConfig) {
   const seed = await provisionTenants(api);
   await api.dispose();
 
-  // 2. Drive logins in a real browser per role to capture httpOnly cookies.
+  // 2. Drive a login per (project, role) so every project owns its own
+  //    session row. Sharing one made refresh-token rotation cross-project:
+  //    the first project to refresh invalidated the rest. See sessions.ts.
+  const wanted = plannedSessions(config);
   const browser = await chromium.launch();
-  await Promise.all([
-    captureWebSession(browser, baseURL, seed.clinic.owner, 'clinic-owner'),
-    captureWebSession(browser, baseURL, seed.clinic.doctor, 'clinic-doctor'),
-    captureWebSession(
-      browser,
-      baseURL,
-      seed.clinic.receptionist,
-      'clinic-receptionist',
+  await Promise.all(
+    wanted.map(({ role, path }) =>
+      captureSession(browser, baseURL, seed, role, path),
     ),
-    captureWebSession(browser, baseURL, seed.lab.owner, 'lab-owner'),
-    capturePortalSession(browser, baseURL, seed.clinic.patient, 'patient'),
-    capturePlatformSession(browser, baseURL, seed.platform, 'platform-admin'),
-  ]);
+  );
   await browser.close();
+  console.log(
+    `  captured ${wanted.length} session(s) across ` +
+      `${new Set(wanted.map((w) => w.project)).size} project(s)`,
+  );
 
   // Drop the seed payload so individual specs can reach test data (e.g. a
   // pre-seeded patient id) without re-provisioning. Path is gitignored.
@@ -64,7 +64,7 @@ async function captureWebSession(
   browser: import('@playwright/test').Browser,
   baseURL: string,
   user: { email: string; password: string },
-  label: string,
+  statePath: string,
 ): Promise<void> {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
@@ -73,8 +73,8 @@ async function captureWebSession(
   await fillEmailAndPassword(page, user.email, user.password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
   // Login success redirects into the authed shell.
-  await waitForPostLoginRedirect(page, label, '/login', stop);
-  const path = `${process.cwd()}/storage/${label}.json`;
+  await waitForPostLoginRedirect(page, statePath, '/login', stop);
+  const path = `${process.cwd()}/${statePath}`;
   await mkdir(dirname(path), { recursive: true });
   await ctx.storageState({ path });
   await ctx.close();
@@ -84,7 +84,7 @@ async function capturePortalSession(
   browser: import('@playwright/test').Browser,
   baseURL: string,
   user: { email: string; password: string },
-  label: string,
+  statePath: string,
 ): Promise<void> {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
@@ -92,8 +92,8 @@ async function capturePortalSession(
   await page.goto(`${baseURL}/portal/login`);
   await fillEmailAndPassword(page, user.email, user.password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
-  await waitForPostLoginRedirect(page, label, '/portal/login', stop);
-  const path = `${process.cwd()}/storage/${label}.json`;
+  await waitForPostLoginRedirect(page, statePath, '/portal/login', stop);
+  const path = `${process.cwd()}/${statePath}`;
   await mkdir(dirname(path), { recursive: true });
   await ctx.storageState({ path });
   await ctx.close();
@@ -103,7 +103,7 @@ async function capturePlatformSession(
   browser: import('@playwright/test').Browser,
   baseURL: string,
   admin: { email: string; password: string },
-  label: string,
+  statePath: string,
 ): Promise<void> {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
@@ -111,8 +111,8 @@ async function capturePlatformSession(
   await page.goto(`${baseURL}/platform/login`);
   await fillEmailAndPassword(page, admin.email, admin.password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
-  await waitForPostLoginRedirect(page, label, '/platform/login', stop);
-  const path = `${process.cwd()}/storage/${label}.json`;
+  await waitForPostLoginRedirect(page, statePath, '/platform/login', stop);
+  const path = `${process.cwd()}/${statePath}`;
   await mkdir(dirname(path), { recursive: true });
   await ctx.storageState({ path });
   await ctx.close();
@@ -179,7 +179,8 @@ async function waitForPostLoginRedirect(
   } catch (err) {
     const dir = `${process.cwd()}/test-results/global-setup`;
     await mkdir(dir, { recursive: true }).catch(() => undefined);
-    const stamp = `${label}-${Date.now()}`;
+    // `label` is now a storage path, so flatten its separators for a filename.
+    const stamp = `${label.replace(/[\\/]/gu, '_')}-${Date.now()}`;
     const pngPath = `${dir}/${stamp}.png`;
     const htmlPath = `${dir}/${stamp}.html`;
     await page
@@ -267,3 +268,57 @@ async function fillEmailAndPassword(
 }
 
 export type Seed = ProvisionedSeed;
+
+/**
+ * Every (project, role) pair that needs a signed-in session, read off the
+ * project list rather than hardcoded — a project added to the config gets its
+ * sessions without touching this file, and one that declares a role its specs
+ * never use only costs a login.
+ */
+function plannedSessions(
+  config: FullConfig,
+): Array<{ project: string; role: SessionRole; path: string }> {
+  const out: Array<{ project: string; role: SessionRole; path: string }> = [];
+  const seen = new Set<string>();
+  for (const project of config.projects) {
+    const roles = (project.metadata as { roles?: SessionRole[] } | undefined)
+      ?.roles;
+    if (!roles?.length) continue; // e.g. chromium-public, which is anonymous
+    for (const role of roles) {
+      const path = sessionPath(project.name, role);
+      if (seen.has(path)) continue;
+      seen.add(path);
+      out.push({ project: project.name, role, path });
+    }
+  }
+  return out;
+}
+
+/** Route a role to the right login page and seed user. */
+async function captureSession(
+  browser: import('@playwright/test').Browser,
+  baseURL: string,
+  seed: ProvisionedSeed,
+  role: SessionRole,
+  path: string,
+): Promise<void> {
+  switch (role) {
+    case 'clinicOwner':
+      return captureWebSession(browser, baseURL, seed.clinic.owner, path);
+    case 'clinicDoctor':
+      return captureWebSession(browser, baseURL, seed.clinic.doctor, path);
+    case 'clinicReceptionist':
+      return captureWebSession(
+        browser,
+        baseURL,
+        seed.clinic.receptionist,
+        path,
+      );
+    case 'labOwner':
+      return captureWebSession(browser, baseURL, seed.lab.owner, path);
+    case 'patient':
+      return capturePortalSession(browser, baseURL, seed.clinic.patient, path);
+    case 'platformAdmin':
+      return capturePlatformSession(browser, baseURL, seed.platform, path);
+  }
+}
