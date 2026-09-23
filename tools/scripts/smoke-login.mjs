@@ -20,6 +20,8 @@
  *      to /login is the failure signature; following redirects would turn it
  *      into a misleading 200.
  *   4. Fetch an authed API route through the same origin.
+ *   5. Sign out, so a check that runs every 30 minutes does not leave a
+ *      trail of live refresh sessions behind it.
  *
  * Usage:
  *   SMOKE_BASE_URL=https://cliniq-lab.up.railway.app \
@@ -42,7 +44,9 @@ const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS ?? 20_000);
 /** Protected page + authed api route to prove the session actually works. */
 const TENANT_PAGE = '/patients';
 const TENANT_API = '/api/auth/me';
+const TENANT_LOGOUT = '/api/auth/logout';
 const PLATFORM_PAGE = '/platform/dashboard';
+const PLATFORM_LOGOUT = '/api/platform/auth/logout';
 
 const failures = [];
 function fail(step, detail) {
@@ -89,7 +93,15 @@ const cookieHeader = (jar) =>
  * One login → use-the-session round trip.
  * `label` distinguishes the tenant and platform shells in the output.
  */
-async function checkSession({ label, loginPath, email, password, page, api }) {
+async function checkSession({
+  label,
+  loginPath,
+  email,
+  password,
+  page,
+  api,
+  logoutPath,
+}) {
   console.log(`\n${label}`);
 
   let res;
@@ -143,10 +155,44 @@ async function checkSession({ label, loginPath, email, password, page, api }) {
     );
   }
 
-  if (!api) return;
-  const apiRes = await req(api, { headers: { cookie: cookieHeader(jar) } });
-  if (apiRes.status === 200) pass(`${label} ${api}`, '200');
-  else fail(`${label} ${api}`, `expected 200, got ${apiRes.status}`);
+  if (api) {
+    const apiRes = await req(api, { headers: { cookie: cookieHeader(jar) } });
+    if (apiRes.status === 200) pass(`${label} ${api}`, '200');
+    else fail(`${label} ${api}`, `expected 200, got ${apiRes.status}`);
+  }
+
+  await endSession(label, logoutPath, jar);
+}
+
+/**
+ * Sign out again. Refresh tokens are server-side sessions now, so a check
+ * that only ever logs in leaves one live 7-day session behind every 30
+ * minutes — 48 a day, per account, accumulating forever (nothing sweeps
+ * them). Signing out keeps the standing credential to roughly one session.
+ *
+ * Deliberately NOT a failure if it does not work: this runs after every
+ * assertion that matters, and a monitoring job that cries outage because
+ * cleanup failed is worse than one that leaves a row behind.
+ */
+async function endSession(label, logoutPath, jar) {
+  if (!logoutPath) return;
+  try {
+    const res = await req(logoutPath, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: cookieHeader(jar),
+      },
+      body: '{}',
+    });
+    if (res.status === 200 || res.status === 204) {
+      pass(`${label} logout`, `${res.status}`);
+    } else {
+      console.log(`  note  ${label} logout returned ${res.status}`);
+    }
+  } catch (err) {
+    console.log(`  note  ${label} logout failed: ${err.message}`);
+  }
 }
 
 async function main() {
@@ -168,6 +214,7 @@ async function main() {
     password: PASSWORD,
     page: TENANT_PAGE,
     api: TENANT_API,
+    logoutPath: TENANT_LOGOUT,
   });
 
   if (PLATFORM_EMAIL && PLATFORM_PASSWORD) {
@@ -177,6 +224,7 @@ async function main() {
       email: PLATFORM_EMAIL,
       password: PLATFORM_PASSWORD,
       page: PLATFORM_PAGE,
+      logoutPath: PLATFORM_LOGOUT,
     });
   } else {
     console.log('\nplatform\n  skipped (SMOKE_PLATFORM_* not set)');
