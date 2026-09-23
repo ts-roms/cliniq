@@ -59,6 +59,7 @@ export class ConsultationsService {
     }
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       let patientId = dto.patientId;
+      let visitTypeId = dto.visitTypeId;
 
       if (dto.appointmentId) {
         const appt = await tx.appointment.findFirst({
@@ -67,6 +68,7 @@ export class ConsultationsService {
             id: true,
             patientId: true,
             status: true,
+            visitTypeId: true,
             consultation: { select: { id: true } },
           },
         });
@@ -91,6 +93,9 @@ export class ConsultationsService {
           );
         }
         patientId = appt.patientId;
+        // The booking already recorded what the patient is coming in for;
+        // that answer wins over anything the caller passes at start time.
+        visitTypeId = appt.visitTypeId ?? visitTypeId;
         await tx.appointment.update({
           where: { id: appt.id },
           data: transitionData(AppointmentStatus.IN_PROGRESS),
@@ -110,6 +115,7 @@ export class ConsultationsService {
           patientId: patient.id,
           providerId: user.userId,
           appointmentId: dto.appointmentId ?? null,
+          visitTypeId: visitTypeId ?? null,
           startedAt: new Date(),
           status: ConsultStatus.IN_PROGRESS,
         },

@@ -37,6 +37,16 @@ export class CreateAppointmentDto {
   @IsEnum(AppointmentType)
   type?: AppointmentType;
 
+  @ApiPropertyOptional({
+    description:
+      'What the patient is coming in FOR (VisitType id). `type` above is the ' +
+      'modality; this is the clinical domain and drives which forms the ' +
+      'consult screen opens.',
+  })
+  @IsOptional()
+  @IsString()
+  visitTypeId?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

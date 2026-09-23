@@ -1,7 +1,12 @@
 'use client';
 
 import { BroadcastForm } from '@/features/notifications';
-import { SettingsForm, useTenantSettings } from '@/features/settings';
+import {
+  ModulesCard,
+  SettingsForm,
+  useTenantSettings,
+} from '@/features/settings';
+import { VisitTypesCard } from '@/features/visit-types';
 import { DelegationsCard } from '@/features/delegations';
 import { MembersCard } from '@/features/members';
 import { AvailabilityCard } from '@/features/availability';
@@ -24,6 +29,8 @@ export default function ClinicSettingsPage() {
         <p className="text-sm text-destructive">{(error as Error).message}</p>
       )}
       {data && <SettingsForm tenant={data} />}
+      {data && <ModulesCard tenant={data} />}
+      <VisitTypesCard />
 
       <section className="space-y-2 pt-4">
         <h2 className="text-lg font-semibold tracking-tight">Team</h2>

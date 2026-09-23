@@ -17,4 +17,13 @@ export class StartConsultationDto {
   @IsOptional()
   @IsString()
   appointmentId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'What this consult is for (VisitType id). Ignored when appointmentId is ' +
+      'given and that appointment already carries one — the booking wins.',
+  })
+  @IsOptional()
+  @IsString()
+  visitTypeId?: string;
 }

@@ -227,6 +227,38 @@ async function main() {
     }
   }
 
+  // A starter checkup catalogue, so the visit-type picker on booking and the
+  // "Visit focus" panel on the consult have something to show out of the box.
+  // The demo tenant is GENERAL, so every module is in scope for it.
+  const VISIT_TYPES: Array<{
+    name: string;
+    modules: string[];
+    isDefault?: boolean;
+    sortOrder: number;
+  }> = [
+    {
+      name: 'General consultation',
+      modules: [],
+      isDefault: true,
+      sortOrder: 0,
+    },
+    { name: 'Annual physical', modules: ['lab_orders'], sortOrder: 1 },
+    { name: 'Dental cleaning', modules: ['dental'], sortOrder: 2 },
+    { name: 'Prenatal checkup', modules: ['ob', 'ultrasound'], sortOrder: 3 },
+  ];
+  for (const vt of VISIT_TYPES) {
+    await prisma.visitType.create({
+      data: {
+        tenantId: tenant.id,
+        name: vt.name,
+        modules: vt.modules,
+        isDefault: vt.isDefault ?? false,
+        sortOrder: vt.sortOrder,
+      },
+    });
+  }
+  console.log(`  visit types  ${VISIT_TYPES.map((v) => v.name).join(', ')}`);
+
   console.log('\n✓ Seed complete\n');
   console.log(`  Tenant slug: ${TENANT_SLUG}`);
   console.log(`  Password   : ${PASSWORD}` + ' (tenant users)');

@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService, type InputJsonValue } from '@org/db';
+import {
+  resolveClinicModules,
+  type ClinicType,
+  type Plan,
+} from '@org/shared-types';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type { UpdateSettingsDto } from './dto/settings.dto.js';
 
@@ -23,13 +28,29 @@ export class SettingsService {
             country: true,
             timezone: true,
             currency: true,
+            type: true,
             plan: true,
             settings: true,
           },
         }),
     );
     if (!tenant) throw new NotFoundException('tenant not found');
-    return tenant;
+
+    // `modules` is derived, not stored: settings holds the clinic's explicit
+    // choice (if any) and the tenant type supplies the default, then the plan
+    // narrows it. Returning the resolved list means the web never has to
+    // reproduce that precedence to decide what to render.
+    const stored = (tenant.settings ?? {}) as { modules?: unknown };
+    return {
+      ...tenant,
+      modules: resolveClinicModules({
+        clinicType: tenant.type as ClinicType | null,
+        plan: tenant.plan as Plan | null,
+        configured: Array.isArray(stored.modules)
+          ? (stored.modules as string[])
+          : null,
+      }),
+    };
   }
 
   /**

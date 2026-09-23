@@ -26,7 +26,12 @@ import { LabOrdersCard } from '@/features/labs';
 import { DentalChartCard } from '@/features/dental';
 import { ObCard, UltrasoundCard } from '@/features/ob';
 import { useCan } from '@/features/auth';
-import { Actions } from '@org/shared-types';
+import {
+  ModuleSection,
+  useEnabledModules,
+  usePatientModuleData,
+} from '@/features/settings';
+import { Actions, ClinicModules } from '@org/shared-types';
 
 export default function PatientDetailPage({
   params,
@@ -41,6 +46,15 @@ export default function PatientDetailPage({
   // instead of showing a card that fails to load.
   const canReadConsults = can(Actions.CONSULT_READ);
   const canReadBilling = can(Actions.BILLING_READ);
+
+  // What this clinic practises, and what this patient actually has on file.
+  // A module that is off still renders when the patient has records in it.
+  const { modules } = useEnabledModules();
+  const moduleData = usePatientModuleData(id);
+  const shows = (m: (typeof ClinicModules)[keyof typeof ClinicModules]) => ({
+    enabled: modules.includes(m),
+    hasData: moduleData.data?.[m] === true,
+  });
 
   const patient = usePatient(id);
   const consults = useConsultationsForPatient(id, {
@@ -93,14 +107,33 @@ export default function PatientDetailPage({
         <AllergiesCard patientId={patient.data.id} />
         <MedicationsCard patientId={patient.data.id} />
         <ConditionsCard patientId={patient.data.id} />
-        <HmoCardsCard patientId={patient.data.id} />
+        <ModuleSection module={ClinicModules.HMO} {...shows(ClinicModules.HMO)}>
+          <HmoCardsCard patientId={patient.data.id} />
+        </ModuleSection>
       </div>
       <div className="space-y-6">
         <PrescriptionsCard patientId={patient.data.id} />
-        <LabOrdersCard patientId={patient.data.id} />
-        <DentalChartCard patientId={patient.data.id} />
-        <ObCard patientId={patient.data.id} />
-        <UltrasoundCard patientId={patient.data.id} />
+        <ModuleSection
+          module={ClinicModules.LAB_ORDERS}
+          {...shows(ClinicModules.LAB_ORDERS)}
+        >
+          <LabOrdersCard patientId={patient.data.id} />
+        </ModuleSection>
+        <ModuleSection
+          module={ClinicModules.DENTAL}
+          {...shows(ClinicModules.DENTAL)}
+        >
+          <DentalChartCard patientId={patient.data.id} />
+        </ModuleSection>
+        <ModuleSection module={ClinicModules.OB} {...shows(ClinicModules.OB)}>
+          <ObCard patientId={patient.data.id} />
+        </ModuleSection>
+        <ModuleSection
+          module={ClinicModules.ULTRASOUND}
+          {...shows(ClinicModules.ULTRASOUND)}
+        >
+          <UltrasoundCard patientId={patient.data.id} />
+        </ModuleSection>
         {canReadBilling && <InvoicesCard patientId={patient.data.id} />}
       </div>
     </div>

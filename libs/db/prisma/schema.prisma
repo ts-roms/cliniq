@@ -1166,6 +1166,10 @@ model Consultation {
   providerId String   // user.id of the doctor
   // Optional back-link to the booked slot. Walk-ins / ad-hoc consults leave it null.
   appointmentId String? @unique
+  // What this consult is for. Copied from the appointment when one opened it,
+  // set directly for a walk-in. Drives which clinical forms the consult screen
+  // puts in front of the clinician.
+  visitTypeId   String?
   startedAt  DateTime @default(now())
   endedAt    DateTime?
 
@@ -1186,6 +1190,7 @@ model Consultation {
   patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   provider      User           @relation("ConsultProvider", fields: [providerId], references: [id])
   appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  visitType     VisitType?     @relation(fields: [visitTypeId], references: [id], onDelete: SetNull)
   suggestions   AiSuggestion[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
@@ -1449,6 +1454,9 @@ model Appointment {
   startsAt       DateTime
   endsAt         DateTime
   type           AppointmentType   @default(CONSULT)
+  // What the patient is coming in FOR (clinical domain). `type` above is the
+  // modality and answers a different question.
+  visitTypeId    String?
   status         AppointmentStatus @default(SCHEDULED)
   reason         String?
   notes          String?
@@ -1473,6 +1481,7 @@ model Appointment {
 
   patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
   provider     User          @relation("ApptProvider", fields: [providerId], references: [id])
+  visitType    VisitType?    @relation(fields: [visitTypeId], references: [id], onDelete: SetNull)
   teleSessions TeleSession[]
   // The consultation opened from this appointment (PATCH /appointments/:id/start
   // or POST /consultations with appointmentId). Completing it completes the
@@ -1926,6 +1935,46 @@ model Service {
 
   @@index([tenantId, active])
   @@map("services")
+}
+
+// ── Visit types (what a patient is coming in FOR) ────────────────
+// Distinct from AppointmentType, which is the modality (consult / follow-up /
+// procedure / telemed) and says nothing about the clinical domain, and from
+// Service, which is a billing price list with no clinical meaning.
+//
+// A visit type is the clinic's own catalogue of checkups — "Dental cleaning",
+// "Prenatal checkup", "Annual physical" — and each one names the clinical
+// modules it focuses. Picking one at booking or check-in is what tells the
+// consult screen to open the dental chart rather than every form the product
+// ships.
+//
+// `modules` holds ClinicModule ids (libs/shared-types/src/lib/clinic-modules.ts).
+// Kept as text[] rather than an enum so adding a module is a code change, not
+// a migration; the api validates against the catalogue on write.
+model VisitType {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  code     String?
+  // Clinical modules this visit focuses. Empty = general visit, no emphasis.
+  modules  String[] @default([])
+  // Shown first in the picker, and pre-selected for a walk-in.
+  isDefault Boolean @default(false)
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+  // Free-text guidance shown under the picker.
+  description String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  appointments  Appointment[]
+  consultations Consultation[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, active, sortOrder])
+  @@map("visit_types")
 }
 
 model Invoice {

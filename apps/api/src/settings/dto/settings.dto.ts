@@ -1,10 +1,12 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayUnique,
   IsArray,
   IsBoolean,
   IsInt,
   IsObject,
   IsOptional,
+  IsIn,
   IsString,
   IsUrl,
   Matches,
@@ -14,6 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ALL_CLINIC_MODULES } from '@org/shared-types';
 
 export class OperatingHourDto {
   @ApiProperty({ minimum: 0, maximum: 6, description: '0=Sunday, 6=Saturday' })
@@ -117,6 +120,21 @@ export class UpdateSettingsDto {
     { message: 'appointmentWebhookUrl must be an absolute http(s) URL' },
   )
   appointmentWebhookUrl?: string;
+
+  @ApiPropertyOptional({
+    isArray: true,
+    enum: ALL_CLINIC_MODULES,
+    description:
+      'Clinical modules this clinic practises. Omit to keep whatever is ' +
+      'stored; send an explicit array (including []) to set it. Unset falls ' +
+      'back to the defaults for the tenant type. The plan narrows the result ' +
+      'but never widens it.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(ALL_CLINIC_MODULES, { each: true })
+  modules?: string[];
 
   @ApiPropertyOptional({
     description: 'Free-form key/value extension; merged shallowly',
