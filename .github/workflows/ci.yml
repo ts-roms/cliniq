@@ -307,6 +307,13 @@ jobs:
       COOKIE_SECURE: 'false'
       THROTTLE_AUTH_LIMIT: '1000'
       THROTTLE_LIMIT: '5000'
+      # globalSetup logs each role in ONCE and every project reuses that
+      # storageState, so the whole matrix rides a single access token. At the
+      # 15m production default a run that takes longer than that starts
+      # failing wholesale in whichever projects happen to run last — and the
+      # refresh path does not recover it, because several projects present the
+      # same on-disk refresh token. Outlast the run instead of relying on it.
+      JWT_EXPIRES_IN: 8h
       AI_SERVICE_TOKEN: ci-only-ai-service-token-not-a-secret
       WEB_E2E_BASE_URL: http://localhost:4000
       API_E2E_URL: http://localhost:4005
