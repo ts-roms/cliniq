@@ -31,6 +31,7 @@ import {
 } from './decorators/current-user.decorator.js';
 import { Audit } from '../audit/audit.decorator.js';
 import { AUTH_THROTTLE } from '../common/throttle.config.js';
+import { PortalRoute } from './decorators/portal-route.decorator.js';
 
 const ACCESS_COOKIE = 'cliniq.access';
 const REFRESH_COOKIE = 'cliniq.refresh';
@@ -155,7 +156,10 @@ export class AuthController {
   }
 
   /** "Sign out everywhere" — revoke every refresh session in this tenant. */
+  // @PortalRoute: revoking your own sessions is an account-security action
+  // a patient must not be locked out of.
   @Post('logout-all')
+  @PortalRoute()
   @HttpCode(HttpStatus.OK)
   @Audit({ action: 'auth.logoutAll', entity: 'User' })
   async logoutAll(
@@ -192,7 +196,11 @@ export class AuthController {
    * feature gates follow the tenant, not the moment of sign-in.
    * getTenantContext is cached, so this is one Map lookup per request.
    */
+  // @PortalRoute: the portal session hook calls this on every page load.
+  // It echoes the caller's own JWT payload plus their tenant's kind/plan
+  // — no other user's data — so portal accounts must be able to reach it.
   @Get('me')
+  @PortalRoute()
   async me(@CurrentUser() user: AuthenticatedUser) {
     const tenant = await this.prisma.getTenantContext(user.tenantId);
     return {

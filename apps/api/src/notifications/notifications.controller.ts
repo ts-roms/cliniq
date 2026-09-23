@@ -25,6 +25,7 @@ import {
   RegisterPushTokenDto,
   UnregisterPushTokenDto,
 } from './dto/push-token.dto.js';
+import { PortalRoute } from '../auth/decorators/portal-route.decorator.js';
 
 const STAFF_ROLES = [
   'OWNER',
@@ -43,8 +44,13 @@ export class NotificationsController {
     private readonly push: PushService,
   ) {}
 
+  // Everything below `broadcast` is scoped to the caller's own userId +
+  // tenantId, so portal accounts read and clear their own notifications
+  // (lab result released, appointment reminder) and the Expo portal app
+  // registers its push token. `broadcast` stays TENANT_MANAGE, staff only.
   /** Register the calling user's mobile push token (Expo). Idempotent. */
   @Post('push-tokens')
+  @PortalRoute()
   @HttpCode(HttpStatus.OK)
   registerPushToken(
     @Body() dto: RegisterPushTokenDto,
@@ -61,6 +67,7 @@ export class NotificationsController {
 
   /** Forget the calling user's token for a given device (called on logout). */
   @Post('push-tokens/unregister')
+  @PortalRoute()
   @HttpCode(HttpStatus.OK)
   async unregisterPushToken(
     @Body() dto: UnregisterPushTokenDto,
@@ -71,6 +78,7 @@ export class NotificationsController {
   }
 
   @Get()
+  @PortalRoute()
   @ApiQuery({ name: 'unread', required: false, type: String })
   list(
     @Query('unread') unread: string | undefined,
@@ -80,16 +88,19 @@ export class NotificationsController {
   }
 
   @Get('unread-count')
+  @PortalRoute()
   unreadCount(@CurrentUser() user: AuthenticatedUser) {
     return this.notif.unreadCount(user);
   }
 
   @Patch(':id/read')
+  @PortalRoute()
   markRead(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.notif.markRead(id, user);
   }
 
   @Post('read-all')
+  @PortalRoute()
   @HttpCode(HttpStatus.OK)
   markAllRead(@CurrentUser() user: AuthenticatedUser) {
     return this.notif.markAllRead(user);

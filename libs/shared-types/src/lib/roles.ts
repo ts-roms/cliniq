@@ -31,6 +31,14 @@ export const Actions = {
   USER_MANAGE: 'user:manage',
   PATIENT_READ: 'patient:read',
   PATIENT_WRITE: 'patient:write',
+  // Read one's OWN record through the patient portal (/api/me/*). Held by
+  // PATIENT and by nobody else. Deliberately NOT patient:read — that one
+  // means "read the clinic's patient records" and gates ~30 staff routes
+  // (GET /patients, /patients/:id/export, /lab-orders/:id, /prescriptions/
+  // :id/pdf, …). While PATIENT held patient:read, a portal account could
+  // read every chart in its tenant; RLS stopped cross-tenant reads and
+  // nothing stopped patient→patient. See portal-boundary.spec.ts.
+  PORTAL_READ: 'portal:read',
   CONSULT_READ: 'consult:read',
   CONSULT_WRITE: 'consult:write',
   RX_WRITE: 'rx:write',
@@ -115,7 +123,9 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.BILLING_WRITE,
     Actions.INVENTORY_READ,
   ]),
-  PATIENT: new Set([Actions.PATIENT_READ]),
+  // Portal accounts only. PORTAL_READ reaches /api/me/* and nothing else;
+  // the staff surface is closed to them both here and by PortalScopeGuard.
+  PATIENT: new Set([Actions.PORTAL_READ]),
 };
 
 export function can(role: Role, action: Action): boolean {
