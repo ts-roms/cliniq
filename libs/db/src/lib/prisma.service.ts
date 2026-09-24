@@ -261,6 +261,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get labResultVersion() {
     return this.client.labResultVersion;
   }
+  get labReport() {
+    return this.client.labReport;
+  }
+  get labReportSignature() {
+    return this.client.labReportSignature;
+  }
   get teleSession() {
     return this.client.teleSession;
   }
