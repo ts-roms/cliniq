@@ -18,6 +18,7 @@ import { ConsentTypeDto } from '../consents/dto/set-consent.dto.js';
 import { ConsultationsService } from './consultations.service.js';
 import { StartConsultationDto } from './dto/start-consultation.dto.js';
 import { UpdateConsultationDto } from './dto/update-consultation.dto.js';
+import { AmendConsultationDto } from './dto/amend-consultation.dto.js';
 import { DecideAiSuggestionDto } from './dto/submit-ai-suggestion.dto.js';
 import { GenerateSoapDto } from './dto/generate-soap.dto.js';
 import { GenerateDermDto } from './dto/generate-derm.dto.js';
@@ -77,6 +78,39 @@ export class ConsultationsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.consults.update(id, dto, user);
+  }
+
+  /**
+   * Correct a signed note.
+   *
+   * CONSULT_WRITE, the same gate as writing the note in the first place, and
+   * the author is recorded on every amendment. If amending someone else's
+   * signed note should need more than that, it wants its own action rather
+   * than a narrower reading of this one.
+   */
+  @Post(':id/amendments')
+  @HttpCode(HttpStatus.CREATED)
+  @Requires(Actions.CONSULT_WRITE)
+  @Audit({
+    action: 'consult.amend',
+    entity: 'Consultation',
+    entityIdFrom: 'param:id',
+  })
+  amend(
+    @Param('id') id: string,
+    @Body() dto: AmendConsultationDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.consults.amend(id, dto, user);
+  }
+
+  @Get(':id/amendments')
+  @Requires(Actions.CONSULT_READ)
+  listAmendments(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.consults.listAmendments(id, user);
   }
 
   @Post(':id/complete')

@@ -967,6 +967,7 @@ model User {
   appointments  Appointment[]  @relation("ApptProvider")
   availability  ProviderAvailability[]
   timeOff       ProviderTimeOff[]
+  amendments          ConsultationAmendment[] @relation("AmendmentAuthor")
   delegationsGranted  Delegation[] @relation("DelegationGranter")
   delegationsReceived Delegation[] @relation("DelegationGrantee")
 
@@ -1225,6 +1226,7 @@ model Consultation {
   appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   visitType     VisitType?     @relation(fields: [visitTypeId], references: [id], onDelete: SetNull)
   suggestions   AiSuggestion[]
+  amendments    ConsultationAmendment[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
   dentalCharts  DentalChart[]
@@ -1232,6 +1234,55 @@ model Consultation {
   @@index([tenantId, patientId, startedAt])
   @@index([tenantId, providerId, startedAt])
   @@map("consultations")
+}
+
+/// An amendment to a signed consultation.
+///
+/// Completing a consultation sets `lockedAt` and freezes it: the note is a
+/// medico-legal record, so destructive editing is not on the table. But a
+/// clinician who signs with the wrong diagnosis or a typo'd dose must have a
+/// lawful way to correct it — `ConsultationsService.update` has always told
+/// them to "create a revision instead" while no revision mechanism existed,
+/// so in practice the workaround was to never complete a consult at all,
+/// which quietly destroys the lock's value.
+///
+/// Each row is a COMPLETE snapshot of the note as amended, not a patch, so
+/// "the note as of version N" is one row with no reconstruction. The original
+/// `Consultation` row is never rewritten; version 1 here is the first
+/// correction to it. The current view is the highest version, falling back to
+/// the consultation itself.
+///
+/// `reason` is required. An amendment without one is unreviewable.
+model ConsultationAmendment {
+  id             String @id @default(cuid())
+  tenantId       String
+  consultationId String
+  /// 1 = first amendment to the signed note. Unique per consultation.
+  version        Int
+  /// Who made the correction — not necessarily the original provider.
+  authorId       String
+  /// Snapshotted at amendment time so a later change to the user's name or
+  /// licence does not retroactively alter what was signed. Same reason
+  /// Prescription carries providerName / providerLicense.
+  authorName     String?
+  authorLicense  String?
+  reason         String
+
+  subjective     Json?
+  objective      Json?
+  assessment     Json?
+  plan           Json?
+  diagnosisCodes String[] @default([])
+
+  signedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  author       User         @relation("AmendmentAuthor", fields: [authorId], references: [id])
+
+  @@unique([consultationId, version])
+  @@index([tenantId, consultationId])
+  @@map("consultation_amendments")
 }
 
 enum ConsultStatus {

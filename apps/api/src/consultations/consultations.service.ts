@@ -19,6 +19,7 @@ import {
 } from '../appointments/appointment-transitions.js';
 import type { StartConsultationDto } from './dto/start-consultation.dto.js';
 import type { UpdateConsultationDto } from './dto/update-consultation.dto.js';
+import type { AmendConsultationDto } from './dto/amend-consultation.dto.js';
 import {
   AiSuggestionDecision,
   type DecideAiSuggestionDto,
@@ -142,7 +143,12 @@ export class ConsultationsService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const consult = await tx.consultation.findFirst({
         where: { id, deletedAt: null },
-        include: { suggestions: { orderBy: { createdAt: 'desc' } } },
+        include: {
+          suggestions: { orderBy: { createdAt: 'desc' } },
+          // Ascending: the chart renders the amendment trail in the order it
+          // happened, and the last entry is the current content.
+          amendments: { orderBy: { version: 'asc' } },
+        },
       });
       if (!consult) throw new NotFoundException(`Consultation ${id} not found`);
       return consult;
@@ -175,7 +181,7 @@ export class ConsultationsService {
         throw new NotFoundException(`Consultation ${id} not found`);
       if (existing.lockedAt) {
         throw new BadRequestException(
-          'Consultation is locked; create a revision instead',
+          `Consultation is locked. Correct it with POST /consultations/${id}/amendments (a reason is required).`,
         );
       }
       // SOAP sections are free-form JSON on the DTO; Prisma wants its
@@ -256,6 +262,119 @@ export class ConsultationsService {
           endedAt: now,
           lockedAt: now,
         },
+      });
+    });
+  }
+
+  /**
+   * Amend a signed consultation.
+   *
+   * `complete` freezes the note (lockedAt) because it is a medico-legal
+   * record and destructive editing is not acceptable. This is the lawful way
+   * to correct one: the original row is never rewritten, and each amendment
+   * is a complete snapshot of the note as amended, carrying forward whatever
+   * the caller did not restate. The chart shows the latest version and the
+   * trail that produced it.
+   *
+   * Only LOCKED consultations are amendable — an in-progress note is simply
+   * edited through `update`, and sending those down two paths would leave two
+   * different notions of "current".
+   */
+  async amend(id: string, dto: AmendConsultationDto, user: AuthenticatedUser) {
+    if (dto.diagnosisCodes && dto.diagnosisCodes.length > 0) {
+      const unknown = await this.icd.findUnknown(dto.diagnosisCodes);
+      if (unknown.length > 0) {
+        throw new BadRequestException({
+          message: `Unknown ICD-10 codes: ${unknown.join(', ')}`,
+          unknownCodes: unknown,
+        });
+      }
+    }
+
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const consult = await tx.consultation.findFirst({
+        where: { id, deletedAt: null },
+        select: {
+          id: true,
+          lockedAt: true,
+          subjective: true,
+          objective: true,
+          assessment: true,
+          plan: true,
+          diagnosisCodes: true,
+        },
+      });
+      if (!consult) throw new NotFoundException(`Consultation ${id} not found`);
+      if (!consult.lockedAt) {
+        throw new BadRequestException(
+          'Consultation is not locked yet — edit it directly instead of amending',
+        );
+      }
+
+      // Current content = latest amendment if there is one, else the note as
+      // signed. Amendments stack, so correcting a correction works.
+      const latest = await tx.consultationAmendment.findFirst({
+        where: { consultationId: id },
+        orderBy: { version: 'desc' },
+      });
+      const current = latest ?? consult;
+
+      // Attribution is snapshotted, for the same reason Prescription snapshots
+      // providerLicense: a later change to the user's name or licence must not
+      // retroactively alter what was signed.
+      const author = await tx.user.findFirst({
+        where: { id: user.userId },
+        select: { name: true, prcLicenseNumber: true },
+      });
+
+      const pick = <T>(next: T | undefined, prev: T): T =>
+        next === undefined ? prev : next;
+
+      return tx.consultationAmendment.create({
+        data: {
+          tenantId: user.tenantId,
+          consultationId: id,
+          // The unique index on (consultationId, version) is what actually
+          // serialises concurrent amendments: if two clinicians race, one
+          // insert fails rather than silently overwriting the other.
+          version: (latest?.version ?? 0) + 1,
+          authorId: user.userId,
+          authorName: author?.name ?? null,
+          authorLicense: author?.prcLicenseNumber ?? null,
+          reason: dto.reason,
+          subjective: pick(
+            dto.subjective as InputJsonValue | undefined,
+            current.subjective as InputJsonValue,
+          ),
+          objective: pick(
+            dto.objective as InputJsonValue | undefined,
+            current.objective as InputJsonValue,
+          ),
+          assessment: pick(
+            dto.assessment as InputJsonValue | undefined,
+            current.assessment as InputJsonValue,
+          ),
+          plan: pick(
+            dto.plan as InputJsonValue | undefined,
+            current.plan as InputJsonValue,
+          ),
+          diagnosisCodes: pick(dto.diagnosisCodes, current.diagnosisCodes),
+        },
+      });
+    });
+  }
+
+  /** The amendment trail for a consultation, oldest first. */
+  async listAmendments(id: string, user: AuthenticatedUser) {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const consult = await tx.consultation.findFirst({
+        where: { id, deletedAt: null },
+        select: { id: true },
+      });
+      if (!consult) throw new NotFoundException(`Consultation ${id} not found`);
+      return tx.consultationAmendment.findMany({
+        where: { consultationId: id },
+        orderBy: { version: 'asc' },
       });
     });
   }

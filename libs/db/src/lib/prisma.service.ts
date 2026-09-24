@@ -153,6 +153,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get aiSuggestion() {
     return this.client.aiSuggestion;
   }
+  get consultationAmendment() {
+    return this.client.consultationAmendment;
+  }
   get prescription() {
     return this.client.prescription;
   }
