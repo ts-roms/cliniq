@@ -16,6 +16,7 @@ import {
   Select,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { centavosToPesos, pesoInputProps } from '@/shared/lib/money';
 import { formatCentavos, type Invoice } from '@/features/billing';
 import {
   fileClaimSchema,
@@ -38,12 +39,12 @@ export function FileClaimDialog({ invoice }: { invoice: Invoice }) {
     formState: { errors, isSubmitting },
   } = useForm<FileClaimInput, unknown, FileClaimOutput>({
     resolver: zodResolver(fileClaimSchema),
-    defaultValues: { claimedCentavos: remaining },
+    defaultValues: { claimedCentavos: centavosToPesos(remaining) },
   });
 
   const onSubmit = handleSubmit(async (values) => {
     await file.mutateAsync(values);
-    reset({ claimedCentavos: remaining });
+    reset({ claimedCentavos: centavosToPesos(remaining) });
     setOpen(false);
   });
 
@@ -83,10 +84,10 @@ export function FileClaimDialog({ invoice }: { invoice: Invoice }) {
               </Select>
             </FormField>
             <FormField
-              label="Claimed amount (centavos)"
+              label="Claimed amount (₱)"
               error={errors.claimedCentavos?.message}
             >
-              <Input type="number" {...register('claimedCentavos')} />
+              <Input {...pesoInputProps} {...register('claimedCentavos')} />
             </FormField>
             <FormField label="Notes" error={errors.notes?.message}>
               <Input {...register('notes')} />

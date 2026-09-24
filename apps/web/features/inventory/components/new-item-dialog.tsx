@@ -15,6 +15,7 @@ import {
   Input,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { pesoInputProps } from '@/shared/lib/money';
 import {
   createItemSchema,
   type CreateItemInput,
@@ -82,10 +83,10 @@ export function NewItemDialog() {
             </FormField>
           </div>
           <FormField
-            label="Default price (centavos)"
+            label="Default price (₱)"
             error={errors.defaultPriceCentavos?.message}
           >
-            <Input type="number" {...register('defaultPriceCentavos')} />
+            <Input {...pesoInputProps} {...register('defaultPriceCentavos')} />
           </FormField>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" {...register('isControlled')} />

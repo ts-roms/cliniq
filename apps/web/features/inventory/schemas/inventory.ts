@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pesosAsCentavos } from '@/shared/lib/money';
 
 export const createItemSchema = z.object({
   sku: z
@@ -10,7 +11,8 @@ export const createItemSchema = z.object({
   category: z.string().max(40).optional(),
   unit: z.string().max(20).default('each'),
   reorderLevel: z.coerce.number().int().min(0).default(0),
-  defaultPriceCentavos: z.coerce.number().int().min(0).default(0),
+  // Form input is pesos; parsed output is centavos.
+  defaultPriceCentavos: pesosAsCentavos().default(0),
   isControlled: z.boolean().default(false),
 });
 export type CreateItemInput = z.input<typeof createItemSchema>;
@@ -20,7 +22,8 @@ export const receiveBatchSchema = z.object({
   receivedQty: z.coerce.number().int().min(1, 'must be at least 1'),
   lotNumber: z.string().max(40).optional(),
   expiresOn: z.string().optional(),
-  unitCostCentavos: z.coerce.number().int().min(0).default(0),
+  // Form input is pesos; parsed output is centavos.
+  unitCostCentavos: pesosAsCentavos().default(0),
   supplierName: z.string().max(120).optional(),
 });
 export type ReceiveBatchInput = z.input<typeof receiveBatchSchema>;

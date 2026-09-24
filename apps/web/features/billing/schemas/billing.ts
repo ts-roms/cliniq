@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pesosAsCentavos } from '@/shared/lib/money';
 
 export const paymentMethodEnum = z.enum([
   'CASH',
@@ -22,10 +23,11 @@ export const invoiceStatusEnum = z.enum([
 ]);
 export type InvoiceStatus = z.infer<typeof invoiceStatusEnum>;
 
+// Form inputs for the *Centavos fields below are pesos; output is centavos.
 export const invoiceItemSchema = z.object({
   description: z.string().min(1).max(200),
   quantity: z.coerce.number().int().min(1),
-  unitPriceCentavos: z.coerce.number().int().min(0),
+  unitPriceCentavos: pesosAsCentavos(),
   serviceId: z.string().optional(),
 });
 export type InvoiceItemInput = z.input<typeof invoiceItemSchema>;
@@ -33,8 +35,8 @@ export type InvoiceItemOutput = z.output<typeof invoiceItemSchema>;
 
 export const createInvoiceSchema = z.object({
   patientId: z.string().min(1),
-  discountCentavos: z.coerce.number().int().min(0).optional(),
-  taxCentavos: z.coerce.number().int().min(0).optional(),
+  discountCentavos: pesosAsCentavos().optional(),
+  taxCentavos: pesosAsCentavos().optional(),
   notes: z.string().max(280).optional(),
   items: z.array(invoiceItemSchema).min(1, 'add at least one line'),
 });
@@ -42,7 +44,7 @@ export type CreateInvoiceInput = z.input<typeof createInvoiceSchema>;
 export type CreateInvoiceOutput = z.output<typeof createInvoiceSchema>;
 
 export const recordPaymentSchema = z.object({
-  amountCentavos: z.coerce.number().int().min(1),
+  amountCentavos: pesosAsCentavos({ min: 0.01 }),
   method: paymentMethodEnum,
   reference: z.string().max(80).optional(),
 });

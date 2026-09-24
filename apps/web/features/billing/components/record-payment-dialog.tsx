@@ -15,6 +15,7 @@ import {
   Select,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { centavosToPesos, pesoInputProps } from '@/shared/lib/money';
 import {
   recordPaymentSchema,
   type Invoice,
@@ -44,7 +45,7 @@ export function RecordPaymentDialog({
     resolver: zodResolver(recordPaymentSchema),
     defaultValues: {
       method: 'CASH',
-      amountCentavos: remaining,
+      amountCentavos: centavosToPesos(remaining),
     },
   });
 
@@ -73,10 +74,10 @@ export function RecordPaymentDialog({
           </p>
           <div className="grid grid-cols-2 gap-3">
             <FormField
-              label="Amount (centavos)"
+              label="Amount (₱)"
               error={errors.amountCentavos?.message}
             >
-              <Input type="number" {...register('amountCentavos')} />
+              <Input {...pesoInputProps} {...register('amountCentavos')} />
             </FormField>
             <FormField label="Method" error={errors.method?.message}>
               <Select {...register('method')}>
