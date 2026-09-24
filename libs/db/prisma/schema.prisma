@@ -2626,6 +2626,149 @@ model TestComponent {
   @@map("test_components")
 }
 
+// ──────────────────────────────────────────────
+// SPECIMENS
+// ──────────────────────────────────────────────
+//
+// The accession number is the specimen's identity for the rest of its life:
+// it is what goes on the label, the worklist and the report, and it is what
+// makes "which tube produced this result" answerable. Before this, a lab
+// order carried three nullable timestamps (collectedAt / receivedAt /
+// reportedAt) and nothing else — no collector, no container, no volume, no
+// rejection, and no way to tell one tube from another when an order needed
+// two.
+
+enum SpecimenStatus {
+  ORDERED
+  COLLECTED
+  RECEIVED
+  PROCESSING
+  COMPLETED
+  REJECTED
+  CANCELLED
+  REFERRED
+}
+
+/// Why a specimen could not be used.
+///
+/// A closed list rather than free text because rejection rate by reason is a
+/// quality indicator a laboratory is expected to track and act on — "other,
+/// see note" for everything makes that impossible.
+enum SpecimenRejectionReason {
+  HEMOLYZED
+  INSUFFICIENT_QUANTITY
+  WRONG_CONTAINER
+  WRONG_SPECIMEN
+  LEAKING
+  CLOTTED
+  IMPROPER_TRANSPORT
+  UNLABELED
+  MISLABELED
+  DELAYED
+  OTHER
+}
+
+model Specimen {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Per tenant, per day, allocated atomically. See DocumentSequence.
+  accessionNumber String
+
+  orderId   String
+  patientId String
+
+  /// Recorded at collection, not joined from the catalogue: the catalogue
+  /// can be edited afterwards, and what was actually drawn does not change.
+  specimenType String?
+  container    String?
+  volumeMl     Float?
+
+  collectedAt    DateTime?
+  collectedById  String?
+  collectionSite String?
+
+  receivedAt   DateTime?
+  receivedById String?
+
+  status          SpecimenStatus @default(ORDERED)
+  storageLocation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order      LabOrder            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  items      LabOrderItem[]
+  rejections SpecimenRejection[]
+
+  @@unique([tenantId, accessionNumber])
+  @@index([tenantId, status, receivedAt])
+  @@index([tenantId, orderId])
+  @@index([tenantId, patientId, createdAt])
+  @@map("specimens")
+}
+
+/// A specimen that could not be used, and what was done about it.
+///
+/// Append-only and one-per-attempt: a tube rejected twice has two rows, and
+/// the application role holds no UPDATE or DELETE on this table. A mistaken
+/// rejection is explained by the next attempt, not erased.
+model SpecimenRejection {
+  id       String @id @default(cuid())
+  tenantId String
+
+  specimenId String
+  reason     SpecimenRejectionReason
+  remarks    String?
+
+  rejectedById String
+  rejectedAt   DateTime @default(now())
+
+  /// When the ordering team was told. Null means nobody has been told yet,
+  /// which is the state a rejection worklist should surface.
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  specimen Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, specimenId])
+  @@index([tenantId, reason, rejectedAt])
+  @@map("specimen_rejections")
+}
+
+/// Gap-free, race-free document numbering.
+///
+/// The old `nextOrderNumber` did count-then-format inside a transaction:
+///
+///     const n = await tx.labOrder.count({ where: { number: { startsWith } } });
+///     return `${prefix}-${n + 1}`;
+///
+/// At READ COMMITTED two concurrent orders read the same count and format the
+/// same number; the unique index then fails one insert, surfacing as a 500.
+/// Accession numbers are allocated far more often than order slips and would
+/// hit it routinely.
+///
+/// Allocation is a single atomic INSERT ... ON CONFLICT DO UPDATE ... RETURNING,
+/// so concurrent callers serialise on the row rather than racing.
+model DocumentSequence {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// What is being numbered: ACCESSION, LAB_ORDER, …
+  kind String
+  /// The window the counter resets on — "2026-09-24" for a daily accession
+  /// series, "2026-09" for a monthly order series. Opaque to the allocator.
+  period String
+
+  nextValue Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, kind, period])
+  @@map("document_sequences")
+}
+
 enum LabOrderStatus {
   PENDING
   COLLECTED
@@ -2805,6 +2948,7 @@ model LabOrder {
   patient      Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   consultation Consultation?  @relation(fields: [consultationId], references: [id])
   items        LabOrderItem[]
+  specimens    Specimen[]
 
   @@unique([tenantId, number])
   @@index([tenantId, patientId, createdAt])
@@ -2843,11 +2987,18 @@ model LabOrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order LabOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  test  LaboratoryTest? @relation(fields: [testId], references: [id])
+  /// The tube this test is run from. Null until collection, and an order
+  /// that needs two specimen types produces two specimens with the items
+  /// split between them.
+  specimenId String?
+
+  order    LabOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  test     LaboratoryTest? @relation(fields: [testId], references: [id])
+  specimen Specimen?      @relation(fields: [specimenId], references: [id])
 
   @@index([tenantId, orderId])
   @@index([tenantId, testId])
+  @@index([tenantId, specimenId])
   @@map("lab_order_items")
 }
 

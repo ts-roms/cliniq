@@ -20,6 +20,11 @@ import type {
   UpdateLabOrderDto,
 } from './dto/labs.dto.js';
 import {
+  formatOrderNumber,
+  nextSequenceValue,
+  orderPeriod,
+} from './accession.js';
+import {
   ageInDays,
   deriveFlag,
   isAbnormal,
@@ -519,16 +524,31 @@ export class LabsService {
 
   // ── helpers ──────────────────────────────────────
 
+  /**
+   * Allocate the next order-slip number.
+   *
+   * This used to count-then-format:
+   *
+   *     const n = await tx.labOrder.count({ where: { number: { startsWith } } });
+   *     return `${prefix}-${n + 1}`;
+   *
+   * At READ COMMITTED two concurrent orders read the same count and format
+   * the same number; the unique index then failed one insert and it surfaced
+   * as a 500 on a perfectly valid request. It now shares the atomic allocator
+   * the accession numbers use — see ./accession.ts.
+   */
   private async nextOrderNumber(
     tx: PrismaClient,
     tenantId: string,
   ): Promise<string> {
     const now = new Date();
-    const prefix = `LAB-${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    const monthCount = await tx.labOrder.count({
-      where: { tenantId, number: { startsWith: prefix } },
-    });
-    return `${prefix}-${String(monthCount + 1).padStart(4, '0')}`;
+    const value = await nextSequenceValue(
+      tx,
+      tenantId,
+      'LAB_ORDER',
+      orderPeriod(now),
+    );
+    return formatOrderNumber(now, value);
   }
 }
 
