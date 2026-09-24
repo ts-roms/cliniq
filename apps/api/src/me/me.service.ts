@@ -8,6 +8,7 @@ import { PrismaService, TeleSessionStatus } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import type { UpdateStaffProfileDto } from './dto/staff-profile.dto.js';
 import { BillingService } from '../billing/billing.service.js';
+import { FilesService } from '../files/files.service.js';
 
 /**
  * Self-scoped service for the patient portal. Every method derives the patient
@@ -24,6 +25,7 @@ export class MeService {
     private readonly prisma: PrismaService,
     private readonly billing: BillingService,
     private readonly config: ConfigService,
+    private readonly files: FilesService,
   ) {}
 
   private requirePatientId(user: AuthenticatedUser): string {
@@ -263,5 +265,20 @@ export class MeService {
       providerName: provider?.name ?? null,
       joinUrl: `${base}/portal/tele/${session.joinToken}`,
     };
+  }
+  /**
+   * Download one of the caller's OWN documents.
+   *
+   * requirePatientId throws for a staff JWT, and FilesService then refuses
+   * any file whose patientId does not equal the caller's — including every
+   * file with a null owner, which is how non-clinical files (clinic logo,
+   * a clinician's signature image) stay staff-only without a second rule.
+   *
+   * The id comes from the path, but it is only ever an id: ownership is
+   * decided against the JWT `pid` claim, so probing ids reveals nothing.
+   */
+  async downloadFile(fileId: string, user: AuthenticatedUser) {
+    this.requirePatientId(user);
+    return this.files.download(fileId, user);
   }
 }

@@ -1529,10 +1529,24 @@ model FileObject {
   uploadedBy String?
   status     FileStatus   @default(PENDING)
 
+  /// Who the file is ABOUT. Nullable because not every file has a patient —
+  /// a clinic logo, a clinician's signature image — and because rows written
+  /// before ownership existed cannot have it inferred after the fact.
+  ///
+  /// This is the column download authorization hangs off. Without it the only
+  /// question answerable about a file was "is it in your tenant?", which is
+  /// not enough: it would let any portal account fetch any other patient's
+  /// documents. A file with a null patientId is staff-only by construction —
+  /// a portal caller can never match null.
+  patientId      String?
+  /// The encounter it was captured during, when there was one.
+  consultationId String?
+
   createdAt DateTime  @default(now())
   deletedAt DateTime?
 
   @@index([tenantId, category, createdAt])
+  @@index([tenantId, patientId, createdAt])
   @@map("files")
 }
 
