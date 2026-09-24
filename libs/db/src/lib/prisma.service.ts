@@ -258,6 +258,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get documentSequence() {
     return this.client.documentSequence;
   }
+  get labResultVersion() {
+    return this.client.labResultVersion;
+  }
   get teleSession() {
     return this.client.teleSession;
   }

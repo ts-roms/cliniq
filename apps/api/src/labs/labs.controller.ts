@@ -20,6 +20,7 @@ import {
 } from '../auth/decorators/current-user.decorator.js';
 import { LabsService } from './labs.service.js';
 import {
+  AmendResultDto,
   CreateLabOrderDto,
   RecordResultDto,
   UpdateLabOrderDto,
@@ -98,7 +99,11 @@ export class LabsController {
   }
 
   @Patch('lab-orders/:id/items/:itemId')
-  @Requires(Actions.CONSULT_WRITE)
+  // LAB_RESULT_ENTER, not CONSULT_WRITE. Deliberately granted to DOCTOR and
+  // NURSE as well as the lab roles, so clinics that key in referred-in
+  // reports keep working — this is a new name for who could already do it,
+  // not a narrowing.
+  @Requires(Actions.LAB_RESULT_ENTER)
   @Audit({
     action: 'lab.resultRecord',
     entity: 'LabOrderItem',
@@ -111,5 +116,53 @@ export class LabsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.labs.recordResult(id, itemId, dto, user);
+  }
+
+  /** Release a result to the chart. */
+  @Patch('lab-orders/:id/items/:itemId/verify')
+  @Requires(Actions.LAB_RESULT_VERIFY)
+  @Audit({
+    action: 'lab.resultVerify',
+    entity: 'LabOrderItem',
+    entityIdFrom: 'param:itemId',
+  })
+  verifyResult(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.labs.verifyResult(id, itemId, user);
+  }
+
+  /**
+   * Correct a released result. Requires a stated reason — someone may have
+   * acted on the value being replaced.
+   */
+  @Post('lab-orders/:id/items/:itemId/amend')
+  @HttpCode(HttpStatus.OK)
+  @Requires(Actions.LAB_RESULT_VERIFY)
+  @Audit({
+    action: 'lab.resultAmend',
+    entity: 'LabOrderItem',
+    entityIdFrom: 'param:itemId',
+  })
+  amendResult(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body() dto: AmendResultDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.labs.amendResult(id, itemId, dto, user);
+  }
+
+  /** Every value this result has ever held. */
+  @Get('lab-orders/:id/items/:itemId/history')
+  @Requires(Actions.CONSULT_READ)
+  resultHistory(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.labs.resultHistory(id, itemId, user);
   }
 }

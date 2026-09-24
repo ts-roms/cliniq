@@ -61,12 +61,46 @@ export class BrandingDto {
   tagline?: string;
 }
 
+/**
+ * Whether laboratory results must be released before they reach the chart.
+ *
+ * Both default off. A single-technologist clinic would otherwise be unable to
+ * release any result at all, and results that never reach the ordering doctor
+ * are a worse patient-safety problem than self-verification. Who entered and
+ * who released is recorded either way — these only decide what is enforced.
+ */
+export class LabVerificationDto {
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Results land PRELIMINARY and must be verified before the order reports.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'The verifier must be someone other than whoever entered the result.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  requireSeparateVerifier?: boolean;
+}
+
 export class UpdateSettingsDto {
   @ApiPropertyOptional({ type: BrandingDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => BrandingDto)
   branding?: BrandingDto;
+
+  @ApiPropertyOptional({ type: LabVerificationDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LabVerificationDto)
+  labVerification?: LabVerificationDto;
 
   @ApiPropertyOptional({ type: [OperatingHourDto] })
   @IsOptional()

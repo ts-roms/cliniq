@@ -34,6 +34,8 @@ export type E2ERole =
   | 'DOCTOR'
   | 'NURSE'
   | 'RECEPTIONIST'
+  | 'MEDICAL_TECHNOLOGIST'
+  | 'PATHOLOGIST'
   | 'PATIENT';
 
 export interface E2ETenant {
@@ -78,6 +80,10 @@ export interface E2EEnv {
   makeDoctor(tenant: E2ETenant): Promise<E2EUser>;
   makeNurse(tenant: E2ETenant): Promise<E2EUser>;
   makeReceptionist(tenant: E2ETenant): Promise<E2EUser>;
+  /** Runs the bench: enters results and may release them. */
+  makeMedTech(tenant: E2ETenant): Promise<E2EUser>;
+  /** Releases results but cannot enter them. */
+  makePathologist(tenant: E2ETenant): Promise<E2EUser>;
   /** Register a patient via the public portal flow (creates Patient + User + TenantUser). */
   makePatient(tenant: E2ETenant): Promise<E2EUser & { patientId: string }>;
   /** Seed a platform admin (no API route exists for self-signup). */
@@ -297,6 +303,8 @@ export async function bootEnv(): Promise<E2EEnv> {
     makeDoctor: (tenant) => register(tenant, 'DOCTOR'),
     makeNurse: (tenant) => register(tenant, 'NURSE'),
     makeReceptionist: (tenant) => register(tenant, 'RECEPTIONIST'),
+    makeMedTech: (tenant) => register(tenant, 'MEDICAL_TECHNOLOGIST'),
+    makePathologist: (tenant) => register(tenant, 'PATHOLOGIST'),
 
     async makePatient(tenant) {
       const rand = randomUUID().slice(0, 8);
