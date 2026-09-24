@@ -1253,6 +1253,7 @@ model Patient {
   medications    Medication[]
   conditions     Condition[]
   invoices       Invoice[]
+  entitlements      PatientEntitlement[]
   dsrRequests    DataSubjectRequest[]
   queueTickets   QueueTicket[]      @relation("PatientQueueTickets")
   pregnancies    ObPregnancy[]      @relation("PatientPregnancies")
@@ -2188,10 +2189,96 @@ model Invoice {
   payments Payment[]
   hmoClaims HmoClaim[]
 
+  /// The entitlement claimed on this invoice, if any.
+  entitlementId String?
+  /// The OSCA / PWD ID number presented, snapshotted. The BIR requires it on
+  /// the face of the invoice, and the entitlement row can be edited later —
+  /// a reissued ID must not rewrite what an old receipt said.
+  statutoryIdNumber String?
+  /// How much of `discountCentavos` was statutory. `discountCentavos` stays
+  /// the total shown to the patient so existing readers keep working; this
+  /// is the part the establishment claims as a tax deduction, which is a
+  /// different number from a commercial discount and reported separately.
+  statutoryDiscountCentavos Int @default(0)
+  /// The sale with VAT removed — the base the statutory discount was taken
+  /// from. Required on the invoice face for a VAT-exempt sale.
+  vatExemptSaleCentavos Int @default(0)
+
   @@unique([tenantId, number])
   @@index([tenantId, patientId, issuedAt])
   @@index([tenantId, status])
   @@map("invoices")
+}
+
+/// A statutory entitlement a patient holds.
+///
+/// RA 9994 (senior citizens) and RA 10754 (persons with disability) both
+/// grant 20% and VAT exemption **on presentation of an ID**. The ID number is
+/// not decoration: the BIR requires it on the invoice, and a discount claimed
+/// without one is not substantiated.
+model PatientEntitlement {
+  id        String          @id @default(cuid())
+  tenantId  String
+  patientId String
+  type      EntitlementType
+
+  /// OSCA / senior citizen / PWD ID number as presented.
+  idNumber String
+
+  /// A PWD ID carries an expiry; a senior citizen ID generally does not.
+  /// Null at either end means open-ended.
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  /// Who sighted the physical ID, and when. Null means recorded but not yet
+  /// verified — visible to the clinic rather than silently trusted.
+  verifiedAt   DateTime?
+  verifiedById String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  /// One live entitlement of each type per patient. A replacement ID updates
+  /// the row rather than accumulating duplicates that disagree.
+  @@unique([tenantId, patientId, type])
+  @@index([tenantId, patientId])
+  @@map("patient_entitlements")
+}
+
+enum EntitlementType {
+  SENIOR_CITIZEN
+  PWD
+}
+
+/// What a given entitlement is worth, per tenant.
+///
+/// Configurable rather than hard-coded because the statutory rates are law
+/// but not eternal — RA 9994 raised what RA 7432 set — and because a clinic
+/// may run its own concessions through the same machinery. The DEFAULTS are
+/// the statutory ones (see apps/api/src/billing/ph-statutory.ts); a tenant
+/// that has configured nothing gets the law.
+///
+/// What is NOT configurable is the arithmetic: VAT comes off before the
+/// percentage, because that is what determines the deductible amount.
+model DiscountRule {
+  id       String          @id @default(cuid())
+  tenantId String
+  type     EntitlementType
+
+  percent   Int
+  vatExempt Boolean @default(true)
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, type, effectiveFrom])
+  @@map("discount_rules")
 }
 
 enum InvoiceStatus {

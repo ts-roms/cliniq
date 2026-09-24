@@ -3116,6 +3116,100 @@
         "tags": ["billing"]
       }
     },
+    "/api/patients/{patientId}/entitlements": {
+      "post": {
+        "operationId": "BillingController_upsertEntitlement",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertEntitlementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["billing"]
+      },
+      "get": {
+        "operationId": "BillingController_listEntitlements",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["billing"]
+      }
+    },
+    "/api/patients/{patientId}/entitlements/{type}": {
+      "delete": {
+        "operationId": "BillingController_removeEntitlement",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["billing"]
+      }
+    },
     "/api/dsr": {
       "post": {
         "operationId": "DsrController_file",
@@ -11361,6 +11455,34 @@
           }
         },
         "required": ["amountCentavos", "method"]
+      },
+      "UpsertEntitlementDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["SENIOR_CITIZEN", "PWD"]
+          },
+          "idNumber": {
+            "type": "string",
+            "description": "OSCA / senior citizen / PWD ID number."
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": "string",
+            "description": "A PWD ID expires; a senior citizen ID generally does not."
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "Set when staff have sighted the physical ID.",
+            "default": false
+          }
+        },
+        "required": ["type", "idNumber"]
       },
       "FileDsrDto": {
         "type": "object",
