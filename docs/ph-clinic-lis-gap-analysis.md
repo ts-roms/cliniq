@@ -1819,6 +1819,8 @@ Every row below was verified against the source, not inferred from a commit mess
 | Result verification + history               | built            | `20260924220000_lis_result_verification`                                                        |
 | Signed reports + PDF + portal access        | built            | `20260924240000_lis_lab_reports`                                                                |
 | PH statutory discounts (RA 9994 / RA 10754) | built            | `20260924280000_ph_statutory_discounts`                                                         |
+| Laboratory LTO profile + service capability | partial          | `20260924300000_lis_laboratory_licence` — reported, not enforced                                |
+
 
 ## Three things this exercise taught that are worth keeping
 
