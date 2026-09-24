@@ -2703,8 +2703,107 @@ model LabServiceCapability {
 
   laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
 
+  /// Where this goes when it is not performed here. Named on the capability
+  /// row rather than chosen at order time, because "HbA1c goes to
+  /// Hi-Precision" is a standing arrangement and asking whoever places the
+  /// order to remember it each time is how it ends up wrong.
+  referralLaboratoryId String?
+
+  referralLaboratory ReferralLaboratory? @relation(fields: [referralLaboratoryId], references: [id])
+
   @@index([tenantId, laboratoryId])
   @@map("lab_service_capabilities")
+}
+
+/// A laboratory this clinic sends work to.
+///
+/// AO 2021-0037 permits referral only to a **licensed** laboratory, so the
+/// destination's own LTO number is part of the record rather than
+/// decoration — referring to one we cannot evidence is licensed is
+/// indefensible if anyone asks.
+model ReferralLaboratory {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  dohLtoNumber String?
+
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?
+  /// How specimens get there. Free text: it is a courier name, a pickup
+  /// schedule, or "their driver collects at 3pm".
+  courier String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  capabilities LabServiceCapability[]
+  referrals    LabReferral[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("referral_laboratories")
+}
+
+enum ReferralStatus {
+  PENDING
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+/// One test sent out to another laboratory.
+///
+/// Per order item rather than per specimen. A referral is about a test and
+/// who is answerable for its result; which tube carried it is a detail, and
+/// modelling it as a specimen would leave referred-in reports — which arrive
+/// with no specimen of ours at all — unrepresentable.
+///
+/// Chain of custody lives in the fields here rather than a separate
+/// ReferralSpecimen: who released it, when, by what courier, and what
+/// condition it arrived in. That is a smaller model than §6.11 sketched and
+/// is enough to answer the questions an inspection asks.
+model LabReferral {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// `@unique`, not a composite with tenantId: an order item's id is already
+  /// globally unique, so this says exactly what is meant — one live referral
+  /// per item. Sending the same test to two laboratories would leave two
+  /// answers to "whose result is this".
+  orderItemId          String @unique
+  referralLaboratoryId String
+
+  status ReferralStatus @default(PENDING)
+
+  /// Their reference number, once they give us one. This is what ties our
+  /// record to theirs when something has to be chased.
+  externalRef String?
+
+  sentAt     DateTime?
+  sentById   String?
+  courier    String?
+  receivedAt DateTime?
+  /// Condition on arrival, when they tell us. A referral laboratory that
+  /// rejects our specimen is information the ordering doctor needs.
+  conditionOnArrival String?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item       LabOrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  laboratory ReferralLaboratory @relation(fields: [referralLaboratoryId], references: [id])
+
+  @@index([tenantId, status, sentAt])
+  @@index([tenantId, referralLaboratoryId])
+  @@map("lab_referrals")
 }
 
 enum LabResultType {
@@ -3188,6 +3287,7 @@ model LabOrderItem {
   test     LaboratoryTest? @relation(fields: [testId], references: [id])
   specimen Specimen?      @relation(fields: [specimenId], references: [id])
   versions LabResultVersion[]
+  referral LabReferral?
 
   @@index([tenantId, orderId])
   @@index([tenantId, testId])
