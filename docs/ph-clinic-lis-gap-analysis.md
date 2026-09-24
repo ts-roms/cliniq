@@ -296,7 +296,13 @@ Not a bug — a scope gap, listed as P0 because it is the stated product goal. A
 const tokens = await this.prisma.pushToken.findMany({ ... });
 ```
 
-Impact is bounded (a device token, and only for a user id that already exists), but it is the one place the otherwise-uniform isolation model has a hole. `platform_admins` and `platform_refresh_sessions` are likewise outside RLS; no current code path exposes them to a tenant session, so that is a defence-in-depth gap rather than a live vulnerability. `icd_codes` is deliberately global with a `SELECT`-only grant — correct.
+Impact is bounded (a device token, and only for a user id that already exists), but it is the one place the otherwise-uniform isolation model has a hole. `platform_admins` and `platform_refresh_sessions` are likewise outside RLS; no current code path exposes them to a tenant session, so that is a defence-in-depth gap rather than a live vulnerability. `icd_codes` is deliberately global with a `SELECT`-only grant — **this document said that was correct, and it was wrong.**
+
+The creating migration (`20260504020000_pilot_readiness`) does say `GRANT SELECT ON "icd_codes" TO cliniq_app`, but the schema-wide `ALTER DEFAULT PRIVILEGES` in `20260501000001_rls_policies` had already granted all four privileges, and a narrower GRANT does not subtract. The role held `DELETE, INSERT, SELECT, UPDATE` on it until `20260924260000_icd_codes_read_only`.
+
+It matters more on this table than on the append-only ones. `icd_codes` has no `tenantId` and therefore no RLS, so nothing stood between any tenant session and `DELETE FROM icd_codes` — which would remove the ICD-10 reference data for every tenant on the instance. No code path does it (the API only reads; the seed runs as the owner), so this was a hole rather than a live bug.
+
+**This is the third instance of the same trap**, after `audit_logs` / `consultation_amendments` and CI re-granting after `migrate deploy`. All three were found by hand, late, one at a time. `apps/api-e2e/src/modules/privilege-coverage.spec.ts` now asserts the class: every `REVOKE` the migrations declare still holds, read out of the migration files so the next one is covered automatically.
 
 > **Status: fixed.** `20260924100000_push_tokens_rls` enables and forces RLS with a tenant-isolation policy, and `PushService` goes through `withTenant`. Every table carrying a `tenantId` is now under RLS; the migrations that add one assert this, and a scratch-database check of `information_schema` returns zero exceptions.
 
@@ -944,7 +950,7 @@ Statuses below distinguish **LEGAL REQUIREMENT** (statute or DOH/NPC issuance), 
 | Tenant GUC set inside the transaction via parameterised `set_config`               | `prisma.service.ts` `withTenant`                                                                                                                               |
 | Platform admin as a separate identity table, not a `User` row                      | `PlatformAdmin`, `PlatformRefreshSession`                                                                                                                      |
 | Platform RLS bypass is an explicit, `SET LOCAL`-scoped GUC                         | `withPlatformContext`, migration `20260506110000`                                                                                                              |
-| Audit log append-only at the grant level                                           | `REVOKE UPDATE, DELETE` in `20260924090100_append_only_grants` — the earlier `GRANT SELECT, INSERT` was silently overridden by the schema's default privileges |
+| Audit log append-only at the grant level, asserted in CI                           | `REVOKE UPDATE, DELETE` in `20260924090100_append_only_grants` — the earlier `GRANT SELECT, INSERT` was silently overridden by the schema's default privileges |
 | Tokens in httpOnly cookies (web) with Bearer fallback (mobile)                     | `jwt-auth.guard.ts:20-35`                                                                                                                                      |
 | MFA/TOTP + hashed backup codes + brute-force lockout                               | `User.mfaSecret`, `failedLoginCount`, `lockedUntil`                                                                                                            |
 | Password reset tokens stored as sha256, never raw                                  | `PasswordResetToken`, `TenantInvite`                                                                                                                           |
@@ -1845,6 +1851,7 @@ Every row below was verified against the source, not inferred from a commit mess
 | Signed reports + PDF + portal access           | built            | `20260924240000_lis_lab_reports`                                                                   |
 | Laboratory LTO profile + service capability    | built            | `20260924300000_lis_laboratory_licence`                                                            |
 | Referral laboratories + capability enforcement | partial          | `20260924320000_lis_referral_labs` — no MOA file, referred tests not yet stated on the report face |
+
 
 ## Three things this exercise taught that are worth keeping
 
