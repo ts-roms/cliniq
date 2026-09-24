@@ -1,11 +1,14 @@
 import {
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
 import { Features } from '@org/shared-types';
@@ -71,6 +74,31 @@ export class ReportsController {
   @Requires(Actions.CONSULT_READ)
   detail(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.reports.detail(id, user);
+  }
+
+  /**
+   * The report as a PDF.
+   *
+   * Audited: downloading a laboratory result is exactly the event an
+   * inspection asks about, the same reasoning as the file-download route.
+   */
+  @Get('reports/:id/pdf')
+  @Header('Content-Type', 'application/pdf')
+  @Requires(Actions.CONSULT_READ)
+  @Audit({
+    action: 'lis.reportPdfDownload',
+    entity: 'LabReport',
+    entityIdFrom: 'param:id',
+  })
+  async pdf(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const buf = await this.reports.renderPdf(id, user);
+    res.setHeader('Content-Disposition', `inline; filename="report-${id}.pdf"`);
+    res.setHeader('Content-Length', buf.length.toString());
+    res.end(buf);
   }
 
   /** Countersign an issued report — a pathologist endorsing it. */

@@ -121,3 +121,26 @@ export function canIssueReport(
   }
   return { ok: true };
 }
+
+/**
+ * The warning a report must carry on its face, or null when it needs none.
+ *
+ * Separated from the renderer so it can be tested: pdfkit compresses its
+ * content streams, so asserting on the produced bytes would prove nothing.
+ * The wording is the deliverable here, not the typography.
+ *
+ * A PDF is the one artifact that leaves the system and keeps existing. By the
+ * time it is on paper or in someone's inbox, no status column can reach it —
+ * so if a correction has invalidated it, the page itself has to say so.
+ */
+export function supersededNotice(report: {
+  isCurrent: boolean;
+  status: string;
+  supersededByNumber: string | null;
+}): string | null {
+  if (report.isCurrent && report.status !== 'SUPERSEDED') return null;
+  if (report.supersededByNumber !== null) {
+    return `SUPERSEDED — replaced by report ${report.supersededByNumber}. Do not act on this copy.`;
+  }
+  return 'OUT OF DATE — a result has been corrected since this report was issued. Do not act on this copy.';
+}

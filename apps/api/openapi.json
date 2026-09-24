@@ -4847,6 +4847,32 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/reports/{id}/pdf": {
+      "get": {
+        "operationId": "ReportsController_pdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/lis/reports/{id}/sign": {
       "post": {
         "operationId": "ReportsController_sign",
@@ -5475,6 +5501,49 @@
     "/api/me/files/{id}/download": {
       "get": {
         "operationId": "MeController_downloadFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["me"]
+      }
+    },
+    "/api/me/lab-reports": {
+      "get": {
+        "operationId": "MeController_labReports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["me"]
+      }
+    },
+    "/api/me/lab-reports/{id}/pdf": {
+      "get": {
+        "operationId": "MeController_labReportPdf",
         "parameters": [
           {
             "name": "id",

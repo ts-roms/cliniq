@@ -29,6 +29,6 @@ import { ReportsService } from './reports.service.js';
     SpecimensService,
     ReportsService,
   ],
-  exports: [LabsService],
+  exports: [LabsService, ReportsService],
 })
 export class LabsModule {}
