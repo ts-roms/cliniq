@@ -240,6 +240,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get criticalResultNotification() {
     return this.client.criticalResultNotification;
   }
+  get labSection() {
+    return this.client.labSection;
+  }
+  get laboratoryTest() {
+    return this.client.laboratoryTest;
+  }
+  get testComponent() {
+    return this.client.testComponent;
+  }
   get teleSession() {
     return this.client.teleSession;
   }

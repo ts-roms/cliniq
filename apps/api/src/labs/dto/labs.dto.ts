@@ -14,12 +14,35 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LabAbnormalFlag, LabOrderStatus } from '@org/db';
 
 export class LabOrderItemInputDto {
+  /**
+   * Order from the catalogue. When set, the test's code, name, specimen and
+   * component unit are SNAPSHOTTED onto the item, so the order reads as it
+   * was placed even after the catalogue is edited — and `testName` becomes
+   * optional because the catalogue supplies it.
+   *
+   * Omitting it still works: a laboratory may order something ad hoc, and
+   * orders placed before the catalogue existed have no entry to point at.
+   */
+  @ApiPropertyOptional({
+    description:
+      'Catalogue test to order. Supplies code/name/unit; testName is then optional.',
+  })
+  @IsOptional()
+  @IsString()
+  testId?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   @MaxLength(40)
   testCode?: string;
-  @ApiProperty() @IsString() @MaxLength(120) testName!: string;
+  @ApiPropertyOptional({
+    description: 'Required unless testId is given, which supplies it.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  testName?: string;
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
