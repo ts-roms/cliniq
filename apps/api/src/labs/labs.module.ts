@@ -7,6 +7,8 @@ import { CriticalResultsController } from './critical-results.controller.js';
 import { CriticalResultsService } from './critical-results.service.js';
 import { CatalogueController } from './catalogue.controller.js';
 import { CatalogueService } from './catalogue.service.js';
+import { SpecimensController } from './specimens.controller.js';
+import { SpecimensService } from './specimens.service.js';
 
 @Module({
   controllers: [
@@ -14,12 +16,14 @@ import { CatalogueService } from './catalogue.service.js';
     CriticalValueRulesController,
     CriticalResultsController,
     CatalogueController,
+    SpecimensController,
   ],
   providers: [
     LabsService,
     CriticalValueRulesService,
     CriticalResultsService,
     CatalogueService,
+    SpecimensService,
   ],
   exports: [LabsService],
 })

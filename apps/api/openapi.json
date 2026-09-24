@@ -1620,6 +1620,32 @@
         "tags": ["files"]
       }
     },
+    "/api/files/{id}/download": {
+      "get": {
+        "operationId": "FilesController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["files"]
+      }
+    },
     "/api/icd-codes/search": {
       "get": {
         "operationId": "IcdCodesController_search",
@@ -4137,6 +4163,502 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/critical-results": {
+      "get": {
+        "operationId": "CriticalResultsController_list",
+        "parameters": [
+          {
+            "name": "includeAcknowledged",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/critical-results/{id}/acknowledge": {
+      "post": {
+        "operationId": "CriticalResultsController_acknowledge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcknowledgeCriticalResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/sections": {
+      "get": {
+        "operationId": "CatalogueController_listSections",
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "post": {
+        "operationId": "CatalogueController_createSection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLabSectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/sections/{id}": {
+      "patch": {
+        "operationId": "CatalogueController_updateSection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLabSectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/tests": {
+      "get": {
+        "operationId": "CatalogueController_listTests",
+        "parameters": [
+          {
+            "name": "sectionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "post": {
+        "operationId": "CatalogueController_createTest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLaboratoryTestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/tests/{id}": {
+      "get": {
+        "operationId": "CatalogueController_getTest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "patch": {
+        "operationId": "CatalogueController_updateTest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLaboratoryTestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "delete": {
+        "operationId": "CatalogueController_retireTest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/specimens": {
+      "get": {
+        "operationId": "SpecimensController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SpecimenStatus"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/specimens/{id}": {
+      "get": {
+        "operationId": "SpecimensController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/orders/{orderId}/specimens": {
+      "post": {
+        "operationId": "SpecimensController_collect",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectSpecimenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/specimens/{id}/receive": {
+      "patch": {
+        "operationId": "SpecimensController_receive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveSpecimenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/specimens/{id}/reject": {
+      "post": {
+        "operationId": "SpecimensController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectSpecimenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/specimens/{id}/status": {
+      "patch": {
+        "operationId": "SpecimensController_transition",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionSpecimenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/tele/sessions": {
       "post": {
         "operationId": "TeleController_create",
@@ -4713,6 +5235,32 @@
     "/api/me/invoices/{id}/pdf": {
       "get": {
         "operationId": "MeController_invoicePdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["me"]
+      }
+    },
+    "/api/me/files/{id}/download": {
+      "get": {
+        "operationId": "MeController_downloadFile",
         "parameters": [
           {
             "name": "id",
@@ -9819,6 +10367,14 @@
           "isPhi": {
             "type": "boolean",
             "description": "Mark as PHI. Defaults true for clinical categories."
+          },
+          "patientId": {
+            "type": "string",
+            "description": "Patient this file belongs to. Required for the portal to be able to fetch it; omit for non-clinical files."
+          },
+          "consultationId": {
+            "type": "string",
+            "description": "Encounter the file was captured during, when there was one."
           }
         },
         "required": ["category", "filename", "mimeType", "sizeBytes"]
@@ -10699,11 +11255,16 @@
       "LabOrderItemInputDto": {
         "type": "object",
         "properties": {
+          "testId": {
+            "type": "string",
+            "description": "Catalogue test to order. Supplies code/name/unit; testName is then optional."
+          },
           "testCode": {
             "type": "string"
           },
           "testName": {
-            "type": "string"
+            "type": "string",
+            "description": "Required unless testId is given, which supplies it."
           },
           "category": {
             "type": "string"
@@ -10725,8 +11286,7 @@
             "type": "number",
             "description": "Overrides the tenant's critical rule for this order only. At or above this value the result is CRITICAL_HIGH."
           }
-        },
-        "required": ["testName"]
+        }
       },
       "CreateLabOrderDto": {
         "type": "object",
@@ -10851,6 +11411,10 @@
           "note": {
             "type": "string"
           },
+          "notifyWithinMinutes": {
+            "type": "number",
+            "description": "Minutes the clinician has to acknowledge before escalation. Defaults to 60. Urgency is per-analyte: a critical potassium wants a phone call inside minutes, an abnormal TSH does not."
+          },
           "effectiveFrom": {
             "format": "date-time",
             "type": "string",
@@ -10877,6 +11441,275 @@
             "description": "When this rule stops applying. Must be after effectiveFrom."
           }
         }
+      },
+      "AcknowledgeCriticalResultDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["IN_APP", "PHONE", "SMS", "EMAIL", "IN_PERSON"],
+            "description": "How the result was actually communicated. Defaults to how it was raised (IN_APP); set PHONE when the laboratory telephoned it."
+          },
+          "note": {
+            "type": "string",
+            "description": "Read-back — what the clinician repeated back, e.g. 'Potassium 6.8, repeat sent, patient recalled'. This is the evidence an inspection asks for."
+          }
+        }
+      },
+      "CreateLabSectionDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Short code, e.g. HEMATOLOGY."
+          },
+          "name": {
+            "type": "string",
+            "description": "What staff see, e.g. \"Hematology\"."
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        },
+        "required": ["code", "name"]
+      },
+      "UpdateLabSectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Retire a section without deleting it. Tests already on it keep working."
+          }
+        }
+      },
+      "TestComponentInputDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Analyte code, e.g. HGB."
+          },
+          "name": {
+            "type": "string"
+          },
+          "resultType": {
+            "type": "string",
+            "enum": ["NUMERIC", "TEXT", "CODED", "TITER"]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "decimals": {
+            "type": "number",
+            "description": "Decimal places for display. Four places on a haemoglobin is false precision."
+          },
+          "displayOrder": {
+            "type": "number"
+          },
+          "loincCode": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "name"]
+      },
+      "CreateLaboratoryTestDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The laboratory's own code, e.g. CBC or K. CriticalValueRule matches on this."
+          },
+          "name": {
+            "type": "string"
+          },
+          "sectionId": {
+            "type": "string",
+            "description": "Section id this test belongs to."
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "loincCode": {
+            "type": "string",
+            "description": "LOINC, kept separate from `code`."
+          },
+          "specimenType": {
+            "type": "string",
+            "description": "e.g. \"Whole blood (EDTA)\"."
+          },
+          "container": {
+            "type": "string",
+            "description": "e.g. \"Lavender top\"."
+          },
+          "minVolumeMl": {
+            "type": "number"
+          },
+          "collectionInstructions": {
+            "type": "string"
+          },
+          "processingInstructions": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "targetTatMinutes": {
+            "type": "number",
+            "description": "Routine turnaround target, minutes."
+          },
+          "statTatMinutes": {
+            "type": "number",
+            "description": "STAT turnaround target, minutes."
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestComponentInputDto"
+            }
+          }
+        },
+        "required": ["code", "name", "sectionId", "components"]
+      },
+      "UpdateLaboratoryTestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "sectionId": {
+            "type": "string"
+          },
+          "specimenType": {
+            "type": "string"
+          },
+          "container": {
+            "type": "string"
+          },
+          "targetTatMinutes": {
+            "type": "number"
+          },
+          "statTatMinutes": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Retire a test without deleting it. Orders already placed from it keep their snapshot."
+          }
+        }
+      },
+      "SpecimenStatus": {
+        "type": "string",
+        "enum": [
+          "ORDERED",
+          "COLLECTED",
+          "RECEIVED",
+          "PROCESSING",
+          "COMPLETED",
+          "REJECTED",
+          "CANCELLED",
+          "REFERRED"
+        ]
+      },
+      "CollectSpecimenDto": {
+        "type": "object",
+        "properties": {
+          "specimenType": {
+            "type": "string",
+            "description": "e.g. \"Whole blood (EDTA)\"."
+          },
+          "container": {
+            "type": "string",
+            "description": "e.g. \"Lavender top\"."
+          },
+          "volumeMl": {
+            "type": "number"
+          },
+          "collectionSite": {
+            "type": "string",
+            "description": "e.g. \"Left antecubital\"."
+          },
+          "collectedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When it was drawn. Defaults to now."
+          },
+          "itemIds": {
+            "description": "Order item ids for this tube. Omit to take every item not yet on a specimen.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ReceiveSpecimenDto": {
+        "type": "object",
+        "properties": {
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Defaults to now."
+          },
+          "storageLocation": {
+            "type": "string",
+            "description": "e.g. \"Fridge 2, rack B\"."
+          }
+        }
+      },
+      "RejectSpecimenDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "HEMOLYZED",
+              "INSUFFICIENT_QUANTITY",
+              "WRONG_CONTAINER",
+              "WRONG_SPECIMEN",
+              "LEAKING",
+              "CLOTTED",
+              "IMPROPER_TRANSPORT",
+              "UNLABELED",
+              "MISLABELED",
+              "DELAYED",
+              "OTHER"
+            ]
+          },
+          "remarks": {
+            "type": "string",
+            "description": "Required when the reason is OTHER — \"other\" with no explanation is not a reason."
+          }
+        },
+        "required": ["reason"]
+      },
+      "TransitionSpecimenDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ORDERED",
+              "COLLECTED",
+              "RECEIVED",
+              "PROCESSING",
+              "COMPLETED",
+              "REJECTED",
+              "CANCELLED",
+              "REFERRED"
+            ],
+            "description": "PROCESSING, COMPLETED, CANCELLED or REFERRED. Collection, reception and rejection have their own routes."
+          }
+        },
+        "required": ["status"]
       },
       "CreateSessionDto": {
         "type": "object",
@@ -11092,7 +11925,7 @@
               }
             ]
           },
-          "dentalLabPlan": {
+          "labPlan": {
             "description": "LAB tenants only (400 on a CLINIC tenant)",
             "allOf": [
               {
