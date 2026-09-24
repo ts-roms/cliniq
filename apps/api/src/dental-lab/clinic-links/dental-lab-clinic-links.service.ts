@@ -1,0 +1,291 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { DentalLabClinicLinkStatus, PrismaService } from '@org/db';
+import type { AuthenticatedUser } from '../../auth/decorators/current-user.decorator.js';
+import type { InviteClinicDto } from './dto/invite.dto.js';
+import { DentalLabCounterpartyService } from '../_shared/counterparty.service.js';
+
+/**
+ * Manages the many-to-many association between LAB tenants and CLINIC tenants.
+ * Both sides see the same row; the link is mutated by either side depending
+ * on action (lab invites/revokes, clinic accepts/rejects).
+ *
+ * RLS on `lab_clinic_links` ensures a tenant only sees rows where it appears
+ * as either lab or clinic, so we don't have to re-check tenant ownership in
+ * service code beyond the kind check.
+ */
+@Injectable()
+export class DentalLabClinicLinksService {
+  private readonly logger = new Logger(DentalLabClinicLinksService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly counterparty: DentalLabCounterpartyService,
+  ) {}
+
+  /** Lab → invites a clinic by slug. */
+  async invite(dto: InviteClinicDto, user: AuthenticatedUser) {
+    const labCtx = await this.prisma.getTenantContext(user.tenantId);
+    if (!labCtx || labCtx.kind !== 'LAB') {
+      throw new ForbiddenException('only LAB tenants can invite clinics');
+    }
+    // We need the lab id + name for the rest of the flow. The
+    // getTenantContext helper only returns kind/plan/labPlan; pull the
+    // rest in another tenant-scoped read.
+    const lab = await this.prisma.withTenant(user.tenantId, null, (tx) =>
+      tx.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: { id: true, name: true },
+      }),
+    );
+    if (!lab) {
+      throw new ForbiddenException('lab tenant not found');
+    }
+
+    // Looking up another tenant by slug crosses tenant boundaries — use
+    // platform context so the cliniq_app role can see beyond its own row.
+    const slug = dto.clinicSlug.toLowerCase().trim();
+    const clinic = await this.prisma.withPlatformContext((tx) =>
+      tx.tenant.findUnique({
+        where: { slug },
+        select: { id: true, kind: true, name: true, deletedAt: true },
+      }),
+    );
+    if (!clinic || clinic.deletedAt) {
+      throw new NotFoundException(`No tenant with slug "${slug}"`);
+    }
+    if (clinic.kind !== 'CLINIC') {
+      throw new BadRequestException(`Tenant "${slug}" is not a clinic`);
+    }
+    if (clinic.id === lab.id) {
+      throw new BadRequestException('cannot invite yourself');
+    }
+
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const existing = await tx.dentalLabClinicLink.findFirst({
+        where: {
+          labTenantId: lab.id,
+          clinicTenantId: clinic.id,
+          deletedAt: null,
+        },
+      });
+      if (existing) {
+        // Idempotent re-invite: revive a REJECTED/REVOKED link as PENDING.
+        if (
+          existing.status === DentalLabClinicLinkStatus.REJECTED ||
+          existing.status === DentalLabClinicLinkStatus.REVOKED
+        ) {
+          this.logger.log(`Re-inviting clinic ${clinic.id} from lab ${lab.id}`);
+          return tx.dentalLabClinicLink.update({
+            where: { id: existing.id },
+            data: {
+              status: DentalLabClinicLinkStatus.PENDING,
+              invitedByUserId: user.userId,
+              invitedAt: new Date(),
+              respondedAt: null,
+              inviteNote: dto.inviteNote ?? null,
+            },
+          });
+        }
+        throw new ConflictException(
+          `Already linked with status ${existing.status}`,
+        );
+      }
+
+      return tx.dentalLabClinicLink.create({
+        data: {
+          labTenantId: lab.id,
+          clinicTenantId: clinic.id,
+          status: DentalLabClinicLinkStatus.PENDING,
+          invitedByUserId: user.userId,
+          inviteNote: dto.inviteNote ?? null,
+        },
+      });
+    });
+  }
+
+  /** Lab → list of all links the lab has. */
+  async listForLab(user: AuthenticatedUser) {
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.dentalLabClinicLink.findMany({
+          where: { labTenantId: user.tenantId, deletedAt: null },
+          orderBy: [{ invitedAt: 'desc' }],
+          include: {
+            clinic: {
+              select: { id: true, slug: true, name: true, type: true },
+            },
+          },
+        }),
+    );
+    // RLS hides the counterparty tenant, so `clinic` above always comes back
+    // null — see DentalLabCounterpartyService for the full explanation.
+    return this.counterparty.hydrate(rows);
+  }
+
+  /** Clinic → list of incoming invitations + active links. */
+  async listForClinic(user: AuthenticatedUser) {
+    const rows = await this.prisma.withTenant(
+      user.tenantId,
+      user.userId,
+      (tx) =>
+        tx.dentalLabClinicLink.findMany({
+          where: { clinicTenantId: user.tenantId, deletedAt: null },
+          orderBy: [{ invitedAt: 'desc' }],
+          include: {
+            lab: {
+              select: { id: true, slug: true, name: true, labSpecialty: true },
+            },
+          },
+        }),
+    );
+    // RLS hides the counterparty tenant, so `lab` above always comes back
+    // null — see DentalLabCounterpartyService for the full explanation.
+    return this.counterparty.hydrate(rows);
+  }
+
+  /** Lab → revoke a pending invitation. */
+  async revoke(id: string, user: AuthenticatedUser) {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const link = await tx.dentalLabClinicLink.findFirst({
+        where: { id, labTenantId: user.tenantId, deletedAt: null },
+      });
+      if (!link) throw new NotFoundException('invitation not found');
+      if (link.status !== DentalLabClinicLinkStatus.PENDING) {
+        throw new BadRequestException(
+          `Only PENDING invitations can be revoked (current: ${link.status})`,
+        );
+      }
+      return tx.dentalLabClinicLink.update({
+        where: { id },
+        data: {
+          status: DentalLabClinicLinkStatus.REVOKED,
+          respondedAt: new Date(),
+        },
+      });
+    });
+  }
+
+  /** Clinic → accept an invitation. */
+  async accept(id: string, user: AuthenticatedUser) {
+    return this.transitionFromClinic(
+      id,
+      user,
+      DentalLabClinicLinkStatus.ACTIVE,
+      [DentalLabClinicLinkStatus.PENDING],
+    );
+  }
+
+  /** Clinic → reject an invitation. */
+  async reject(id: string, user: AuthenticatedUser) {
+    return this.transitionFromClinic(
+      id,
+      user,
+      DentalLabClinicLinkStatus.REJECTED,
+      [DentalLabClinicLinkStatus.PENDING],
+    );
+  }
+
+  /** Either side → suspend/unsuspend an active link. */
+  async setStatus(
+    id: string,
+    targetStatus: DentalLabClinicLinkStatus,
+    user: AuthenticatedUser,
+  ) {
+    if (
+      targetStatus !== DentalLabClinicLinkStatus.SUSPENDED &&
+      targetStatus !== DentalLabClinicLinkStatus.ACTIVE
+    ) {
+      throw new BadRequestException('only SUSPENDED/ACTIVE allowed here');
+    }
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const link = await tx.dentalLabClinicLink.findFirst({
+        where: {
+          id,
+          deletedAt: null,
+          OR: [
+            { labTenantId: user.tenantId },
+            { clinicTenantId: user.tenantId },
+          ],
+        },
+      });
+      if (!link) throw new NotFoundException('link not found');
+      if (
+        link.status !== DentalLabClinicLinkStatus.ACTIVE &&
+        link.status !== DentalLabClinicLinkStatus.SUSPENDED
+      ) {
+        throw new BadRequestException(
+          `Link must be ACTIVE or SUSPENDED to toggle (current: ${link.status})`,
+        );
+      }
+      return tx.dentalLabClinicLink.update({
+        where: { id },
+        data: { status: targetStatus, respondedAt: new Date() },
+      });
+    });
+  }
+
+  private async transitionFromClinic(
+    id: string,
+    user: AuthenticatedUser,
+    next: DentalLabClinicLinkStatus,
+    allowedFrom: DentalLabClinicLinkStatus[],
+  ) {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const link = await tx.dentalLabClinicLink.findFirst({
+        where: { id, clinicTenantId: user.tenantId, deletedAt: null },
+      });
+      if (!link) throw new NotFoundException('invitation not found');
+      if (!allowedFrom.includes(link.status)) {
+        throw new BadRequestException(
+          `Cannot transition from ${link.status} to ${next}`,
+        );
+      }
+      this.logger.log(
+        `Clinic ${user.tenantId} ${next} invitation ${id} from lab ${link.labTenantId}`,
+      );
+      return tx.dentalLabClinicLink.update({
+        where: { id },
+        data: { status: next, respondedAt: new Date() },
+      });
+    });
+  }
+
+  /**
+   * Public helper: is the given clinic linked-active with the given lab?
+   * Used by lab order endpoints to confirm a clinic is allowed to place an
+   * order with a particular lab. Bypasses the per-row RLS by using a
+   * dedicated $queryRaw — no tenant context needed.
+   */
+  async isLinkActive(
+    labTenantId: string,
+    clinicTenantId: string,
+  ): Promise<boolean> {
+    // Runs BEFORE the caller's withTenant wrap, so set the GUC here: under
+    // cliniq_app the `lab_clinic_links_either_side` policy hides every row
+    // when current_tenant_id() is empty and this silently returned false.
+    const rows = await this.prisma.withTenant(
+      clinicTenantId,
+      null,
+      (tx) =>
+        tx.$queryRaw<{ exists: boolean }[]>`
+        SELECT EXISTS (
+          SELECT 1 FROM "lab_clinic_links"
+          WHERE "labTenantId"    = ${labTenantId}
+            AND "clinicTenantId" = ${clinicTenantId}
+            AND "status"         = 'ACTIVE'
+            AND "deletedAt"      IS NULL
+        ) AS "exists"
+      `,
+    );
+    return Boolean(rows[0]?.exists);
+  }
+}

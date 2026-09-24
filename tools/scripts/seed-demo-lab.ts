@@ -16,13 +16,13 @@
  */
 import {
   prisma,
-  LabCaseStatus,
-  LabCaseUrgency,
-  LabClinicLinkStatus,
-  LabInvoiceStatus,
-  LabPlan,
-  LabProductPricingMode,
-  LabSpecialty,
+  DentalLabCaseStatus,
+  DentalLabCaseUrgency,
+  DentalLabClinicLinkStatus,
+  DentalLabInvoiceStatus,
+  DentalLabPlan,
+  DentalLabProductPricingMode,
+  DentalLabSpecialty,
   MemberStatus,
   Plan,
   Role,
@@ -78,8 +78,8 @@ async function main() {
       slug: LAB_SLUG,
       name: 'Cebu Dental Lab (demo)',
       kind: TenantKind.LAB,
-      labSpecialty: LabSpecialty.FULL_SERVICE,
-      labPlan: LabPlan.LAB_PREMIUM, // unlock all lab features for demo
+      labSpecialty: DentalLabSpecialty.FULL_SERVICE,
+      labPlan: DentalLabPlan.LAB_PREMIUM, // unlock all lab features for demo
       status: TenantStatus.ACTIVE,
     },
   });
@@ -130,11 +130,11 @@ async function main() {
 
   // ── Lab → Clinic link (ACTIVE) ──────────────────────────
   console.log('→ Linking lab and clinic');
-  await prisma.labClinicLink.create({
+  await prisma.dentalLabClinicLink.create({
     data: {
       labTenantId: lab.id,
       clinicTenantId: clinic.id,
-      status: LabClinicLinkStatus.ACTIVE,
+      status: DentalLabClinicLinkStatus.ACTIVE,
       invitedByUserId: labOwner.id,
       invitedAt: daysAgo(45),
       respondedAt: daysAgo(44),
@@ -143,13 +143,13 @@ async function main() {
 
   // ── Catalog: categories + products ──────────────────────
   console.log('→ Seeding catalog');
-  const crowns = await prisma.labProductCategory.create({
+  const crowns = await prisma.dentalLabProductCategory.create({
     data: { tenantId: lab.id, name: 'Crowns & Bridges', sortOrder: 1 },
   });
-  const aligners = await prisma.labProductCategory.create({
+  const aligners = await prisma.dentalLabProductCategory.create({
     data: { tenantId: lab.id, name: 'Clear Aligners', sortOrder: 2 },
   });
-  const dentures = await prisma.labProductCategory.create({
+  const dentures = await prisma.dentalLabProductCategory.create({
     data: { tenantId: lab.id, name: 'Removable Prosthetics', sortOrder: 3 },
   });
 
@@ -190,7 +190,7 @@ async function main() {
       name: 'Clear aligner set (10 stages)',
       description: 'Custom thermoformed aligners — 14 working days.',
       defaultPrice: 4500000, // ₱45,000
-      pricingMode: LabProductPricingMode.ADJUST_ON_ORDER,
+      pricingMode: DentalLabProductPricingMode.ADJUST_ON_ORDER,
       phases: [
         'Scan review',
         'Setup design',
@@ -214,7 +214,7 @@ async function main() {
     { id: string; defaultPrice: number; currency: string }
   > = {};
   for (const p of productSpecs) {
-    const created = await prisma.labProduct.create({
+    const created = await prisma.dentalLabProduct.create({
       data: {
         tenantId: lab.id,
         categoryId: p.categoryId,
@@ -223,7 +223,7 @@ async function main() {
         description: p.description,
         defaultPrice: p.defaultPrice,
         currency: 'PHP',
-        pricingMode: p.pricingMode ?? LabProductPricingMode.FIXED,
+        pricingMode: p.pricingMode ?? DentalLabProductPricingMode.FIXED,
         phases: p.phases,
         isActive: true,
       },
@@ -237,7 +237,7 @@ async function main() {
 
   // ── Materials + lots ────────────────────────────────────
   console.log('→ Seeding materials');
-  const zirconia = await prisma.labMaterial.create({
+  const zirconia = await prisma.dentalLabMaterial.create({
     data: {
       tenantId: lab.id,
       sku: 'MAT-ZIRC-A2',
@@ -247,7 +247,7 @@ async function main() {
       defaultSupplier: 'IPS e.max',
     },
   });
-  await prisma.labMaterialLot.create({
+  await prisma.dentalLabMaterialLot.create({
     data: {
       materialId: zirconia.id,
       lotNumber: 'LOT-2026-04-Z101',
@@ -261,7 +261,7 @@ async function main() {
       status: 'ACTIVE',
     },
   });
-  const acrylic = await prisma.labMaterial.create({
+  const acrylic = await prisma.dentalLabMaterial.create({
     data: {
       tenantId: lab.id,
       sku: 'MAT-PMMA',
@@ -270,7 +270,7 @@ async function main() {
       unitOfMeasure: 'puck',
     },
   });
-  await prisma.labMaterialLot.create({
+  await prisma.dentalLabMaterialLot.create({
     data: {
       materialId: acrylic.id,
       lotNumber: 'LOT-2026-03-P204',
@@ -287,8 +287,8 @@ async function main() {
   let nextRef = 1;
   type CaseSpec = {
     sku: keyof typeof products | string;
-    status: LabCaseStatus;
-    urgency?: LabCaseUrgency;
+    status: DentalLabCaseStatus;
+    urgency?: DentalLabCaseUrgency;
     patient: string;
     doctor: string;
     notes?: string;
@@ -303,7 +303,7 @@ async function main() {
   const caseSpecs: CaseSpec[] = [
     {
       sku: 'CROWN-PFM',
-      status: LabCaseStatus.SUBMITTED,
+      status: DentalLabCaseStatus.SUBMITTED,
       patient: 'M. Cruz',
       doctor: 'Dr. Reyes',
       notes: 'Tooth 36, shade A2.',
@@ -312,8 +312,8 @@ async function main() {
     },
     {
       sku: 'CROWN-ZIRC',
-      status: LabCaseStatus.IN_PROGRESS,
-      urgency: LabCaseUrgency.URGENT,
+      status: DentalLabCaseStatus.IN_PROGRESS,
+      urgency: DentalLabCaseUrgency.URGENT,
       patient: 'A. Bonifacio',
       doctor: 'Dr. Reyes',
       notes: 'Tooth 14, shade B1. Urgent — wedding next week.',
@@ -323,7 +323,7 @@ async function main() {
     },
     {
       sku: 'CROWN-PFM',
-      status: LabCaseStatus.AWAITING_PICKUP,
+      status: DentalLabCaseStatus.AWAITING_PICKUP,
       patient: 'P. Garcia',
       doctor: 'Dr. Mendoza',
       daysAgoCreated: 9,
@@ -333,7 +333,7 @@ async function main() {
     },
     {
       sku: 'CROWN-ZIRC',
-      status: LabCaseStatus.SHIPPED,
+      status: DentalLabCaseStatus.SHIPPED,
       patient: 'L. Aquino',
       doctor: 'Dr. Reyes',
       daysAgoCreated: 11,
@@ -344,7 +344,7 @@ async function main() {
     },
     {
       sku: 'CROWN-PFM',
-      status: LabCaseStatus.DELIVERED,
+      status: DentalLabCaseStatus.DELIVERED,
       patient: 'J. Rizal',
       doctor: 'Dr. Mendoza',
       daysAgoCreated: 18,
@@ -356,7 +356,7 @@ async function main() {
     },
     {
       sku: 'CROWN-ZIRC',
-      status: LabCaseStatus.DELIVERED,
+      status: DentalLabCaseStatus.DELIVERED,
       patient: 'A. Luna',
       doctor: 'Dr. Reyes',
       daysAgoCreated: 22,
@@ -368,7 +368,7 @@ async function main() {
     },
     {
       sku: 'DENT-FULL',
-      status: LabCaseStatus.DELIVERED,
+      status: DentalLabCaseStatus.DELIVERED,
       patient: 'V. Diego',
       doctor: 'Dr. Mendoza',
       daysAgoCreated: 35,
@@ -380,7 +380,7 @@ async function main() {
     },
     {
       sku: 'ALIGN-SET-10',
-      status: LabCaseStatus.IN_PROGRESS,
+      status: DentalLabCaseStatus.IN_PROGRESS,
       patient: 'C. Sotto',
       doctor: 'Dr. Reyes',
       notes: '10-stage upper. Custom price negotiated.',
@@ -402,7 +402,7 @@ async function main() {
     if (!product) continue;
     const ref = nextRef++;
     const unitPrice = spec.overrideUnitPrice ?? product.defaultPrice;
-    const created = await prisma.labCase.create({
+    const created = await prisma.dentalLabCase.create({
       data: {
         labTenantId: lab.id,
         clinicTenantId: clinic.id,
@@ -411,7 +411,7 @@ async function main() {
         unitPrice,
         currency: product.currency,
         status: spec.status,
-        urgency: spec.urgency ?? LabCaseUrgency.STANDARD,
+        urgency: spec.urgency ?? DentalLabCaseUrgency.STANDARD,
         patientLabel: spec.patient,
         doctorLabel: spec.doctor,
         notes: spec.notes ?? null,
@@ -442,7 +442,7 @@ async function main() {
       },
       include: { product: { select: { name: true } } },
     });
-    if (spec.status === LabCaseStatus.DELIVERED) {
+    if (spec.status === DentalLabCaseStatus.DELIVERED) {
       deliveredCases.push({
         id: created.id,
         unitPrice,
@@ -457,12 +457,12 @@ async function main() {
     console.log('→ Seeding invoices');
     const [paidCase, issuedCase, draftCase] = deliveredCases;
 
-    const paidInvoice = await prisma.labInvoice.create({
+    const paidInvoice = await prisma.dentalLabInvoice.create({
       data: {
         labTenantId: lab.id,
         clinicTenantId: clinic.id,
         refNumber: 1,
-        status: LabInvoiceStatus.PAID,
+        status: DentalLabInvoiceStatus.PAID,
         currency: 'PHP',
         subtotalCents: paidCase.unitPrice,
         taxCents: 0,
@@ -488,12 +488,12 @@ async function main() {
       },
     });
 
-    await prisma.labInvoice.create({
+    await prisma.dentalLabInvoice.create({
       data: {
         labTenantId: lab.id,
         clinicTenantId: clinic.id,
         refNumber: 2,
-        status: LabInvoiceStatus.ISSUED,
+        status: DentalLabInvoiceStatus.ISSUED,
         currency: 'PHP',
         subtotalCents: issuedCase.unitPrice,
         taxCents: 0,
@@ -518,11 +518,11 @@ async function main() {
       },
     });
 
-    await prisma.labInvoice.create({
+    await prisma.dentalLabInvoice.create({
       data: {
         labTenantId: lab.id,
         clinicTenantId: clinic.id,
-        status: LabInvoiceStatus.DRAFT,
+        status: DentalLabInvoiceStatus.DRAFT,
         currency: 'PHP',
         subtotalCents: draftCase.unitPrice,
         taxCents: 0,

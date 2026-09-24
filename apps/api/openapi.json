@@ -1338,6 +1338,66 @@
         "tags": ["consultations"]
       }
     },
+    "/api/consultations/{id}/amendments": {
+      "post": {
+        "operationId": "ConsultationsController_amend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AmendConsultationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["consultations"]
+      },
+      "get": {
+        "operationId": "ConsultationsController_listAmendments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["consultations"]
+      }
+    },
     "/api/consultations/{id}/complete": {
       "post": {
         "operationId": "ConsultationsController_complete",
@@ -3966,6 +4026,117 @@
         "tags": ["labs"]
       }
     },
+    "/api/lis/critical-value-rules": {
+      "get": {
+        "operationId": "CriticalValueRulesController_list",
+        "parameters": [
+          {
+            "name": "includeExpired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "post": {
+        "operationId": "CriticalValueRulesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCriticalValueRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/critical-value-rules/{id}": {
+      "patch": {
+        "operationId": "CriticalValueRulesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCriticalValueRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "delete": {
+        "operationId": "CriticalValueRulesController_retire",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/tele/sessions": {
       "post": {
         "operationId": "TeleController_create",
@@ -4851,9 +5022,9 @@
         "tags": ["platform-tenants"]
       }
     },
-    "/api/lab/clinic-links/invite": {
+    "/api/dental-lab/clinic-links/invite": {
       "post": {
-        "operationId": "LabClinicLinksController_invite",
+        "operationId": "DentalLabClinicLinksController_invite",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -4878,9 +5049,9 @@
         "tags": ["lab-clinic-links"]
       }
     },
-    "/api/lab/clinic-links": {
+    "/api/dental-lab/clinic-links": {
       "get": {
-        "operationId": "LabClinicLinksController_list",
+        "operationId": "DentalLabClinicLinksController_list",
         "parameters": [],
         "responses": {
           "200": {
@@ -4895,9 +5066,9 @@
         "tags": ["lab-clinic-links"]
       }
     },
-    "/api/lab/clinic-links/{id}": {
+    "/api/dental-lab/clinic-links/{id}": {
       "delete": {
-        "operationId": "LabClinicLinksController_revoke",
+        "operationId": "DentalLabClinicLinksController_revoke",
         "parameters": [
           {
             "name": "id",
@@ -4921,9 +5092,9 @@
         "tags": ["lab-clinic-links"]
       }
     },
-    "/api/lab/clinic-links/{id}/suspend": {
+    "/api/dental-lab/clinic-links/{id}/suspend": {
       "patch": {
-        "operationId": "LabClinicLinksController_suspend",
+        "operationId": "DentalLabClinicLinksController_suspend",
         "parameters": [
           {
             "name": "id",
@@ -4947,9 +5118,9 @@
         "tags": ["lab-clinic-links"]
       }
     },
-    "/api/lab/clinic-links/{id}/reactivate": {
+    "/api/dental-lab/clinic-links/{id}/reactivate": {
       "patch": {
-        "operationId": "LabClinicLinksController_reactivate",
+        "operationId": "DentalLabClinicLinksController_reactivate",
         "parameters": [
           {
             "name": "id",
@@ -4973,9 +5144,9 @@
         "tags": ["lab-clinic-links"]
       }
     },
-    "/api/lab/categories": {
+    "/api/dental-lab/categories": {
       "get": {
-        "operationId": "LabProductsController_listCategories",
+        "operationId": "DentalLabProductsController_listCategories",
         "parameters": [],
         "responses": {
           "200": {
@@ -4990,7 +5161,7 @@
         "tags": ["lab-products"]
       },
       "post": {
-        "operationId": "LabProductsController_createCategory",
+        "operationId": "DentalLabProductsController_createCategory",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5015,9 +5186,9 @@
         "tags": ["lab-products"]
       }
     },
-    "/api/lab/categories/{id}": {
+    "/api/dental-lab/categories/{id}": {
       "patch": {
-        "operationId": "LabProductsController_updateCategory",
+        "operationId": "DentalLabProductsController_updateCategory",
         "parameters": [
           {
             "name": "id",
@@ -5051,7 +5222,7 @@
         "tags": ["lab-products"]
       },
       "delete": {
-        "operationId": "LabProductsController_removeCategory",
+        "operationId": "DentalLabProductsController_removeCategory",
         "parameters": [
           {
             "name": "id",
@@ -5075,9 +5246,9 @@
         "tags": ["lab-products"]
       }
     },
-    "/api/lab/products": {
+    "/api/dental-lab/products": {
       "get": {
-        "operationId": "LabProductsController_listProducts",
+        "operationId": "DentalLabProductsController_listProducts",
         "parameters": [
           {
             "name": "activeOnly",
@@ -5109,7 +5280,7 @@
         "tags": ["lab-products"]
       },
       "post": {
-        "operationId": "LabProductsController_createProduct",
+        "operationId": "DentalLabProductsController_createProduct",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5134,9 +5305,9 @@
         "tags": ["lab-products"]
       }
     },
-    "/api/lab/products/{id}": {
+    "/api/dental-lab/products/{id}": {
       "get": {
-        "operationId": "LabProductsController_findProduct",
+        "operationId": "DentalLabProductsController_findProduct",
         "parameters": [
           {
             "name": "id",
@@ -5160,7 +5331,7 @@
         "tags": ["lab-products"]
       },
       "patch": {
-        "operationId": "LabProductsController_updateProduct",
+        "operationId": "DentalLabProductsController_updateProduct",
         "parameters": [
           {
             "name": "id",
@@ -5194,7 +5365,7 @@
         "tags": ["lab-products"]
       },
       "delete": {
-        "operationId": "LabProductsController_removeProduct",
+        "operationId": "DentalLabProductsController_removeProduct",
         "parameters": [
           {
             "name": "id",
@@ -5218,9 +5389,9 @@
         "tags": ["lab-products"]
       }
     },
-    "/api/lab/products/{id}/clone": {
+    "/api/dental-lab/products/{id}/clone": {
       "post": {
-        "operationId": "LabProductsController_cloneProduct",
+        "operationId": "DentalLabProductsController_cloneProduct",
         "parameters": [
           {
             "name": "id",
@@ -5244,16 +5415,16 @@
         "tags": ["lab-products"]
       }
     },
-    "/api/lab/cases": {
+    "/api/dental-lab/cases": {
       "get": {
-        "operationId": "LabCasesController_list",
+        "operationId": "DentalLabCasesController_list",
         "parameters": [
           {
             "name": "status",
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/LabCaseStatus"
+              "$ref": "#/components/schemas/DentalLabCaseStatus"
             }
           },
           {
@@ -5300,9 +5471,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}": {
+    "/api/dental-lab/cases/{id}": {
       "get": {
-        "operationId": "LabCasesController_findOne",
+        "operationId": "DentalLabCasesController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -5326,7 +5497,7 @@
         "tags": ["lab-cases"]
       },
       "patch": {
-        "operationId": "LabCasesController_update",
+        "operationId": "DentalLabCasesController_update",
         "parameters": [
           {
             "name": "id",
@@ -5360,9 +5531,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/transitions": {
+    "/api/dental-lab/cases/{id}/transitions": {
       "post": {
-        "operationId": "LabCasesController_transition",
+        "operationId": "DentalLabCasesController_transition",
         "parameters": [
           {
             "name": "id",
@@ -5396,9 +5567,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/files/presign": {
+    "/api/dental-lab/cases/{id}/files/presign": {
       "post": {
-        "operationId": "LabCasesController_presignFile",
+        "operationId": "DentalLabCasesController_presignFile",
         "parameters": [
           {
             "name": "id",
@@ -5432,9 +5603,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/files/{fileId}/confirm": {
+    "/api/dental-lab/cases/{id}/files/{fileId}/confirm": {
       "post": {
-        "operationId": "LabCasesController_confirmFile",
+        "operationId": "DentalLabCasesController_confirmFile",
         "parameters": [
           {
             "name": "id",
@@ -5466,9 +5637,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/files/{fileId}": {
+    "/api/dental-lab/cases/{id}/files/{fileId}": {
       "delete": {
-        "operationId": "LabCasesController_deleteFile",
+        "operationId": "DentalLabCasesController_deleteFile",
         "parameters": [
           {
             "name": "id",
@@ -5500,9 +5671,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/phases": {
+    "/api/dental-lab/cases/{id}/phases": {
       "get": {
-        "operationId": "LabCasesController_listPhases",
+        "operationId": "DentalLabCasesController_listPhases",
         "parameters": [
           {
             "name": "id",
@@ -5526,9 +5697,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/phases/advance": {
+    "/api/dental-lab/cases/{id}/phases/advance": {
       "post": {
-        "operationId": "LabCasesController_advancePhase",
+        "operationId": "DentalLabCasesController_advancePhase",
         "parameters": [
           {
             "name": "id",
@@ -5562,9 +5733,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/notes": {
+    "/api/dental-lab/cases/{id}/notes": {
       "get": {
-        "operationId": "LabCasesController_listNotes",
+        "operationId": "DentalLabCasesController_listNotes",
         "parameters": [
           {
             "name": "id",
@@ -5588,7 +5759,7 @@
         "tags": ["lab-cases"]
       },
       "post": {
-        "operationId": "LabCasesController_createNote",
+        "operationId": "DentalLabCasesController_createNote",
         "parameters": [
           {
             "name": "id",
@@ -5622,9 +5793,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/notes/{noteId}": {
+    "/api/dental-lab/cases/{id}/notes/{noteId}": {
       "patch": {
-        "operationId": "LabCasesController_updateNote",
+        "operationId": "DentalLabCasesController_updateNote",
         "parameters": [
           {
             "name": "id",
@@ -5666,7 +5837,7 @@
         "tags": ["lab-cases"]
       },
       "delete": {
-        "operationId": "LabCasesController_deleteNote",
+        "operationId": "DentalLabCasesController_deleteNote",
         "parameters": [
           {
             "name": "id",
@@ -5698,9 +5869,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/messages": {
+    "/api/dental-lab/cases/{id}/messages": {
       "get": {
-        "operationId": "LabCasesController_listMessages",
+        "operationId": "DentalLabCasesController_listMessages",
         "parameters": [
           {
             "name": "id",
@@ -5724,7 +5895,7 @@
         "tags": ["lab-cases"]
       },
       "post": {
-        "operationId": "LabCasesController_createMessage",
+        "operationId": "DentalLabCasesController_createMessage",
         "parameters": [
           {
             "name": "id",
@@ -5758,9 +5929,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/messages/{messageId}": {
+    "/api/dental-lab/cases/{id}/messages/{messageId}": {
       "delete": {
-        "operationId": "LabCasesController_deleteMessage",
+        "operationId": "DentalLabCasesController_deleteMessage",
         "parameters": [
           {
             "name": "id",
@@ -5792,9 +5963,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/shipment": {
+    "/api/dental-lab/cases/{id}/shipment": {
       "get": {
-        "operationId": "LabCasesController_getShipment",
+        "operationId": "DentalLabCasesController_getShipment",
         "parameters": [
           {
             "name": "id",
@@ -5818,7 +5989,7 @@
         "tags": ["lab-cases"]
       },
       "post": {
-        "operationId": "LabCasesController_upsertShipment",
+        "operationId": "DentalLabCasesController_upsertShipment",
         "parameters": [
           {
             "name": "id",
@@ -5852,9 +6023,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/cases/{id}/shipment/delivered": {
+    "/api/dental-lab/cases/{id}/shipment/delivered": {
       "post": {
-        "operationId": "LabCasesController_markDelivered",
+        "operationId": "DentalLabCasesController_markDelivered",
         "parameters": [
           {
             "name": "id",
@@ -5878,9 +6049,9 @@
         "tags": ["lab-cases"]
       }
     },
-    "/api/lab/tags": {
+    "/api/dental-lab/tags": {
       "get": {
-        "operationId": "LabTagsController_list",
+        "operationId": "DentalLabTagsController_list",
         "parameters": [],
         "responses": {
           "200": {
@@ -5895,7 +6066,7 @@
         "tags": ["lab-tags"]
       },
       "post": {
-        "operationId": "LabTagsController_create",
+        "operationId": "DentalLabTagsController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5920,9 +6091,9 @@
         "tags": ["lab-tags"]
       }
     },
-    "/api/lab/tags/{id}": {
+    "/api/dental-lab/tags/{id}": {
       "patch": {
-        "operationId": "LabTagsController_update",
+        "operationId": "DentalLabTagsController_update",
         "parameters": [
           {
             "name": "id",
@@ -5956,7 +6127,7 @@
         "tags": ["lab-tags"]
       },
       "delete": {
-        "operationId": "LabTagsController_remove",
+        "operationId": "DentalLabTagsController_remove",
         "parameters": [
           {
             "name": "id",
@@ -5980,9 +6151,9 @@
         "tags": ["lab-tags"]
       }
     },
-    "/api/lab/cases/{caseId}/tags": {
+    "/api/dental-lab/cases/{caseId}/tags": {
       "get": {
-        "operationId": "LabTagsController_listForCase",
+        "operationId": "DentalLabTagsController_listForCase",
         "parameters": [
           {
             "name": "caseId",
@@ -6006,7 +6177,7 @@
         "tags": ["lab-tags"]
       },
       "post": {
-        "operationId": "LabTagsController_assign",
+        "operationId": "DentalLabTagsController_assign",
         "parameters": [
           {
             "name": "caseId",
@@ -6040,9 +6211,9 @@
         "tags": ["lab-tags"]
       }
     },
-    "/api/lab/cases/{caseId}/tags/{tagId}": {
+    "/api/dental-lab/cases/{caseId}/tags/{tagId}": {
       "delete": {
-        "operationId": "LabTagsController_unassign",
+        "operationId": "DentalLabTagsController_unassign",
         "parameters": [
           {
             "name": "caseId",
@@ -6074,9 +6245,9 @@
         "tags": ["lab-tags"]
       }
     },
-    "/api/lab/materials": {
+    "/api/dental-lab/materials": {
       "get": {
-        "operationId": "LabMaterialsController_list",
+        "operationId": "DentalLabMaterialsController_list",
         "parameters": [],
         "responses": {
           "200": {
@@ -6091,7 +6262,7 @@
         "tags": ["lab-materials"]
       },
       "post": {
-        "operationId": "LabMaterialsController_create",
+        "operationId": "DentalLabMaterialsController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6116,9 +6287,9 @@
         "tags": ["lab-materials"]
       }
     },
-    "/api/lab/materials/{id}": {
+    "/api/dental-lab/materials/{id}": {
       "patch": {
-        "operationId": "LabMaterialsController_update",
+        "operationId": "DentalLabMaterialsController_update",
         "parameters": [
           {
             "name": "id",
@@ -6152,7 +6323,7 @@
         "tags": ["lab-materials"]
       },
       "delete": {
-        "operationId": "LabMaterialsController_remove",
+        "operationId": "DentalLabMaterialsController_remove",
         "parameters": [
           {
             "name": "id",
@@ -6176,9 +6347,9 @@
         "tags": ["lab-materials"]
       }
     },
-    "/api/lab/materials/{id}/lots": {
+    "/api/dental-lab/materials/{id}/lots": {
       "get": {
-        "operationId": "LabMaterialsController_listLots",
+        "operationId": "DentalLabMaterialsController_listLots",
         "parameters": [
           {
             "name": "id",
@@ -6202,7 +6373,7 @@
         "tags": ["lab-materials"]
       },
       "post": {
-        "operationId": "LabMaterialsController_createLot",
+        "operationId": "DentalLabMaterialsController_createLot",
         "parameters": [
           {
             "name": "id",
@@ -6236,9 +6407,9 @@
         "tags": ["lab-materials"]
       }
     },
-    "/api/lab/lots/{lotId}": {
+    "/api/dental-lab/lots/{lotId}": {
       "patch": {
-        "operationId": "LabMaterialsController_updateLot",
+        "operationId": "DentalLabMaterialsController_updateLot",
         "parameters": [
           {
             "name": "lotId",
@@ -6272,7 +6443,7 @@
         "tags": ["lab-materials"]
       },
       "delete": {
-        "operationId": "LabMaterialsController_removeLot",
+        "operationId": "DentalLabMaterialsController_removeLot",
         "parameters": [
           {
             "name": "lotId",
@@ -6296,9 +6467,9 @@
         "tags": ["lab-materials"]
       }
     },
-    "/api/lab/cases/{caseId}/material-usages": {
+    "/api/dental-lab/cases/{caseId}/material-usages": {
       "get": {
-        "operationId": "LabMaterialsController_listUsages",
+        "operationId": "DentalLabMaterialsController_listUsages",
         "parameters": [
           {
             "name": "caseId",
@@ -6322,7 +6493,7 @@
         "tags": ["lab-materials"]
       },
       "post": {
-        "operationId": "LabMaterialsController_recordUsage",
+        "operationId": "DentalLabMaterialsController_recordUsage",
         "parameters": [
           {
             "name": "caseId",
@@ -6356,9 +6527,9 @@
         "tags": ["lab-materials"]
       }
     },
-    "/api/lab/cases/{caseId}/material-usages/{usageId}": {
+    "/api/dental-lab/cases/{caseId}/material-usages/{usageId}": {
       "delete": {
-        "operationId": "LabMaterialsController_deleteUsage",
+        "operationId": "DentalLabMaterialsController_deleteUsage",
         "parameters": [
           {
             "name": "caseId",
@@ -6390,9 +6561,9 @@
         "tags": ["lab-materials"]
       }
     },
-    "/api/lab/conformity-templates": {
+    "/api/dental-lab/conformity-templates": {
       "get": {
-        "operationId": "LabComplianceController_listConformity",
+        "operationId": "DentalLabComplianceController_listConformity",
         "parameters": [],
         "responses": {
           "200": {
@@ -6407,7 +6578,7 @@
         "tags": ["lab-compliance"]
       },
       "post": {
-        "operationId": "LabComplianceController_createConformity",
+        "operationId": "DentalLabComplianceController_createConformity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6432,9 +6603,9 @@
         "tags": ["lab-compliance"]
       }
     },
-    "/api/lab/conformity-templates/{id}": {
+    "/api/dental-lab/conformity-templates/{id}": {
       "patch": {
-        "operationId": "LabComplianceController_updateConformity",
+        "operationId": "DentalLabComplianceController_updateConformity",
         "parameters": [
           {
             "name": "id",
@@ -6468,7 +6639,7 @@
         "tags": ["lab-compliance"]
       },
       "delete": {
-        "operationId": "LabComplianceController_removeConformity",
+        "operationId": "DentalLabComplianceController_removeConformity",
         "parameters": [
           {
             "name": "id",
@@ -6492,9 +6663,9 @@
         "tags": ["lab-compliance"]
       }
     },
-    "/api/lab/consent-templates": {
+    "/api/dental-lab/consent-templates": {
       "get": {
-        "operationId": "LabComplianceController_listConsentLab",
+        "operationId": "DentalLabComplianceController_listConsentLab",
         "parameters": [],
         "responses": {
           "200": {
@@ -6509,7 +6680,7 @@
         "tags": ["lab-compliance"]
       },
       "post": {
-        "operationId": "LabComplianceController_createConsent",
+        "operationId": "DentalLabComplianceController_createConsent",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6534,9 +6705,9 @@
         "tags": ["lab-compliance"]
       }
     },
-    "/api/lab/consent-templates/{id}": {
+    "/api/dental-lab/consent-templates/{id}": {
       "patch": {
-        "operationId": "LabComplianceController_updateConsent",
+        "operationId": "DentalLabComplianceController_updateConsent",
         "parameters": [
           {
             "name": "id",
@@ -6570,7 +6741,7 @@
         "tags": ["lab-compliance"]
       },
       "delete": {
-        "operationId": "LabComplianceController_removeConsent",
+        "operationId": "DentalLabComplianceController_removeConsent",
         "parameters": [
           {
             "name": "id",
@@ -6596,7 +6767,7 @@
     },
     "/api/clinic/consent-templates": {
       "get": {
-        "operationId": "LabComplianceController_listConsentClinic",
+        "operationId": "DentalLabComplianceController_listConsentClinic",
         "parameters": [],
         "responses": {
           "200": {
@@ -6611,9 +6782,9 @@
         "tags": ["lab-compliance"]
       }
     },
-    "/api/lab/cases/{caseId}/signatures": {
+    "/api/dental-lab/cases/{caseId}/signatures": {
       "get": {
-        "operationId": "LabComplianceController_listSignaturesLab",
+        "operationId": "DentalLabComplianceController_listSignaturesLab",
         "parameters": [
           {
             "name": "caseId",
@@ -6637,7 +6808,7 @@
         "tags": ["lab-compliance"]
       },
       "post": {
-        "operationId": "LabComplianceController_captureFromLab",
+        "operationId": "DentalLabComplianceController_captureFromLab",
         "parameters": [
           {
             "name": "caseId",
@@ -6673,7 +6844,7 @@
     },
     "/api/clinic/lab-cases/{caseId}/signatures": {
       "get": {
-        "operationId": "LabComplianceController_listSignaturesClinic",
+        "operationId": "DentalLabComplianceController_listSignaturesClinic",
         "parameters": [
           {
             "name": "caseId",
@@ -6697,7 +6868,7 @@
         "tags": ["lab-compliance"]
       },
       "post": {
-        "operationId": "LabComplianceController_captureFromClinic",
+        "operationId": "DentalLabComplianceController_captureFromClinic",
         "parameters": [
           {
             "name": "caseId",
@@ -6731,9 +6902,9 @@
         "tags": ["lab-compliance"]
       }
     },
-    "/api/lab/cases/{caseId}/conformity-pdf": {
+    "/api/dental-lab/cases/{caseId}/conformity-pdf": {
       "post": {
-        "operationId": "LabComplianceController_renderConformityPdf",
+        "operationId": "DentalLabComplianceController_renderConformityPdf",
         "parameters": [
           {
             "name": "caseId",
@@ -6765,16 +6936,16 @@
         "tags": ["lab-compliance"]
       }
     },
-    "/api/lab/invoices": {
+    "/api/dental-lab/invoices": {
       "get": {
-        "operationId": "LabInvoicesController_list",
+        "operationId": "DentalLabInvoicesController_list",
         "parameters": [
           {
             "name": "status",
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/LabInvoiceStatus"
+              "$ref": "#/components/schemas/DentalLabInvoiceStatus"
             }
           },
           {
@@ -6821,7 +6992,7 @@
         "tags": ["lab-invoices"]
       },
       "post": {
-        "operationId": "LabInvoicesController_create",
+        "operationId": "DentalLabInvoicesController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6846,9 +7017,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}": {
+    "/api/dental-lab/invoices/{id}": {
       "get": {
-        "operationId": "LabInvoicesController_findOne",
+        "operationId": "DentalLabInvoicesController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -6872,7 +7043,7 @@
         "tags": ["lab-invoices"]
       },
       "patch": {
-        "operationId": "LabInvoicesController_update",
+        "operationId": "DentalLabInvoicesController_update",
         "parameters": [
           {
             "name": "id",
@@ -6906,9 +7077,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/generate-from-cases": {
+    "/api/dental-lab/invoices/generate-from-cases": {
       "post": {
-        "operationId": "LabInvoicesController_generate",
+        "operationId": "DentalLabInvoicesController_generate",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6933,9 +7104,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/sweep": {
+    "/api/dental-lab/invoices/sweep": {
       "post": {
-        "operationId": "LabInvoicesController_sweep",
+        "operationId": "DentalLabInvoicesController_sweep",
         "parameters": [
           {
             "name": "period",
@@ -6959,9 +7130,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/items": {
+    "/api/dental-lab/invoices/{id}/items": {
       "post": {
-        "operationId": "LabInvoicesController_addItem",
+        "operationId": "DentalLabInvoicesController_addItem",
         "parameters": [
           {
             "name": "id",
@@ -6995,9 +7166,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/items/{itemId}": {
+    "/api/dental-lab/invoices/{id}/items/{itemId}": {
       "patch": {
-        "operationId": "LabInvoicesController_updateItem",
+        "operationId": "DentalLabInvoicesController_updateItem",
         "parameters": [
           {
             "name": "id",
@@ -7039,7 +7210,7 @@
         "tags": ["lab-invoices"]
       },
       "delete": {
-        "operationId": "LabInvoicesController_deleteItem",
+        "operationId": "DentalLabInvoicesController_deleteItem",
         "parameters": [
           {
             "name": "id",
@@ -7071,9 +7242,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/issue": {
+    "/api/dental-lab/invoices/{id}/issue": {
       "post": {
-        "operationId": "LabInvoicesController_issue",
+        "operationId": "DentalLabInvoicesController_issue",
         "parameters": [
           {
             "name": "id",
@@ -7097,9 +7268,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/payments": {
+    "/api/dental-lab/invoices/{id}/payments": {
       "post": {
-        "operationId": "LabInvoicesController_recordPayment",
+        "operationId": "DentalLabInvoicesController_recordPayment",
         "parameters": [
           {
             "name": "id",
@@ -7133,9 +7304,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/void": {
+    "/api/dental-lab/invoices/{id}/void": {
       "post": {
-        "operationId": "LabInvoicesController_voidInvoice",
+        "operationId": "DentalLabInvoicesController_voidInvoice",
         "parameters": [
           {
             "name": "id",
@@ -7159,9 +7330,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/pdf": {
+    "/api/dental-lab/invoices/{id}/pdf": {
       "post": {
-        "operationId": "LabInvoicesController_generatePdf",
+        "operationId": "DentalLabInvoicesController_generatePdf",
         "parameters": [
           {
             "name": "id",
@@ -7185,9 +7356,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/payment-links": {
+    "/api/dental-lab/invoices/{id}/payment-links": {
       "post": {
-        "operationId": "LabInvoicesController_createPaymentLink",
+        "operationId": "DentalLabInvoicesController_createPaymentLink",
         "parameters": [
           {
             "name": "id",
@@ -7221,9 +7392,9 @@
         "tags": ["lab-invoices"]
       }
     },
-    "/api/lab/invoices/{id}/payment-links/{linkId}": {
+    "/api/dental-lab/invoices/{id}/payment-links/{linkId}": {
       "delete": {
-        "operationId": "LabInvoicesController_cancelPaymentLink",
+        "operationId": "DentalLabInvoicesController_cancelPaymentLink",
         "parameters": [
           {
             "name": "id",
@@ -7276,9 +7447,9 @@
         "tags": ["webhooks"]
       }
     },
-    "/api/lab/stats": {
+    "/api/dental-lab/stats": {
       "get": {
-        "operationId": "LabStatsController_overview",
+        "operationId": "DentalLabStatsController_overview",
         "parameters": [],
         "responses": {
           "200": {
@@ -7293,9 +7464,9 @@
         "tags": ["lab-stats"]
       }
     },
-    "/api/lab/treatment-plans": {
+    "/api/dental-lab/treatment-plans": {
       "get": {
-        "operationId": "LabTreatmentPlansController_list",
+        "operationId": "DentalLabTreatmentPlansController_list",
         "parameters": [
           {
             "name": "caseId",
@@ -7319,7 +7490,7 @@
         "tags": ["lab-treatment-plans"]
       },
       "post": {
-        "operationId": "LabTreatmentPlansController_create",
+        "operationId": "DentalLabTreatmentPlansController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -7344,9 +7515,9 @@
         "tags": ["lab-treatment-plans"]
       }
     },
-    "/api/lab/treatment-plans/{id}": {
+    "/api/dental-lab/treatment-plans/{id}": {
       "get": {
-        "operationId": "LabTreatmentPlansController_findOne",
+        "operationId": "DentalLabTreatmentPlansController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -7370,7 +7541,7 @@
         "tags": ["lab-treatment-plans"]
       },
       "patch": {
-        "operationId": "LabTreatmentPlansController_update",
+        "operationId": "DentalLabTreatmentPlansController_update",
         "parameters": [
           {
             "name": "id",
@@ -7404,9 +7575,9 @@
         "tags": ["lab-treatment-plans"]
       }
     },
-    "/api/lab/treatment-plans/{id}/propose": {
+    "/api/dental-lab/treatment-plans/{id}/propose": {
       "post": {
-        "operationId": "LabTreatmentPlansController_propose",
+        "operationId": "DentalLabTreatmentPlansController_propose",
         "parameters": [
           {
             "name": "id",
@@ -7430,9 +7601,9 @@
         "tags": ["lab-treatment-plans"]
       }
     },
-    "/api/lab/treatment-plans/{id}/files/presign": {
+    "/api/dental-lab/treatment-plans/{id}/files/presign": {
       "post": {
-        "operationId": "LabTreatmentPlansController_presignFile",
+        "operationId": "DentalLabTreatmentPlansController_presignFile",
         "parameters": [
           {
             "name": "id",
@@ -7466,9 +7637,9 @@
         "tags": ["lab-treatment-plans"]
       }
     },
-    "/api/lab/treatment-plans/{id}/files/{fileId}": {
+    "/api/dental-lab/treatment-plans/{id}/files/{fileId}": {
       "delete": {
-        "operationId": "LabTreatmentPlansController_deleteFile",
+        "operationId": "DentalLabTreatmentPlansController_deleteFile",
         "parameters": [
           {
             "name": "id",
@@ -7500,9 +7671,9 @@
         "tags": ["lab-treatment-plans"]
       }
     },
-    "/api/lab/treatment-plans/draft-summary": {
+    "/api/dental-lab/treatment-plans/draft-summary": {
       "post": {
-        "operationId": "LabTreatmentPlansController_draftSummary",
+        "operationId": "DentalLabTreatmentPlansController_draftSummary",
         "parameters": [
           {
             "name": "caseId",
@@ -7526,9 +7697,9 @@
         "tags": ["lab-treatment-plans"]
       }
     },
-    "/api/lab/disputes": {
+    "/api/dental-lab/disputes": {
       "get": {
-        "operationId": "LabDisputesController_list",
+        "operationId": "DentalLabDisputesController_list",
         "parameters": [
           {
             "name": "caseId",
@@ -7552,7 +7723,7 @@
         "tags": ["lab-disputes"]
       },
       "post": {
-        "operationId": "LabDisputesController_open",
+        "operationId": "DentalLabDisputesController_open",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -7577,9 +7748,9 @@
         "tags": ["lab-disputes"]
       }
     },
-    "/api/lab/disputes/{id}": {
+    "/api/dental-lab/disputes/{id}": {
       "get": {
-        "operationId": "LabDisputesController_findOne",
+        "operationId": "DentalLabDisputesController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -7603,9 +7774,9 @@
         "tags": ["lab-disputes"]
       }
     },
-    "/api/lab/disputes/{id}/messages": {
+    "/api/dental-lab/disputes/{id}/messages": {
       "post": {
-        "operationId": "LabDisputesController_postMessage",
+        "operationId": "DentalLabDisputesController_postMessage",
         "parameters": [
           {
             "name": "id",
@@ -7639,9 +7810,9 @@
         "tags": ["lab-disputes"]
       }
     },
-    "/api/lab/disputes/{id}/close": {
+    "/api/dental-lab/disputes/{id}/close": {
       "post": {
-        "operationId": "LabDisputesController_close",
+        "operationId": "DentalLabDisputesController_close",
         "parameters": [
           {
             "name": "id",
@@ -7830,7 +8001,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/LabCaseStatus"
+              "$ref": "#/components/schemas/DentalLabCaseStatus"
             }
           },
           {
@@ -8258,7 +8429,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/LabInvoiceStatus"
+              "$ref": "#/components/schemas/DentalLabInvoiceStatus"
             }
           },
           {
@@ -9537,6 +9708,39 @@
           }
         }
       },
+      "AmendConsultationDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Why the note is being corrected, e.g. \"wrong laterality\" or \"dose typo\". Required — an amendment without one is unreviewable."
+          },
+          "subjective": {
+            "type": "object",
+            "description": "Subjective (HPI / chief complaint)"
+          },
+          "objective": {
+            "type": "object",
+            "description": "Objective (vitals + exam)"
+          },
+          "assessment": {
+            "type": "object",
+            "description": "Assessment"
+          },
+          "plan": {
+            "type": "object",
+            "description": "Plan"
+          },
+          "diagnosisCodes": {
+            "description": "ICD-10 codes. Replaces the current list wholesale.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["reason"]
+      },
       "GenerateDermDto": {
         "type": "object",
         "properties": {
@@ -10512,6 +10716,14 @@
           },
           "referenceHigh": {
             "type": "number"
+          },
+          "criticalLow": {
+            "type": "number",
+            "description": "Overrides the tenant's critical rule for this order only. At or below this value the result is CRITICAL_LOW."
+          },
+          "criticalHigh": {
+            "type": "number",
+            "description": "Overrides the tenant's critical rule for this order only. At or above this value the result is CRITICAL_HIGH."
           }
         },
         "required": ["testName"]
@@ -10600,6 +10812,71 @@
           }
         },
         "required": ["resultValue"]
+      },
+      "CreateCriticalValueRuleDto": {
+        "type": "object",
+        "properties": {
+          "test": {
+            "type": "string",
+            "description": "Test code or name, e.g. \"K\" or \"Potassium\""
+          },
+          "label": {
+            "type": "string",
+            "description": "Shown to staff, e.g. \"Potassium (serum)\""
+          },
+          "unit": {
+            "type": "string"
+          },
+          "criticalLow": {
+            "type": "number",
+            "description": "At or below this value the result is CRITICAL_LOW. At least one of criticalLow / criticalHigh is required."
+          },
+          "criticalHigh": {
+            "type": "number",
+            "description": "At or above this value the result is CRITICAL_HIGH."
+          },
+          "ageMinDays": {
+            "type": "number",
+            "description": "Inclusive lower age bound, in days."
+          },
+          "ageMaxDays": {
+            "type": "number",
+            "description": "Exclusive upper age bound, in days."
+          },
+          "sex": {
+            "type": "string",
+            "enum": ["FEMALE", "MALE", "OTHER", "UNDISCLOSED"],
+            "description": "Omit to apply the rule to any sex."
+          },
+          "note": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Defaults to now. Set it to schedule a change of limits."
+          }
+        },
+        "required": ["test", "label"]
+      },
+      "UpdateCriticalValueRuleDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "effectiveTo": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this rule stops applying. Must be after effectiveFrom."
+          }
+        }
       },
       "CreateSessionDto": {
         "type": "object",
@@ -10799,7 +11076,7 @@
         "type": "string",
         "enum": ["STARTER", "PRO", "PREMIUM"]
       },
-      "LabPlan": {
+      "DentalLabPlan": {
         "type": "string",
         "enum": ["LAB_BASIC", "LAB_STANDARD", "LAB_PREMIUM"],
         "description": "LAB tenants only (400 on a CLINIC tenant)"
@@ -10815,11 +11092,11 @@
               }
             ]
           },
-          "labPlan": {
+          "dentalLabPlan": {
             "description": "LAB tenants only (400 on a CLINIC tenant)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabPlan"
+                "$ref": "#/components/schemas/DentalLabPlan"
               }
             ]
           },
@@ -10946,7 +11223,7 @@
           }
         }
       },
-      "LabProductPricingMode": {
+      "DentalLabProductPricingMode": {
         "type": "string",
         "enum": [
           "FIXED",
@@ -10983,7 +11260,7 @@
           "pricingMode": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabProductPricingMode"
+                "$ref": "#/components/schemas/DentalLabProductPricingMode"
               }
             ]
           },
@@ -11030,7 +11307,7 @@
           "pricingMode": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabProductPricingMode"
+                "$ref": "#/components/schemas/DentalLabProductPricingMode"
               }
             ]
           },
@@ -11054,7 +11331,7 @@
           }
         }
       },
-      "LabCaseStatus": {
+      "DentalLabCaseStatus": {
         "type": "string",
         "enum": [
           "DRAFT",
@@ -11067,7 +11344,7 @@
           "REJECTED"
         ]
       },
-      "LabCaseUrgency": {
+      "DentalLabCaseUrgency": {
         "type": "string",
         "enum": ["STANDARD", "URGENT"]
       },
@@ -11077,7 +11354,7 @@
           "urgency": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabCaseUrgency"
+                "$ref": "#/components/schemas/DentalLabCaseUrgency"
               }
             ]
           },
@@ -11111,7 +11388,7 @@
           "status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabCaseStatus"
+                "$ref": "#/components/schemas/DentalLabCaseStatus"
               }
             ]
           },
@@ -11280,7 +11557,7 @@
           }
         }
       },
-      "LabMaterialLotStatus": {
+      "DentalLabMaterialLotStatus": {
         "type": "string",
         "enum": ["ACTIVE", "WAREHOUSE", "FINISHED", "DEFECTIVE", "EXPIRED"]
       },
@@ -11313,7 +11590,7 @@
           "status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabMaterialLotStatus"
+                "$ref": "#/components/schemas/DentalLabMaterialLotStatus"
               }
             ]
           },
@@ -11329,7 +11606,7 @@
           "status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabMaterialLotStatus"
+                "$ref": "#/components/schemas/DentalLabMaterialLotStatus"
               }
             ]
           },
@@ -11411,16 +11688,16 @@
         },
         "required": ["templateId", "signedByName", "signatureFileKey"]
       },
-      "LabInvoiceStatus": {
+      "DentalLabInvoiceStatus": {
         "type": "string",
         "enum": ["DRAFT", "ISSUED", "PAID", "OVERDUE", "VOID"]
       },
-      "LabInvoiceItemInputDto": {
+      "DentalLabInvoiceItemInputDto": {
         "type": "object",
         "properties": {
           "caseId": {
             "type": "string",
-            "description": "Optional LabCase id this line bills for."
+            "description": "Optional DentalLabCase id this line bills for."
           },
           "description": {
             "type": "string",
@@ -11469,7 +11746,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LabInvoiceItemInputDto"
+              "$ref": "#/components/schemas/DentalLabInvoiceItemInputDto"
             }
           }
         },
@@ -11483,7 +11760,7 @@
             "description": "Clinic tenant id. All cases must belong to this clinic."
           },
           "caseIds": {
-            "description": "LabCase ids to bill.",
+            "description": "DentalLabCase ids to bill.",
             "type": "array",
             "items": {
               "type": "string"
@@ -11526,7 +11803,7 @@
         "properties": {
           "caseId": {
             "type": "string",
-            "description": "Optional LabCase id this line bills for."
+            "description": "Optional DentalLabCase id this line bills for."
           },
           "description": {
             "type": "string",
@@ -11584,7 +11861,7 @@
         },
         "required": ["amountCents"]
       },
-      "LabPaymentLinkProvider": {
+      "DentalLabPaymentLinkProvider": {
         "type": "string",
         "enum": ["PAYMONGO", "GCASH", "MAYA", "STRIPE", "MANUAL"]
       },
@@ -11595,7 +11872,7 @@
             "default": "MANUAL",
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabPaymentLinkProvider"
+                "$ref": "#/components/schemas/DentalLabPaymentLinkProvider"
               }
             ]
           },
@@ -11646,7 +11923,7 @@
           }
         }
       },
-      "LabTreatmentPlanFileKind": {
+      "DentalLabTreatmentPlanFileKind": {
         "type": "string",
         "enum": ["STL", "IMAGE", "REPORT", "IPR_TABLE", "OTHER"]
       },
@@ -11668,14 +11945,14 @@
           "kind": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabTreatmentPlanFileKind"
+                "$ref": "#/components/schemas/DentalLabTreatmentPlanFileKind"
               }
             ]
           }
         },
         "required": ["filename", "mimeType", "sizeBytes"]
       },
-      "LabCaseDisputeKind": {
+      "DentalLabCaseDisputeKind": {
         "type": "string",
         "enum": ["QUALITY", "BILLING", "DELIVERY", "OTHER"]
       },
@@ -11689,7 +11966,7 @@
           "kind": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabCaseDisputeKind"
+                "$ref": "#/components/schemas/DentalLabCaseDisputeKind"
               }
             ]
           },
@@ -11709,7 +11986,7 @@
         },
         "required": ["body"]
       },
-      "LabCaseDisputeStatus": {
+      "DentalLabCaseDisputeStatus": {
         "type": "string",
         "enum": ["RESOLVED", "REJECTED", "WITHDRAWN"]
       },
@@ -11719,7 +11996,7 @@
           "status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabCaseDisputeStatus"
+                "$ref": "#/components/schemas/DentalLabCaseDisputeStatus"
               }
             ]
           },
@@ -11743,7 +12020,7 @@
           "urgency": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabCaseUrgency"
+                "$ref": "#/components/schemas/DentalLabCaseUrgency"
               }
             ]
           },
@@ -11771,7 +12048,7 @@
         },
         "required": ["labTenantId", "productId"]
       },
-      "LabTreatmentPlanDecision": {
+      "DentalLabTreatmentPlanDecision": {
         "type": "string",
         "enum": ["APPROVED", "REJECTED", "REVISION_REQUESTED"]
       },
@@ -11781,7 +12058,7 @@
           "decision": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/LabTreatmentPlanDecision"
+                "$ref": "#/components/schemas/DentalLabTreatmentPlanDecision"
               }
             ]
           },

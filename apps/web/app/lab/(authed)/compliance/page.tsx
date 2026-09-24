@@ -18,7 +18,7 @@ import {
   useCreateConsentTemplate,
   useDeleteConformityTemplate,
   useDeleteConsentTemplate,
-} from '@/features/lab';
+} from '@/features/dental-lab';
 
 const PLACEHOLDER_HELP =
   'Use {{caseRef}}, {{patient}}, {{doctor}}, {{lotNumbers}}, {{labName}}, {{date}} as placeholders.';

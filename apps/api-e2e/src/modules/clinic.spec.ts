@@ -28,9 +28,12 @@ async function linkedPair(env: E2EEnv): Promise<{
   const clinic = await env.makeTenant({ kind: 'CLINIC' });
 
   // Lab invites the clinic by slug.
-  const invite = await lab.client.axios.post('/api/lab/clinic-links/invite', {
-    clinicSlug: clinic.tenant.slug,
-  });
+  const invite = await lab.client.axios.post(
+    '/api/dental-lab/clinic-links/invite',
+    {
+      clinicSlug: clinic.tenant.slug,
+    },
+  );
   if (invite.status !== 201 && invite.status !== 200) {
     throw new Error(
       `invite failed: ${invite.status} ${JSON.stringify(invite.data).slice(0, 200)}`,
@@ -73,7 +76,7 @@ describe('@org/api-e2e clinic module', () => {
       const clinic = await env.makeTenant({ kind: 'CLINIC' });
 
       const invite = await lab.client.axios.post(
-        '/api/lab/clinic-links/invite',
+        '/api/dental-lab/clinic-links/invite',
         {
           clinicSlug: clinic.tenant.slug,
         },
@@ -138,7 +141,7 @@ describe('@org/api-e2e clinic module', () => {
     it('DOCTOR cannot accept invitations (requires TENANT_MANAGE)', async () => {
       const lab = await env.makeTenant({ kind: 'LAB' });
       const clinic = await env.makeTenant({ kind: 'CLINIC' });
-      await lab.client.axios.post('/api/lab/clinic-links/invite', {
+      await lab.client.axios.post('/api/dental-lab/clinic-links/invite', {
         clinicSlug: clinic.tenant.slug,
       });
 
@@ -170,7 +173,7 @@ describe('@org/api-e2e clinic module', () => {
       const clinicA = await env.makeTenant({ kind: 'CLINIC' });
       const clinicB = await env.makeTenant({ kind: 'CLINIC' });
 
-      await lab.client.axios.post('/api/lab/clinic-links/invite', {
+      await lab.client.axios.post('/api/dental-lab/clinic-links/invite', {
         clinicSlug: clinicA.tenant.slug,
       });
 

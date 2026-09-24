@@ -58,7 +58,7 @@ export class TenantsService {
           slug: dto.slug,
           name: dto.name,
           kind,
-          // Clinic tenants get a Plan; lab tenants get a LabPlan. Always the
+          // Clinic tenants get a Plan; lab tenants get a DentalLabPlan. Always the
           // basic tier — the caller has no say (see CreateTenantDto); the
           // platform console is the only place a plan changes.
           plan: kind === TenantKind.CLINIC ? DEFAULT_SIGNUP_PLAN : null,

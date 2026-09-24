@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { LabDraftsController } from './lab-drafts.controller.js';
-import { LabDraftsService } from './lab-drafts.service.js';
+import { LabDraftsController } from './dental-lab-drafts.controller.js';
+import { LabDraftsService } from './dental-lab-drafts.service.js';
 
 @Module({
   controllers: [LabDraftsController],

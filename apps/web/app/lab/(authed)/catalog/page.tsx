@@ -17,8 +17,8 @@ import {
   useLabProducts,
   useUpdateProduct,
   type labApi,
-} from '@/features/lab';
-import type { LabProductPricingMode } from '@/features/lab';
+} from '@/features/dental-lab';
+import type { DentalLabProductPricingMode } from '@/features/dental-lab';
 
 export default function LabCatalogPage() {
   const { data, isLoading, error } = useLabProducts();
@@ -113,7 +113,7 @@ function NewProductForm({
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [pricingMode, setPricingMode] =
-    useState<LabProductPricingMode>('FIXED');
+    useState<DentalLabProductPricingMode>('FIXED');
   const [defaultPriceMajor, setDefaultPriceMajor] = useState<string>('');
   const [phases, setPhases] = useState<string>('');
 
@@ -162,7 +162,7 @@ function NewProductForm({
           <Select
             value={pricingMode}
             onChange={(e) =>
-              setPricingMode(e.target.value as LabProductPricingMode)
+              setPricingMode(e.target.value as DentalLabProductPricingMode)
             }
           >
             <option value="FIXED">Fixed</option>

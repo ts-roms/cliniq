@@ -18,10 +18,10 @@ import {
   useGenerateInvoiceFromCases,
   useLabCases,
   useRunMonthlyInvoiceSweep,
-  type LabInvoiceStatus,
-} from '@/features/lab';
+  type DentalLabInvoiceStatus,
+} from '@/features/dental-lab';
 
-const STATUSES: LabInvoiceStatus[] = [
+const STATUSES: DentalLabInvoiceStatus[] = [
   'DRAFT',
   'ISSUED',
   'PAID',
@@ -39,7 +39,7 @@ function formatMoney(cents: number, currency: string): string {
 }
 
 export default function LabBillingPage() {
-  const [status, setStatus] = useState<LabInvoiceStatus | 'all'>('all');
+  const [status, setStatus] = useState<DentalLabInvoiceStatus | 'all'>('all');
   const { data, isLoading, error } = useLabInvoices({
     status: status === 'all' ? undefined : status,
   });
@@ -75,7 +75,7 @@ export default function LabBillingPage() {
             <Select
               value={status}
               onChange={(e) =>
-                setStatus(e.target.value as LabInvoiceStatus | 'all')
+                setStatus(e.target.value as DentalLabInvoiceStatus | 'all')
               }
               className="w-44"
             >

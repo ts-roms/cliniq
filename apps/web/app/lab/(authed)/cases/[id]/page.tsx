@@ -18,8 +18,8 @@ import {
   useLabCase,
   useRenderConformityPdf,
   useTransitionLabCase,
-  type LabCaseStatus,
-} from '@/features/lab';
+  type DentalLabCaseStatus,
+} from '@/features/dental-lab';
 import { useSession } from '@/features/auth';
 
 export default function LabCaseDetailPage() {
@@ -41,7 +41,7 @@ export default function LabCaseDetailPage() {
     return <p className="text-sm text-muted-foreground">Case not found.</p>;
 
   // Available transitions from the lab side.
-  const fromLab: Partial<Record<LabCaseStatus, LabCaseStatus[]>> = {
+  const fromLab: Partial<Record<DentalLabCaseStatus, DentalLabCaseStatus[]>> = {
     SUBMITTED: ['IN_PROGRESS', 'REJECTED'],
     IN_PROGRESS: ['AWAITING_PICKUP', 'SHIPPED', 'CANCELLED'],
     AWAITING_PICKUP: ['SHIPPED', 'DELIVERED'],
@@ -234,7 +234,7 @@ export default function LabCaseDetailPage() {
                 'IN_PROGRESS',
                 'AWAITING_PICKUP',
                 'SHIPPED',
-              ] as LabCaseStatus[]
+              ] as DentalLabCaseStatus[]
             ).includes(lc.status) && (
               <label className="block">
                 <input
@@ -316,7 +316,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function labelForTransition(t: LabCaseStatus): string {
+function labelForTransition(t: DentalLabCaseStatus): string {
   switch (t) {
     case 'IN_PROGRESS':
       return 'Accept & start';

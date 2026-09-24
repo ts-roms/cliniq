@@ -8,7 +8,7 @@ import {
   InvoiceStatusPill,
   useClinicInvoice,
   useGetClinicInvoicePdf,
-} from '@/features/lab';
+} from '@/features/dental-lab';
 
 function formatMoney(cents: number, currency: string): string {
   const formatter = new Intl.NumberFormat('en-PH', {

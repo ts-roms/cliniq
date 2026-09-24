@@ -11,7 +11,11 @@ import {
   Input,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
-import { useCreateLabTag, useDeleteLabTag, useLabTags } from '@/features/lab';
+import {
+  useCreateLabTag,
+  useDeleteLabTag,
+  useLabTags,
+} from '@/features/dental-lab';
 
 const PRESET_COLORS = [
   '64748b',

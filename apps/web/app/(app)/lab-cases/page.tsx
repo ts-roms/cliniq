@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui';
-import { CaseStatusPill, useClinicCases } from '@/features/lab';
+import { CaseStatusPill, useClinicCases } from '@/features/dental-lab';
 
 export default function ClinicLabCasesPage() {
   const { data, isLoading, error } = useClinicCases();

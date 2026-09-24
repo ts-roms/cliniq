@@ -18,8 +18,8 @@ import {
   labApi,
   useClinicInvitations,
   useCreateClinicCase,
-  type LabCaseUrgency,
-} from '@/features/lab';
+  type DentalLabCaseUrgency,
+} from '@/features/dental-lab';
 
 /**
  * Place a new lab case. Three-step wizard collapsed into one screen:
@@ -39,7 +39,7 @@ export default function NewClinicLabCasePage() {
 
   const [labTenantId, setLabTenantId] = useState<string>('');
   const [productId, setProductId] = useState<string>('');
-  const [urgency, setUrgency] = useState<LabCaseUrgency>('STANDARD');
+  const [urgency, setUrgency] = useState<DentalLabCaseUrgency>('STANDARD');
   const [dueAt, setDueAt] = useState<string>('');
   const [patientLabel, setPatientLabel] = useState('');
   const [doctorLabel, setDoctorLabel] = useState('');
@@ -188,7 +188,9 @@ export default function NewClinicLabCasePage() {
               <FormField label="Urgency">
                 <Select
                   value={urgency}
-                  onChange={(e) => setUrgency(e.target.value as LabCaseUrgency)}
+                  onChange={(e) =>
+                    setUrgency(e.target.value as DentalLabCaseUrgency)
+                  }
                 >
                   <option value="STANDARD">Standard</option>
                   <option value="URGENT">Urgent</option>

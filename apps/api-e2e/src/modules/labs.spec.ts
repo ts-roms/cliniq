@@ -1,5 +1,5 @@
 /**
- * /api/lab-orders — in-clinic lab orders (NOT the marketplace `/api/lab/*`).
+ * /api/lab-orders — in-clinic lab orders (NOT the marketplace `/api/dental-lab/*`).
  *
  * Gated by Features.LABS (included in PREMIUM). RBAC matrix:
  *   POST   /api/lab-orders                          — CONSULT_WRITE

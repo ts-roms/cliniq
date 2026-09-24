@@ -5,7 +5,7 @@ import {
   planHasFeature,
   labPlanHasFeature,
   type Plan,
-  type LabPlan,
+  type DentalLabPlan,
   type Feature,
 } from './features.js';
 
@@ -145,7 +145,7 @@ describe('LAB_PLAN_FEATURES (lab ladder)', () => {
 
   it('Sets contain plain string features (no nested Set objects)', () => {
     for (const plan of ['LAB_BASIC', 'LAB_STANDARD', 'LAB_PREMIUM'] as const) {
-      for (const member of LAB_PLAN_FEATURES[plan as LabPlan]) {
+      for (const member of LAB_PLAN_FEATURES[plan as DentalLabPlan]) {
         expect(typeof member).toBe('string');
       }
     }

@@ -2,7 +2,7 @@
 // "what does each subscription tier unlock?" — consumed by the api's
 // FeatureGuard and by the web's plan-aware UI gating.
 //
-// Mirrors the Plan and LabPlan enums in libs/db/prisma/schema.prisma.
+// Mirrors the Plan and DentalLabPlan enums in libs/db/prisma/schema.prisma.
 // Keep them in sync.
 
 export const Plans = {
@@ -20,7 +20,7 @@ export const LabPlans = {
   LAB_PREMIUM: 'LAB_PREMIUM',
 } as const;
 
-export type LabPlan = (typeof LabPlans)[keyof typeof LabPlans];
+export type DentalLabPlan = (typeof LabPlans)[keyof typeof LabPlans];
 
 export const Features = {
   // ── Clinic features ─────────────────────────────────────────────
@@ -157,7 +157,7 @@ export const PLAN_FEATURES: Record<Plan, ReadonlySet<Feature>> = {
  * console (PATCH /platform/tenants/:id, platform admins only).
  */
 export const DEFAULT_SIGNUP_PLAN: Plan = 'STARTER';
-export const DEFAULT_SIGNUP_LAB_PLAN: LabPlan = 'LAB_BASIC';
+export const DEFAULT_SIGNUP_LAB_PLAN: DentalLabPlan = 'LAB_BASIC';
 
 export function planHasFeature(plan: Plan, feature: Feature): boolean {
   return PLAN_FEATURES[plan]?.has(feature) ?? false;
@@ -287,13 +287,16 @@ const LAB_PREMIUM_FEATURES: ReadonlySet<Feature> = new Set<Feature>(
   LAB_PREMIUM_FEATURES_LIST,
 );
 
-export const LAB_PLAN_FEATURES: Record<LabPlan, ReadonlySet<Feature>> = {
+export const LAB_PLAN_FEATURES: Record<DentalLabPlan, ReadonlySet<Feature>> = {
   LAB_BASIC: LAB_BASIC_FEATURES,
   LAB_STANDARD: LAB_STANDARD_FEATURES,
   LAB_PREMIUM: LAB_PREMIUM_FEATURES,
 };
 
-export function labPlanHasFeature(plan: LabPlan, feature: Feature): boolean {
+export function labPlanHasFeature(
+  plan: DentalLabPlan,
+  feature: Feature,
+): boolean {
   return LAB_PLAN_FEATURES[plan]?.has(feature) ?? false;
 }
 
@@ -305,7 +308,7 @@ export interface LabPlanLimits {
   cloudStorageGb: number | null;
 }
 
-export const LAB_PLAN_LIMITS: Record<LabPlan, LabPlanLimits> = {
+export const LAB_PLAN_LIMITS: Record<DentalLabPlan, LabPlanLimits> = {
   LAB_BASIC: { ordersPerMonth: 500, usersPerLab: 200, cloudStorageGb: 5 },
   LAB_STANDARD: { ordersPerMonth: 1000, usersPerLab: null, cloudStorageGb: 15 },
   LAB_PREMIUM: {
@@ -315,12 +318,12 @@ export const LAB_PLAN_LIMITS: Record<LabPlan, LabPlanLimits> = {
   },
 };
 
-export function labPlanLimits(plan: LabPlan): LabPlanLimits {
+export function labPlanLimits(plan: DentalLabPlan): LabPlanLimits {
   return LAB_PLAN_LIMITS[plan];
 }
 
 export interface LabPlanMeta {
-  id: LabPlan;
+  id: DentalLabPlan;
   label: string;
   tagline: string;
   features: Feature[];
@@ -332,7 +335,7 @@ export interface LabPlanMeta {
   cta?: string;
 }
 
-export const LAB_PLAN_META: Record<LabPlan, LabPlanMeta> = {
+export const LAB_PLAN_META: Record<DentalLabPlan, LabPlanMeta> = {
   LAB_BASIC: {
     id: 'LAB_BASIC',
     label: 'Basic',
@@ -380,7 +383,7 @@ export function formatLabPlanPrice(meta: LabPlanMeta): string {
   return formatter.format(meta.priceMonthly / 100);
 }
 
-export const ALL_LAB_PLANS: LabPlan[] = [
+export const ALL_LAB_PLANS: DentalLabPlan[] = [
   'LAB_BASIC',
   'LAB_STANDARD',
   'LAB_PREMIUM',

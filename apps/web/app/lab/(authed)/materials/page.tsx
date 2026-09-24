@@ -19,11 +19,11 @@ import {
   useMaterialLots,
   useMaterials,
   useUpdateMaterialLot,
-  type LabMaterial,
-  type LabMaterialLotStatus,
-} from '@/features/lab';
+  type DentalLabMaterial,
+  type DentalLabMaterialLotStatus,
+} from '@/features/dental-lab';
 
-const LOT_STATUSES: LabMaterialLotStatus[] = [
+const LOT_STATUSES: DentalLabMaterialLotStatus[] = [
   'ACTIVE',
   'WAREHOUSE',
   'FINISHED',
@@ -31,7 +31,7 @@ const LOT_STATUSES: LabMaterialLotStatus[] = [
   'EXPIRED',
 ];
 
-const STATUS_COLOR: Record<LabMaterialLotStatus, string> = {
+const STATUS_COLOR: Record<DentalLabMaterialLotStatus, string> = {
   ACTIVE:
     'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   WAREHOUSE: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
@@ -187,7 +187,7 @@ function MaterialRow({
   material,
   onDelete,
 }: {
-  material: LabMaterial;
+  material: DentalLabMaterial;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -246,7 +246,7 @@ function MaterialRow({
   );
 }
 
-function LotsPanel({ material }: { material: LabMaterial }) {
+function LotsPanel({ material }: { material: DentalLabMaterial }) {
   const { data: lots, isLoading } = useMaterialLots(material.id);
   const create = useCreateMaterialLot(material.id);
   const update = useUpdateMaterialLot(material.id);
@@ -393,7 +393,7 @@ function LotsPanel({ material }: { material: LabMaterial }) {
                       onChange={(e) =>
                         update.mutate({
                           lotId: l.id,
-                          status: e.target.value as LabMaterialLotStatus,
+                          status: e.target.value as DentalLabMaterialLotStatus,
                         })
                       }
                       className="w-32 text-xs"

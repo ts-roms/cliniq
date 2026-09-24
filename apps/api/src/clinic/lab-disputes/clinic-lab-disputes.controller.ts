@@ -10,19 +10,19 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Actions } from '@org/auth';
-import { LabCaseDisputeStatus } from '@org/db';
+import { DentalLabCaseDisputeStatus } from '@org/db';
 import { Audit } from '../../audit/audit.decorator.js';
 import { Requires } from '../../auth/decorators/requires.decorator.js';
 import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../auth/decorators/current-user.decorator.js';
-import { LabDisputesService } from '../../lab/disputes/lab-disputes.service.js';
+import { DentalLabDisputesService } from '../../dental-lab/disputes/dental-lab-disputes.service.js';
 import {
   DisputeMessageDto,
   OpenDisputeDto,
   ResolveDisputeDto,
-} from '../../lab/disputes/dto/dispute.dto.js';
+} from '../../dental-lab/disputes/dto/dispute.dto.js';
 
 /**
  * Clinic-side disputes. No clinic-side feature gate — clinics get free
@@ -33,7 +33,7 @@ import {
 @ApiBearerAuth('jwt')
 @Controller('clinic/lab-disputes')
 export class ClinicLabDisputesController {
-  constructor(private readonly disputes: LabDisputesService) {}
+  constructor(private readonly disputes: DentalLabDisputesService) {}
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
@@ -55,7 +55,7 @@ export class ClinicLabDisputesController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.dispute.open',
-    entity: 'LabCaseDispute',
+    entity: 'DentalLabCaseDispute',
     entityIdFrom: 'result:id',
   })
   open(@Body() dto: OpenDisputeDto, @CurrentUser() user: AuthenticatedUser) {
@@ -78,7 +78,7 @@ export class ClinicLabDisputesController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.dispute.close',
-    entity: 'LabCaseDispute',
+    entity: 'DentalLabCaseDispute',
     entityIdFrom: 'param:id',
   })
   close(
@@ -86,7 +86,7 @@ export class ClinicLabDisputesController {
     @Body() dto: ResolveDisputeDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    if (dto.status === LabCaseDisputeStatus.OPEN) {
+    if (dto.status === DentalLabCaseDisputeStatus.OPEN) {
       throw new Error('cannot close to OPEN');
     }
     return this.disputes.close(id, dto.status, dto.notes ?? null, user);

@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@org/ui';
 import { useLogout, useRequiredSession } from '@/features/auth';
-import { useTenantKind } from '@/features/lab';
+import { useTenantKind } from '@/features/dental-lab';
 
 const NAV = [
   { href: '/lab/cases', label: 'Cases' },

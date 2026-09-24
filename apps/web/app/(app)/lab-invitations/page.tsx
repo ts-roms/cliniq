@@ -6,7 +6,7 @@ import {
   useAcceptInvitation,
   useClinicInvitations,
   useRejectInvitation,
-} from '@/features/lab';
+} from '@/features/dental-lab';
 
 export default function ClinicLabInvitationsPage() {
   const { data, isLoading, error } = useClinicInvitations();

@@ -49,7 +49,7 @@ import { CalendarsModule } from '../calendars/calendars.module.js';
 import { WebhooksModule } from '../webhooks/webhooks.module.js';
 import { MeModule } from '../me/me.module.js';
 import { PlatformModule } from '../platform/platform.module.js';
-import { LabModule } from '../lab/lab.module.js';
+import { DentalLabModule } from '../dental-lab/dental-lab.module.js';
 import { QueueModule } from '../queue/queue.module.js';
 import { ObModule } from '../ob/ob.module.js';
 import { VisitTypesModule } from '../visit-types/visit-types.module.js';
@@ -102,7 +102,7 @@ import { buildThrottlerOptions } from '../common/throttle.config.js';
     MeModule,
     HealthModule,
     PlatformModule,
-    LabModule,
+    DentalLabModule,
     QueueModule,
     ObModule,
     VisitTypesModule,
