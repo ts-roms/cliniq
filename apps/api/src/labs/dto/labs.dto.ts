@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -170,4 +171,41 @@ export class RecordResultDto {
   @IsString()
   @MaxLength(280)
   comment?: string;
+}
+
+/**
+ * Correct a result that has already been released.
+ *
+ * `reason` is required and not merely documentation: a clinician may have
+ * acted on the superseded value, and a correction nobody can explain is not
+ * reviewable. There is a CHECK constraint behind it too.
+ */
+export class AmendResultDto {
+  @ApiProperty() @IsString() resultValue!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  resultUnit?: string;
+
+  @ApiPropertyOptional({ enum: LabAbnormalFlag })
+  @IsOptional()
+  @IsEnum(LabAbnormalFlag)
+  abnormalFlag?: LabAbnormalFlag;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  comment?: string;
+
+  @ApiProperty({ description: 'Why the released value is being changed.' })
+  // Trim BEFORE the length check, or "   " passes as a three-character
+  // explanation and the CHECK constraint rejects it with a 500 instead.
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(500)
+  reason!: string;
 }

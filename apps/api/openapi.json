@@ -4052,6 +4052,118 @@
         "tags": ["labs"]
       }
     },
+    "/api/lab-orders/{id}/items/{itemId}/verify": {
+      "patch": {
+        "operationId": "LabsController_verifyResult",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["labs"]
+      }
+    },
+    "/api/lab-orders/{id}/items/{itemId}/amend": {
+      "post": {
+        "operationId": "LabsController_amendResult",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AmendResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["labs"]
+      }
+    },
+    "/api/lab-orders/{id}/items/{itemId}/history": {
+      "get": {
+        "operationId": "LabsController_resultHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["labs"]
+      }
+    },
     "/api/lis/critical-value-rules": {
       "get": {
         "operationId": "CriticalValueRulesController_list",
@@ -10147,7 +10259,15 @@
           },
           "role": {
             "type": "string",
-            "enum": ["OWNER", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"]
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "DOCTOR",
+              "NURSE",
+              "RECEPTIONIST",
+              "MEDICAL_TECHNOLOGIST",
+              "PATHOLOGIST"
+            ]
           }
         },
         "required": ["email", "role"]
@@ -10157,7 +10277,15 @@
         "properties": {
           "role": {
             "type": "string",
-            "enum": ["OWNER", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"]
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "DOCTOR",
+              "NURSE",
+              "RECEPTIONIST",
+              "MEDICAL_TECHNOLOGIST",
+              "PATHOLOGIST"
+            ]
           }
         },
         "required": ["role"]
@@ -11373,6 +11501,36 @@
         },
         "required": ["resultValue"]
       },
+      "AmendResultDto": {
+        "type": "object",
+        "properties": {
+          "resultValue": {
+            "type": "string"
+          },
+          "resultUnit": {
+            "type": "string"
+          },
+          "abnormalFlag": {
+            "type": "string",
+            "enum": [
+              "NORMAL",
+              "HIGH",
+              "LOW",
+              "CRITICAL_HIGH",
+              "CRITICAL_LOW",
+              "ABNORMAL"
+            ]
+          },
+          "comment": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the released value is being changed."
+          }
+        },
+        "required": ["resultValue", "reason"]
+      },
       "CreateCriticalValueRuleDto": {
         "type": "object",
         "properties": {
@@ -11773,6 +11931,21 @@
           }
         }
       },
+      "LabVerificationDto": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Results land PRELIMINARY and must be verified before the order reports."
+          },
+          "requireSeparateVerifier": {
+            "type": "boolean",
+            "default": false,
+            "description": "The verifier must be someone other than whoever entered the result."
+          }
+        }
+      },
       "OperatingHourDto": {
         "type": "object",
         "properties": {
@@ -11802,6 +11975,9 @@
         "properties": {
           "branding": {
             "$ref": "#/components/schemas/BrandingDto"
+          },
+          "labVerification": {
+            "$ref": "#/components/schemas/LabVerificationDto"
           },
           "operatingHours": {
             "type": "array",

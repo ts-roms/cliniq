@@ -56,7 +56,9 @@ export class SettingsService {
   /**
    * Shallow-merge into the existing settings JSON. Undefined keys are kept,
    * explicit nulls clear them. operatingHours and acceptedPaymentMethods are
-   * arrays — replaced wholesale, not merged element-wise.
+   * arrays — replaced wholesale, not merged element-wise. branding, extras
+   * and labVerification are merged one level deeper, so a partial update does
+   * not clear the sibling keys.
    */
   async update(dto: UpdateSettingsDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
@@ -80,6 +82,16 @@ export class SettingsService {
           : {}),
         ...(dto.extras
           ? { extras: { ...((prev.extras as object) ?? {}), ...dto.extras } }
+          : {}),
+        // Merged, not replaced: sending only `required` must not silently
+        // clear `requireSeparateVerifier` and quietly relax the policy.
+        ...(dto.labVerification
+          ? {
+              labVerification: {
+                ...((prev.labVerification as object) ?? {}),
+                ...dto.labVerification,
+              },
+            }
           : {}),
       };
 

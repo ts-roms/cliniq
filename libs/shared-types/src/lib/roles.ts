@@ -9,6 +9,14 @@ export const Roles = {
   DOCTOR: 'DOCTOR',
   NURSE: 'NURSE',
   RECEPTIONIST: 'RECEPTIONIST',
+  // Laboratory roles. A medical technologist runs the bench and may release
+  // results; a pathologist oversees and releases but does not key them in.
+  // Both are distinct from DOCTOR/NURSE because releasing a result is a
+  // professional act tied to a licence (RA 5527), and because separating
+  // "entered" from "verified" is only meaningful if the two can be different
+  // people with different privileges.
+  MEDICAL_TECHNOLOGIST: 'MEDICAL_TECHNOLOGIST',
+  PATHOLOGIST: 'PATHOLOGIST',
   PATIENT: 'PATIENT',
 } as const;
 
@@ -50,6 +58,13 @@ export const Actions = {
   TELE_HOST: 'tele:host',
   AI_USE: 'ai:use',
   AUDIT_READ: 'audit:read',
+  // Key a result onto an order item. Deliberately broader than the lab roles:
+  // DOCTOR and NURSE could already do this through CONSULT_WRITE, and a
+  // clinic that keys in a referred-in report has to keep being able to.
+  LAB_RESULT_ENTER: 'lab:result:enter',
+  // Release a result to the chart. NURSE and RECEPTIONIST are excluded: this
+  // is the act that makes a value clinically actionable.
+  LAB_RESULT_VERIFY: 'lab:result:verify',
 } as const;
 
 export type Action = (typeof Actions)[keyof typeof Actions];
@@ -74,6 +89,8 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.TELE_HOST,
     Actions.AI_USE,
     Actions.AUDIT_READ,
+    Actions.LAB_RESULT_ENTER,
+    Actions.LAB_RESULT_VERIFY,
   ]),
   // ADMIN runs the clinic day to day (staff, locations, queue, retention)
   // but cannot change tenant settings / plan — that is TENANT_MANAGE, OWNER
@@ -104,6 +121,10 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.INVENTORY_READ,
     Actions.TELE_HOST,
     Actions.AI_USE,
+    // A physician running tests in their own clinic both keys in and
+    // releases them; there is no technologist to separate from.
+    Actions.LAB_RESULT_ENTER,
+    Actions.LAB_RESULT_VERIFY,
   ]),
   NURSE: new Set([
     Actions.PATIENT_READ,
@@ -114,6 +135,10 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.INVENTORY_WRITE,
     Actions.TELE_HOST,
     Actions.AI_USE,
+    // Enter, but not verify: releasing a result to the chart is not nursing
+    // scope. A nurse keying in a referred-in report leaves it PRELIMINARY
+    // for someone who can release it.
+    Actions.LAB_RESULT_ENTER,
   ]),
   RECEPTIONIST: new Set([
     Actions.QUEUE_MANAGE,
@@ -122,6 +147,24 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.BILLING_READ,
     Actions.BILLING_WRITE,
     Actions.INVENTORY_READ,
+  ]),
+  // Runs the bench: keys results in and, where the clinic is not staffed to
+  // separate the two acts, releases them. PATIENT_WRITE is absent — a
+  // technologist works from the order, not the chart.
+  MEDICAL_TECHNOLOGIST: new Set([
+    Actions.PATIENT_READ,
+    Actions.CONSULT_READ,
+    Actions.CONSULT_WRITE,
+    Actions.LAB_RESULT_ENTER,
+    Actions.LAB_RESULT_VERIFY,
+  ]),
+  // Oversees and releases. No LAB_RESULT_ENTER on purpose: a pathologist who
+  // could also key values in would defeat the separation the role exists to
+  // provide.
+  PATHOLOGIST: new Set([
+    Actions.PATIENT_READ,
+    Actions.CONSULT_READ,
+    Actions.LAB_RESULT_VERIFY,
   ]),
   // Portal accounts only. PORTAL_READ reaches /api/me/* and nothing else;
   // the staff surface is closed to them both here and by PortalScopeGuard.
