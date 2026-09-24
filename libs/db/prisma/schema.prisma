@@ -2527,6 +2527,15 @@ model CriticalValueRule {
 
   note String?
 
+  /// How long the responsible clinician has to acknowledge a result that
+  /// trips this rule before the escalation sweep picks it up. Per-analyte
+  /// because urgency is: a critical potassium wants a phone call inside
+  /// minutes, an abnormal TSH does not.
+  ///
+  /// LabsService reads this when it raises a CriticalResultNotification and
+  /// uses it to compute `dueAt`.
+  notifyWithinMinutes Int @default(60)
+
   effectiveFrom DateTime  @default(now())
   effectiveTo   DateTime?
 
