@@ -98,6 +98,15 @@ jobs:
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
+          # The blanket GRANT above runs AFTER `prisma migrate deploy`, so it
+          # silently re-grants UPDATE/DELETE on the append-only tables and
+          # undoes what those migrations revoked. Production never does this —
+          # it only applies migrations — so CI was exercising a database with
+          # weaker privileges than the one we ship. Replay every REVOKE the
+          # migrations contain so the two agree. Reading them from the
+          # migrations rather than listing tables here keeps this correct when
+          # the next append-only table lands.
+          grep -rh '^REVOKE' libs/db/prisma/migrations/*/migration.sql             | psql -h localhost -U cliniq -d cliniq_test -v ON_ERROR_STOP=1
 
       - name: Sync Nx project references
         run: pnpm exec nx sync:check || pnpm exec nx sync
@@ -197,6 +206,15 @@ jobs:
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
+          # The blanket GRANT above runs AFTER `prisma migrate deploy`, so it
+          # silently re-grants UPDATE/DELETE on the append-only tables and
+          # undoes what those migrations revoked. Production never does this —
+          # it only applies migrations — so CI was exercising a database with
+          # weaker privileges than the one we ship. Replay every REVOKE the
+          # migrations contain so the two agree. Reading them from the
+          # migrations rather than listing tables here keeps this correct when
+          # the next append-only table lands.
+          grep -rh '^REVOKE' libs/db/prisma/migrations/*/migration.sql             | psql -h localhost -U cliniq -d cliniq_test -v ON_ERROR_STOP=1
 
       - name: Build api
         run: pnpm exec nx run @org/api:build
@@ -355,6 +373,15 @@ jobs:
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE ON SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;"
           psql -h localhost -U cliniq -d cliniq_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
+          # The blanket GRANT above runs AFTER `prisma migrate deploy`, so it
+          # silently re-grants UPDATE/DELETE on the append-only tables and
+          # undoes what those migrations revoked. Production never does this —
+          # it only applies migrations — so CI was exercising a database with
+          # weaker privileges than the one we ship. Replay every REVOKE the
+          # migrations contain so the two agree. Reading them from the
+          # migrations rather than listing tables here keeps this correct when
+          # the next append-only table lands.
+          grep -rh '^REVOKE' libs/db/prisma/migrations/*/migration.sql             | psql -h localhost -U cliniq -d cliniq_test -v ON_ERROR_STOP=1
 
       - name: Build api
         run: pnpm exec nx run @org/api:build
