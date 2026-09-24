@@ -1,13 +1,17 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
+  IsDate,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
   MaxLength,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -84,4 +88,46 @@ export class CreateServiceDto {
   @IsInt()
   @Min(0)
   priceCentavos!: number;
+}
+
+/**
+ * Record a statutory entitlement against a patient.
+ *
+ * The ID number is required because it is what substantiates the claim: a
+ * 20% discount given without recording the OSCA or PWD ID is one the BIR
+ * will disallow as a deduction.
+ */
+export class UpsertEntitlementDto {
+  @ApiProperty({ enum: ['SENIOR_CITIZEN', 'PWD'] })
+  @IsIn(['SENIOR_CITIZEN', 'PWD'])
+  type!: 'SENIOR_CITIZEN' | 'PWD';
+
+  @ApiProperty({ description: 'OSCA / senior citizen / PWD ID number.' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(1)
+  @MaxLength(64)
+  idNumber!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  validFrom?: Date;
+
+  @ApiPropertyOptional({
+    description: 'A PWD ID expires; a senior citizen ID generally does not.',
+  })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  validUntil?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Set when staff have sighted the physical ID.',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  verified?: boolean;
 }

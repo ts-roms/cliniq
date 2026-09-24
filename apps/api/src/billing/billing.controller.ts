@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -23,6 +24,7 @@ import {
   CreateInvoiceDto,
   CreateServiceDto,
   RecordPaymentDto,
+  UpsertEntitlementDto,
 } from './dto/billing.dto.js';
 
 @ApiTags('billing')
@@ -110,5 +112,55 @@ export class BillingController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.billing.recordPayment(invoiceId, dto, user);
+  }
+  // ── Statutory entitlements (RA 9994 / RA 10754) ───
+
+  /**
+   * Record or update a patient's senior-citizen or PWD entitlement.
+   *
+   * BILLING_WRITE rather than PATIENT_WRITE: this is the front desk sighting
+   * an ID at the counter, and it changes what the patient is charged.
+   */
+  @Post('patients/:patientId/entitlements')
+  @HttpCode(HttpStatus.OK)
+  @Requires(Actions.BILLING_WRITE)
+  @Audit({
+    action: 'billing.entitlementUpsert',
+    entity: 'PatientEntitlement',
+    entityIdFrom: 'result:id',
+  })
+  upsertEntitlement(
+    @Param('patientId') patientId: string,
+    @Body() dto: UpsertEntitlementDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.billing.upsertEntitlement(patientId, dto, user);
+  }
+
+  /** The entitlements on file for a patient. */
+  @Get('patients/:patientId/entitlements')
+  @Requires(Actions.BILLING_READ)
+  listEntitlements(
+    @Param('patientId') patientId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.billing.listEntitlements(patientId, user);
+  }
+
+  /** Withdraw an entitlement — an ID that turned out not to be valid. */
+  @Delete('patients/:patientId/entitlements/:type')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Requires(Actions.BILLING_WRITE)
+  @Audit({
+    action: 'billing.entitlementRemove',
+    entity: 'PatientEntitlement',
+    entityIdFrom: 'param:type',
+  })
+  removeEntitlement(
+    @Param('patientId') patientId: string,
+    @Param('type') type: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.billing.removeEntitlement(patientId, type, user);
   }
 }
