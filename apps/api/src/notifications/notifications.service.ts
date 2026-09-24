@@ -63,7 +63,7 @@ export class NotificationsService {
     }
     // Fire-and-forget push fan-out. PushService swallows its own errors and
     // no-ops when the user has no registered devices.
-    void this.push.sendToUser(input.userId, {
+    void this.push.sendToUser(input.tenantId, input.userId, {
       title: input.title,
       body: input.body,
       data: pushData(input),
@@ -93,7 +93,7 @@ export class NotificationsService {
       );
       return;
     }
-    void this.push.sendToUsers(input.userIds, {
+    void this.push.sendToUsers(input.tenantId, input.userIds, {
       title: input.title,
       body: input.body,
       data: pushData(input),

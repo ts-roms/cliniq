@@ -44,55 +44,79 @@ export class PushService {
     token: string;
     platform: string;
   }): Promise<{ id: string }> {
-    // Drop any prior row that holds this exact token under a different
-    // (user, device) — Expo guarantees token uniqueness across installs but
-    // a logout/re-login on the same device under a different user can hit
-    // the @unique(token) constraint.
-    await this.prisma.pushToken.deleteMany({
-      where: {
-        token: input.token,
-        NOT: { AND: [{ userId: input.userId }, { deviceId: input.deviceId }] },
-      },
-    });
+    // Stale-row cleanup, deliberately cross-tenant — hence the platform
+    // context rather than withTenant. Two unique constraints can collide
+    // with a row this tenant cannot see:
+    //
+    //   @unique(token)             Expo re-issues the same token across
+    //                              reinstalls, so the device's previous
+    //                              owner may sit in another tenant.
+    //   @unique(userId, deviceId)  a clinician working at two clinics
+    //                              re-registers the same phone under the
+    //                              other tenant.
+    //
+    // Either one would make the tenant-scoped upsert below fail on insert,
+    // because RLS hides the conflicting row from the find that would have
+    // turned it into an update. Clear both first. Rows already in THIS
+    // tenant are left alone so the upsert can update them in place.
+    await this.prisma.withPlatformContext((tx) =>
+      tx.pushToken.deleteMany({
+        where: {
+          tenantId: { not: input.tenantId },
+          OR: [
+            { token: input.token },
+            { userId: input.userId, deviceId: input.deviceId },
+          ],
+        },
+      }),
+    );
 
-    const row = await this.prisma.pushToken.upsert({
-      where: {
-        userId_deviceId: { userId: input.userId, deviceId: input.deviceId },
-      },
-      create: {
-        tenantId: input.tenantId,
-        userId: input.userId,
-        deviceId: input.deviceId,
-        token: input.token,
-        platform: input.platform,
-      },
-      update: {
-        token: input.token,
-        platform: input.platform,
-        lastUsed: new Date(),
-        // tenantId may change if the user belongs to multiple tenants and
-        // re-registered under a different one — keep it in sync.
-        tenantId: input.tenantId,
-      },
-      select: { id: true },
-    });
-    return row;
+    return this.prisma.withTenant(input.tenantId, input.userId, (tx) =>
+      tx.pushToken.upsert({
+        where: {
+          userId_deviceId: { userId: input.userId, deviceId: input.deviceId },
+        },
+        create: {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          deviceId: input.deviceId,
+          token: input.token,
+          platform: input.platform,
+        },
+        update: {
+          token: input.token,
+          platform: input.platform,
+          lastUsed: new Date(),
+        },
+        select: { id: true },
+      }),
+    );
   }
 
-  async unregister(userId: string, deviceId: string): Promise<void> {
-    await this.prisma.pushToken.deleteMany({
-      where: { userId, deviceId },
-    });
+  async unregister(
+    tenantId: string,
+    userId: string,
+    deviceId: string,
+  ): Promise<void> {
+    await this.prisma.withTenant(tenantId, userId, (tx) =>
+      tx.pushToken.deleteMany({ where: { userId, deviceId } }),
+    );
   }
 
+  /**
+   * `tenantId` is not decoration: a user who belongs to two tenants has a
+   * device row per tenant, and querying by userId alone pushed one tenant's
+   * payload — patient name in the title, on a lock screen — to the device
+   * registered under the other.
+   */
   async sendToUser(
+    tenantId: string,
     userId: string,
     payload: { title: string; body?: string; data?: Record<string, unknown> },
   ): Promise<void> {
-    const tokens = await this.prisma.pushToken.findMany({
-      where: { userId },
-      select: { token: true },
-    });
+    const tokens = await this.prisma.withTenant(tenantId, null, (tx) =>
+      tx.pushToken.findMany({ where: { userId }, select: { token: true } }),
+    );
     if (tokens.length === 0) return;
     await this.dispatch(
       tokens.map((t) => ({
@@ -107,14 +131,17 @@ export class PushService {
   }
 
   async sendToUsers(
+    tenantId: string,
     userIds: string[],
     payload: { title: string; body?: string; data?: Record<string, unknown> },
   ): Promise<void> {
     if (userIds.length === 0) return;
-    const tokens = await this.prisma.pushToken.findMany({
-      where: { userId: { in: userIds } },
-      select: { token: true },
-    });
+    const tokens = await this.prisma.withTenant(tenantId, null, (tx) =>
+      tx.pushToken.findMany({
+        where: { userId: { in: userIds } },
+        select: { token: true },
+      }),
+    );
     if (tokens.length === 0) return;
     await this.dispatch(
       tokens.map((t) => ({
@@ -166,8 +193,16 @@ export class PushService {
                 x.err === 'MismatchSenderId'),
           );
         if (dead.length) {
-          await this.prisma.pushToken
-            .deleteMany({ where: { token: { in: dead.map((d) => d.token!) } } })
+          // Cross-tenant on purpose: Expo has told us these handles are dead
+          // everywhere, and a batch can span tenants. Platform context, so
+          // the intent is declared rather than inherited from a missing
+          // policy — which is exactly how this table lost its isolation.
+          await this.prisma
+            .withPlatformContext((tx) =>
+              tx.pushToken.deleteMany({
+                where: { token: { in: dead.map((d) => d.token!) } },
+              }),
+            )
             .catch(() => undefined);
           this.logger.log(`reaped ${dead.length} dead push tokens`);
         }
