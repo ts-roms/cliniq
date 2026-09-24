@@ -116,4 +116,12 @@ export class SetCapabilityDto {
   @IsOptional()
   @IsBoolean()
   isEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Where this goes when it is not performed here. A standing arrangement, recorded once rather than chosen at every order.',
+  })
+  @IsOptional()
+  @IsString()
+  referralLaboratoryId?: string;
 }

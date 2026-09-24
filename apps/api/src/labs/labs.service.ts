@@ -17,6 +17,8 @@ import {
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { LaboratoryService } from './laboratory.service.js';
+import { ReferralService } from './referral.service.js';
+import { readReferralPolicy, routeTest } from './referral.js';
 import type {
   AmendResultDto,
   CreateLabOrderDto,
@@ -56,6 +58,7 @@ export class LabsService {
     private readonly prisma: PrismaService,
     private readonly notif: NotificationsService,
     private readonly laboratory: LaboratoryService,
+    private readonly referrals: ReferralService,
   ) {}
 
   // ── Orders ─────────────────────────────────────────
@@ -200,21 +203,71 @@ export class LabsService {
       });
 
       // DOH AO 2021-0037: a laboratory may not perform examinations beyond
-      // its authorized service capability. Reported rather than refused —
-      // the lawful response to an out-of-scope test is to refer it, and
-      // referral laboratories are not modelled yet, so blocking would leave
-      // a clinic unable to order something it is entitled to send out.
-      // Empty for any tenant that has not declared a capability.
+      // its authorized service capability, and the lawful response to an
+      // out-of-scope test is to refer it to one that can. Empty for any
+      // tenant that has not declared a capability, so a clinic that never
+      // opens that screen sees none of this.
       const outOfScope = await this.laboratory.screen(
         tx,
         order.items.map((i) => ({
+          ref: i.id,
           testId: i.testId,
           sectionId: null,
           testName: i.testName,
         })),
       );
 
-      return { ...order, outOfScope };
+      const tenant = await tx.tenant.findFirst({
+        where: { id: user.tenantId },
+        select: { settings: true },
+      });
+      const policy = readReferralPolicy(tenant?.settings);
+
+      const referred: Array<{ testName: string; laboratory: string }> = [];
+      const flagged: Array<{ testName: string; reason: string }> = [];
+      const refusals: string[] = [];
+
+      for (const oos of outOfScope) {
+        const decision = routeTest(
+          { isOutOfScope: true, reason: oos.reason },
+          oos.referralLaboratoryId,
+          policy,
+        );
+        if (decision.action === 'REFER') {
+          const referral = await this.referrals.createForItem(
+            tx,
+            user.tenantId,
+            oos.ref,
+            decision.referralLaboratoryId,
+          );
+          if (referral) {
+            const lab = await tx.referralLaboratory.findFirst({
+              where: { id: decision.referralLaboratoryId },
+              select: { name: true },
+            });
+            referred.push({
+              testName: oos.testName,
+              laboratory: lab?.name ?? 'referral laboratory',
+            });
+            continue;
+          }
+          // The destination turned out to be unusable — inactive, or with no
+          // LTO on file. Fall through: an order must not fail on the strength
+          // of a misconfigured standing arrangement, so this becomes the same
+          // flag it would have been with no destination at all.
+        }
+        if (decision.action === 'REFUSE') {
+          refusals.push(decision.reason);
+        } else {
+          flagged.push({ testName: oos.testName, reason: oos.reason });
+        }
+      }
+
+      if (refusals.length > 0) {
+        throw new BadRequestException(refusals.join('; '));
+      }
+
+      return { ...order, outOfScope: flagged, referred };
     });
   }
 

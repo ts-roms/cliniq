@@ -784,7 +784,19 @@ model LabReportSignature {
 
 `contentHash` on both sides is what makes the signature mean something: if the rendered report ever differs from what was signed, verification fails. A boolean `signed = true` would not survive a dispute.
 
-## 6.10 Laboratory sections & service capability — 🔴
+## 6.10 Laboratory sections & service capability — ✅ BUILT (was 🔴)
+
+> **Status: built and enforceable.** `20260924300000_lis_laboratory_licence` models the licensed facility — LTO number, category, classification, validity window, head of laboratory and pathologist of record with PRC numbers — and the report PDF carries the LTO and head, which is the actual AO 2021-0037 requirement and was missing from every report issued before it.
+>
+> `20260924320000_lis_referral_labs` (§6.11) supplies the referral path, which is what makes the refusal below real. Order placement routes each out-of-scope test three ways: **referred** when a destination is on file, **flagged** when there is none, **refused** when there is none and the clinic has turned enforcement on.
+>
+> Three properties worth knowing:
+>
+> - **Undeclared is not prohibited.** A clinic that never opens this screen sees no change; an empty declaration reports NOT_DECLARED. Treating silence as prohibition would flag every test in every clinic.
+> - **A per-test row overrides its section**, so "we do chemistry but HbA1c goes out" and "no microbiology except gram stain" are both expressible.
+> - **An expired licence is stated, not hidden** — on the profile and in red on the report. A report issued during a lapse is a fact, and a document that quietly omits it is worse than one that says so.
+>
+> The category→section table in `capability.ts` is guidance for whoever fills the form in, and a test asserts the checker never consults it: the authoritative list is what is printed on the laboratory's own Licence to Operate, which can carry conditions no table here knows about.
 
 Nothing models what a given laboratory is licensed to perform. This is not a nice-to-have in the Philippines — a clinical laboratory **may not perform examinations beyond its authorized service capability** (§21).
 
@@ -818,7 +830,20 @@ model LabServiceCapability {
 
 Order placement then becomes: _can this laboratory perform this test?_ → yes, accession locally; no, create a `ReferralOrder`. That decision must be enforced server-side at order time, not left to the receptionist.
 
-## 6.11 Referral laboratory — 🔴
+## 6.11 Referral laboratory — 🟡 PARTIAL (was 🔴)
+
+> **Status: built** (`20260924320000_lis_referral_labs`), and it is what turns §6.10 from advice into enforcement.
+>
+> `ReferralLaboratory` (destinations, with their own LTO number), `LabReferral` (one test sent out), and a standing `referralLaboratoryId` on the capability row that excluded the test — recorded once rather than chosen at every order, because "HbA1c goes to Hi-Precision" is an arrangement, not a decision.
+>
+> Two safety properties:
+>
+> - **Referral only to a licensed laboratory.** A destination with no LTO on file is refused at referral time, per AO 2021-0037. Referring to one we cannot evidence is licensed is indefensible if anyone asks.
+> - **A misconfigured destination does not break ordering.** If the standing arrangement points at an inactive or unlicensed laboratory, the order still succeeds and the item falls back to being flagged. An order failing because someone mis-set a send-out arrangement months ago would be the wrong failure.
+>
+> `lab_referrals` has no DELETE and the foreign key to the destination is RESTRICT: a referral records a specimen leaving the building, and can be cancelled but not erased.
+>
+> **Smaller than the sketch below, deliberately.** Chain of custody lives in fields on `LabReferral` — released by, when, courier, condition on arrival — rather than a separate `ReferralSpecimen`, and a referral is keyed to the order ITEM rather than a specimen, so a referred-in report arriving with no specimen of ours is still representable. `ReferralResult` is not built: a referred result is recorded through the ordinary result path. **Still open: the MOA file, and stating referred tests on the report face** — the latter is an AO 2021-0037 requirement and is the first thing to add here.
 
 Nothing exists. Needed: `ReferralLaboratory` (name, DOH LTO, MOA file, contact, courier), `ReferralOrder`, `ReferralSpecimen` (chain of custody: released-by, courier, released-at, received-at, condition on arrival), `ReferralResult` (external result file + transcribed components + who reviewed it before it entered the patient's chart). The report must state which tests were referred and to which licensed laboratory.
 
@@ -1790,7 +1815,7 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 | 13  | Add `FileObject.patientId` + an authorized, audited download endpoint + AV scan **— MOSTLY DONE.** Ownership and the audited download landed; **AV scan still open**                                                                                                                                                            | `libs/db/prisma/schema.prisma:1387`, `apps/api/src/files/`                                                                              | PHI is write-only today, and any download added later has nothing to authorize against                                                                                                                                                        |
 | 14  | Normalize `Patient`: middle name, suffix, civil status, blood type + `PatientAddress`/`PatientContact`/`PatientIdentifier`/`PatientEntitlement`                                                                                                                                                                                 | `libs/db/prisma/schema.prisma:1144-1182`                                                                                                | 8 fields cannot register a Philippine patient                                                                                                                                                                                                 |
 | 15  | Build `PatientEntitlement` + `DiscountRule` + VAT-first statutory arithmetic                                                                                                                                                                                                                                                    | `libs/billing-rules/src/ph-statutory.ts` (new), `apps/api/src/billing/pricing.service.ts` (new); `Invoice.discountCentavos` today       | RA 9994 / RA 10754 are legal requirements a billing clinic cannot skip                                                                                                                                                                        |
-| 16  | Build `Laboratory` (DOH LTO, category, head, pathologist) + `LabServiceCapability`, enforced at order placement                                                                                                                                                                                                                 | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/catalog/`                                                                             | AO 2021-0037: a lab may not test beyond its authorized capability                                                                                                                                                                             |
+| 16  | ~~Build `Laboratory` (DOH LTO, category, head, pathologist) + `LabServiceCapability`, enforced at order placement~~ **DONE** — `20260924300000_lis_laboratory_licence` plus `20260924320000_lis_referral_labs`. Enforcement is per-tenant and defaults off (§6.10)                                                              | `libs/db/prisma/schema.prisma`, `apps/api/src/labs/capability.ts`, `referral.ts`                                                        | AO 2021-0037: a lab may not test beyond its authorized capability                                                                                                                                                                             |
 | 17  | ~~Build `LabReport` + `LabReportSignature` with the PRC snapshot and a content hash~~ **DONE** — plus the PDF and patient-portal access. Keyed to the order rather than the specimen, and the PDF is rendered on demand rather than stored (§6.9)                                                                               | `libs/db/prisma/schema.prisma`, `apps/api/src/labs/reports.service.ts`, `apps/api/src/labs/pdf/`                                        | Reuses the proven `Prescription.providerLicense` pattern; a boolean `signed` is worthless                                                                                                                                                     |
 | 18  | Capture before/after values and a `reason` in the audit log                                                                                                                                                                                                                                                                     | `libs/db/prisma/schema.prisma:1359` (`AuditLog`), `apps/api/src/audit/audit.interceptor.ts`                                             | Append-only is already right; it records _that_ something changed, not _what_                                                                                                                                                                 |
 | 19  | Promote `Consultation.diagnosisCodes String[]` to a `Diagnosis` entity                                                                                                                                                                                                                                                          | `libs/db/prisma/schema.prisma:1216`                                                                                                     | Needed for problem lists, reporting and any PhilHealth claim                                                                                                                                                                                  |
@@ -1802,23 +1827,24 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 
 Every row below was verified against the source, not inferred from a commit message: the migration, guard, spec or module named was confirmed to exist on `main`. Everything listed here is merged.
 
-| Finding                                     | State            | Landed in                                                                                       |
-| ------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| P0-1 portal BOLA                            | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
-| P0-2 critical thresholds                    | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
-| P0-2 result verification chain              | fixed            | `20260924220000_lis_result_verification`                                                        |
-| P0-3 critical-result handling               | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
-| P0-4 consultation amendments                | fixed            | `20260924090000_consultation_amendments`                                                        |
-| P0-5 DOH-licensable laboratory              | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
-| P0-6 `push_tokens` RLS                      | fixed            | `20260924100000_push_tokens_rls`                                                                |
-| P0-7 file download path                     | fixed            | `20260924140000_file_patient_ownership`                                                         |
-| Audit log append-only **in CI**             | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
-| Dental-lab rename                           | mostly done      | see §29 #11                                                                                     |
-| Test catalogue                              | built            | `20260924180000_lis_test_catalogue`                                                             |
-| Specimens + accession                       | built            | `20260924200000_lis_specimens`                                                                  |
-| Result verification + history               | built            | `20260924220000_lis_result_verification`                                                        |
-| Signed reports + PDF + portal access        | built            | `20260924240000_lis_lab_reports`                                                                |
-| Laboratory LTO profile + service capability | partial          | `20260924300000_lis_laboratory_licence` — reported, not enforced                                |
+| Finding                                        | State            | Landed in                                                                                          |
+| ---------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
+| P0-1 portal BOLA                               | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                     |
+| P0-2 critical thresholds                       | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                             |
+| P0-2 result verification chain                 | fixed            | `20260924220000_lis_result_verification`                                                           |
+| P0-3 critical-result handling                  | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`)    |
+| P0-4 consultation amendments                   | fixed            | `20260924090000_consultation_amendments`                                                           |
+| P0-5 DOH-licensable laboratory                 | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open       |
+| P0-6 `push_tokens` RLS                         | fixed            | `20260924100000_push_tokens_rls`                                                                   |
+| P0-7 file download path                        | fixed            | `20260924140000_file_patient_ownership`                                                            |
+| Audit log append-only **in CI**                | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                    |
+| Dental-lab rename                              | mostly done      | see §29 #11                                                                                        |
+| Test catalogue                                 | built            | `20260924180000_lis_test_catalogue`                                                                |
+| Specimens + accession                          | built            | `20260924200000_lis_specimens`                                                                     |
+| Result verification + history                  | built            | `20260924220000_lis_result_verification`                                                           |
+| Signed reports + PDF + portal access           | built            | `20260924240000_lis_lab_reports`                                                                   |
+| Laboratory LTO profile + service capability    | built            | `20260924300000_lis_laboratory_licence`                                                            |
+| Referral laboratories + capability enforcement | partial          | `20260924320000_lis_referral_labs` — no MOA file, referred tests not yet stated on the report face |
 
 ## Three things this exercise taught that are worth keeping
 

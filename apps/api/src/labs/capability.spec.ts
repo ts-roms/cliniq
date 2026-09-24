@@ -6,6 +6,7 @@ import {
 } from './capability.js';
 
 const test = (over: Partial<Parameters<typeof checkCapability>[0]> = {}) => ({
+  ref: 'item-1',
   testId: 'test-cbc',
   sectionId: 'sec-heme',
   testName: 'Complete blood count',
@@ -73,7 +74,12 @@ describe('checkCapability', () => {
     // it. Flagging here would punish clinics for ordering off-catalogue.
     expect(
       checkCapability(
-        { testId: null, sectionId: null, testName: 'Something unusual' },
+        {
+          ref: 'item-1',
+          testId: null,
+          sectionId: null,
+          testName: 'Something unusual',
+        },
         [section('sec-heme')],
       ),
     ).toEqual({ status: 'NOT_DECLARED' });
@@ -145,7 +151,12 @@ describe('CATEGORY_SECTION_GUIDANCE', () => {
     // printed on the laboratory's own Licence to Operate, which can carry
     // conditions this table knows nothing about.
     const v = checkCapability(
-      { testId: 't', sectionId: 'MICROBIOLOGY', testName: 'Culture' },
+      {
+        ref: 'item-1',
+        testId: 't',
+        sectionId: 'MICROBIOLOGY',
+        testName: 'Culture',
+      },
       [{ sectionId: 'MICROBIOLOGY', testId: null, isEnabled: true }],
     );
     expect(v).toEqual({ status: 'WITHIN_SCOPE' });

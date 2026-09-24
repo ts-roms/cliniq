@@ -273,6 +273,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get labServiceCapability() {
     return this.client.labServiceCapability;
   }
+  get referralLaboratory() {
+    return this.client.referralLaboratory;
+  }
+  get labReferral() {
+    return this.client.labReferral;
+  }
   get teleSession() {
     return this.client.teleSession;
   }

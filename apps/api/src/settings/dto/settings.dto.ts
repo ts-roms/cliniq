@@ -89,6 +89,25 @@ export class LabVerificationDto {
   requireSeparateVerifier?: boolean;
 }
 
+/**
+ * What happens to a test the laboratory is not authorized to perform.
+ *
+ * Off by default. Turning it on is a statement that the clinic has finished
+ * declaring its capability and its send-out destinations — until then,
+ * refusing orders would punish an incomplete configuration rather than a
+ * real mistake.
+ */
+export class LabCapabilityDto {
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Refuse an order containing an out-of-scope test that has no referral laboratory on file.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  enforce?: boolean;
+}
+
 export class UpdateSettingsDto {
   @ApiPropertyOptional({ type: BrandingDto })
   @IsOptional()
@@ -101,6 +120,12 @@ export class UpdateSettingsDto {
   @ValidateNested()
   @Type(() => LabVerificationDto)
   labVerification?: LabVerificationDto;
+
+  @ApiPropertyOptional({ type: LabCapabilityDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LabCapabilityDto)
+  labCapability?: LabCapabilityDto;
 
   @ApiPropertyOptional({ type: [OperatingHourDto] })
   @IsOptional()

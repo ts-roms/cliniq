@@ -10,19 +10,16 @@
  * immunology. Running a test the licence does not cover is a finding
  * against the licence, not a preference.
  *
- * ## What this enforces, and what it does not
+ * ## What this decides, and what it does not
  *
- * It reports whether a test is within capability. It does **not** block the
- * order, and that is deliberate rather than an omission: the lawful response
- * to an out-of-scope test is to refer it to a laboratory that can perform
- * it, and referral laboratories are not modelled yet. Blocking with no
- * referral path would leave a clinic unable to order a test it is perfectly
- * entitled to send out, which is worse than the status quo.
+ * It answers one question: is this test within the declared capability? What
+ * happens next — refer it, flag it, or refuse the order — belongs to
+ * ./referral.ts, which knows about destinations and about whether the clinic
+ * has asked for the gaps to be policed.
  *
- * So the decision is surfaced — on the order response, where the person
- * placing it can act — and hard enforcement waits for the referral slice.
- * That is a smaller promise than the gap analysis sketched, and it is
- * written down here rather than left for someone to discover.
+ * Keeping the two apart matters because the answers have different
+ * lifetimes. Whether a laboratory may run a test is a fact about its
+ * licence; what to do when it may not is a workflow the clinic configures.
  */
 
 export type LtoCategory = 'PRIMARY' | 'SECONDARY' | 'TERTIARY';
@@ -36,6 +33,14 @@ export interface CapabilityEntry {
 
 /** A test as the check sees it. */
 export interface TestRef {
+  /**
+   * The caller's handle for this test — an order item id.
+   *
+   * Carried through so results map back unambiguously. Matching on testId
+   * would be wrong the moment an order contains the same test twice, which
+   * is unusual but not impossible (a repeat on a different specimen).
+   */
+  ref: string;
   testId: string | null;
   sectionId: string | null;
   testName: string;

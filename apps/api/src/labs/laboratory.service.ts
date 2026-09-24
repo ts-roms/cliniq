@@ -100,7 +100,10 @@ export class LaboratoryService {
       if (existing) {
         return tx.labServiceCapability.update({
           where: { id: existing.id },
-          data: { isEnabled: dto.isEnabled ?? true },
+          data: {
+            isEnabled: dto.isEnabled ?? true,
+            referralLaboratoryId: dto.referralLaboratoryId ?? null,
+          },
         });
       }
       return tx.labServiceCapability.create({
@@ -110,6 +113,7 @@ export class LaboratoryService {
           sectionId: dto.sectionId ?? null,
           testId: dto.testId ?? null,
           isEnabled: dto.isEnabled ?? true,
+          referralLaboratoryId: dto.referralLaboratoryId ?? null,
         },
       });
     });
@@ -125,15 +129,23 @@ export class LaboratoryService {
    * Which of these tests fall outside the laboratory's declared capability.
    *
    * Returns an empty list when nothing is declared, so a clinic that has
-   * never filled this in sees no change at all. Callers surface the result;
-   * nothing here refuses an order, because the lawful response to an
-   * out-of-scope test is referral and referral is not modelled yet. See
-   * ./capability.ts.
+   * never filled this in sees no change at all. Each entry carries the
+   * standing referral destination from whichever capability row excluded the
+   * test, when there is one; what the caller does with that — refer, flag or
+   * refuse — is ./referral.ts's decision, not this one's.
    */
   async screen(
     tx: PrismaClient,
     tests: readonly TestRef[],
-  ): Promise<Array<{ testName: string; reason: string }>> {
+  ): Promise<
+    Array<{
+      ref: string;
+      testId: string | null;
+      testName: string;
+      reason: string;
+      referralLaboratoryId: string | null;
+    }>
+  > {
     const lab = await tx.laboratory.findFirst({
       include: { capabilities: true },
     });
@@ -145,11 +157,31 @@ export class LaboratoryService {
       isEnabled: c.isEnabled,
     }));
 
-    const out: Array<{ testName: string; reason: string }> = [];
+    const out: Array<{
+      ref: string;
+      testId: string | null;
+      testName: string;
+      reason: string;
+      referralLaboratoryId: string | null;
+    }> = [];
     for (const test of tests) {
       const verdict = checkCapability(test, declared);
       if (verdict.status === 'OUT_OF_SCOPE') {
-        out.push({ testName: test.testName, reason: verdict.reason });
+        // The standing send-out arrangement lives on whichever capability
+        // row excluded this test — most specific first, same precedence the
+        // check itself uses.
+        const row =
+          lab.capabilities.find((c) => c.testId === test.testId) ??
+          lab.capabilities.find(
+            (c) => c.testId === null && c.sectionId === test.sectionId,
+          );
+        out.push({
+          ref: test.ref,
+          testId: test.testId,
+          testName: test.testName,
+          reason: verdict.reason,
+          referralLaboratoryId: row?.referralLaboratoryId ?? null,
+        });
       }
     }
     if (out.length > 0) {
