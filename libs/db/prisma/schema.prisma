@@ -2483,6 +2483,149 @@ model HmoClaim {
 // many values (e.g. CBC), each value gets its own item. Abnormal flags are
 // computed at result entry from referenceLow/referenceHigh.
 
+// ──────────────────────────────────────────────
+// LABORATORY TEST CATALOGUE
+// ──────────────────────────────────────────────
+//
+// What the laboratory offers, and what each test actually reports.
+//
+// Before this, an order item carried `testName String` and an optional
+// `testCode` — both free text. Three clinics spelled "CBC with platelet
+// count" three ways, nothing could be reported on, and a panel had no
+// identity at all: the schema's own comment admitted that a CBC was entered
+// as ~7 sibling order items with no parent, no shared reference set, and no
+// way to render a CBC report AS a CBC.
+//
+// A panel is a LaboratoryTest whose TestComponents are its analytes. CBC is
+// one test with HGB / HCT / RBC / WBC / PLT components, not seven tests.
+//
+// Deliberately NOT here yet, each its own piece of work:
+//   * ReferenceRange  — needs age / sex / method / effective-date dimensions;
+//                       components carry a default unit only
+//   * Specimen        — accession, collection, reception, rejection
+//   * Container / SpecimenType as tables — carried as fields for now, because
+//                       two more reference tables buy nothing until specimen
+//                       handling exists to consume them
+
+/// A bench. Hematology, Clinical Chemistry, Urinalysis, and so on.
+///
+/// Tenant-scoped and configurable rather than an enum: DOH licenses a
+/// laboratory for a specific service capability, and not every laboratory
+/// offers every section. Hard-coding the list would misrepresent what a
+/// given lab is licensed to do.
+model LabSection {
+  id       String @id @default(cuid())
+  tenantId String
+
+  code String  // HEMATOLOGY, CLINICAL_CHEMISTRY, …
+  name String
+  sortOrder Int    @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tests LaboratoryTest[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive, sortOrder])
+  @@map("lab_sections")
+}
+
+enum LabResultType {
+  NUMERIC
+  TEXT
+  CODED
+  TITER
+}
+
+/// One orderable test.
+///
+/// `code` is the laboratory's own code and is what CriticalValueRule matches
+/// on, via the same normalisation the flagging module applies. `loincCode` is
+/// carried separately because a local code is what staff type and LOINC is
+/// what an interoperability layer needs — conflating them loses one or the
+/// other.
+model LaboratoryTest {
+  id       String @id @default(cuid())
+  tenantId String
+
+  code      String  // local code, e.g. "CBC", "K"
+  loincCode String?
+  name      String
+  shortName String?
+
+  sectionId String
+
+  /// True when the test reports several analytes. A CBC is one test with
+  /// many components, not many tests.
+  isPanel Boolean @default(false)
+
+  // Collection guidance. Fields rather than tables until specimen handling
+  // exists to consume them — see the header.
+  specimenType           String?  // "Whole blood (EDTA)", "Random urine"
+  container              String?  // "Lavender top", "Sterile cup"
+  minVolumeMl            Float?
+  collectionInstructions String?
+  processingInstructions String?
+
+  method String?
+
+  /// Turnaround targets in minutes, for the TAT reporting the audit calls
+  /// for. Null means the laboratory has not committed to one.
+  targetTatMinutes Int?
+  statTatMinutes   Int?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  section    LabSection      @relation(fields: [sectionId], references: [id])
+  components TestComponent[]
+  orderItems LabOrderItem[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, sectionId, isActive])
+  @@map("laboratory_tests")
+}
+
+/// One analyte a test reports.
+///
+/// A non-panel test has exactly one component; a CBC has several. Results
+/// will hang off these rather than off a free-text name, which is what makes
+/// "show me every haemoglobin for this patient" answerable.
+model TestComponent {
+  id       String @id @default(cuid())
+  tenantId String
+  testId   String
+
+  code      String  // HGB, HCT, WBC …
+  loincCode String?
+  name      String
+
+  resultType LabResultType @default(NUMERIC)
+  unit       String?
+  /// Decimal places for display. Reporting haemoglobin to four places is
+  /// false precision; reporting it to zero loses information.
+  decimals   Int  @default(1)
+
+  displayOrder Int @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  test LaboratoryTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, testId, code])
+  @@index([tenantId, testId, displayOrder])
+  @@map("test_components")
+}
+
 enum LabOrderStatus {
   PENDING
   COLLECTED
@@ -2674,6 +2817,12 @@ model LabOrderItem {
   id             String           @id @default(cuid())
   tenantId       String
   orderId        String
+  /// Catalogue entry this item was ordered from, when it was. Nullable: rows
+  /// written before the catalogue existed have none, and a laboratory may
+  /// still order something ad hoc. When set, the name/code/unit below are a
+  /// SNAPSHOT of the catalogue at order time — the catalogue can be edited
+  /// and a historical order must still read as it was placed.
+  testId         String?
   testCode       String?          // e.g. LOINC or local code
   testName       String
   category       String?          // CBC, Chem, Urinalysis, Imaging, …
@@ -2694,9 +2843,11 @@ model LabOrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order LabOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  test  LaboratoryTest? @relation(fields: [testId], references: [id])
 
   @@index([tenantId, orderId])
+  @@index([tenantId, testId])
   @@map("lab_order_items")
 }
 

@@ -78,13 +78,18 @@ export class LabsService {
     // side. CriticalValueRule has a DB CHECK for this; order items do not, so
     // the guard lives here.
     for (const item of dto.items) {
+      if (!item.testId && !item.testName?.trim()) {
+        throw new BadRequestException(
+          'each item needs either testId (order from the catalogue) or testName',
+        );
+      }
       if (
         item.criticalLow !== undefined &&
         item.criticalHigh !== undefined &&
         item.criticalLow >= item.criticalHigh
       ) {
         throw new BadRequestException(
-          `${item.testName}: criticalLow must be below criticalHigh`,
+          `${item.testName ?? item.testId}: criticalLow must be below criticalHigh`,
         );
       }
     }
@@ -108,6 +113,31 @@ export class LabsService {
           );
         }
       }
+      // Resolve catalogue entries once, inside the tenant context so a test
+      // from another clinic simply is not found.
+      const testIds = [
+        ...new Set(dto.items.map((i) => i.testId).filter(Boolean)),
+      ] as string[];
+      const tests = testIds.length
+        ? await tx.laboratoryTest.findMany({
+            where: { id: { in: testIds }, deletedAt: null },
+            include: {
+              components: {
+                where: { deletedAt: null },
+                orderBy: { displayOrder: 'asc' },
+              },
+            },
+          })
+        : [];
+      const byId = new Map(tests.map((t) => [t.id, t]));
+      for (const id of testIds) {
+        if (!byId.has(id)) {
+          throw new BadRequestException(
+            `test ${id} not found in this tenant's catalogue`,
+          );
+        }
+      }
+
       const number = await this.nextOrderNumber(tx, user.tenantId);
       return tx.labOrder.create({
         data: {
@@ -120,17 +150,31 @@ export class LabsService {
           externalRef: dto.externalRef,
           notes: dto.notes,
           items: {
-            create: dto.items.map((item) => ({
-              tenantId: user.tenantId,
-              testCode: item.testCode,
-              testName: item.testName,
-              category: item.category,
-              resultUnit: item.resultUnit,
-              referenceLow: item.referenceLow,
-              referenceHigh: item.referenceHigh,
-              criticalLow: item.criticalLow,
-              criticalHigh: item.criticalHigh,
-            })),
+            create: dto.items.map((item) => {
+              const test = item.testId ? byId.get(item.testId) : undefined;
+              // Snapshot, not join: the catalogue can be edited or retired,
+              // and a historical order must still read as it was placed.
+              // Anything the caller passed explicitly wins, so an ad-hoc
+              // override on one order stays possible.
+              const single =
+                test && test.components.length === 1
+                  ? test.components[0]
+                  : undefined;
+              return {
+                tenantId: user.tenantId,
+                testId: item.testId ?? null,
+                testCode: item.testCode ?? test?.code ?? null,
+                testName: item.testName ?? test?.name ?? '',
+                category: item.category,
+                // A panel reports many units, so there is no single one to
+                // copy — only a one-component test can supply it.
+                resultUnit: item.resultUnit ?? single?.unit ?? null,
+                referenceLow: item.referenceLow,
+                referenceHigh: item.referenceHigh,
+                criticalLow: item.criticalLow,
+                criticalHigh: item.criticalHigh,
+              };
+            }),
           },
         },
         include: { items: true },
