@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Param,
+  Patch,
+  Res,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Actions } from '@org/auth';
@@ -127,5 +135,41 @@ export class MeController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.me.downloadFile(id, user);
+  }
+
+  /**
+   * The patient's own laboratory reports.
+   *
+   * Only reports that are issued and still current are listed. A superseded
+   * or stale one is withheld rather than shown with a warning: staff need the
+   * history, but a patient reading their own results is better served by the
+   * one document that is true.
+   */
+  @Get('lab-reports')
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
+  labReports(@CurrentUser() user: AuthenticatedUser) {
+    return this.me.labReports(user);
+  }
+
+  /** One of their own reports as a PDF. Audited, like every PHI download. */
+  @Get('lab-reports/:id/pdf')
+  @Header('Content-Type', 'application/pdf')
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
+  @Audit({
+    action: 'me.labReport.pdf',
+    entity: 'LabReport',
+    entityIdFrom: 'param:id',
+  })
+  async labReportPdf(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const buf = await this.me.labReportPdf(id, user);
+    res.setHeader('Content-Disposition', `inline; filename="report-${id}.pdf"`);
+    res.setHeader('Content-Length', buf.length.toString());
+    res.end(buf);
   }
 }

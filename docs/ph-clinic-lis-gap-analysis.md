@@ -36,7 +36,7 @@ What is not there:
 
 - **The clinical laboratory was two tables** at the time of the audit: `LabOrder` + `LabOrderItem`, with the result a free-text string inline on the order item. No test catalog, no specimen, no accession number, no reference-range entity, no verification or validation step, no QC, no equipment, no reagent lot, no referral laboratory, no sections, no TAT targets, no critical-value rule or acknowledgement.
 
-  _Since then_ the catalogue (`LaboratoryTest`, `TestComponent`, `LabSection`), specimens with atomic accession numbering and append-only rejections, configured critical-value rules, and acknowledged/escalated critical-result notifications have shipped. The result verification chain has since shipped too. **What remains unbuilt is still enough that CLINIQ cannot yet legally operate a DOH-licensed clinical laboratory**: QC, EQAP evidence, equipment and reagent lots, the laboratory licence profile and service capability, referral laboratories, and signed reports. See §6 and §30.
+  _Since then_ the catalogue (`LaboratoryTest`, `TestComponent`, `LabSection`), specimens with atomic accession numbering and append-only rejections, configured critical-value rules, and acknowledged/escalated critical-result notifications have shipped. The result verification chain has since shipped too. **What remains unbuilt is still enough that CLINIQ cannot yet legally operate a DOH-licensed clinical laboratory**: QC, EQAP evidence, equipment and reagent lots, the laboratory licence profile and service capability, and referral laboratories. Signed reports have since shipped. See §6 and §30.
 
 - **The ~35 `Lab*` models are a dental laboratory marketplace**, not a clinical lab. `LabCase`, `LabProduct`, `LabMaterialLot`, `LabShipment`, `LabTreatmentPlan`, `LabInvoice`, `LabCaseDispute` model crown-and-bridge manufacturing workflow between a clinic and a dental lab. This is a substantial, well-built module — and it is a naming collision that will confuse every engineer who joins after this. `apps/api/src/dental-lab/` (dental) and `apps/api/src/labs/` (clinical) differ by one character.
 - **A P0 patient-portal authorization hole.** `PATIENT` role holds `PATIENT_READ` (`libs/shared-types/src/lib/roles.ts:118`), and ~30 staff endpoints are gated on `PATIENT_READ` alone with no self-scoping. A portal patient can call `GET /api/patients`, `GET /api/patients/:id`, `GET /api/patients/:id/export`, `GET /api/lab-orders/:id`, `GET /api/prescriptions/:id/pdf` and read every other patient in their clinic. RLS stops cross-tenant; nothing stops patient→patient.
@@ -277,13 +277,13 @@ Not a bug — a scope gap, listed as P0 because it is the stated product goal. A
 
 > **Status: partially closed, and the remainder is the licensing-critical part.**
 >
-> | Built                                                                                                  | Still missing                                                  |
-> | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-> | Test catalogue — `LaboratoryTest`, `TestComponent`, `LabSection` (`20260924180000_lis_test_catalogue`) | QC and EQAP evidence                                           |
-> | Specimens, accession numbers, append-only rejections (`20260924200000_lis_specimens`)                  | Equipment and reagent lots                                     |
-> | Configured critical-value rules (`20260923180000_critical_value_rules`)                                | `Laboratory` licence profile + `LabServiceCapability`          |
-> | Acknowledged critical-result notifications (`20260924120000_critical_result_notifications`)            | Referral laboratories                                          |
-> | Result verification chain (`20260924220000_lis_result_verification`)                                   | `LabReport` + signatures; a standalone `ReferenceRange` entity |
+> | Built                                                                                                                         | Still missing                                         |
+> | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+> | Test catalogue — `LaboratoryTest`, `TestComponent`, `LabSection` (`20260924180000_lis_test_catalogue`)                        | QC and EQAP evidence                                  |
+> | Specimens, accession numbers, append-only rejections (`20260924200000_lis_specimens`)                                         | Equipment and reagent lots                            |
+> | Configured critical-value rules (`20260923180000_critical_value_rules`)                                                       | `Laboratory` licence profile + `LabServiceCapability` |
+> | Acknowledged critical-result notifications (`20260924120000_critical_result_notifications`)                                   | Referral laboratories                                 |
+> | Result verification chain (`20260924220000_lis_result_verification`); signed reports + PDF (`20260924240000_lis_lab_reports`) | A standalone `ReferenceRange` entity                  |
 >
 > A DOH licence turns on the right-hand column, not the left. The catalogue and specimen work make the laboratory _operable_; it does not make it _licensable_.
 
@@ -744,7 +744,19 @@ DRAFT ──enter──► ENTERED ──verify──► VERIFIED ──validate
 
 Today none of this exists and a `DOCTOR` token can do all of it via `CONSULT_WRITE`. The e2e suite must assert "doctor cannot validate as pathologist" and "performer cannot self-verify where double verification is configured".
 
-## 6.9 Digital signatures — 🔴
+## 6.9 Digital signatures — ✅ BUILT (was 🔴)
+
+> **Status: built** in `20260924240000_lis_lab_reports`. `LabReport` + `LabReportSignature`, numbered `LR-202609-0001` through the same atomic `DocumentSequence` as accessions and order slips, with the signer's name and PRC licence snapshotted at signing exactly as `Prescription.providerLicense` does it.
+>
+> Three departures from the sketch below, each deliberate:
+>
+> 1. **The report hangs off the ORDER, not the specimen.** An order split across two tubes still produces one report for the patient; keying it to the specimen would produce two documents for one draw.
+> 2. **No `renderedFileId`.** The PDF is rendered on demand rather than stored. A stored PDF is a second copy of the truth that can drift from the results, and the whole point of `contentHash` is that there is one answer to "is this still what was signed?". The cost is re-rendering; the benefit is that a stale PDF cannot be served from storage.
+> 3. **`isCurrent` is computed on read, never stored.** Stored staleness would have to be updated from every path that can change a result, and the failure mode of missing one is a report that silently looks valid.
+>
+> What follows, all tested: a stale report cannot be countersigned, re-issuing supersedes rather than edits, a superseded report cannot be signed, and `resultStatus` is inside the hash so FINAL → CORRECTED with the same number still invalidates the signature. The PDF carries a red banner naming its replacement, because once a document is on paper no status column can reach it.
+>
+> Still open: a rendered-report archive for long-term retention, if retention rules ever require the exact bytes that were issued rather than the ability to reproduce them.
 
 `User.prcLicenseNumber` / `prcLicenseExpiry` / `prcSpecialty` / `signatureFileId` already exist and are snapshotted onto `Prescription` — the pattern is proven in this codebase. It needs to be applied to lab reports:
 
@@ -1796,23 +1808,24 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 
 Every row below was verified against the source, not inferred from a commit message: the migration, guard, spec or module named was confirmed to exist on `main`. Everything listed here is merged.
 
-| Finding                                      | State            | Landed in                                                                                       |
-| -------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| P0-1 portal BOLA                             | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
-| P0-2 critical thresholds                     | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
-| P0-2 result verification chain               | fixed            | `20260924220000_lis_result_verification`                                                        |
-| P0-3 critical-result handling                | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
-| P0-4 consultation amendments                 | fixed            | `20260924090000_consultation_amendments`                                                        |
-| P0-5 DOH-licensable laboratory               | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
-| P0-6 `push_tokens` RLS                       | fixed            | `20260924100000_push_tokens_rls`                                                                |
-| P0-7 file download path                      | fixed            | `20260924140000_file_patient_ownership`                                                         |
-| Audit log append-only **in CI**              | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
-| `icd_codes` writable by the app role         | fixed            | `20260924260000_icd_codes_read_only`                                                            |
-| Privilege/RLS coverage asserted, not assumed | built            | `apps/api-e2e/src/modules/privilege-coverage.spec.ts`                                           |
-| Dental-lab rename                            | mostly done      | see §29 #11                                                                                     |
-| Test catalogue                               | built            | `20260924180000_lis_test_catalogue`                                                             |
-| Specimens + accession                        | built            | `20260924200000_lis_specimens`                                                                  |
-| Result verification + history                | built            | `20260924220000_lis_result_verification`                                                        |
+| Finding                                     | State            | Landed in                                                                                       |
+| ------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| P0-1 portal BOLA                            | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
+| P0-2 critical thresholds                    | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
+| P0-2 result verification chain              | fixed            | `20260924220000_lis_result_verification`                                                        |
+| P0-3 critical-result handling               | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
+| P0-4 consultation amendments                | fixed            | `20260924090000_consultation_amendments`                                                        |
+| P0-5 DOH-licensable laboratory              | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
+| P0-6 `push_tokens` RLS                      | fixed            | `20260924100000_push_tokens_rls`                                                                |
+| P0-7 file download path                     | fixed            | `20260924140000_file_patient_ownership`                                                         |
+| Audit log append-only **in CI**             | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
+| Dental-lab rename                           | mostly done      | see §29 #11                                                                                     |
+| Test catalogue                              | built            | `20260924180000_lis_test_catalogue`                                                             |
+| Specimens + accession                       | built            | `20260924200000_lis_specimens`                                                                  |
+| Result verification + history               | built            | `20260924220000_lis_result_verification`                                                        |
+| Signed reports + PDF + portal access        | built            | `20260924240000_lis_lab_reports`                                                                |
+| PH statutory discounts (RA 9994 / RA 10754) | built            | `20260924280000_ph_statutory_discounts`                                                         |
+| Laboratory LTO profile + service capability | partial          | `20260924300000_lis_laboratory_licence` — reported, not enforced                                |
 
 ## Three things this exercise taught that are worth keeping
 

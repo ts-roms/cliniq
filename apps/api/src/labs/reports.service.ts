@@ -14,6 +14,7 @@ import type { AuthenticatedUser } from '../auth/decorators/current-user.decorato
 // The report series shares DocumentSequence with order and accession
 // numbers, so all three are allocated the same atomic way.
 import { nextSequenceValue, orderPeriod } from './accession.js';
+import { licenceStatus } from './capability.js';
 import {
   canIssueReport,
   formatReportNumber,
@@ -21,6 +22,10 @@ import {
   reportIsCurrent,
   type ReportableResult,
 } from './reporting.js';
+import {
+  renderLabReportPdf,
+  type LabReportPdfData,
+} from './pdf/render-lab-report-pdf.js';
 
 /**
  * Signed laboratory reports.
@@ -177,6 +182,178 @@ export class ReportsService {
       const report = await this.load(tx, reportId);
       if (!report) throw new NotFoundException(`Report ${reportId} not found`);
       return report;
+    });
+  }
+
+  /**
+   * Render a report as a PDF.
+   *
+   * `patientId` scopes the lookup when the portal calls this, so a patient
+   * cannot fetch another patient's report by id. Staff pass nothing and RLS
+   * is the only scope, as everywhere else on the staff surface.
+   */
+  async renderPdf(
+    reportId: string,
+    user: AuthenticatedUser,
+    opts: { patientId?: string } = {},
+  ): Promise<Buffer> {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const report = await tx.labReport.findFirst({
+        where: {
+          id: reportId,
+          ...(opts.patientId ? { patientId: opts.patientId } : {}),
+        },
+        include: {
+          signatures: { orderBy: { signedAt: 'asc' } },
+          supersededBy: { select: { number: true } },
+          order: {
+            select: {
+              number: true,
+              items: {
+                select: {
+                  testCode: true,
+                  testName: true,
+                  resultValue: true,
+                  resultUnit: true,
+                  referenceLow: true,
+                  referenceHigh: true,
+                  abnormalFlag: true,
+                  resultStatus: true,
+                },
+                orderBy: { createdAt: 'asc' },
+              },
+            },
+          },
+        },
+      });
+      if (!report) throw new NotFoundException(`Report ${reportId} not found`);
+
+      const patient = await tx.patient.findFirst({
+        where: { id: report.patientId },
+        select: {
+          firstName: true,
+          lastName: true,
+          dateOfBirth: true,
+          sex: true,
+          mrn: true,
+        },
+      });
+      if (!patient) {
+        throw new NotFoundException(`Patient for report ${reportId} not found`);
+      }
+
+      const tenant = await tx.tenant.findFirst({
+        where: { id: user.tenantId },
+        select: { name: true, settings: true },
+      });
+      const lab = await tx.laboratory.findFirst();
+      const location = await tx.location.findFirst({
+        where: { isPrimary: true, deletedAt: null, active: true },
+        select: {
+          name: true,
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          province: true,
+          phone: true,
+        },
+      });
+
+      // Recomputed at render time, not read from a column: a PDF generated
+      // after a correction must carry the warning even though the row was
+      // written before it.
+      const isCurrent = reportIsCurrent(
+        report.contentHash,
+        toReportable(report.order.items),
+      );
+
+      return renderLabReportPdf({
+        report: {
+          number: report.number,
+          version: report.version,
+          status: report.status,
+          issuedAt: report.issuedAt,
+          isCurrent,
+          supersededByNumber: report.supersededBy?.number ?? null,
+          orderNumber: report.order.number,
+          results: report.order.items.map((i) => ({
+            testCode: i.testCode,
+            testName: i.testName,
+            resultValue: i.resultValue,
+            resultUnit: i.resultUnit,
+            referenceLow: i.referenceLow,
+            referenceHigh: i.referenceHigh,
+            abnormalFlag: i.abnormalFlag,
+            resultStatus: i.resultStatus,
+          })),
+          signatures: report.signatures.map((s) => ({
+            signerName: s.signerName,
+            signerRole: s.signerRole,
+            signerLicense: s.signerLicense,
+            signedAt: s.signedAt,
+          })),
+        },
+        tenant: {
+          name: tenant?.name ?? 'Clinic',
+          settings: tenant?.settings as LabReportPdfData['tenant']['settings'],
+        },
+        laboratory: lab
+          ? {
+              name: lab.name,
+              dohLtoNumber: lab.dohLtoNumber,
+              category: lab.category,
+              classification: lab.classification,
+              headName: lab.headName,
+              headLicenseNumber: lab.headLicenseNumber,
+              licenceExpired: licenceStatus(lab, new Date()).expired,
+            }
+          : null,
+        location,
+        patient,
+      });
+    });
+  }
+
+  /**
+   * The reports a patient may see: issued, still current, for their own
+   * record only.
+   *
+   * Superseded and stale reports are withheld from the portal rather than
+   * shown with a warning. Staff need the history; a patient reading their own
+   * results is better served by the one document that is true. The superseded
+   * banner on the PDF exists for copies already in circulation.
+   */
+  listForPatient(patientId: string, user: AuthenticatedUser) {
+    return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const reports = await tx.labReport.findMany({
+        where: { patientId, status: LabReportStatus.ISSUED },
+        include: {
+          signatures: {
+            select: {
+              signerName: true,
+              signerRole: true,
+              signerLicense: true,
+              signedAt: true,
+            },
+            orderBy: { signedAt: 'asc' },
+          },
+          order: { select: { number: true, items: true } },
+        },
+        orderBy: { issuedAt: 'desc' },
+        take: 50,
+      });
+      return reports
+        .filter((r) =>
+          reportIsCurrent(r.contentHash, toReportable(r.order.items)),
+        )
+        .map((r) => ({
+          id: r.id,
+          number: r.number,
+          version: r.version,
+          issuedAt: r.issuedAt,
+          orderNumber: r.order.number,
+          signatures: r.signatures,
+        }));
     });
   }
 

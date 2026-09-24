@@ -1253,6 +1253,7 @@ model Patient {
   medications    Medication[]
   conditions     Condition[]
   invoices       Invoice[]
+  entitlements      PatientEntitlement[]
   dsrRequests    DataSubjectRequest[]
   queueTickets   QueueTicket[]      @relation("PatientQueueTickets")
   pregnancies    ObPregnancy[]      @relation("PatientPregnancies")
@@ -2188,10 +2189,96 @@ model Invoice {
   payments Payment[]
   hmoClaims HmoClaim[]
 
+  /// The entitlement claimed on this invoice, if any.
+  entitlementId String?
+  /// The OSCA / PWD ID number presented, snapshotted. The BIR requires it on
+  /// the face of the invoice, and the entitlement row can be edited later —
+  /// a reissued ID must not rewrite what an old receipt said.
+  statutoryIdNumber String?
+  /// How much of `discountCentavos` was statutory. `discountCentavos` stays
+  /// the total shown to the patient so existing readers keep working; this
+  /// is the part the establishment claims as a tax deduction, which is a
+  /// different number from a commercial discount and reported separately.
+  statutoryDiscountCentavos Int @default(0)
+  /// The sale with VAT removed — the base the statutory discount was taken
+  /// from. Required on the invoice face for a VAT-exempt sale.
+  vatExemptSaleCentavos Int @default(0)
+
   @@unique([tenantId, number])
   @@index([tenantId, patientId, issuedAt])
   @@index([tenantId, status])
   @@map("invoices")
+}
+
+/// A statutory entitlement a patient holds.
+///
+/// RA 9994 (senior citizens) and RA 10754 (persons with disability) both
+/// grant 20% and VAT exemption **on presentation of an ID**. The ID number is
+/// not decoration: the BIR requires it on the invoice, and a discount claimed
+/// without one is not substantiated.
+model PatientEntitlement {
+  id        String          @id @default(cuid())
+  tenantId  String
+  patientId String
+  type      EntitlementType
+
+  /// OSCA / senior citizen / PWD ID number as presented.
+  idNumber String
+
+  /// A PWD ID carries an expiry; a senior citizen ID generally does not.
+  /// Null at either end means open-ended.
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  /// Who sighted the physical ID, and when. Null means recorded but not yet
+  /// verified — visible to the clinic rather than silently trusted.
+  verifiedAt   DateTime?
+  verifiedById String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  /// One live entitlement of each type per patient. A replacement ID updates
+  /// the row rather than accumulating duplicates that disagree.
+  @@unique([tenantId, patientId, type])
+  @@index([tenantId, patientId])
+  @@map("patient_entitlements")
+}
+
+enum EntitlementType {
+  SENIOR_CITIZEN
+  PWD
+}
+
+/// What a given entitlement is worth, per tenant.
+///
+/// Configurable rather than hard-coded because the statutory rates are law
+/// but not eternal — RA 9994 raised what RA 7432 set — and because a clinic
+/// may run its own concessions through the same machinery. The DEFAULTS are
+/// the statutory ones (see apps/api/src/billing/ph-statutory.ts); a tenant
+/// that has configured nothing gets the law.
+///
+/// What is NOT configurable is the arithmetic: VAT comes off before the
+/// percentage, because that is what determines the deductible amount.
+model DiscountRule {
+  id       String          @id @default(cuid())
+  tenantId String
+  type     EntitlementType
+
+  percent   Int
+  vatExempt Boolean @default(true)
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, type, effectiveFrom])
+  @@map("discount_rules")
 }
 
 enum InvoiceStatus {
@@ -2536,6 +2623,88 @@ model LabSection {
   @@unique([tenantId, code])
   @@index([tenantId, isActive, sortOrder])
   @@map("lab_sections")
+}
+
+/// DOH Licence to Operate category (AO 2021-0037).
+enum LtoCategory {
+  PRIMARY
+  SECONDARY
+  TERTIARY
+}
+
+/// The licensed clinical laboratory, which is not the same thing as the
+/// tenant.
+///
+/// A tenant is an account; a laboratory is a facility with a Licence to
+/// Operate, a category, a head and a pathologist. AO 2021-0037 requires the
+/// LTO number and the head of laboratory on issued reports, and a laboratory
+/// may not perform examinations beyond its authorized service capability.
+/// None of that could be recorded.
+///
+/// One per tenant for now. A multi-site group with an LTO per branch needs
+/// this keyed to `Location`, which is why `locationId` is here from the
+/// start even though nothing reads it yet.
+model Laboratory {
+  id       String  @id @default(cuid())
+  tenantId String
+  /// Reserved for the multi-site case. Null means "this tenant's laboratory".
+  locationId String?
+
+  name String
+
+  dohLtoNumber   String?
+  category       LtoCategory @default(PRIMARY)
+  /// GENERAL or SPECIAL; INSTITUTION_BASED or FREESTANDING. Free text because
+  /// the combinations on an actual LTO do not reduce to one enum cleanly.
+  classification String?
+
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  /// Head of laboratory and pathologist of record, with PRC numbers. Names
+  /// rather than user references: the pathologist of record is frequently a
+  /// visiting consultant who has no account here, and a report that cannot
+  /// name them is not compliant.
+  headName                 String?
+  headLicenseNumber        String?
+  pathologistName          String?
+  pathologistLicenseNumber String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  capabilities LabServiceCapability[]
+
+  @@unique([tenantId])
+  @@map("laboratories")
+}
+
+/// What this laboratory is authorized to perform.
+///
+/// A row naming a test overrides a row naming its section, which is what
+/// makes "we do chemistry but HbA1c goes out" and "no microbiology except
+/// gram stain" both expressible. See apps/api/src/labs/capability.ts.
+///
+/// Declaring nothing means undeclared, not prohibited — a laboratory that
+/// has never opened this screen has not said it can do nothing.
+model LabServiceCapability {
+  id           String @id @default(cuid())
+  tenantId     String
+  laboratoryId String
+
+  /// Exactly one of these is set: a whole section, or a single test.
+  sectionId String?
+  testId    String?
+
+  isEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, laboratoryId])
+  @@map("lab_service_capabilities")
 }
 
 enum LabResultType {

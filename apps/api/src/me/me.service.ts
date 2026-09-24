@@ -9,6 +9,7 @@ import type { AuthenticatedUser } from '../auth/decorators/current-user.decorato
 import type { UpdateStaffProfileDto } from './dto/staff-profile.dto.js';
 import { BillingService } from '../billing/billing.service.js';
 import { FilesService } from '../files/files.service.js';
+import { ReportsService } from '../labs/reports.service.js';
 import { isReleased, type LabResultStatus } from '../labs/verification.js';
 
 /**
@@ -27,7 +28,31 @@ export class MeService {
     private readonly billing: BillingService,
     private readonly config: ConfigService,
     private readonly files: FilesService,
+    private readonly reports: ReportsService,
   ) {}
+
+  /**
+   * The patient's own laboratory reports.
+   *
+   * Scoped to their `patientId` from the JWT, never a param — the same rule
+   * every other method here follows.
+   */
+  labReports(user: AuthenticatedUser) {
+    return this.reports.listForPatient(this.requirePatientId(user), user);
+  }
+
+  /**
+   * One of their reports, as a PDF.
+   *
+   * The patient id is passed down so the lookup is scoped by ownership as
+   * well as by RLS. Without it a portal account could fetch another
+   * patient's report by id — the same shape as the original portal BOLA.
+   */
+  labReportPdf(reportId: string, user: AuthenticatedUser) {
+    return this.reports.renderPdf(reportId, user, {
+      patientId: this.requirePatientId(user),
+    });
+  }
 
   private requirePatientId(user: AuthenticatedUser): string {
     if (!user.patientId) {

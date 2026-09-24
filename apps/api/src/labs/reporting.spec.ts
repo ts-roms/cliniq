@@ -3,6 +3,7 @@ import {
   formatReportNumber,
   hashReportContent,
   reportIsCurrent,
+  supersededNotice,
   type ReportableResult,
 } from './reporting.js';
 
@@ -145,5 +146,65 @@ describe('canIssueReport', () => {
     const r = canIssueReport([]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/no tests/);
+  });
+});
+
+describe('supersededNotice', () => {
+  const current = {
+    isCurrent: true,
+    status: 'ISSUED',
+    supersededByNumber: null,
+  };
+
+  it('says nothing on a current report', () => {
+    expect(supersededNotice(current)).toBeNull();
+  });
+
+  it('names the replacement when there is one', () => {
+    const notice = supersededNotice({
+      isCurrent: false,
+      status: 'SUPERSEDED',
+      supersededByNumber: 'LR-202609-0002',
+    });
+    expect(notice).toMatch(/SUPERSEDED/);
+    // Naming the replacement is the point: a reader holding this needs to
+    // know what to go and find.
+    expect(notice).toMatch(/LR-202609-0002/);
+  });
+
+  it('warns on a stale report even before it has been re-issued', () => {
+    // A result was corrected but nobody has issued the replacement yet.
+    // That gap is exactly when a stale copy is most dangerous.
+    const notice = supersededNotice({
+      isCurrent: false,
+      status: 'ISSUED',
+      supersededByNumber: null,
+    });
+    expect(notice).toMatch(/OUT OF DATE/);
+  });
+
+  it('warns on a SUPERSEDED row whose hash still matches', () => {
+    // Re-issuing with a since-reverted value could leave the old report
+    // hash-current while still superseded. Status alone must be enough.
+    expect(
+      supersededNotice({
+        isCurrent: true,
+        status: 'SUPERSEDED',
+        supersededByNumber: 'LR-202609-0002',
+      }),
+    ).toMatch(/SUPERSEDED/);
+  });
+
+  it('tells the reader not to act on it, in both cases', () => {
+    for (const r of [
+      { isCurrent: false, status: 'ISSUED', supersededByNumber: null },
+      {
+        isCurrent: false,
+        status: 'SUPERSEDED',
+        supersededByNumber: 'LR-202609-0002',
+      },
+    ]) {
+      expect(supersededNotice(r)).toMatch(/Do not act on this copy/);
+    }
   });
 });
