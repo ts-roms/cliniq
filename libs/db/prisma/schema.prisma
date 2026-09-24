@@ -2525,6 +2525,89 @@ model CriticalValueRule {
   @@map("critical_value_rules")
 }
 
+/// How a critical result was communicated to the responsible clinician.
+///
+/// IN_APP is what the system can do by itself. The others record a human
+/// action — a laboratory that telephones a critical potassium logs PHONE with
+/// the read-back in `acknowledgementNote`. Documented communication AND
+/// acknowledgement of critical values is the single most common finding in
+/// laboratory inspections, and neither can be evidenced from an in-app
+/// notification that nobody opened.
+enum CriticalNotificationMethod {
+  IN_APP
+  PHONE
+  SMS
+  EMAIL
+  IN_PERSON
+}
+
+/// A critical result that someone must be told about, and the record that
+/// they were.
+///
+/// Before this existed, a critical result fired a fire-and-forget in-app
+/// notification:
+///
+///     void this.notif.notify({ ... severity: CRITICAL ... });
+///
+/// unawaited, failure swallowed, no recipient record, no acknowledgement, no
+/// escalation, and no audit row. If delivery failed there was no trace that
+/// anyone should have been told — the result simply sat in the chart.
+///
+/// The row is now written in the SAME transaction as the result, so a
+/// critical value cannot exist without a corresponding obligation to
+/// communicate it. Delivery stays best-effort and is recorded on the row;
+/// the obligation does not depend on delivery succeeding.
+///
+/// Values are snapshotted rather than joined: the row has to stay meaningful
+/// after a result is corrected, and "what was critical at the time" is the
+/// question an inspection asks.
+model CriticalResultNotification {
+  id       String @id @default(cuid())
+  tenantId String
+
+  orderId     String
+  orderItemId String
+  patientId   String
+
+  // Snapshot of what made this critical.
+  testName     String
+  resultValue  String
+  resultUnit   String?
+  flag         LabAbnormalFlag
+  criticalLow  Float?
+  criticalHigh Float?
+  /// The rule that fired, when one did. Null for an explicitly-flagged result.
+  ruleId       String?
+
+  /// The clinician who must be told — the ordering provider.
+  recipientUserId String
+  method          CriticalNotificationMethod @default(IN_APP)
+
+  /// When delivery was attempted and whether it worked. A null notifiedAt
+  /// with a non-null deliveryError is the case that used to be invisible.
+  notifiedAt    DateTime?
+  deliveryError String?
+
+  /// Read-back. `acknowledgementNote` is where the clinician's repeat-back of
+  /// the value goes when the lab telephones it.
+  acknowledgedAt       DateTime?
+  acknowledgedByUserId String?
+  acknowledgementNote  String?
+
+  /// When acknowledgement becomes overdue, from the rule's
+  /// notifyWithinMinutes. The escalation sweep reads this.
+  dueAt       DateTime
+  escalatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, acknowledgedAt, dueAt])
+  @@index([tenantId, orderItemId])
+  @@index([tenantId, patientId, createdAt])
+  @@map("critical_result_notifications")
+}
+
 enum LabAbnormalFlag {
   NORMAL
   HIGH
@@ -2691,6 +2774,7 @@ enum NotificationKind {
   HMO_CLAIM_UPDATE
   LAB_REPORTED
   LAB_ABNORMAL
+  LAB_CRITICAL_UNACKNOWLEDGED
   INVENTORY_LOW
   DSR_FILED
   DSR_RESOLVED

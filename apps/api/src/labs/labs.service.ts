@@ -216,9 +216,16 @@ export class LabsService {
           `Item ${itemId} not found in order ${orderId}`,
         );
 
-      const flag =
-        dto.abnormalFlag ??
-        (await this.computeFlag(tx, item, dto.resultValue, user.tenantId));
+      // An explicitly-supplied flag still needs limits resolved, because a
+      // critical result must record WHICH thresholds applied even when a human
+      // set the flag by hand (qualitative results, referred-in reports).
+      const resolution = await this.resolveFlag(
+        tx,
+        item,
+        dto.resultValue,
+        user.tenantId,
+      );
+      const flag = dto.abnormalFlag ?? resolution.flag;
 
       const updatedItem = await tx.labOrderItem.update({
         where: { id: itemId },
@@ -251,16 +258,51 @@ export class LabsService {
         orderJustReported = true;
       }
 
-      // Notify the ordering provider of abnormal/critical results immediately,
-      // and of the full REPORTED transition once everything's in. Notification
-      // delivery is best-effort — we don't roll back the result on failure.
       const order = await tx.labOrder.findFirst({
         where: { id: orderId },
         select: { number: true, providerId: true, patientId: true },
       });
+
+      // A critical result creates an obligation to tell someone, and that
+      // obligation is recorded IN THIS TRANSACTION. Delivery below is still
+      // best-effort; the record is not. Previously a failed notify() left no
+      // trace that anyone should have been told.
+      let criticalNotificationId: string | null = null;
+      if (critical && order) {
+        const created = await tx.criticalResultNotification.create({
+          data: {
+            tenantId: user.tenantId,
+            orderId,
+            orderItemId: itemId,
+            patientId: order.patientId,
+            testName: item.testName,
+            resultValue: dto.resultValue,
+            resultUnit: dto.resultUnit ?? item.resultUnit,
+            flag: flag as LabAbnormalFlag,
+            criticalLow: resolution.criticalLow,
+            criticalHigh: resolution.criticalHigh,
+            ruleId: resolution.ruleId,
+            recipientUserId: order.providerId,
+            dueAt: new Date(
+              Date.now() + resolution.notifyWithinMinutes * 60_000,
+            ),
+          },
+          select: { id: true },
+        });
+        criticalNotificationId = created.id;
+        this.logger.warn(
+          `critical result ${flag} on ${item.testName} (order ${order.number}) — notification ${created.id} raised for user ${order.providerId}`,
+        );
+      }
+
+      // Notify the ordering provider of abnormal/critical results immediately,
+      // and of the full REPORTED transition once everything's in. Delivery is
+      // best-effort — we don't roll back the result on failure — but for a
+      // critical result the outcome is stamped on the row above so a silent
+      // failure is visible in the unacknowledged queue.
       if (order) {
         if (abnormal) {
-          void this.notif.notify({
+          const delivery = this.notif.notify({
             tenantId: user.tenantId,
             userId: order.providerId,
             kind: NotificationKind.LAB_ABNORMAL,
@@ -272,6 +314,15 @@ export class LabsService {
             link: `/patients/${order.patientId}`,
             entityId: orderId,
           });
+          if (criticalNotificationId) {
+            void this.recordDelivery(
+              user.tenantId,
+              criticalNotificationId,
+              delivery,
+            );
+          } else {
+            void delivery.catch(() => undefined);
+          }
         }
         if (orderJustReported) {
           void this.notif.notify({
@@ -290,6 +341,45 @@ export class LabsService {
   }
 
   /**
+   * Stamp the outcome of the in-app delivery onto the critical notification.
+   *
+   * Runs outside the result transaction on purpose: the obligation is already
+   * durable, and a push/in-app failure must not roll back a recorded result.
+   * Either way the row ends up truthy — `notifiedAt` set, or `deliveryError`
+   * explaining why not — so the unacknowledged queue shows both "nobody has
+   * acknowledged this" and "we could not even reach them".
+   */
+  private async recordDelivery(
+    tenantId: string,
+    notificationId: string,
+    delivery: Promise<unknown>,
+  ): Promise<void> {
+    let error: string | null = null;
+    try {
+      await delivery;
+    } catch (err) {
+      error = (err as Error).message.slice(0, 500);
+      this.logger.error(
+        `critical notification ${notificationId} delivery failed: ${error}`,
+      );
+    }
+    try {
+      await this.prisma.withTenant(tenantId, null, (tx) =>
+        tx.criticalResultNotification.update({
+          where: { id: notificationId },
+          data: error
+            ? { deliveryError: error }
+            : { notifiedAt: new Date(), deliveryError: null },
+        }),
+      );
+    } catch (err) {
+      this.logger.error(
+        `could not stamp delivery on ${notificationId}: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  /**
    * Resolve the limits that apply to one result, then flag it.
    *
    * Precedence for critical limits:
@@ -302,8 +392,12 @@ export class LabsService {
    * Age and sex come from the patient on the order. An unknown date of birth
    * or sex matches only rules that do not narrow on that dimension, so a
    * neonatal limit is never applied to a patient we cannot age.
+   *
+   * Returns the limits that were actually applied, not just the flag: a
+   * critical result has to record WHICH thresholds made it critical, because
+   * the rule can be superseded and the result still has to be explicable.
    */
-  private async computeFlag(
+  private async resolveFlag(
     tx: PrismaClient,
     item: {
       testCode: string | null;
@@ -316,7 +410,7 @@ export class LabsService {
     },
     resultValue: string,
     tenantId: string,
-  ): Promise<LabAbnormalFlag | undefined> {
+  ): Promise<FlagResolution> {
     const reference = {
       referenceLow: item.referenceLow,
       referenceHigh: item.referenceHigh,
@@ -324,16 +418,21 @@ export class LabsService {
 
     // 1. Per-order override short-circuits the lookup entirely.
     if (item.criticalLow !== null || item.criticalHigh !== null) {
-      return toDbFlag(
-        deriveFlag(resultValue, reference, {
-          criticalLow: item.criticalLow,
-          criticalHigh: item.criticalHigh,
-        }),
-      );
+      const limits = {
+        criticalLow: item.criticalLow,
+        criticalHigh: item.criticalHigh,
+      };
+      return {
+        flag: toDbFlag(deriveFlag(resultValue, reference, limits)),
+        ...limits,
+        ruleId: null,
+        notifyWithinMinutes: DEFAULT_CRITICAL_NOTIFY_MINUTES,
+      };
     }
 
     const testKey = normaliseTestKey(item.testCode, item.testName);
-    if (testKey === '') return toDbFlag(deriveFlag(resultValue, reference));
+    if (testKey === '')
+      return noCriticalLimits(deriveFlag(resultValue, reference));
 
     const now = new Date();
     const rules = await tx.criticalValueRule.findMany({
@@ -346,7 +445,7 @@ export class LabsService {
       },
     });
     if (rules.length === 0) {
-      return toDbFlag(deriveFlag(resultValue, reference));
+      return noCriticalLimits(deriveFlag(resultValue, reference));
     }
 
     const order = await tx.labOrder.findFirst({
@@ -359,15 +458,19 @@ export class LabsService {
     };
 
     const rule = selectCriticalRule(rules, patient, now);
-    return toDbFlag(
-      deriveFlag(
-        resultValue,
-        reference,
-        rule
-          ? { criticalLow: rule.criticalLow, criticalHigh: rule.criticalHigh }
-          : { criticalLow: null, criticalHigh: null },
-      ),
-    );
+    if (!rule) return noCriticalLimits(deriveFlag(resultValue, reference));
+
+    const limits = {
+      criticalLow: rule.criticalLow,
+      criticalHigh: rule.criticalHigh,
+    };
+    return {
+      flag: toDbFlag(deriveFlag(resultValue, reference, limits)),
+      ...limits,
+      ruleId: rule.id,
+      notifyWithinMinutes:
+        rule.notifyWithinMinutes ?? DEFAULT_CRITICAL_NOTIFY_MINUTES,
+    };
   }
 
   // ── helpers ──────────────────────────────────────
@@ -392,4 +495,31 @@ export class LabsService {
  */
 function toDbFlag(flag: ResultFlag | undefined): LabAbnormalFlag | undefined {
   return flag === undefined ? undefined : (flag as LabAbnormalFlag);
+}
+
+/**
+ * How long a clinician has to acknowledge a critical result before the
+ * escalation sweep picks it up, when the rule does not say. An hour is a
+ * deliberately loose default: the point of the sweep is to catch results
+ * nobody looked at, not to page people over a busy morning.
+ */
+const DEFAULT_CRITICAL_NOTIFY_MINUTES = 60;
+
+/** The flag plus the critical limits that produced it (if any). */
+interface FlagResolution {
+  flag: LabAbnormalFlag | undefined;
+  criticalLow: number | null;
+  criticalHigh: number | null;
+  ruleId: string | null;
+  notifyWithinMinutes: number;
+}
+
+function noCriticalLimits(flag: ResultFlag | undefined): FlagResolution {
+  return {
+    flag: toDbFlag(flag),
+    criticalLow: null,
+    criticalHigh: null,
+    ruleId: null,
+    notifyWithinMinutes: DEFAULT_CRITICAL_NOTIFY_MINUTES,
+  };
 }
