@@ -16,6 +16,7 @@ import {
 } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { LaboratoryService } from './laboratory.service.js';
 import type {
   AmendResultDto,
   CreateLabOrderDto,
@@ -54,6 +55,7 @@ export class LabsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notif: NotificationsService,
+    private readonly laboratory: LaboratoryService,
   ) {}
 
   // ── Orders ─────────────────────────────────────────
@@ -156,7 +158,7 @@ export class LabsService {
       }
 
       const number = await this.nextOrderNumber(tx, user.tenantId);
-      return tx.labOrder.create({
+      const order = await tx.labOrder.create({
         data: {
           tenantId: user.tenantId,
           patientId: dto.patientId,
@@ -196,6 +198,23 @@ export class LabsService {
         },
         include: { items: true },
       });
+
+      // DOH AO 2021-0037: a laboratory may not perform examinations beyond
+      // its authorized service capability. Reported rather than refused —
+      // the lawful response to an out-of-scope test is to refer it, and
+      // referral laboratories are not modelled yet, so blocking would leave
+      // a clinic unable to order something it is entitled to send out.
+      // Empty for any tenant that has not declared a capability.
+      const outOfScope = await this.laboratory.screen(
+        tx,
+        order.items.map((i) => ({
+          testId: i.testId,
+          sectionId: null,
+          testName: i.testName,
+        })),
+      );
+
+      return { ...order, outOfScope };
     });
   }
 

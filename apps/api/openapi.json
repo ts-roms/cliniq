@@ -4899,6 +4899,101 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/laboratory": {
+      "get": {
+        "operationId": "LaboratoryController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "put": {
+        "operationId": "LaboratoryController_upsert",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertLaboratoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/laboratory/capabilities": {
+      "post": {
+        "operationId": "LaboratoryController_setCapability",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCapabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/laboratory/capabilities/{id}": {
+      "delete": {
+        "operationId": "LaboratoryController_removeCapability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/tele/sessions": {
       "post": {
         "operationId": "TeleController_create",
@@ -12039,6 +12134,75 @@
           }
         },
         "required": ["status"]
+      },
+      "LtoCategory": {
+        "type": "string",
+        "enum": ["PRIMARY", "SECONDARY", "TERTIARY"]
+      },
+      "UpsertLaboratoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dohLtoNumber": {
+            "type": "string",
+            "description": "DOH Licence to Operate number."
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LtoCategory"
+              }
+            ]
+          },
+          "classification": {
+            "type": "string",
+            "description": "e.g. \"GENERAL, FREESTANDING\" — as printed on the LTO."
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the LTO expires."
+          },
+          "headName": {
+            "type": "string"
+          },
+          "headLicenseNumber": {
+            "type": "string",
+            "description": "PRC licence number."
+          },
+          "pathologistName": {
+            "type": "string"
+          },
+          "pathologistLicenseNumber": {
+            "type": "string",
+            "description": "PRC licence number."
+          }
+        },
+        "required": ["name", "category"]
+      },
+      "SetCapabilityDto": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "description": "A whole section."
+          },
+          "testId": {
+            "type": "string",
+            "description": "A single test. Overrides whatever its section says."
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "False records that this is explicitly NOT performed here."
+          }
+        }
       },
       "CreateSessionDto": {
         "type": "object",

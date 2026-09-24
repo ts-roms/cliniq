@@ -2538,6 +2538,88 @@ model LabSection {
   @@map("lab_sections")
 }
 
+/// DOH Licence to Operate category (AO 2021-0037).
+enum LtoCategory {
+  PRIMARY
+  SECONDARY
+  TERTIARY
+}
+
+/// The licensed clinical laboratory, which is not the same thing as the
+/// tenant.
+///
+/// A tenant is an account; a laboratory is a facility with a Licence to
+/// Operate, a category, a head and a pathologist. AO 2021-0037 requires the
+/// LTO number and the head of laboratory on issued reports, and a laboratory
+/// may not perform examinations beyond its authorized service capability.
+/// None of that could be recorded.
+///
+/// One per tenant for now. A multi-site group with an LTO per branch needs
+/// this keyed to `Location`, which is why `locationId` is here from the
+/// start even though nothing reads it yet.
+model Laboratory {
+  id       String  @id @default(cuid())
+  tenantId String
+  /// Reserved for the multi-site case. Null means "this tenant's laboratory".
+  locationId String?
+
+  name String
+
+  dohLtoNumber   String?
+  category       LtoCategory @default(PRIMARY)
+  /// GENERAL or SPECIAL; INSTITUTION_BASED or FREESTANDING. Free text because
+  /// the combinations on an actual LTO do not reduce to one enum cleanly.
+  classification String?
+
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  /// Head of laboratory and pathologist of record, with PRC numbers. Names
+  /// rather than user references: the pathologist of record is frequently a
+  /// visiting consultant who has no account here, and a report that cannot
+  /// name them is not compliant.
+  headName                 String?
+  headLicenseNumber        String?
+  pathologistName          String?
+  pathologistLicenseNumber String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  capabilities LabServiceCapability[]
+
+  @@unique([tenantId])
+  @@map("laboratories")
+}
+
+/// What this laboratory is authorized to perform.
+///
+/// A row naming a test overrides a row naming its section, which is what
+/// makes "we do chemistry but HbA1c goes out" and "no microbiology except
+/// gram stain" both expressible. See apps/api/src/labs/capability.ts.
+///
+/// Declaring nothing means undeclared, not prohibited — a laboratory that
+/// has never opened this screen has not said it can do nothing.
+model LabServiceCapability {
+  id           String @id @default(cuid())
+  tenantId     String
+  laboratoryId String
+
+  /// Exactly one of these is set: a whole section, or a single test.
+  sectionId String?
+  testId    String?
+
+  isEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, laboratoryId])
+  @@map("lab_service_capabilities")
+}
+
 enum LabResultType {
   NUMERIC
   TEXT
