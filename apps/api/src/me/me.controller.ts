@@ -109,4 +109,23 @@ export class MeController {
     res.send(pdf);
     return undefined;
   }
+  /**
+   * The portal half of file download. Staff use GET /api/files/:id/download,
+   * which is gated on PATIENT_READ and scoped by RLS alone; portal accounts
+   * come through here, where ownership is additionally enforced.
+   */
+  @Get('files/:id/download')
+  @Requires(Actions.PORTAL_READ)
+  @PortalRoute()
+  @Audit({
+    action: 'me.file.download',
+    entity: 'FileObject',
+    entityIdFrom: 'param:id',
+  })
+  downloadFile(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.me.downloadFile(id, user);
+  }
 }

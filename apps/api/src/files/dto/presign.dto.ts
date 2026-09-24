@@ -52,6 +52,35 @@ export class PresignRequestDto {
   @IsOptional()
   @IsBoolean()
   isPhi?: boolean;
+
+  /**
+   * Who the file is about. Optional because not every file has a patient —
+   * a clinic logo, a clinician's signature image — but supplying it is what
+   * makes the file downloadable by that patient through the portal. A file
+   * with no patient is staff-only by construction.
+   */
+  @ApiPropertyOptional({
+    description:
+      'Patient this file belongs to. Required for the portal to be able to fetch it; omit for non-clinical files.',
+  })
+  @IsOptional()
+  @IsString()
+  patientId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Encounter the file was captured during, when there was one.',
+  })
+  @IsOptional()
+  @IsString()
+  consultationId?: string;
+}
+
+export class DownloadResponseDto {
+  @ApiProperty({ description: 'Short-lived presigned GET URL.' })
+  url!: string;
+  @ApiProperty() expiresInSec!: number;
+  @ApiProperty() filename!: string;
+  @ApiProperty() mimeType!: string;
 }
 
 export class PresignResponseDto {
