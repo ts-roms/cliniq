@@ -1,0 +1,23 @@
+-- Make icd_codes actually read-only for the application role.
+--
+-- 20260504020000_pilot_readiness said what it meant:
+--
+--     GRANT SELECT ON "icd_codes" TO cliniq_app;
+--
+-- but 20260501000001_rls_policies had already run
+-- ALTER DEFAULT PRIVILEGES ... GRANT SELECT, INSERT, UPDATE, DELETE, which
+-- applies to every table created afterwards. A narrower GRANT does not
+-- subtract; only REVOKE does. So the role has held all four ever since.
+--
+-- This matters more here than on a tenant-scoped table. icd_codes is global:
+-- no tenantId, and therefore no row-level security. There is nothing between
+-- a tenant session and `DELETE FROM icd_codes`, which would remove the
+-- ICD-10 reference data for every tenant on the instance. No code path does
+-- it — the API only ever reads (icd-codes.service.ts) and the seed runs as
+-- the owner — so this closes a hole rather than fixing a live bug.
+--
+-- This is the third time the same trap has bitten. The first two were
+-- audit_logs / consultation_amendments (20260924090100) and the CI
+-- provisioning step re-granting after migrate. privilege-coverage.spec.ts
+-- now asserts the whole class instead of us finding them one at a time.
+REVOKE INSERT, UPDATE, DELETE ON "icd_codes" FROM cliniq_app;
