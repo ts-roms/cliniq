@@ -83,6 +83,16 @@ export class CreateCriticalValueRuleDto {
   note?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Minutes the clinician has to acknowledge before escalation. Defaults to 60. Urgency is per-analyte: a critical potassium wants a phone call inside minutes, an abnormal TSH does not.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  notifyWithinMinutes?: number;
+
+  @ApiPropertyOptional({
     description: 'Defaults to now. Set it to schedule a change of limits.',
   })
   @IsOptional()

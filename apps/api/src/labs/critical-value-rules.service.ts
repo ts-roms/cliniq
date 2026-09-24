@@ -82,6 +82,9 @@ export class CriticalValueRulesService {
           ageMaxDays: dto.ageMaxDays ?? null,
           sex: dto.sex ?? null,
           note: dto.note ?? null,
+          ...(dto.notifyWithinMinutes !== undefined
+            ? { notifyWithinMinutes: dto.notifyWithinMinutes }
+            : {}),
           effectiveFrom: dto.effectiveFrom ?? new Date(),
           createdById: user.userId,
         },
