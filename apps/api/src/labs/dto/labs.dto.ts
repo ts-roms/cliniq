@@ -42,6 +42,29 @@ export class LabOrderItemInputDto {
   @Type(() => Number)
   @IsNumber()
   referenceHigh?: number;
+
+  /**
+   * Per-order critical limits. Leave these unset and the tenant's configured
+   * CriticalValueRule applies. They are never derived from the reference
+   * interval — see apps/api/src/labs/flagging.ts.
+   */
+  @ApiPropertyOptional({
+    description:
+      "Overrides the tenant's critical rule for this order only. At or below this value the result is CRITICAL_LOW.",
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  criticalLow?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Overrides the tenant's critical rule for this order only. At or above this value the result is CRITICAL_HIGH.",
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  criticalHigh?: number;
 }
 
 export class CreateLabOrderDto {

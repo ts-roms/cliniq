@@ -32,7 +32,7 @@ What is not there:
 - **A P0 patient-portal authorization hole.** `PATIENT` role holds `PATIENT_READ` (`libs/shared-types/src/lib/roles.ts:118`), and ~30 staff endpoints are gated on `PATIENT_READ` alone with no self-scoping. A portal patient can call `GET /api/patients`, `GET /api/patients/:id`, `GET /api/patients/:id/export`, `GET /api/lab-orders/:id`, `GET /api/prescriptions/:id/pdf` and read every other patient in their clinic. RLS stops cross-tenant; nothing stops patient→patient.
 - **Zero PH payer/benefit modelling.** No PhilHealth member, eligibility, benefit or claim entity. No senior citizen, no OSCA, no PWD, no VAT-exemption. `Invoice.discountCentavos` is one flat integer — it cannot represent the statutory sequence (VAT-exempt the base, then 20% off).
 - **The `Patient` table has 8 fields.** No middle name, suffix, address, barangay, civil status, emergency contact, blood type, occupation, or any government identifier.
-- **Signed clinical notes cannot be corrected.** `ConsultationsService.update` refuses a locked consult with *"Consultation is locked; create a revision instead"* (`apps/api/src/consultations/consultations.service.ts:177-179`) — and no revision mechanism exists anywhere in the codebase.
+- **Signed clinical notes cannot be corrected.** `ConsultationsService.update` refuses a locked consult with _"Consultation is locked; create a revision instead"_ (`apps/api/src/consultations/consultations.service.ts:177-179`) — and no revision mechanism exists anywhere in the codebase.
 
 **Maturity verdict:** CLINIQ is roughly **a credible small-clinic EMR at ~70% of a pilot-ready product**, and **~10% of a clinical laboratory information system**. The platform engineering (multi-tenancy, auth, audit, CI, IaC) is production-grade and should be preserved as-is. The clinical laboratory needs to be built, not refactored.
 
@@ -94,17 +94,17 @@ PostgreSQL as role `cliniq_app`  (NOLOGIN, no BYPASSRLS)
 
 ## 2.3 External services
 
-| Service | Used for | Where |
-| --- | --- | --- |
-| AWS Bedrock | SOAP drafting, dermatology draft, dental treatment-plan draft | `apps/ai-service/src/bedrock/` |
-| AWS Transcribe | consult audio → transcript | `apps/ai-service/src/transcribe/` |
-| AWS S3 + KMS | PHI documents, PDFs | `apps/api/src/files/`, `infra/terraform/modules/storage/` |
-| SMTP (mailer) | invites, password reset | `apps/api/src/mailer/` |
-| SMS provider | queue "you're up next" | `apps/api/src/sms/` |
-| Push (Expo) | mobile notifications | `apps/api/src/notifications/push.service.ts` |
-| WebRTC + TURN | telemedicine (signalling over HTTP short-poll) | `apps/api/src/tele/` |
-| Payment links | dental-lab invoices only | `LabPaymentLink` model |
-| Railway / AWS ECS | hosting | `.railway/railway.ts`, `infra/` |
+| Service           | Used for                                                      | Where                                                     |
+| ----------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
+| AWS Bedrock       | SOAP drafting, dermatology draft, dental treatment-plan draft | `apps/ai-service/src/bedrock/`                            |
+| AWS Transcribe    | consult audio → transcript                                    | `apps/ai-service/src/transcribe/`                         |
+| AWS S3 + KMS      | PHI documents, PDFs                                           | `apps/api/src/files/`, `infra/terraform/modules/storage/` |
+| SMTP (mailer)     | invites, password reset                                       | `apps/api/src/mailer/`                                    |
+| SMS provider      | queue "you're up next"                                        | `apps/api/src/sms/`                                       |
+| Push (Expo)       | mobile notifications                                          | `apps/api/src/notifications/push.service.ts`              |
+| WebRTC + TURN     | telemedicine (signalling over HTTP short-poll)                | `apps/api/src/tele/`                                      |
+| Payment links     | dental-lab invoices only                                      | `LabPaymentLink` model                                    |
+| Railway / AWS ECS | hosting                                                       | `.railway/railway.ts`, `infra/`                           |
 
 **Note:** there is no analyzer interface, no HL7/ASTM/FHIR endpoint, and no PhilHealth eClaims integration anywhere in the tree.
 
@@ -112,45 +112,45 @@ PostgreSQL as role `cliniq_app`  (NOLOGIN, no BYPASSRLS)
 
 # 3. Current Feature Inventory
 
-| Domain | Status | Evidence | Notes |
-| --- | --- | --- | --- |
-| Multi-tenancy + RLS | ✅ | `prisma.service.ts:78-118`, 76/80 tables | Superuser boot refusal is excellent |
-| Auth (JWT, refresh, MFA/TOTP, lockout) | ✅ | `libs/auth/`, `User.mfaEnabled/failedLoginCount` | httpOnly cookies + Bearer both supported |
-| RBAC | 🟡 | `libs/shared-types/src/lib/roles.ts` | 6 roles / 20 actions; no lab or cashier roles |
-| Patient registration | 🟠 | `schema.prisma:1144-1182` | 8 fields. See §5 |
-| Patient chart | 🟡 | `Allergy`, `Medication`, `Condition`, `Vital` | No history/immunisation/procedure/document entities |
-| Consultation (SOAP) | 🟡 | `Consultation`, JSON SOAP, `lockedAt` | Locked = frozen forever; no amendment |
-| ICD-10 | ✅ | `IcdCode` model + `icd.findUnknown()` validation | Validated on write |
-| Prescriptions | ✅ | `Prescription` + `PrescriptionItem` + PRC snapshot + PDF | Best-implemented clinical domain |
-| Drug catalog + safety | ✅ | `apps/api/src/drugs/`, `prescriptions/safety/` | Global + per-tenant drugs |
-| Appointments | ✅ | `Appointment` + lifecycle timestamps + `appointment-transitions.ts` | Proper state machine |
-| Provider availability | ✅ | `ProviderAvailability`, `ProviderTimeOff` | Weekly + dated overrides |
-| Queue | 🟡 | `Queue`, `QueueTicket` | Single-stage ticket; no multi-stage journey (§7) |
-| Visit types | ✅ | `VisitType` | Drives which clinical forms appear |
-| **Clinical laboratory** | 🟠 | `LabOrder`, `LabOrderItem` only | See §6 — this is the headline gap |
-| Dental laboratory marketplace | ✅ | ~35 `Lab*` models, `apps/api/src/lab/` | Substantial and complete; wrong name |
-| Dental chart / odontogram | ✅ | `DentalChart`, `DentalToothEntry`, `DentalSurfaceFinding` | FDI numbering |
-| OB module | ✅ | `ObPregnancy`, `ObVisit`, `UltrasoundReport` | |
-| Billing | 🟡 | `Invoice`, `InvoiceItem`, `Payment`, `Service` | Flat discount; no PH statutory rules (§8) |
-| HMO | 🟡 | `HmoProvider`, `HmoMembership`, `HmoClaim` | No LOA/authorization entity |
-| **PhilHealth** | 🔴 | one `payerCode` comment string | Nothing modelled |
-| **Senior / PWD** | 🔴 | one `QueueKind.PRIORITY` enum value | Nothing modelled |
-| Inventory | ✅ | `InventoryItem`, `StockBatch`, `StockMovement` | FEFO batch consumption |
-| Telemedicine | ✅ | `TeleSession`, `TeleSignal`, recording consent | WebRTC P2P + short-poll signalling |
-| Notifications | 🟡 | `Notification`, `PushToken` | In-app + push + SMS; no unified channel abstraction |
-| Audit log | 🟡 | `AuditLog` + `AuditInterceptor` | Append-only ✅; no before/after, no reason |
-| Consents (DPA) | ✅ | `PatientConsent`, `@RequiresConsent` interceptor | AI processing gated on consent |
-| DSR (data subject requests) | ✅ | `DataSubjectRequest` + `EraseProcessor` | Access/erase/portability |
-| Retention | 🟡 | `apps/api/src/retention/`, `docs/regulatory/retention.md` | Only audit + notification purges implemented |
-| Files / S3 | 🟡 | `FileObject`, presign PUT + confirm | **No download endpoint; no patientId; no AV scan** |
-| Patient portal | 🟡 | `apps/api/src/me/`, `/portal/*` routes | `/me/*` is correctly self-scoped; the rest is not (§4) |
-| Platform admin | ✅ | `PlatformAdmin` (separate identity table), RLS bypass GUC | Good blast-radius isolation |
-| Delegations (act-on-behalf) | ✅ | `Delegation` + `X-Acting-For` + scoped actions | Audited |
-| Reports | 🟡 | 4 endpoints: overview, revenue, top-services, no-shows | No lab analytics at all |
-| AI | ✅ | `ai-service`, `libs/ai-prompts`, `AiBudget`, consent gate | Data-minimised; budget enforced in consult path |
-| Infra (Terraform AWS) | ✅ | `infra/terraform/modules/*` | S3 KMS+versioned+PAB; VPC; RDS; ECS |
-| CI | ✅ | lint/typecheck/test/build + api-e2e + Playwright + docker build | All suites run |
-| Unit tests (API) | 🔴 | 7 spec files / 243 source files | ~3% |
+| Domain                                 | Status | Evidence                                                            | Notes                                                  |
+| -------------------------------------- | ------ | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| Multi-tenancy + RLS                    | ✅     | `prisma.service.ts:78-118`, 76/80 tables                            | Superuser boot refusal is excellent                    |
+| Auth (JWT, refresh, MFA/TOTP, lockout) | ✅     | `libs/auth/`, `User.mfaEnabled/failedLoginCount`                    | httpOnly cookies + Bearer both supported               |
+| RBAC                                   | 🟡     | `libs/shared-types/src/lib/roles.ts`                                | 6 roles / 20 actions; no lab or cashier roles          |
+| Patient registration                   | 🟠     | `schema.prisma:1144-1182`                                           | 8 fields. See §5                                       |
+| Patient chart                          | 🟡     | `Allergy`, `Medication`, `Condition`, `Vital`                       | No history/immunisation/procedure/document entities    |
+| Consultation (SOAP)                    | 🟡     | `Consultation`, JSON SOAP, `lockedAt`                               | Locked = frozen forever; no amendment                  |
+| ICD-10                                 | ✅     | `IcdCode` model + `icd.findUnknown()` validation                    | Validated on write                                     |
+| Prescriptions                          | ✅     | `Prescription` + `PrescriptionItem` + PRC snapshot + PDF            | Best-implemented clinical domain                       |
+| Drug catalog + safety                  | ✅     | `apps/api/src/drugs/`, `prescriptions/safety/`                      | Global + per-tenant drugs                              |
+| Appointments                           | ✅     | `Appointment` + lifecycle timestamps + `appointment-transitions.ts` | Proper state machine                                   |
+| Provider availability                  | ✅     | `ProviderAvailability`, `ProviderTimeOff`                           | Weekly + dated overrides                               |
+| Queue                                  | 🟡     | `Queue`, `QueueTicket`                                              | Single-stage ticket; no multi-stage journey (§7)       |
+| Visit types                            | ✅     | `VisitType`                                                         | Drives which clinical forms appear                     |
+| **Clinical laboratory**                | 🟠     | `LabOrder`, `LabOrderItem` only                                     | See §6 — this is the headline gap                      |
+| Dental laboratory marketplace          | ✅     | ~35 `Lab*` models, `apps/api/src/lab/`                              | Substantial and complete; wrong name                   |
+| Dental chart / odontogram              | ✅     | `DentalChart`, `DentalToothEntry`, `DentalSurfaceFinding`           | FDI numbering                                          |
+| OB module                              | ✅     | `ObPregnancy`, `ObVisit`, `UltrasoundReport`                        |                                                        |
+| Billing                                | 🟡     | `Invoice`, `InvoiceItem`, `Payment`, `Service`                      | Flat discount; no PH statutory rules (§8)              |
+| HMO                                    | 🟡     | `HmoProvider`, `HmoMembership`, `HmoClaim`                          | No LOA/authorization entity                            |
+| **PhilHealth**                         | 🔴     | one `payerCode` comment string                                      | Nothing modelled                                       |
+| **Senior / PWD**                       | 🔴     | one `QueueKind.PRIORITY` enum value                                 | Nothing modelled                                       |
+| Inventory                              | ✅     | `InventoryItem`, `StockBatch`, `StockMovement`                      | FEFO batch consumption                                 |
+| Telemedicine                           | ✅     | `TeleSession`, `TeleSignal`, recording consent                      | WebRTC P2P + short-poll signalling                     |
+| Notifications                          | 🟡     | `Notification`, `PushToken`                                         | In-app + push + SMS; no unified channel abstraction    |
+| Audit log                              | 🟡     | `AuditLog` + `AuditInterceptor`                                     | Append-only ✅; no before/after, no reason             |
+| Consents (DPA)                         | ✅     | `PatientConsent`, `@RequiresConsent` interceptor                    | AI processing gated on consent                         |
+| DSR (data subject requests)            | ✅     | `DataSubjectRequest` + `EraseProcessor`                             | Access/erase/portability                               |
+| Retention                              | 🟡     | `apps/api/src/retention/`, `docs/regulatory/retention.md`           | Only audit + notification purges implemented           |
+| Files / S3                             | 🟡     | `FileObject`, presign PUT + confirm                                 | **No download endpoint; no patientId; no AV scan**     |
+| Patient portal                         | 🟡     | `apps/api/src/me/`, `/portal/*` routes                              | `/me/*` is correctly self-scoped; the rest is not (§4) |
+| Platform admin                         | ✅     | `PlatformAdmin` (separate identity table), RLS bypass GUC           | Good blast-radius isolation                            |
+| Delegations (act-on-behalf)            | ✅     | `Delegation` + `X-Acting-For` + scoped actions                      | Audited                                                |
+| Reports                                | 🟡     | 4 endpoints: overview, revenue, top-services, no-shows              | No lab analytics at all                                |
+| AI                                     | ✅     | `ai-service`, `libs/ai-prompts`, `AiBudget`, consent gate           | Data-minimised; budget enforced in consult path        |
+| Infra (Terraform AWS)                  | ✅     | `infra/terraform/modules/*`                                         | S3 KMS+versioned+PAB; VPC; RDS; ECS                    |
+| CI                                     | ✅     | lint/typecheck/test/build + api-e2e + Playwright + docker build     | All suites run                                         |
+| Unit tests (API)                       | 🔴     | 7 spec files / 243 source files                                     | ~3%                                                    |
 
 ---
 
@@ -165,7 +165,7 @@ PostgreSQL as role `cliniq_app`  (NOLOGIN, no BYPASSRLS)
 PATIENT: new Set([Actions.PATIENT_READ]),
 ```
 
-`PATIENT_READ` is the *only* gate on ~30 staff endpoints. `PatientsService.findById` and `.list` contain no role branch and no self-scope:
+`PATIENT_READ` is the _only_ gate on ~30 staff endpoints. `PatientsService.findById` and `.list` contain no role branch and no self-scope:
 
 ```ts
 // apps/api/src/patients/patients.service.ts:130-138
@@ -180,24 +180,24 @@ async findById(id: string, user: AuthenticatedUser) {
 
 RLS scopes this to the tenant. **Nothing scopes it to the patient.** A portal account issued by `/portal/signup` therefore reaches, with its own valid token:
 
-| Endpoint | File |
-| --- | --- |
-| `GET /api/patients` (full roster) | `patients.controller.ts:50` |
-| `GET /api/patients/:id` | `patients.controller.ts:59` |
-| `GET /api/patients/:id/modules` | `patients.controller.ts:76` |
-| `GET /api/patients/:id/export` (full chart PDF) | `patients.controller.ts` |
-| `GET /api/lab-orders/:id` | `labs.controller.ts:53` |
-| `GET /api/patients/:patientId/lab-orders` | `labs.controller.ts:35` |
-| `GET /api/prescriptions/:id` and `/pdf` | `prescriptions.controller.ts` |
-| `GET /api/patients/:patientId/dental-chart` | `dental.controller.ts` |
-| `GET /api/ob/pregnancies`, `/ob/ultrasound/:id` | `ob.controller.ts` |
-| `GET /api/clinical/allergies|medications|conditions|vitals` | `clinical.controller.ts` |
-| `GET /api/patients/:patientId/hmo-memberships` | `hmo.controller.ts` |
-| `GET /api/appointments`, `/appointments/:id` | `appointments.controller.ts` |
+| Endpoint                                        | File                          |
+| ----------------------------------------------- | ----------------------------- | ---------- | ------- | ------------------------ |
+| `GET /api/patients` (full roster)               | `patients.controller.ts:50`   |
+| `GET /api/patients/:id`                         | `patients.controller.ts:59`   |
+| `GET /api/patients/:id/modules`                 | `patients.controller.ts:76`   |
+| `GET /api/patients/:id/export` (full chart PDF) | `patients.controller.ts`      |
+| `GET /api/lab-orders/:id`                       | `labs.controller.ts:53`       |
+| `GET /api/patients/:patientId/lab-orders`       | `labs.controller.ts:35`       |
+| `GET /api/prescriptions/:id` and `/pdf`         | `prescriptions.controller.ts` |
+| `GET /api/patients/:patientId/dental-chart`     | `dental.controller.ts`        |
+| `GET /api/ob/pregnancies`, `/ob/ultrasound/:id` | `ob.controller.ts`            |
+| `GET /api/clinical/allergies                    | medications                   | conditions | vitals` | `clinical.controller.ts` |
+| `GET /api/patients/:patientId/hmo-memberships`  | `hmo.controller.ts`           |
+| `GET /api/appointments`, `/appointments/:id`    | `appointments.controller.ts`  |
 
 The `/api/me/*` module is done correctly — `MeService.requirePatientId` derives the id from the JWT `pid` claim and never from a param (`me.service.ts:30-33`). The design intent was right; the coarse gate leaks around it.
 
-**No test covers this.** `apps/api-e2e/src/modules/patients.spec.ts:91` asserts only that PATIENT cannot *create* a patient (403 on `PATIENT_WRITE`). There is no assertion that PATIENT is refused on read.
+**No test covers this.** `apps/api-e2e/src/modules/patients.spec.ts:91` asserts only that PATIENT cannot _create_ a patient (403 on `PATIENT_WRITE`). There is no assertion that PATIENT is refused on read.
 
 **Fix (small, surgical):**
 
@@ -230,6 +230,10 @@ if (high !== null) {
 
 For serum potassium (reference 3.5–5.1 mmol/L) this flags CRITICAL_HIGH at 7.65 and CRITICAL_LOW at 1.75. Clinically accepted critical limits are roughly ≥6.0–6.5 and ≤2.5. **The rule systematically under-flags true critical values** — a patient-safety defect, not a cosmetic one. Critical limits are per-analyte and must be configured, never derived from the reference interval.
 
+> **Status: the threshold half is fixed.** Critical limits are now configured data — `CriticalValueRule` (tenant-scoped, RLS-forced, narrowable by age and sex, bounded by an effective window) plus per-order overrides on `LabOrderItem`. The arithmetic lives in `apps/api/src/labs/flagging.ts` as pure functions with 34 unit tests, and with no limit configured a result is flagged HIGH/LOW against its reference interval but **never** CRITICAL. The formula is gone.
+>
+> **The rest of P0-2 still stands**: no technologist → verification → validation → release chain, no `verifiedBy`/`validatedBy`/`releasedAt`, no result versioning, and a released result can still be silently rewritten. That is the Phase 2 LIS work, not a patch.
+
 ## P0-3 ⚠️ Critical results are a fire-and-forget in-app notification
 
 ```ts
@@ -241,7 +245,7 @@ void this.notif.notify({ ... severity: NotificationSeverity.CRITICAL ... });
 
 ## P0-4 ⚠️ Signed consultations cannot be amended
 
-`ConsultationsService.complete` sets `lockedAt`; `update` then refuses with *"Consultation is locked; create a revision instead"* — and grep across `apps/api/src` finds no addendum, amendment or revision mechanism for consultations (only for dental-lab treatment plans). A doctor who signs a note with the wrong diagnosis, the wrong patient's history, or a typo'd drug has **no lawful path to correct the record**. In practice clinics will work around this by never completing consults, which silently destroys the lock's value.
+`ConsultationsService.complete` sets `lockedAt`; `update` then refuses with _"Consultation is locked; create a revision instead"_ — and grep across `apps/api/src` finds no addendum, amendment or revision mechanism for consultations (only for dental-lab treatment plans). A doctor who signs a note with the wrong diagnosis, the wrong patient's history, or a typo'd drug has **no lawful path to correct the record**. In practice clinics will work around this by never completing consults, which silently destroys the lock's value.
 
 ## P0-5 ⚠️ CLINIQ cannot support a DOH-licensed clinical laboratory
 
@@ -270,27 +274,27 @@ Impact is bounded (a device token, and only for a user id that already exists), 
 
 Current (`libs/db/prisma/schema.prisma:1144-1182`), in full: `mrn`, `firstName`, `lastName`, `dateOfBirth`, `sex`, `email`, `phone`.
 
-| Field | Status | Recommendation |
-| --- | --- | --- |
-| MRN | ✅ `@@unique([tenantId, mrn])` | Keep. Add a generator; today it is caller-supplied. |
-| First / Last name | ✅ | |
-| Middle name, suffix | 🔴 | Add to `Patient`. PH records routinely need both; middle name is the mother's maiden surname and is a real disambiguator. |
-| Preferred name | 🔴 | Add `preferredName String?` |
-| Date of birth | ✅ | |
-| Sex | ✅ `Sex` enum | Keep. Consider separate `genderIdentity` later. |
-| Civil status | 🔴 | Enum `CivilStatus` |
-| Address / barangay / city / province / region | 🔴 | **Normalize** — `PatientAddress` (many-per-patient, typed HOME/WORK/BILLING) with `line1`, `barangay`, `cityMunicipality`, `province`, `region`, `postalCode`. PSGC codes optional but valuable for reporting. |
-| Contact info | 🟡 email + phone inline | **Normalize** — `PatientContact` (typed MOBILE/LANDLINE/EMAIL, `isPrimary`). Patients have two mobiles more often than not. |
-| Emergency contact / guardian | 🔴 | `PatientRelatedPerson` with `relationship`, `isEmergencyContact`, `isGuardian` |
-| Occupation / employer | 🔴 | Fields on `Patient`, or a `PatientEmployment` row if HMO membership should key off it |
-| PhilHealth | 🔴 | `PatientIdentifier` (see below) + `PhilHealthMembership` |
-| HMO | 🟡 `HmoMembership` exists | Keep; add LOA (§8) |
-| Senior citizen (OSCA) | 🔴 | `PatientEntitlement` (see below) |
-| PWD | 🔴 | `PatientEntitlement` |
-| Government IDs (PhilSys/UMID/TIN/passport) | 🔴 | `PatientIdentifier` |
-| Allergies | ✅ `Allergy` model | Keep |
-| Blood type | 🔴 | Add `bloodType BloodType?` to `Patient` |
-| Nationality | 🔴 | Add |
+| Field                                         | Status                         | Recommendation                                                                                                                                                                                                 |
+| --------------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MRN                                           | ✅ `@@unique([tenantId, mrn])` | Keep. Add a generator; today it is caller-supplied.                                                                                                                                                            |
+| First / Last name                             | ✅                             |                                                                                                                                                                                                                |
+| Middle name, suffix                           | 🔴                             | Add to `Patient`. PH records routinely need both; middle name is the mother's maiden surname and is a real disambiguator.                                                                                      |
+| Preferred name                                | 🔴                             | Add `preferredName String?`                                                                                                                                                                                    |
+| Date of birth                                 | ✅                             |                                                                                                                                                                                                                |
+| Sex                                           | ✅ `Sex` enum                  | Keep. Consider separate `genderIdentity` later.                                                                                                                                                                |
+| Civil status                                  | 🔴                             | Enum `CivilStatus`                                                                                                                                                                                             |
+| Address / barangay / city / province / region | 🔴                             | **Normalize** — `PatientAddress` (many-per-patient, typed HOME/WORK/BILLING) with `line1`, `barangay`, `cityMunicipality`, `province`, `region`, `postalCode`. PSGC codes optional but valuable for reporting. |
+| Contact info                                  | 🟡 email + phone inline        | **Normalize** — `PatientContact` (typed MOBILE/LANDLINE/EMAIL, `isPrimary`). Patients have two mobiles more often than not.                                                                                    |
+| Emergency contact / guardian                  | 🔴                             | `PatientRelatedPerson` with `relationship`, `isEmergencyContact`, `isGuardian`                                                                                                                                 |
+| Occupation / employer                         | 🔴                             | Fields on `Patient`, or a `PatientEmployment` row if HMO membership should key off it                                                                                                                          |
+| PhilHealth                                    | 🔴                             | `PatientIdentifier` (see below) + `PhilHealthMembership`                                                                                                                                                       |
+| HMO                                           | 🟡 `HmoMembership` exists      | Keep; add LOA (§8)                                                                                                                                                                                             |
+| Senior citizen (OSCA)                         | 🔴                             | `PatientEntitlement` (see below)                                                                                                                                                                               |
+| PWD                                           | 🔴                             | `PatientEntitlement`                                                                                                                                                                                           |
+| Government IDs (PhilSys/UMID/TIN/passport)    | 🔴                             | `PatientIdentifier`                                                                                                                                                                                            |
+| Allergies                                     | ✅ `Allergy` model             | Keep                                                                                                                                                                                                           |
+| Blood type                                    | 🔴                             | Add `bloodType BloodType?` to `Patient`                                                                                                                                                                        |
+| Nationality                                   | 🔴                             | Add                                                                                                                                                                                                            |
 
 **Recommended normalization (do not stuff these onto `Patient`):**
 
@@ -330,48 +334,48 @@ model PatientEntitlement {
 
 ## 5.2 Patient chart — 🟡 PARTIAL
 
-| Section | Status | Evidence |
-| --- | --- | --- |
-| Demographics | 🟠 | thin (§5.1) |
-| Identifiers | 🔴 | — |
-| Contacts / Addresses | 🔴 | — |
-| Allergies | ✅ | `Allergy` + `AllergyType` + `Severity` |
-| Medical history | 🔴 | only `Condition` (problem list) |
-| Surgical history | 🔴 | — |
-| Family history | 🔴 | — |
-| Social history | 🔴 | — |
-| Immunizations | 🔴 | — |
-| Medications | ✅ | `Medication` + `MedStatus` |
-| Problems / Diagnoses | 🟡 | `Condition`, plus `Consultation.diagnosisCodes String[]` — diagnoses are a string array on the encounter, not entities |
-| Encounters | ✅ | `Consultation` |
-| Laboratory | 🟠 | §6 |
-| Imaging | 🟡 | `UltrasoundReport` only (OB) |
-| Procedures | 🔴 | — |
-| Prescriptions | ✅ | `Prescription` |
-| Documents | 🟠 | `FileObject` has no patient link |
-| Audit history | ✅ | `AuditLog` (append-only) |
+| Section              | Status | Evidence                                                                                                               |
+| -------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Demographics         | 🟠     | thin (§5.1)                                                                                                            |
+| Identifiers          | 🔴     | —                                                                                                                      |
+| Contacts / Addresses | 🔴     | —                                                                                                                      |
+| Allergies            | ✅     | `Allergy` + `AllergyType` + `Severity`                                                                                 |
+| Medical history      | 🔴     | only `Condition` (problem list)                                                                                        |
+| Surgical history     | 🔴     | —                                                                                                                      |
+| Family history       | 🔴     | —                                                                                                                      |
+| Social history       | 🔴     | —                                                                                                                      |
+| Immunizations        | 🔴     | —                                                                                                                      |
+| Medications          | ✅     | `Medication` + `MedStatus`                                                                                             |
+| Problems / Diagnoses | 🟡     | `Condition`, plus `Consultation.diagnosisCodes String[]` — diagnoses are a string array on the encounter, not entities |
+| Encounters           | ✅     | `Consultation`                                                                                                         |
+| Laboratory           | 🟠     | §6                                                                                                                     |
+| Imaging              | 🟡     | `UltrasoundReport` only (OB)                                                                                           |
+| Procedures           | 🔴     | —                                                                                                                      |
+| Prescriptions        | ✅     | `Prescription`                                                                                                         |
+| Documents            | 🟠     | `FileObject` has no patient link                                                                                       |
+| Audit history        | ✅     | `AuditLog` (append-only)                                                                                               |
 
 **Recommendation:** `Consultation.diagnosisCodes String[]` should become a `Diagnosis` entity (`encounterId`, `icdCode`, `rank` primary/secondary, `certainty`, `onsetDate`, `resolvedAt`) so diagnoses can be reported on, carried to the problem list, and attached to a PhilHealth claim. Migration is additive and backfillable from the array.
 
 ## 5.3 Clinical encounter — 🟡 PARTIAL
 
-| Stage | Status | Evidence |
-| --- | --- | --- |
-| Check-in | ✅ | `Appointment.checkedInAt` + `QueueTicket` |
-| Vitals | ✅ | `Vital` |
-| Chief complaint | 🟡 | inside `Consultation.subjective` JSON |
-| History | 🟡 | free JSON |
-| Physical exam | 🟡 | `Consultation.objective` JSON |
-| Assessment | 🟡 | JSON |
-| Diagnosis | 🟡 | `diagnosisCodes String[]`, validated against `IcdCode` ✅ |
-| Plan | 🟡 | JSON |
-| Orders (lab) | 🟡 | `LabOrder` |
-| Prescription | ✅ | `Prescription` + PDF + PRC snapshot |
-| Follow-up | 🔴 | no follow-up entity; only a free-text plan |
-| Medical certificate | 🔴 | — |
-| Fit-to-work certificate | 🔴 | — |
-| Referral letter | 🔴 | — |
-| Procedures | 🔴 | — |
+| Stage                   | Status | Evidence                                                  |
+| ----------------------- | ------ | --------------------------------------------------------- |
+| Check-in                | ✅     | `Appointment.checkedInAt` + `QueueTicket`                 |
+| Vitals                  | ✅     | `Vital`                                                   |
+| Chief complaint         | 🟡     | inside `Consultation.subjective` JSON                     |
+| History                 | 🟡     | free JSON                                                 |
+| Physical exam           | 🟡     | `Consultation.objective` JSON                             |
+| Assessment              | 🟡     | JSON                                                      |
+| Diagnosis               | 🟡     | `diagnosisCodes String[]`, validated against `IcdCode` ✅ |
+| Plan                    | 🟡     | JSON                                                      |
+| Orders (lab)            | 🟡     | `LabOrder`                                                |
+| Prescription            | ✅     | `Prescription` + PDF + PRC snapshot                       |
+| Follow-up               | 🔴     | no follow-up entity; only a free-text plan                |
+| Medical certificate     | 🔴     | —                                                         |
+| Fit-to-work certificate | 🔴     | —                                                         |
+| Referral letter         | 🔴     | —                                                         |
+| Procedures              | 🔴     | —                                                         |
 
 SOAP as JSON is a defensible MVP choice (Tiptap rich text without four extra tables) and I would **not** redesign it. But it means SOAP content is unqueryable and unversioned — which is fine for narrative, and not fine for `chiefComplaint`. Recommend promoting `chiefComplaint String?` to a column.
 
@@ -404,7 +408,7 @@ Appointments are genuinely good: a real state machine (`apps/api/src/appointment
 
 The queue is not. `QueueTicket` has one `status` (`WAITING|CALLED|SERVED|NO_SHOW|CANCELLED`) and one `Queue` per `(tenant, location, kind)`. A patient's journey through the clinic is not modelled — so "waiting for cashier" and "waiting for the doctor" are different tickets in different queues with no link, and TAT across the visit cannot be computed.
 
-**Recommended (P2, not P0):** keep `Queue`/`QueueTicket` as the *display* layer and add a `VisitJourney` with ordered `VisitStage` rows:
+**Recommended (P2, not P0):** keep `Queue`/`QueueTicket` as the _display_ layer and add a `VisitJourney` with ordered `VisitStage` rows:
 
 ```
 CHECKED_IN → VITALS → DOCTOR → LAB → CASHIER → COMPLETED
@@ -418,7 +422,7 @@ each stage carrying `enteredAt`, `startedAt`, `completedAt`, `stationId`, `staff
 
 ## 6.1 The naming problem, first
 
-`apps/api/src/lab/` is a **dental laboratory marketplace** — `LabCase` (a crown being manufactured), `LabProduct` (a catalog of prosthetics), `LabMaterialLot`, `LabShipment`, `LabTreatmentPlan`, `LabConformityDocTemplate`, `LabCaseDispute`. `Tenant.kind = LAB` with `LabSpecialty` means *dental lab tenant*.
+`apps/api/src/lab/` is a **dental laboratory marketplace** — `LabCase` (a crown being manufactured), `LabProduct` (a catalog of prosthetics), `LabMaterialLot`, `LabShipment`, `LabTreatmentPlan`, `LabConformityDocTemplate`, `LabCaseDispute`. `Tenant.kind = LAB` with `LabSpecialty` means _dental lab tenant_.
 
 `apps/api/src/labs/` is the **clinical laboratory** — two tables.
 
@@ -426,19 +430,19 @@ Thirty-five models are named `Lab*` for the former; the latter gets `LabOrder`/`
 
 ## 6.2 Stage-by-stage mapping
 
-| Target stage | Status | What exists |
-| --- | --- | --- |
-| Doctor/clinic order | 🟡 | `LabOrder` with `patientId`, `providerId`, `consultationId`, `number` |
-| Accession | 🔴 | `LabOrder.number` is a slip number, not an accession; no specimen accession exists |
-| Specimen collection | 🔴 | `LabOrder.collectedAt` timestamp only — no collector, no container, no volume, no site |
-| Specimen reception | 🔴 | `receivedAt` timestamp only |
-| Processing | 🔴 | no state, no worklist, no section routing |
-| Testing | 🔴 | no analyzer, no method, no run |
-| Result entry | 🟡 | `LabOrderItem.resultValue String?` — free text |
-| Technical verification | 🔴 | — |
-| Pathologist validation | 🔴 | — |
-| Result release | 🟡 | `LabOrderStatus.REPORTED` auto-set when every item has a value |
-| Report to doctor/patient | 🟡 | in-app notification; no PDF lab report exists |
+| Target stage             | Status | What exists                                                                            |
+| ------------------------ | ------ | -------------------------------------------------------------------------------------- |
+| Doctor/clinic order      | 🟡     | `LabOrder` with `patientId`, `providerId`, `consultationId`, `number`                  |
+| Accession                | 🔴     | `LabOrder.number` is a slip number, not an accession; no specimen accession exists     |
+| Specimen collection      | 🔴     | `LabOrder.collectedAt` timestamp only — no collector, no container, no volume, no site |
+| Specimen reception       | 🔴     | `receivedAt` timestamp only                                                            |
+| Processing               | 🔴     | no state, no worklist, no section routing                                              |
+| Testing                  | 🔴     | no analyzer, no method, no run                                                         |
+| Result entry             | 🟡     | `LabOrderItem.resultValue String?` — free text                                         |
+| Technical verification   | 🔴     | —                                                                                      |
+| Pathologist validation   | 🔴     | —                                                                                      |
+| Result release           | 🟡     | `LabOrderStatus.REPORTED` auto-set when every item has a value                         |
+| Report to doctor/patient | 🟡     | in-app notification; no PDF lab report exists                                          |
 
 ## 6.3 Lab order — 🟠
 
@@ -740,7 +744,7 @@ model LabServiceCapability {
 }
 ```
 
-Order placement then becomes: *can this laboratory perform this test?* → yes, accession locally; no, create a `ReferralOrder`. That decision must be enforced server-side at order time, not left to the receptionist.
+Order placement then becomes: _can this laboratory perform this test?_ → yes, accession locally; no, create a `ReferralOrder`. That decision must be enforced server-side at order time, not left to the receptionist.
 
 ## 6.11 Referral laboratory — 🔴
 
@@ -800,13 +804,13 @@ Statuses below distinguish **LEGAL REQUIREMENT** (statute or DOH/NPC issuance), 
 
 ## 7.2 Data privacy
 
-**LEGAL REQUIREMENT.** RA 10173 (Data Privacy Act) classifies health information as *sensitive personal information*. NPC Circular 16-03 requires notification to the Commission and to affected data subjects **within 72 hours** of knowledge or reasonable belief of a breach involving sensitive personal information where there is a real risk of serious harm, with a full report within five days. There is to be **no delay** where at least 100 data subjects are involved.
+**LEGAL REQUIREMENT.** RA 10173 (Data Privacy Act) classifies health information as _sensitive personal information_. NPC Circular 16-03 requires notification to the Commission and to affected data subjects **within 72 hours** of knowledge or reasonable belief of a breach involving sensitive personal information where there is a real risk of serious harm, with a full report within five days. There is to be **no delay** where at least 100 data subjects are involved.
 
 **CLINIQ status:** 🟡. `docs/runbooks/breach-response.md` exists — a genuine strength, most codebases have nothing. But there is no in-product breach register, no `PrivacyIncident` entity, and no automated detection that would start the 72-hour clock. The DSR module (`DataSubjectRequest`, access/erase/portability) is ✅ and directly serves DPA §16 rights.
 
 ## 7.3 Senior citizen and PWD
 
-**LEGAL REQUIREMENT.** RA 9994 (Expanded Senior Citizens Act) grants senior citizens a 20% discount and VAT exemption on, among other things, medical and dental services and diagnostic and laboratory fees in all private facilities. RA 10754 grants PWDs the equivalent 20% discount and VAT exemption on presentation of a valid PWD ID issued by the C/MSWDO or NCDA. The arithmetic is statutory: **strip the 12% VAT from the base first, then apply 20% to the VAT-exclusive amount.** (DOH AO 2024-0017 / FDA Circular 2025-005 removed the *purchase booklet* from the requirements for the medicines discount; the ID itself is still required.)
+**LEGAL REQUIREMENT.** RA 9994 (Expanded Senior Citizens Act) grants senior citizens a 20% discount and VAT exemption on, among other things, medical and dental services and diagnostic and laboratory fees in all private facilities. RA 10754 grants PWDs the equivalent 20% discount and VAT exemption on presentation of a valid PWD ID issued by the C/MSWDO or NCDA. The arithmetic is statutory: **strip the 12% VAT from the base first, then apply 20% to the VAT-exclusive amount.** (DOH AO 2024-0017 / FDA Circular 2025-005 removed the _purchase booklet_ from the requirements for the medicines discount; the ID itself is still required.)
 
 **CLINIQ status:** 🔴. `Invoice` carries `subtotalCentavos`, `discountCentavos`, `taxCentavos`, `totalCentavos` — four integers that cannot express "this line was VAT-exempt because the patient is a senior, under OSCA ID 12-3456, and therefore the 20% was computed on ₱892.86 not ₱1,000". The discount basis, the entitlement id, and the per-line VAT treatment all need to be recorded, because they are what a BIR or DOH examiner asks for.
 
@@ -836,38 +840,38 @@ Statuses below distinguish **LEGAL REQUIREMENT** (statute or DOH/NPC issuance), 
 
 ## 8.1 What is genuinely strong
 
-| Control | Evidence |
-| --- | --- |
-| RLS forced on 76/80 tables | 44 migrations, `FORCE ROW LEVEL SECURITY` |
-| App refuses to start as superuser / `BYPASSRLS` | `prisma.service.ts:78-118` |
-| Tenant GUC set inside the transaction via parameterised `set_config` | `prisma.service.ts` `withTenant` |
-| Platform admin as a separate identity table, not a `User` row | `PlatformAdmin`, `PlatformRefreshSession` |
-| Platform RLS bypass is an explicit, `SET LOCAL`-scoped GUC | `withPlatformContext`, migration `20260506110000` |
-| Audit log append-only at the grant level | `GRANT SELECT, INSERT` only |
-| Tokens in httpOnly cookies (web) with Bearer fallback (mobile) | `jwt-auth.guard.ts:20-35` |
-| MFA/TOTP + hashed backup codes + brute-force lockout | `User.mfaSecret`, `failedLoginCount`, `lockedUntil` |
-| Password reset tokens stored as sha256, never raw | `PasswordResetToken`, `TenantInvite` |
-| Rate limiting with a tighter bucket on credential endpoints | `common/throttle.config.ts` (default 300/min, auth 10/min) |
-| S3 PHI bucket: SSE-KMS, versioned, public access blocked, access-logged, lifecycle | `infra/terraform/modules/storage/main.tf` |
-| AI receives minimised context, gated on explicit patient consent | `ai-client.service.ts:90-100`, `@RequiresConsent(AI_PROCESSING)` |
+| Control                                                                            | Evidence                                                         |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| RLS forced on 76/80 tables                                                         | 44 migrations, `FORCE ROW LEVEL SECURITY`                        |
+| App refuses to start as superuser / `BYPASSRLS`                                    | `prisma.service.ts:78-118`                                       |
+| Tenant GUC set inside the transaction via parameterised `set_config`               | `prisma.service.ts` `withTenant`                                 |
+| Platform admin as a separate identity table, not a `User` row                      | `PlatformAdmin`, `PlatformRefreshSession`                        |
+| Platform RLS bypass is an explicit, `SET LOCAL`-scoped GUC                         | `withPlatformContext`, migration `20260506110000`                |
+| Audit log append-only at the grant level                                           | `GRANT SELECT, INSERT` only                                      |
+| Tokens in httpOnly cookies (web) with Bearer fallback (mobile)                     | `jwt-auth.guard.ts:20-35`                                        |
+| MFA/TOTP + hashed backup codes + brute-force lockout                               | `User.mfaSecret`, `failedLoginCount`, `lockedUntil`              |
+| Password reset tokens stored as sha256, never raw                                  | `PasswordResetToken`, `TenantInvite`                             |
+| Rate limiting with a tighter bucket on credential endpoints                        | `common/throttle.config.ts` (default 300/min, auth 10/min)       |
+| S3 PHI bucket: SSE-KMS, versioned, public access blocked, access-logged, lifecycle | `infra/terraform/modules/storage/main.tf`                        |
+| AI receives minimised context, gated on explicit patient consent                   | `ai-client.service.ts:90-100`, `@RequiresConsent(AI_PROCESSING)` |
 
 ## 8.2 Gaps
 
-| # | Finding | Sev | Evidence |
-| --- | --- | --- | --- |
-| S1 | **PATIENT role reaches ~30 staff endpoints** (P0-1) | P0 | `roles.ts:118` + controllers |
-| S2 | `push_tokens` has no RLS and `PushService` bypasses `withTenant` | P0 | `push.service.ts:92,114` |
-| S3 | `platform_admins` / `platform_refresh_sessions` outside RLS (defence-in-depth) | P1 | no policy in any migration |
-| S4 | No file download endpoint and `FileObject` has no `patientId` — future downloads cannot be authorized | P0 | `files.service.ts`, `schema.prisma:1387` |
-| S5 | No malware scanning on upload; extension sanitised but `mimeType` is caller-asserted | P1 | `files.service.ts:161-166` |
-| S6 | Audit log records no before/after values and no reason | P1 | `AuditLog` model |
-| S7 | `AuditLog` has no read on `patient.read` for portal routes, and no `lab.resultRelease`/`report.download` actions | P1 | `audit.decorator.ts` usage |
-| S8 | Dead RLS helper: `current_user_id()` reads `app.current_user`, but `withTenant` sets `app.current_user_id`. No policy uses it, so no live impact — but it is a loaded footgun for the next person who writes a per-user policy | P2 | migration `20260501000001:18-19` vs `prisma.service.ts` |
-| S9 | Rate-limit storage is in-process; with >1 replica each enforces its own count | P2 | `throttle.config.ts` (documented) |
-| S10 | `queue/page.tsx` still reads a token from localStorage for raw `fetch` (TODO in-file) | P2 | `apps/web/app/(app)/queue/page.tsx:77` |
-| S11 | Inventory SKU uniqueness check leaks nothing cross-tenant (RLS) — but `createItem` conflicts are computed pre-insert rather than on a DB constraint, a race | P3 | `inventory.service.ts:69-74` |
-| S12 | No `PrivacyIncident` / breach register to drive the NPC 72-hour clock | P1 | — |
-| S13 | `patientLabel` is sent to the AI service in the dental-lab treatment-plan path | P2 | `ai-client.service.ts:73` |
+| #   | Finding                                                                                                                                                                                                                        | Sev | Evidence                                                |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- | ------------------------------------------------------- |
+| S1  | **PATIENT role reaches ~30 staff endpoints** (P0-1)                                                                                                                                                                            | P0  | `roles.ts:118` + controllers                            |
+| S2  | `push_tokens` has no RLS and `PushService` bypasses `withTenant`                                                                                                                                                               | P0  | `push.service.ts:92,114`                                |
+| S3  | `platform_admins` / `platform_refresh_sessions` outside RLS (defence-in-depth)                                                                                                                                                 | P1  | no policy in any migration                              |
+| S4  | No file download endpoint and `FileObject` has no `patientId` — future downloads cannot be authorized                                                                                                                          | P0  | `files.service.ts`, `schema.prisma:1387`                |
+| S5  | No malware scanning on upload; extension sanitised but `mimeType` is caller-asserted                                                                                                                                           | P1  | `files.service.ts:161-166`                              |
+| S6  | Audit log records no before/after values and no reason                                                                                                                                                                         | P1  | `AuditLog` model                                        |
+| S7  | `AuditLog` has no read on `patient.read` for portal routes, and no `lab.resultRelease`/`report.download` actions                                                                                                               | P1  | `audit.decorator.ts` usage                              |
+| S8  | Dead RLS helper: `current_user_id()` reads `app.current_user`, but `withTenant` sets `app.current_user_id`. No policy uses it, so no live impact — but it is a loaded footgun for the next person who writes a per-user policy | P2  | migration `20260501000001:18-19` vs `prisma.service.ts` |
+| S9  | Rate-limit storage is in-process; with >1 replica each enforces its own count                                                                                                                                                  | P2  | `throttle.config.ts` (documented)                       |
+| S10 | `queue/page.tsx` still reads a token from localStorage for raw `fetch` (TODO in-file)                                                                                                                                          | P2  | `apps/web/app/(app)/queue/page.tsx:77`                  |
+| S11 | Inventory SKU uniqueness check leaks nothing cross-tenant (RLS) — but `createItem` conflicts are computed pre-insert rather than on a DB constraint, a race                                                                    | P3  | `inventory.service.ts:69-74`                            |
+| S12 | No `PrivacyIncident` / breach register to drive the NPC 72-hour clock                                                                                                                                                          | P1  | —                                                       |
+| S13 | `patientLabel` is sent to the AI service in the dental-lab treatment-plan path                                                                                                                                                 | P2  | `ai-client.service.ts:73`                               |
 
 ---
 
@@ -957,7 +961,9 @@ No table has a foreign key from `tenantId` to `tenants.id` except through the re
 
 ```ts
 // apps/api/src/labs/labs.service.ts:258-266
-const monthCount = await tx.labOrder.count({ where: { tenantId, number: { startsWith: prefix } } });
+const monthCount = await tx.labOrder.count({
+  where: { tenantId, number: { startsWith: prefix } },
+});
 return `${prefix}-${String(monthCount + 1).padStart(4, '0')}`;
 ```
 
@@ -977,19 +983,19 @@ Count-then-format inside a transaction is not serialisable under concurrent inse
 
 **Conventions in use (follow these, do not impose new ones):** NestJS controllers with `class-validator` DTOs under `<module>/dto/`, global `ValidationPipe`, `@Requires(Actions.X)` for RBAC, `@RequiresFeature(Features.X)` for plan gating, `@Audit({ action, entity, entityIdFrom })` for the audit trail, `@RequiresConsent(type, source)` for DPA consent, `@Public()` to opt out of JWT. Services always wrap data access in `prisma.withTenant`. Errors via a global `AllExceptionsFilter`. OpenAPI is emitted and `libs/api-client` is generated from it.
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Authentication | ✅ | JWT via cookie or Bearer; `@Public` opt-out; delegation via `X-Acting-For` with active-delegation + active-membership checks |
-| Authorization | 🟡 | Action-based and consistently applied — but the action vocabulary is too coarse (P0-1) and has no lab actions |
-| Validation | ✅ | DTOs throughout; ICD codes validated against the catalog |
-| Mass assignment | 🟡 | `consultations.service.ts:183` spreads `...dto` into `update`; safe because the DTO is whitelisted, but `labs.service.ts:127` does `const data: Record<string, unknown> = { ...dto }` — audit these two |
-| IDOR / BOLA | ⚠️ | Cross-tenant: covered by RLS. Intra-tenant patient→patient: **not covered** (P0-1) |
-| Rate limiting | ✅ | Global + tighter credential bucket; in-process store (S9) |
-| Error handling | ✅ | `AllExceptionsFilter` |
-| Logging | ✅ | `RequestLoggingInterceptor` |
-| Pagination / filtering | 🟡 | Present on patients/appointments; several list endpoints use a bare `take: 100` (`labs.service.ts:38`) |
-| File upload | 🟡 | Presigned PUT, extension sanitised, KMS forced for PHI — no AV scan, no server-side content-type verification |
-| File download | 🔴 | Does not exist (S4) |
+| Area                   | Status | Notes                                                                                                                                                                                                   |
+| ---------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication         | ✅     | JWT via cookie or Bearer; `@Public` opt-out; delegation via `X-Acting-For` with active-delegation + active-membership checks                                                                            |
+| Authorization          | 🟡     | Action-based and consistently applied — but the action vocabulary is too coarse (P0-1) and has no lab actions                                                                                           |
+| Validation             | ✅     | DTOs throughout; ICD codes validated against the catalog                                                                                                                                                |
+| Mass assignment        | 🟡     | `consultations.service.ts:183` spreads `...dto` into `update`; safe because the DTO is whitelisted, but `labs.service.ts:127` does `const data: Record<string, unknown> = { ...dto }` — audit these two |
+| IDOR / BOLA            | ⚠️     | Cross-tenant: covered by RLS. Intra-tenant patient→patient: **not covered** (P0-1)                                                                                                                      |
+| Rate limiting          | ✅     | Global + tighter credential bucket; in-process store (S9)                                                                                                                                               |
+| Error handling         | ✅     | `AllExceptionsFilter`                                                                                                                                                                                   |
+| Logging                | ✅     | `RequestLoggingInterceptor`                                                                                                                                                                             |
+| Pagination / filtering | 🟡     | Present on patients/appointments; several list endpoints use a bare `take: 100` (`labs.service.ts:38`)                                                                                                  |
+| File upload            | 🟡     | Presigned PUT, extension sanitised, KMS forced for PHI — no AV scan, no server-side content-type verification                                                                                           |
+| File download          | 🔴     | Does not exist (S4)                                                                                                                                                                                     |
 
 **Specific issues**
 
@@ -1006,17 +1012,17 @@ Count-then-format inside a transaction is not serialisable under concurrent inse
 
 47 routes across four portals. Route groups: `(app)` clinic, `lab/(authed)` dental-lab, `platform/(authed)`, `portal` patient. Feature-folder architecture (`apps/web/features/*`) with colocated components/hooks/schemas — clean and consistent.
 
-| Aspect | Status | Notes |
-| --- | --- | --- |
-| Role-based UI | 🟡 | Menus and buttons gate on role — but see the rule below |
-| **Server-side authorization** | ⚠️ | `apps/web/proxy.ts` resolves the tenant subdomain and does **not** enforce auth. Every authed group relies on the client-side `useRequiredSession` hook. Hiding the button is not authorization — the API is the boundary, and P0-1 shows the API boundary has a hole |
-| Token storage | ✅ | Tokens are httpOnly cookies; localStorage holds only UI-shell session metadata (`features/auth/session.ts:1`) — with one leftover (S10) |
-| Form validation | ✅ | react-hook-form + zod, schemas under `features/*/schemas` |
-| Loading / error states | 🟡 | TanStack Query throughout; states present but inconsistent |
-| Accessibility | 🟡 | A dedicated `apps/web-e2e/src/a11y/a11y.spec.ts` with `@axe-core/playwright` — better than most. Coverage is partial |
-| Responsive | ✅ | `apps/web-e2e/src/responsive/viewports.spec.ts` |
-| i18n | 🟡 | Hand-rolled `en`/`ph` dictionary; few pages consume it |
-| Lab UI | 🟠 | `features/labs` is 4 components (orders card, new-order dialog, record-results dialog) embedded in patient/consult pages. There is **no lab worklist, no accessioning screen, no verification queue, no QC screen** — because there is no backend for them |
+| Aspect                        | Status | Notes                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Role-based UI                 | 🟡     | Menus and buttons gate on role — but see the rule below                                                                                                                                                                                                               |
+| **Server-side authorization** | ⚠️     | `apps/web/proxy.ts` resolves the tenant subdomain and does **not** enforce auth. Every authed group relies on the client-side `useRequiredSession` hook. Hiding the button is not authorization — the API is the boundary, and P0-1 shows the API boundary has a hole |
+| Token storage                 | ✅     | Tokens are httpOnly cookies; localStorage holds only UI-shell session metadata (`features/auth/session.ts:1`) — with one leftover (S10)                                                                                                                               |
+| Form validation               | ✅     | react-hook-form + zod, schemas under `features/*/schemas`                                                                                                                                                                                                             |
+| Loading / error states        | 🟡     | TanStack Query throughout; states present but inconsistent                                                                                                                                                                                                            |
+| Accessibility                 | 🟡     | A dedicated `apps/web-e2e/src/a11y/a11y.spec.ts` with `@axe-core/playwright` — better than most. Coverage is partial                                                                                                                                                  |
+| Responsive                    | ✅     | `apps/web-e2e/src/responsive/viewports.spec.ts`                                                                                                                                                                                                                       |
+| i18n                          | 🟡     | Hand-rolled `en`/`ph` dictionary; few pages consume it                                                                                                                                                                                                                |
+| Lab UI                        | 🟠     | `features/labs` is 4 components (orders card, new-order dialog, record-results dialog) embedded in patient/consult pages. There is **no lab worklist, no accessioning screen, no verification queue, no QC screen** — because there is no backend for them            |
 
 ## Mobile (`apps/mobile`, Expo 54)
 
@@ -1026,20 +1032,20 @@ Count-then-format inside a transaction is not serialisable under concurrent inse
 
 # 12. Infrastructure Audit
 
-| Area | Status | Evidence |
-| --- | --- | --- |
-| VPC | ✅ | `infra/terraform/modules/network` |
-| RDS | ✅ | `infra/terraform/modules/database` |
-| ECS/Fargate | ✅ | `infra/terraform/modules/compute` + `infra/ecs/*.task-def.json` |
-| S3 | ✅ | PHI bucket: KMS CMK, versioning, full public-access block, server access logging to a separate blocked bucket, lifecycle |
-| KMS | ✅ | Dedicated CMK for PHI with rotation |
-| IAM | 🟡 | GitHub OIDC role for deploys (good); least-privilege of task roles not verified in this pass |
-| Secrets | 🟡 | `JWT_SECRET` etc. via env/ECS secrets; no rotation policy documented |
-| CI/CD | ✅ | `ci.yml` runs lint/typecheck/test/build (affected), api e2e against real Postgres with the `cliniq_app` role provisioned, Playwright web e2e, and a Docker image build |
-| Backups | 🟡 | RDS automated 35d + cross-region 90d per `docs/regulatory/retention.md`; **no evidence of a restore test** |
-| DR | 🟡 | `docs/runbooks/backup-restore.md` exists; no RTO/RPO stated |
-| Monitoring / alerting | 🔴 | No CloudWatch alarms, no APM, no error tracking in the tree |
-| Dual deployment targets | ⚠️ | Both AWS Terraform and Railway IaC exist. Railway is the live one. The AWS path builds in CI but skips deploy when `AWS_DEPLOY_ROLE_ARN` is unset. Pick one as canonical or the Terraform will rot |
+| Area                    | Status | Evidence                                                                                                                                                                                           |
+| ----------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| VPC                     | ✅     | `infra/terraform/modules/network`                                                                                                                                                                  |
+| RDS                     | ✅     | `infra/terraform/modules/database`                                                                                                                                                                 |
+| ECS/Fargate             | ✅     | `infra/terraform/modules/compute` + `infra/ecs/*.task-def.json`                                                                                                                                    |
+| S3                      | ✅     | PHI bucket: KMS CMK, versioning, full public-access block, server access logging to a separate blocked bucket, lifecycle                                                                           |
+| KMS                     | ✅     | Dedicated CMK for PHI with rotation                                                                                                                                                                |
+| IAM                     | 🟡     | GitHub OIDC role for deploys (good); least-privilege of task roles not verified in this pass                                                                                                       |
+| Secrets                 | 🟡     | `JWT_SECRET` etc. via env/ECS secrets; no rotation policy documented                                                                                                                               |
+| CI/CD                   | ✅     | `ci.yml` runs lint/typecheck/test/build (affected), api e2e against real Postgres with the `cliniq_app` role provisioned, Playwright web e2e, and a Docker image build                             |
+| Backups                 | 🟡     | RDS automated 35d + cross-region 90d per `docs/regulatory/retention.md`; **no evidence of a restore test**                                                                                         |
+| DR                      | 🟡     | `docs/runbooks/backup-restore.md` exists; no RTO/RPO stated                                                                                                                                        |
+| Monitoring / alerting   | 🔴     | No CloudWatch alarms, no APM, no error tracking in the tree                                                                                                                                        |
+| Dual deployment targets | ⚠️     | Both AWS Terraform and Railway IaC exist. Railway is the live one. The AWS path builds in CI but skips deploy when `AWS_DEPLOY_ROLE_ARN` is unset. Pick one as canonical or the Terraform will rot |
 
 **Recommendations:** CloudWatch alarms on API 5xx rate, DB connection saturation and RDS free storage; a quarterly scripted restore test with the result recorded; an explicit RTO/RPO in the runbook; and a decision on AWS vs Railway.
 
@@ -1152,27 +1158,27 @@ All in `libs/db/prisma/schema.prisma`, with matching migrations under `libs/db/p
 
 Ordered by phase:
 
-| # | Migration | Tables | Risk |
-| --- | --- | --- | --- |
-| M1 | `..._rls_push_tokens` | policy on `push_tokens`; `PushService` → `withTenant` | LOW |
-| M2 | `..._rls_platform_tables` | policies denying `cliniq_app` on `platform_admins`, `platform_refresh_sessions` | LOW |
-| M3 | `..._patient_demographics` | `Patient` scalars + `PatientAddress`, `PatientContact`, `PatientIdentifier`, `PatientEntitlement`, `PatientRelatedPerson` | LOW |
-| M4 | `..._consultation_amendments` | `ConsultationAmendment` | LOW |
-| M5 | `..._diagnosis_entity` | `Diagnosis` + backfill from `diagnosisCodes` | LOW |
-| M6 | `..._file_patient_link` | `FileObject.patientId`, `.consultationId` + backfill | LOW |
-| M7 | `..._lis_catalog` | `LabSection`, `SpecimenType`, `Container`, `LaboratoryTest`, `TestComponent`, `TestPanelMember` | LOW |
-| M8 | `..._lis_specimen` | `Specimen`, `SpecimenRejection`, `DocumentSequence` | LOW |
-| M9 | `..._lis_results` | `LabResult`, `LabResultComponent`, `ReferenceRange`, `CriticalValueRule`, `CriticalResultNotification` | LOW |
-| M10 | `..._lis_reports` | `LabReport`, `LabReportSignature` | LOW |
-| M11 | `..._lab_order_backfill` | repoint `LabOrderItem` → `testId`; backfill legacy rows into single-component results | **MEDIUM** |
-| M12 | `..._laboratory_licence` | `Laboratory`, `LabServiceCapability`, `ReferralLaboratory` + referral chain | LOW |
-| M13 | `..._billing_ph_rules` | `DiscountRule`, `InvoiceDiscountApplication`, `PriceList`, `Refund`, `OfficialReceipt`, `InvoiceItem.isVatExempt/vatCentavos/discountCentavos` | LOW |
-| M14 | `..._philhealth` | `PhilHealthMembership`, `BenefitPackage`, `BenefitPackageItem`, `PhilHealthClaim` | LOW |
-| M15 | `..._hmo_authorization` | `HmoAuthorization` (LOA) | LOW |
-| M16 | `..._lab_qa` | `Equipment`, `EquipmentMaintenance`, `Calibration`, `Reagent`, `ReagentLot`, `QCMaterial`, `QCLot`, `QCRun`, `QCViolation`, `CorrectiveAction`, `EqapEnrollment`, `EqapSubmission` | LOW |
-| M17 | `..._soft_delete_clinical` | `deletedAt` on `Vital`, `Allergy`, `Medication`, `Condition`, `InvoiceItem`, `Payment`, `LabOrderItem`, `QueueTicket` | LOW |
-| M18 | `..._tenant_fks` | FK `tenantId → tenants.id` uniformly | **MEDIUM** (may surface orphans) |
-| M19 | `..._rename_dental_lab` | rename `Lab*` dental models → `DentalLab*`; `TenantKind.LAB` → `DENTAL_LAB` | **HIGH** (wide blast radius — do it early or never) |
+| #   | Migration                     | Tables                                                                                                                                                                             | Risk                                                |
+| --- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| M1  | `..._rls_push_tokens`         | policy on `push_tokens`; `PushService` → `withTenant`                                                                                                                              | LOW                                                 |
+| M2  | `..._rls_platform_tables`     | policies denying `cliniq_app` on `platform_admins`, `platform_refresh_sessions`                                                                                                    | LOW                                                 |
+| M3  | `..._patient_demographics`    | `Patient` scalars + `PatientAddress`, `PatientContact`, `PatientIdentifier`, `PatientEntitlement`, `PatientRelatedPerson`                                                          | LOW                                                 |
+| M4  | `..._consultation_amendments` | `ConsultationAmendment`                                                                                                                                                            | LOW                                                 |
+| M5  | `..._diagnosis_entity`        | `Diagnosis` + backfill from `diagnosisCodes`                                                                                                                                       | LOW                                                 |
+| M6  | `..._file_patient_link`       | `FileObject.patientId`, `.consultationId` + backfill                                                                                                                               | LOW                                                 |
+| M7  | `..._lis_catalog`             | `LabSection`, `SpecimenType`, `Container`, `LaboratoryTest`, `TestComponent`, `TestPanelMember`                                                                                    | LOW                                                 |
+| M8  | `..._lis_specimen`            | `Specimen`, `SpecimenRejection`, `DocumentSequence`                                                                                                                                | LOW                                                 |
+| M9  | `..._lis_results`             | `LabResult`, `LabResultComponent`, `ReferenceRange`, `CriticalValueRule`, `CriticalResultNotification`                                                                             | LOW                                                 |
+| M10 | `..._lis_reports`             | `LabReport`, `LabReportSignature`                                                                                                                                                  | LOW                                                 |
+| M11 | `..._lab_order_backfill`      | repoint `LabOrderItem` → `testId`; backfill legacy rows into single-component results                                                                                              | **MEDIUM**                                          |
+| M12 | `..._laboratory_licence`      | `Laboratory`, `LabServiceCapability`, `ReferralLaboratory` + referral chain                                                                                                        | LOW                                                 |
+| M13 | `..._billing_ph_rules`        | `DiscountRule`, `InvoiceDiscountApplication`, `PriceList`, `Refund`, `OfficialReceipt`, `InvoiceItem.isVatExempt/vatCentavos/discountCentavos`                                     | LOW                                                 |
+| M14 | `..._philhealth`              | `PhilHealthMembership`, `BenefitPackage`, `BenefitPackageItem`, `PhilHealthClaim`                                                                                                  | LOW                                                 |
+| M15 | `..._hmo_authorization`       | `HmoAuthorization` (LOA)                                                                                                                                                           | LOW                                                 |
+| M16 | `..._lab_qa`                  | `Equipment`, `EquipmentMaintenance`, `Calibration`, `Reagent`, `ReagentLot`, `QCMaterial`, `QCLot`, `QCRun`, `QCViolation`, `CorrectiveAction`, `EqapEnrollment`, `EqapSubmission` | LOW                                                 |
+| M17 | `..._soft_delete_clinical`    | `deletedAt` on `Vital`, `Allergy`, `Medication`, `Condition`, `InvoiceItem`, `Payment`, `LabOrderItem`, `QueueTicket`                                                              | LOW                                                 |
+| M18 | `..._tenant_fks`              | FK `tenantId → tenants.id` uniformly                                                                                                                                               | **MEDIUM** (may surface orphans)                    |
+| M19 | `..._rename_dental_lab`       | rename `Lab*` dental models → `DentalLab*`; `TenantKind.LAB` → `DENTAL_LAB`                                                                                                        | **HIGH** (wide blast radius — do it early or never) |
 
 M19 deserves emphasis: it touches ~35 models, ~20 API modules, the web lab portal, the mobile lab screens and the generated API client. **Its cost only goes up.** If it is not done before the LIS work starts, accept the collision permanently and instead namespace the new work (`Diagnostic*`).
 
@@ -1254,6 +1260,7 @@ Two rules for the portal routes: **they live in `MeController` and derive the pa
 # 17. UI/UX Roadmap
 
 New clinic screens (`apps/web/app/(app)/`):
+
 - `lis/worklist` — section-filtered pending worklist, the medtech's home screen
 - `lis/accession` — receive/reject specimens, print labels
 - `lis/results/[specimenId]` — component grid with inline flags and reference ranges shown per row
@@ -1349,48 +1356,48 @@ Cross-cutting: finish the `en`/`ph` i18n (clinic staff in the provinces will wan
 
 # 20. Security Threat Model
 
-| Actor / asset | Threat | Impact | Likelihood | Current control | Gap | Mitigation |
-| --- | --- | --- | --- | --- | --- | --- |
-| Patient (portal) | Reads another patient's chart via `/api/patients/:id` | **Critical** — PHI breach, NPC notifiable | **High** — trivially exploitable with a valid portal token | RLS (tenant only) | No self-scope on ~30 endpoints | P0-1 fix: `PORTAL_READ` action + portal guard + e2e |
-| Patient | Reads a draft/unvalidated lab result | High — clinical harm from misread preliminary data | Medium | none | no result status gating | Portal exposes `RELEASED` only |
-| Staff (tenant A) | Reads tenant B data | Critical | **Low** | RLS forced, superuser boot refusal | `push_tokens` only | M1 |
-| Staff | Escalates via `X-Acting-For` | High | Low | Active delegation + active membership + scope narrowing | none found | keep; add e2e for expired delegation |
-| Doctor | Enters/releases a lab result as the laboratory | High — no separation of duties, RMT/pathologist attribution false | **High** today | none | `CONSULT_WRITE` gates result entry | Lab action vocabulary (§16) |
-| Medtech | Self-verifies own result | Medium | Medium | none | no verifier ≠ performer rule | Configurable double verification |
-| Anyone with write access | Silently rewrites a released result | **Critical** — patient safety + evidentiary | High today | audit row (id only) | no versioning, no before/after | Result versioning + `supersedesId` |
-| Clinician | Never sees a critical value | **Critical** | Medium | `void` fire-and-forget in-app notification | no ack, no escalation, no audit | `CriticalResultNotification` + escalation |
-| Insider (admin) | Bulk-exports patients | High | Medium | `patient.read` audited; `/export` audited | no volume anomaly detection, no reason capture | Rate-limit exports; require a reason; alert on bulk |
-| Attacker | Steals a token | High | Medium | httpOnly cookies, short access TTL, refresh rotation | S10 localStorage leftover; no device binding | Finish the cookie migration |
-| Attacker | Uploads malware | Medium | Medium | extension allow-list | no AV scan, mimeType asserted by client | S3 + Lambda scan before flipping `READY` |
-| Attacker | Guesses a file id to download PHI | High | — | **no download endpoint exists** | when one is added, `FileObject` has no owner | Add `patientId` first (M6) |
-| Attacker | Credential stuffing | Medium | High | 10/min auth throttle, lockout, MFA | in-process throttle across replicas | Redis throttle store |
-| AI provider | Receives PHI | High | Low | minimised context + consent gate | `patientLabel` in dental-lab path | Strip to initials/id |
-| Backup | Snapshot leaked | Critical | Low | RDS encryption | no restore test | Quarterly restore drill |
-| Analyzer (future) | Spoofed result injection | Critical | — | n/a | n/a | Per-analyzer credentials; inbound results enter at `ENTERED`, never `RELEASED` |
-| Platform admin | Cross-tenant read | High | Low | separate identity table, explicit `SET LOCAL` bypass GUC, audited | `platform_admins` outside RLS | M2 |
+| Actor / asset            | Threat                                                | Impact                                                            | Likelihood                                                 | Current control                                                   | Gap                                            | Mitigation                                                                     |
+| ------------------------ | ----------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| Patient (portal)         | Reads another patient's chart via `/api/patients/:id` | **Critical** — PHI breach, NPC notifiable                         | **High** — trivially exploitable with a valid portal token | RLS (tenant only)                                                 | No self-scope on ~30 endpoints                 | P0-1 fix: `PORTAL_READ` action + portal guard + e2e                            |
+| Patient                  | Reads a draft/unvalidated lab result                  | High — clinical harm from misread preliminary data                | Medium                                                     | none                                                              | no result status gating                        | Portal exposes `RELEASED` only                                                 |
+| Staff (tenant A)         | Reads tenant B data                                   | Critical                                                          | **Low**                                                    | RLS forced, superuser boot refusal                                | `push_tokens` only                             | M1                                                                             |
+| Staff                    | Escalates via `X-Acting-For`                          | High                                                              | Low                                                        | Active delegation + active membership + scope narrowing           | none found                                     | keep; add e2e for expired delegation                                           |
+| Doctor                   | Enters/releases a lab result as the laboratory        | High — no separation of duties, RMT/pathologist attribution false | **High** today                                             | none                                                              | `CONSULT_WRITE` gates result entry             | Lab action vocabulary (§16)                                                    |
+| Medtech                  | Self-verifies own result                              | Medium                                                            | Medium                                                     | none                                                              | no verifier ≠ performer rule                   | Configurable double verification                                               |
+| Anyone with write access | Silently rewrites a released result                   | **Critical** — patient safety + evidentiary                       | High today                                                 | audit row (id only)                                               | no versioning, no before/after                 | Result versioning + `supersedesId`                                             |
+| Clinician                | Never sees a critical value                           | **Critical**                                                      | Medium                                                     | `void` fire-and-forget in-app notification                        | no ack, no escalation, no audit                | `CriticalResultNotification` + escalation                                      |
+| Insider (admin)          | Bulk-exports patients                                 | High                                                              | Medium                                                     | `patient.read` audited; `/export` audited                         | no volume anomaly detection, no reason capture | Rate-limit exports; require a reason; alert on bulk                            |
+| Attacker                 | Steals a token                                        | High                                                              | Medium                                                     | httpOnly cookies, short access TTL, refresh rotation              | S10 localStorage leftover; no device binding   | Finish the cookie migration                                                    |
+| Attacker                 | Uploads malware                                       | Medium                                                            | Medium                                                     | extension allow-list                                              | no AV scan, mimeType asserted by client        | S3 + Lambda scan before flipping `READY`                                       |
+| Attacker                 | Guesses a file id to download PHI                     | High                                                              | —                                                          | **no download endpoint exists**                                   | when one is added, `FileObject` has no owner   | Add `patientId` first (M6)                                                     |
+| Attacker                 | Credential stuffing                                   | Medium                                                            | High                                                       | 10/min auth throttle, lockout, MFA                                | in-process throttle across replicas            | Redis throttle store                                                           |
+| AI provider              | Receives PHI                                          | High                                                              | Low                                                        | minimised context + consent gate                                  | `patientLabel` in dental-lab path              | Strip to initials/id                                                           |
+| Backup                   | Snapshot leaked                                       | Critical                                                          | Low                                                        | RDS encryption                                                    | no restore test                                | Quarterly restore drill                                                        |
+| Analyzer (future)        | Spoofed result injection                              | Critical                                                          | —                                                          | n/a                                                               | n/a                                            | Per-analyzer credentials; inbound results enter at `ENTERED`, never `RELEASED` |
+| Platform admin           | Cross-tenant read                                     | High                                                              | Low                                                        | separate identity table, explicit `SET LOCAL` bypass GUC, audited | `platform_admins` outside RLS                  | M2                                                                             |
 
 ---
 
 # 21. Compliance Matrix
 
-| Requirement | Authority | Type | Current implementation | Gap | Recommended feature | Priority |
-| --- | --- | --- | --- | --- | --- | --- |
-| Clinical laboratory must hold a DOH LTO; may not test beyond authorized service capability | [DOH AO 2021-0037](https://hfsrb.doh.gov.ph/clinical-laboratory/); [RA 4688](https://www.studocu.com/ph/document/notre-dame-of-marbel-university/medical-technology/ra-4688-clinical-laboratory-act/9306242) | **LEGAL** | none | 🔴 | `Laboratory` + `LabServiceCapability`; enforce at order placement | **P0** |
-| Laboratory headed/managed by a certified pathologist (limited exception for a trained physician in primary/secondary labs where none available) | RA 4688; DOH AO 2021-0037 | **LEGAL** | none | 🔴 | `Laboratory.labHeadUserId` / `pathologistUserId`; `PATHOLOGIST` role | **P0** |
-| Medical technologists practise under pathologist supervision | [RA 5527](https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/2/7439) ([PRC text](https://www.prc.gov.ph/sites/default/files/Medical%20Technology%20-%20Board%20Law_0.PDF)) | **LEGAL** | none | 🔴 | `MEDICAL_TECHNOLOGIST` role + supervision link; PRC on report signatures | **P0** |
-| Participation in an External Quality Assessment Program (NRL or DOH-approved) | DOH AO 2021-0037 | **LEGAL** | none | 🔴 | `EqapEnrollment` + `EqapSubmission` with evidence files | **P1** |
-| Documented internal QC, QC reports per test on file | DOH AO 2021-0037 | **REGULATORY GUIDANCE** | none | 🔴 | `QCMaterial`/`QCLot`/`QCRun`/`QCViolation`/`CorrectiveAction` | **P1** |
-| Retention of laboratory records per DOH standards | DOH AO 2021-0037; [AO 2022-0007](https://sites.google.com/view/doh-hfdb/2023-updates/ao-2023-0018) | **LEGAL** | policy documented, partially implemented | 🟡 | Extend `RetentionService`; retention class per entity | P1 |
-| Health data = sensitive personal information; lawful basis, minimisation, security | [RA 10173](https://privacy.gov.ph/) | **LEGAL** | RLS, KMS, consent, DSR, PIA pages | 🟡 | Encryption at rest ✅; add field-level crypto for identifiers | P1 |
-| Breach notification to NPC and data subjects within 72 hours; full report within 5 days; no delay ≥100 subjects | [NPC Circular 16-03](https://privacy.gov.ph/wp-content/uploads/2022/01/sgd-npc-circular-16-03-personal-data-breach-management.pdf) | **LEGAL** | runbook only | 🟡 | `PrivacyIncident` register + clock + notification templates | **P1** |
-| Data subject rights (access, correction, erasure, portability) | RA 10173 §16 | **LEGAL** | `DataSubjectRequest` + processors | ✅ | keep; extend erasure to files once `FileObject.patientId` exists | P2 |
-| Senior citizen: 20% discount + VAT exemption on medical/dental services and diagnostic and laboratory fees | [RA 9994](https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/2/17035) | **LEGAL** | none | 🔴 | `PatientEntitlement` + `DiscountRule` with VAT-first arithmetic | **P0** for a billing clinic |
-| PWD: 20% discount + VAT exemption on presentation of a valid PWD ID | [RA 10754](https://batasnatin.com/doctrine/pwd-rights-discount-vat-exemption-ra-10754) | **LEGAL** | none | 🔴 | same mechanism, different rule + ID capture | **P0** for a billing clinic |
-| Purchase booklet no longer required for the senior medicines discount | [FDA Circular 2025-005](https://www.fda.gov.ph/fda-circular-no-2025-005-delisting-of-purchase-booklet-from-the-checklist-of-requirements-to-avail-of-the-20-senior-citizen-discount-on-the-purchase-of-medicines-and-medical-devices-in-accordance-w/) (per DOH AO 2024-0017) | **REGULATORY GUIDANCE** | n/a | — | do **not** build a booklet requirement | P3 |
-| PhilHealth claims filed electronically via eClaims within 60 days of service | [PhilHealth](https://www.philhealth.gov.ph/yakap/issuances/) | **CONTRACTUAL / REGULATORY** | none | 🔴 | `PhilHealthClaim` + submission tracking + 60-day alerting | P2 |
-| Konsulta: capitated primary-care package with a defined diagnostic panel | [PhilHealth Circular 2024-0013](https://www.philhealth.gov.ph/circulars/2024/PC2024-0013.pdf) | **CONTRACTUAL** | none | 🔴 | `BenefitPackage` as **configurable data**, not code | P2 |
-| PRC licence on professional documents | RA 5527, PRC | **LEGAL** | ✅ prescriptions | 🟡 | extend to lab reports and medical certificates | P1 |
-| Books/receipts preserved 10 years | NIRC §235 | **LEGAL** | policy only | 🟡 | `OfficialReceipt` + archival job | P2 |
+| Requirement                                                                                                                                     | Authority                                                                                                                                                                                                                                                                     | Type                         | Current implementation                   | Gap | Recommended feature                                                      | Priority                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------- | --- | ------------------------------------------------------------------------ | --------------------------- |
+| Clinical laboratory must hold a DOH LTO; may not test beyond authorized service capability                                                      | [DOH AO 2021-0037](https://hfsrb.doh.gov.ph/clinical-laboratory/); [RA 4688](https://www.studocu.com/ph/document/notre-dame-of-marbel-university/medical-technology/ra-4688-clinical-laboratory-act/9306242)                                                                  | **LEGAL**                    | none                                     | 🔴  | `Laboratory` + `LabServiceCapability`; enforce at order placement        | **P0**                      |
+| Laboratory headed/managed by a certified pathologist (limited exception for a trained physician in primary/secondary labs where none available) | RA 4688; DOH AO 2021-0037                                                                                                                                                                                                                                                     | **LEGAL**                    | none                                     | 🔴  | `Laboratory.labHeadUserId` / `pathologistUserId`; `PATHOLOGIST` role     | **P0**                      |
+| Medical technologists practise under pathologist supervision                                                                                    | [RA 5527](https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/2/7439) ([PRC text](https://www.prc.gov.ph/sites/default/files/Medical%20Technology%20-%20Board%20Law_0.PDF))                                                                                               | **LEGAL**                    | none                                     | 🔴  | `MEDICAL_TECHNOLOGIST` role + supervision link; PRC on report signatures | **P0**                      |
+| Participation in an External Quality Assessment Program (NRL or DOH-approved)                                                                   | DOH AO 2021-0037                                                                                                                                                                                                                                                              | **LEGAL**                    | none                                     | 🔴  | `EqapEnrollment` + `EqapSubmission` with evidence files                  | **P1**                      |
+| Documented internal QC, QC reports per test on file                                                                                             | DOH AO 2021-0037                                                                                                                                                                                                                                                              | **REGULATORY GUIDANCE**      | none                                     | 🔴  | `QCMaterial`/`QCLot`/`QCRun`/`QCViolation`/`CorrectiveAction`            | **P1**                      |
+| Retention of laboratory records per DOH standards                                                                                               | DOH AO 2021-0037; [AO 2022-0007](https://sites.google.com/view/doh-hfdb/2023-updates/ao-2023-0018)                                                                                                                                                                            | **LEGAL**                    | policy documented, partially implemented | 🟡  | Extend `RetentionService`; retention class per entity                    | P1                          |
+| Health data = sensitive personal information; lawful basis, minimisation, security                                                              | [RA 10173](https://privacy.gov.ph/)                                                                                                                                                                                                                                           | **LEGAL**                    | RLS, KMS, consent, DSR, PIA pages        | 🟡  | Encryption at rest ✅; add field-level crypto for identifiers            | P1                          |
+| Breach notification to NPC and data subjects within 72 hours; full report within 5 days; no delay ≥100 subjects                                 | [NPC Circular 16-03](https://privacy.gov.ph/wp-content/uploads/2022/01/sgd-npc-circular-16-03-personal-data-breach-management.pdf)                                                                                                                                            | **LEGAL**                    | runbook only                             | 🟡  | `PrivacyIncident` register + clock + notification templates              | **P1**                      |
+| Data subject rights (access, correction, erasure, portability)                                                                                  | RA 10173 §16                                                                                                                                                                                                                                                                  | **LEGAL**                    | `DataSubjectRequest` + processors        | ✅  | keep; extend erasure to files once `FileObject.patientId` exists         | P2                          |
+| Senior citizen: 20% discount + VAT exemption on medical/dental services and diagnostic and laboratory fees                                      | [RA 9994](https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/2/17035)                                                                                                                                                                                                    | **LEGAL**                    | none                                     | 🔴  | `PatientEntitlement` + `DiscountRule` with VAT-first arithmetic          | **P0** for a billing clinic |
+| PWD: 20% discount + VAT exemption on presentation of a valid PWD ID                                                                             | [RA 10754](https://batasnatin.com/doctrine/pwd-rights-discount-vat-exemption-ra-10754)                                                                                                                                                                                        | **LEGAL**                    | none                                     | 🔴  | same mechanism, different rule + ID capture                              | **P0** for a billing clinic |
+| Purchase booklet no longer required for the senior medicines discount                                                                           | [FDA Circular 2025-005](https://www.fda.gov.ph/fda-circular-no-2025-005-delisting-of-purchase-booklet-from-the-checklist-of-requirements-to-avail-of-the-20-senior-citizen-discount-on-the-purchase-of-medicines-and-medical-devices-in-accordance-w/) (per DOH AO 2024-0017) | **REGULATORY GUIDANCE**      | n/a                                      | —   | do **not** build a booklet requirement                                   | P3                          |
+| PhilHealth claims filed electronically via eClaims within 60 days of service                                                                    | [PhilHealth](https://www.philhealth.gov.ph/yakap/issuances/)                                                                                                                                                                                                                  | **CONTRACTUAL / REGULATORY** | none                                     | 🔴  | `PhilHealthClaim` + submission tracking + 60-day alerting                | P2                          |
+| Konsulta: capitated primary-care package with a defined diagnostic panel                                                                        | [PhilHealth Circular 2024-0013](https://www.philhealth.gov.ph/circulars/2024/PC2024-0013.pdf)                                                                                                                                                                                 | **CONTRACTUAL**              | none                                     | 🔴  | `BenefitPackage` as **configurable data**, not code                      | P2                          |
+| PRC licence on professional documents                                                                                                           | RA 5527, PRC                                                                                                                                                                                                                                                                  | **LEGAL**                    | ✅ prescriptions                         | 🟡  | extend to lab reports and medical certificates                           | P1                          |
+| Books/receipts preserved 10 years                                                                                                               | NIRC §235                                                                                                                                                                                                                                                                     | **LEGAL**                    | policy only                              | 🟡  | `OfficialReceipt` + archival job                                         | P2                          |
 
 **PRODUCT RECOMMENDATIONS (not required by any of the above):** Levey-Jennings charting, Westgard rule automation, analyzer interfacing, FHIR export, TAT dashboards, offline mode. All are good engineering; none is a licensing precondition. Do not present them to a clinic as legal obligations.
 
@@ -1408,7 +1415,7 @@ Cross-cutting: finish the `en`/`ph` i18n (clinic staff in the provinces will wan
 - Audit log: capture before/after and a `reason` on clinical and financial mutations.
 - A regression test that asserts every `tenantId`-bearing table has `relrowsecurity = true`.
 
-*DB:* M1, M2, M4, M6, M19 · *API:* roles, guards, files, consultations · *Web:* amendment UI · *Tests:* portal boundary, RLS coverage · *Migration risk:* HIGH for M19, LOW otherwise.
+_DB:_ M1, M2, M4, M6, M19 · _API:_ roles, guards, files, consultations · _Web:_ amendment UI · _Tests:_ portal boundary, RLS coverage · _Migration risk:_ HIGH for M19, LOW otherwise.
 
 ## Phase 1 — Clinic / EMR foundation (4–6 weeks) · P1
 
@@ -1644,6 +1651,7 @@ Recommended targets: **80% line coverage on `libs/lis-rules` and `libs/billing-r
 The smallest credible **Philippine Clinic + Laboratory** release, for a single-branch clinic with an in-house primary/secondary laboratory:
 
 **Must have**
+
 - Phase 0 in full (the P0 fixes — non-negotiable, these are live defects)
 - Patient registration with middle name, address, contacts, PhilHealth/PhilSys identifiers, senior/PWD entitlements
 - Encounter with SOAP, ICD-10 diagnoses as entities, and amendment
@@ -1656,6 +1664,7 @@ The smallest credible **Philippine Clinic + Laboratory** release, for a single-b
 - Portal: appointments, invoices, **released** lab results only
 
 **Explicitly out of MVP**
+
 - QC/Levey-Jennings/Westgard (required for licensing — but a laboratory can run its QC on paper for a pilot; ship it in the release immediately after)
 - Analyzer interfacing, FHIR, PhilHealth eClaims submission
 - Offline mode, multi-branch, microbiology and anatomic pathology sections
@@ -1690,30 +1699,30 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 
 # 29. The 20 most important things to change or build first
 
-> *"If we want CLINIQ to become a production-ready Philippine Clinic + Clinical Laboratory platform, what are the 20 most important things we should change or build first, and exactly where?"*
+> _"If we want CLINIQ to become a production-ready Philippine Clinic + Clinical Laboratory platform, what are the 20 most important things we should change or build first, and exactly where?"_
 
-| # | Change | Where | Why |
-| --- | --- | --- | --- |
-| 1 | Revoke `PATIENT_READ` from the `PATIENT` role; add `PORTAL_READ` + a portal-scope guard | `libs/shared-types/src/lib/roles.ts:118`, `apps/api/src/auth/guards/rbac.guard.ts`, `apps/api/src/me/me.controller.ts` | A portal patient can read every chart in the clinic today |
-| 2 | Add the portal boundary e2e suite | `apps/api-e2e/src/modules/portal-boundary.spec.ts` (new) | Nothing currently asserts #1 stays fixed |
-| 3 | Replace `deriveFlag`'s `high*1.5 / low*0.5` with configured `CriticalValueRule` rows | `apps/api/src/labs/labs.service.ts:278-292` → `libs/lis-rules/src/critical.ts` (new) | Systematically under-flags true critical values |
-| 4 | Build `CriticalResultNotification` with recipient, method, acknowledgement and escalation | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/critical/` (new); replaces the `void this.notif.notify(...)` at `labs.service.ts:222` | A missed critical value is the classic lab-caused death |
-| 5 | Build the LIS result chain: `LabResult` + `LabResultComponent` with DRAFT→ENTERED→VERIFIED→VALIDATED→RELEASED and versioned corrections | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/results/` (new) | Today one `CONSULT_WRITE` call enters and reports a result, rewritable with no history |
-| 6 | Add `MEDICAL_TECHNOLOGIST`, `PATHOLOGIST`, `LAB_RECEPTION`, `CASHIER` roles and the `LAB_*` action vocabulary | `libs/shared-types/src/lib/roles.ts` | RA 5527 supervision and separation of duties cannot be expressed with 6 roles |
-| 7 | Build `LaboratoryTest` + `TestComponent` + `TestPanelMember` | `libs/db/prisma/schema.prisma` | A CBC is currently 7 unrelated free-text rows |
-| 8 | Build `Specimen` + accession numbering + `SpecimenRejection` | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/specimens/` (new) | No specimen identity = no chain of custody, no wrong-specimen defence |
-| 9 | Build `ReferenceRange` with age/sex/condition/method + effective dates; pin the applied range onto the result | `libs/db/prisma/schema.prisma` | Paediatric and adult results are flagged against the same numbers |
-| 10 | Add `ConsultationAmendment` | `libs/db/prisma/schema.prisma`, `apps/api/src/consultations/consultations.service.ts:177` | The lock already tells users to "create a revision" and no revision exists |
-| 11 | Rename the dental-lab domain (`Lab*` → `DentalLab*`, `apps/api/src/lab/` → `dental-lab/`, `TenantKind.LAB` → `DENTAL_LAB`) | schema + ~20 API modules + web/mobile lab portals + `libs/api-client` | `lab/` and `labs/` differ by one character and mean unrelated things |
-| 12 | Add RLS to `push_tokens` and route `PushService` through `withTenant` | new migration; `apps/api/src/notifications/push.service.ts:92,114` | The one hole in an otherwise uniform isolation model |
-| 13 | Add `FileObject.patientId` + an authorized, audited download endpoint + AV scan | `libs/db/prisma/schema.prisma:1387`, `apps/api/src/files/` | PHI is write-only today, and any download added later has nothing to authorize against |
-| 14 | Normalize `Patient`: middle name, suffix, civil status, blood type + `PatientAddress`/`PatientContact`/`PatientIdentifier`/`PatientEntitlement` | `libs/db/prisma/schema.prisma:1144-1182` | 8 fields cannot register a Philippine patient |
-| 15 | Build `PatientEntitlement` + `DiscountRule` + VAT-first statutory arithmetic | `libs/billing-rules/src/ph-statutory.ts` (new), `apps/api/src/billing/pricing.service.ts` (new); `Invoice.discountCentavos` today | RA 9994 / RA 10754 are legal requirements a billing clinic cannot skip |
-| 16 | Build `Laboratory` (DOH LTO, category, head, pathologist) + `LabServiceCapability`, enforced at order placement | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/catalog/` | AO 2021-0037: a lab may not test beyond its authorized capability |
-| 17 | Build `LabReport` + `LabReportSignature` with the PRC snapshot and a content hash | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/reports/` | Reuses the proven `Prescription.providerLicense` pattern; a boolean `signed` is worthless |
-| 18 | Capture before/after values and a `reason` in the audit log | `libs/db/prisma/schema.prisma:1359` (`AuditLog`), `apps/api/src/audit/audit.interceptor.ts` | Append-only is already right; it records *that* something changed, not *what* |
-| 19 | Promote `Consultation.diagnosisCodes String[]` to a `Diagnosis` entity | `libs/db/prisma/schema.prisma:1216` | Needed for problem lists, reporting and any PhilHealth claim |
-| 20 | Add the RLS coverage assertion + the clinical boundary test matrix to CI | `apps/api-e2e/src/` , `.github/workflows/ci.yml` | A SQL assertion that every `tenantId` table has `relrowsecurity = true` would have caught #12 |
+| #   | Change                                                                                                                                          | Where                                                                                                                                   | Why                                                                                                                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Revoke `PATIENT_READ` from the `PATIENT` role; add `PORTAL_READ` + a portal-scope guard                                                         | `libs/shared-types/src/lib/roles.ts:118`, `apps/api/src/auth/guards/rbac.guard.ts`, `apps/api/src/me/me.controller.ts`                  | A portal patient can read every chart in the clinic today                                                                                                                                                                                     |
+| 2   | Add the portal boundary e2e suite                                                                                                               | `apps/api-e2e/src/modules/portal-boundary.spec.ts` (new)                                                                                | Nothing currently asserts #1 stays fixed                                                                                                                                                                                                      |
+| 3   | ~~Replace `deriveFlag`'s `high*1.5 / low*0.5` with configured `CriticalValueRule` rows~~ **DONE**                                               | `apps/api/src/labs/flagging.ts`, `critical-value-rules.service.ts`, migration `20260923180000_critical_value_rules`                     | Systematically under-flagged true critical values. The evaluator landed in `apps/api/src/labs/` rather than a new `libs/lis-rules` — Nx generators do not run in this workspace's worktrees, and it moves cleanly when the LIS lib is created |
+| 4   | Build `CriticalResultNotification` with recipient, method, acknowledgement and escalation                                                       | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/critical/` (new); replaces the `void this.notif.notify(...)` at `labs.service.ts:222` | A missed critical value is the classic lab-caused death                                                                                                                                                                                       |
+| 5   | Build the LIS result chain: `LabResult` + `LabResultComponent` with DRAFT→ENTERED→VERIFIED→VALIDATED→RELEASED and versioned corrections         | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/results/` (new)                                                                       | Today one `CONSULT_WRITE` call enters and reports a result, rewritable with no history                                                                                                                                                        |
+| 6   | Add `MEDICAL_TECHNOLOGIST`, `PATHOLOGIST`, `LAB_RECEPTION`, `CASHIER` roles and the `LAB_*` action vocabulary                                   | `libs/shared-types/src/lib/roles.ts`                                                                                                    | RA 5527 supervision and separation of duties cannot be expressed with 6 roles                                                                                                                                                                 |
+| 7   | Build `LaboratoryTest` + `TestComponent` + `TestPanelMember`                                                                                    | `libs/db/prisma/schema.prisma`                                                                                                          | A CBC is currently 7 unrelated free-text rows                                                                                                                                                                                                 |
+| 8   | Build `Specimen` + accession numbering + `SpecimenRejection`                                                                                    | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/specimens/` (new)                                                                     | No specimen identity = no chain of custody, no wrong-specimen defence                                                                                                                                                                         |
+| 9   | Build `ReferenceRange` with age/sex/condition/method + effective dates; pin the applied range onto the result                                   | `libs/db/prisma/schema.prisma`                                                                                                          | Paediatric and adult results are flagged against the same numbers                                                                                                                                                                             |
+| 10  | Add `ConsultationAmendment`                                                                                                                     | `libs/db/prisma/schema.prisma`, `apps/api/src/consultations/consultations.service.ts:177`                                               | The lock already tells users to "create a revision" and no revision exists                                                                                                                                                                    |
+| 11  | Rename the dental-lab domain (`Lab*` → `DentalLab*`, `apps/api/src/lab/` → `dental-lab/`, `TenantKind.LAB` → `DENTAL_LAB`)                      | schema + ~20 API modules + web/mobile lab portals + `libs/api-client`                                                                   | `lab/` and `labs/` differ by one character and mean unrelated things                                                                                                                                                                          |
+| 12  | Add RLS to `push_tokens` and route `PushService` through `withTenant`                                                                           | new migration; `apps/api/src/notifications/push.service.ts:92,114`                                                                      | The one hole in an otherwise uniform isolation model                                                                                                                                                                                          |
+| 13  | Add `FileObject.patientId` + an authorized, audited download endpoint + AV scan                                                                 | `libs/db/prisma/schema.prisma:1387`, `apps/api/src/files/`                                                                              | PHI is write-only today, and any download added later has nothing to authorize against                                                                                                                                                        |
+| 14  | Normalize `Patient`: middle name, suffix, civil status, blood type + `PatientAddress`/`PatientContact`/`PatientIdentifier`/`PatientEntitlement` | `libs/db/prisma/schema.prisma:1144-1182`                                                                                                | 8 fields cannot register a Philippine patient                                                                                                                                                                                                 |
+| 15  | Build `PatientEntitlement` + `DiscountRule` + VAT-first statutory arithmetic                                                                    | `libs/billing-rules/src/ph-statutory.ts` (new), `apps/api/src/billing/pricing.service.ts` (new); `Invoice.discountCentavos` today       | RA 9994 / RA 10754 are legal requirements a billing clinic cannot skip                                                                                                                                                                        |
+| 16  | Build `Laboratory` (DOH LTO, category, head, pathologist) + `LabServiceCapability`, enforced at order placement                                 | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/catalog/`                                                                             | AO 2021-0037: a lab may not test beyond its authorized capability                                                                                                                                                                             |
+| 17  | Build `LabReport` + `LabReportSignature` with the PRC snapshot and a content hash                                                               | `libs/db/prisma/schema.prisma`, `apps/api/src/lis/reports/`                                                                             | Reuses the proven `Prescription.providerLicense` pattern; a boolean `signed` is worthless                                                                                                                                                     |
+| 18  | Capture before/after values and a `reason` in the audit log                                                                                     | `libs/db/prisma/schema.prisma:1359` (`AuditLog`), `apps/api/src/audit/audit.interceptor.ts`                                             | Append-only is already right; it records _that_ something changed, not _what_                                                                                                                                                                 |
+| 19  | Promote `Consultation.diagnosisCodes String[]` to a `Diagnosis` entity                                                                          | `libs/db/prisma/schema.prisma:1216`                                                                                                     | Needed for problem lists, reporting and any PhilHealth claim                                                                                                                                                                                  |
+| 20  | Add the RLS coverage assertion + the clinical boundary test matrix to CI                                                                        | `apps/api-e2e/src/` , `.github/workflows/ci.yml`                                                                                        | A SQL assertion that every `tenantId` table has `relrowsecurity = true` would have caught #12                                                                                                                                                 |
 
 ---
 

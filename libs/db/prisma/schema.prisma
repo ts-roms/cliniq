@@ -2344,6 +2344,54 @@ enum LabOrderStatus {
   CANCELLED
 }
 
+/// Per-analyte critical limits, configured by the laboratory.
+///
+/// A critical value is a clinical threshold the lab sets per analyte. It has
+/// no arithmetic relationship to the reference interval — potassium's
+/// reference top is 5.1 mmol/L and its critical top is ~6.0, not 1.5x
+/// anything. Deriving one from the other under-flags results that need a
+/// phone call, so limits live here and nowhere else.
+///
+/// `testKey` is the normalised `testCode ?? testName` of a LabOrderItem (see
+/// normaliseTestKey in apps/api/src/labs/flagging.ts). It is a stopgap: when
+/// the test catalogue lands, rules hang off a component id instead.
+///
+/// Rows are never edited in place to change a limit — insert a new row with a
+/// later `effectiveFrom` and close the old one with `effectiveTo`, so a result
+/// flagged last year can still be explained by the limits in force then.
+model CriticalValueRule {
+  id       String @id @default(cuid())
+  tenantId String
+
+  testKey  String  // normalised match key, e.g. "K" or "POTASSIUM"
+  label    String  // what staff see, e.g. "Potassium (serum)"
+  unit     String?
+
+  // Optional demographic narrowing. Null on both = applies to any patient.
+  // ageMinDays is inclusive, ageMaxDays exclusive. Days, not years, because
+  // neonatal limits change week to week.
+  ageMinDays Int?
+  ageMaxDays Int?
+  sex        Sex?
+
+  // At least one of the two must be set — enforced by a CHECK constraint.
+  criticalLow  Float?
+  criticalHigh Float?
+
+  note String?
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([tenantId, testKey, effectiveFrom])
+  @@map("critical_value_rules")
+}
+
 enum LabAbnormalFlag {
   NORMAL
   HIGH
@@ -2394,6 +2442,12 @@ model LabOrderItem {
   resultUnit     String?
   referenceLow   Float?
   referenceHigh  Float?
+  // Per-order override of the tenant's CriticalValueRule for this test. Set
+  // these only when THIS order needs limits different from the configured
+  // ones; leave null and the rule applies. Critical limits are NEVER derived
+  // from referenceLow/referenceHigh — see apps/api/src/labs/flagging.ts.
+  criticalLow    Float?
+  criticalHigh   Float?
   abnormalFlag   LabAbnormalFlag?
   comment        String?
   reportedAt     DateTime?

@@ -19,6 +19,16 @@ import type {
   RecordResultDto,
   UpdateLabOrderDto,
 } from './dto/labs.dto.js';
+import {
+  ageInDays,
+  deriveFlag,
+  isAbnormal,
+  isCritical,
+  normaliseTestKey,
+  selectCriticalRule,
+  type PatientSex,
+  type ResultFlag,
+} from './flagging.js';
 
 @Injectable()
 export class LabsService {
@@ -64,6 +74,20 @@ export class LabsService {
   }
 
   async create(dto: CreateLabOrderDto, user: AuthenticatedUser) {
+    // An inverted per-order override would make every result critical on one
+    // side. CriticalValueRule has a DB CHECK for this; order items do not, so
+    // the guard lives here.
+    for (const item of dto.items) {
+      if (
+        item.criticalLow !== undefined &&
+        item.criticalHigh !== undefined &&
+        item.criticalLow >= item.criticalHigh
+      ) {
+        throw new BadRequestException(
+          `${item.testName}: criticalLow must be below criticalHigh`,
+        );
+      }
+    }
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const patient = await tx.patient.findFirst({
         where: { id: dto.patientId, deletedAt: null },
@@ -104,6 +128,8 @@ export class LabsService {
               resultUnit: item.resultUnit,
               referenceLow: item.referenceLow,
               referenceHigh: item.referenceHigh,
+              criticalLow: item.criticalLow,
+              criticalHigh: item.criticalHigh,
             })),
           },
         },
@@ -161,10 +187,19 @@ export class LabsService {
   }
 
   /**
-   * Record a result for a single test. Auto-computes abnormalFlag from
-   * referenceLow/referenceHigh when the value is numeric and the caller didn't
-   * provide an explicit flag. Bumps the parent order to REPORTED when every
-   * item has a value.
+   * Record a result for a single test.
+   *
+   * When the caller does not supply an explicit flag and the value is numeric,
+   * the flag is computed from the item's reference interval plus whichever
+   * critical limits apply: the item's own overrides if set, else the tenant's
+   * CriticalValueRule for this test, narrowed by the patient's age and sex.
+   *
+   * With no critical limits configured a result can still be HIGH or LOW but
+   * is NEVER called CRITICAL. It used to be — the limits were derived as
+   * 1.5x / 0.5x the reference bounds, which under-flagged exactly the results
+   * that needed a phone call. See ./flagging.ts.
+   *
+   * Bumps the parent order to REPORTED when every item has a value.
    */
   async recordResult(
     orderId: string,
@@ -183,18 +218,18 @@ export class LabsService {
 
       const flag =
         dto.abnormalFlag ??
-        deriveFlag(
-          dto.resultValue,
-          item.referenceLow ?? null,
-          item.referenceHigh ?? null,
-        );
+        (await this.computeFlag(tx, item, dto.resultValue, user.tenantId));
 
       const updatedItem = await tx.labOrderItem.update({
         where: { id: itemId },
         data: {
           resultValue: dto.resultValue,
           resultUnit: dto.resultUnit ?? item.resultUnit,
-          abnormalFlag: flag,
+          // `?? null`, not `flag`: Prisma OMITS an undefined field, which
+          // would leave the previous flag in place when a corrected value no
+          // longer warrants one — a result reading "4.2  HIGH" because 6.8
+          // was recorded first. Recording a result always (re)states its flag.
+          abnormalFlag: flag ?? null,
           comment: dto.comment ?? item.comment,
           reportedAt: new Date(),
         },
@@ -203,10 +238,8 @@ export class LabsService {
       const remaining = await tx.labOrderItem.count({
         where: { orderId, OR: [{ resultValue: null }, { resultValue: '' }] },
       });
-      const isAbnormal = flag && flag !== LabAbnormalFlag.NORMAL;
-      const isCritical =
-        flag === LabAbnormalFlag.CRITICAL_HIGH ||
-        flag === LabAbnormalFlag.CRITICAL_LOW;
+      const abnormal = isAbnormal(flag as ResultFlag | null | undefined);
+      const critical = isCritical(flag as ResultFlag | null | undefined);
 
       let orderJustReported = false;
       if (remaining === 0) {
@@ -226,12 +259,12 @@ export class LabsService {
         select: { number: true, providerId: true, patientId: true },
       });
       if (order) {
-        if (isAbnormal) {
+        if (abnormal) {
           void this.notif.notify({
             tenantId: user.tenantId,
             userId: order.providerId,
             kind: NotificationKind.LAB_ABNORMAL,
-            severity: isCritical
+            severity: critical
               ? NotificationSeverity.CRITICAL
               : NotificationSeverity.WARNING,
             title: `${item.testName}: ${flag}`,
@@ -256,6 +289,87 @@ export class LabsService {
     });
   }
 
+  /**
+   * Resolve the limits that apply to one result, then flag it.
+   *
+   * Precedence for critical limits:
+   *   1. the item's own criticalLow / criticalHigh, when this order overrides
+   *   2. the tenant's CriticalValueRule for the test, narrowed by the
+   *      patient's age and sex and by the effective window
+   *   3. none — the result is flagged against its reference interval only and
+   *      can never come back CRITICAL
+   *
+   * Age and sex come from the patient on the order. An unknown date of birth
+   * or sex matches only rules that do not narrow on that dimension, so a
+   * neonatal limit is never applied to a patient we cannot age.
+   */
+  private async computeFlag(
+    tx: PrismaClient,
+    item: {
+      testCode: string | null;
+      testName: string;
+      referenceLow: number | null;
+      referenceHigh: number | null;
+      criticalLow: number | null;
+      criticalHigh: number | null;
+      orderId: string;
+    },
+    resultValue: string,
+    tenantId: string,
+  ): Promise<LabAbnormalFlag | undefined> {
+    const reference = {
+      referenceLow: item.referenceLow,
+      referenceHigh: item.referenceHigh,
+    };
+
+    // 1. Per-order override short-circuits the lookup entirely.
+    if (item.criticalLow !== null || item.criticalHigh !== null) {
+      return toDbFlag(
+        deriveFlag(resultValue, reference, {
+          criticalLow: item.criticalLow,
+          criticalHigh: item.criticalHigh,
+        }),
+      );
+    }
+
+    const testKey = normaliseTestKey(item.testCode, item.testName);
+    if (testKey === '') return toDbFlag(deriveFlag(resultValue, reference));
+
+    const now = new Date();
+    const rules = await tx.criticalValueRule.findMany({
+      where: {
+        tenantId,
+        testKey,
+        deletedAt: null,
+        effectiveFrom: { lte: now },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }],
+      },
+    });
+    if (rules.length === 0) {
+      return toDbFlag(deriveFlag(resultValue, reference));
+    }
+
+    const order = await tx.labOrder.findFirst({
+      where: { id: item.orderId },
+      select: { patient: { select: { dateOfBirth: true, sex: true } } },
+    });
+    const patient = {
+      ageDays: ageInDays(order?.patient?.dateOfBirth ?? null, now),
+      sex: (order?.patient?.sex ?? null) as PatientSex | null,
+    };
+
+    const rule = selectCriticalRule(rules, patient, now);
+    return toDbFlag(
+      deriveFlag(
+        resultValue,
+        reference,
+        rule
+          ? { criticalLow: rule.criticalLow, criticalHigh: rule.criticalHigh }
+          : { criticalLow: null, criticalHigh: null },
+      ),
+    );
+  }
+
   // ── helpers ──────────────────────────────────────
 
   private async nextOrderNumber(
@@ -272,27 +386,10 @@ export class LabsService {
 }
 
 /**
- * Map a numeric result against a reference range to a flag. Non-numeric
- * results return undefined — caller should pass explicit ABNORMAL / NORMAL
- * for qualitative tests ("Reactive", "Negative", etc.).
+ * flagging.ts is deliberately Prisma-free, so its ResultFlag is a plain union.
+ * The two vocabularies are identical by construction; this is the one place
+ * that crosses between them.
  */
-function deriveFlag(
-  value: string,
-  low: number | null,
-  high: number | null,
-): LabAbnormalFlag | undefined {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return undefined;
-  if (low === null && high === null) return LabAbnormalFlag.NORMAL;
-  if (high !== null) {
-    const criticalHigh = high * 1.5;
-    if (n >= criticalHigh) return LabAbnormalFlag.CRITICAL_HIGH;
-    if (n > high) return LabAbnormalFlag.HIGH;
-  }
-  if (low !== null) {
-    const criticalLow = low * 0.5;
-    if (n <= criticalLow) return LabAbnormalFlag.CRITICAL_LOW;
-    if (n < low) return LabAbnormalFlag.LOW;
-  }
-  return LabAbnormalFlag.NORMAL;
+function toDbFlag(flag: ResultFlag | undefined): LabAbnormalFlag | undefined {
+  return flag === undefined ? undefined : (flag as LabAbnormalFlag);
 }
