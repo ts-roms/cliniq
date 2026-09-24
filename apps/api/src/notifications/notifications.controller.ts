@@ -73,7 +73,7 @@ export class NotificationsController {
     @Body() dto: UnregisterPushTokenDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    await this.push.unregister(user.userId, dto.deviceId);
+    await this.push.unregister(user.tenantId, user.userId, dto.deviceId);
     return { ok: true };
   }
 
