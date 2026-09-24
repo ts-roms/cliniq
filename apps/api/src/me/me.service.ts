@@ -9,6 +9,7 @@ import type { AuthenticatedUser } from '../auth/decorators/current-user.decorato
 import type { UpdateStaffProfileDto } from './dto/staff-profile.dto.js';
 import { BillingService } from '../billing/billing.service.js';
 import { FilesService } from '../files/files.service.js';
+import { isReleased, type LabResultStatus } from '../labs/verification.js';
 
 /**
  * Self-scoped service for the patient portal. Every method derives the patient
@@ -195,7 +196,10 @@ export class MeService {
         conditions,
         vitals,
         prescriptions,
-        labOrders,
+        labOrders: labOrders.map((o) => ({
+          ...o,
+          items: o.items.map(redactUnreleasedResult),
+        })),
       };
     });
   }
@@ -281,4 +285,41 @@ export class MeService {
     this.requirePatientId(user);
     return this.files.download(fileId, user);
   }
+}
+
+/**
+ * Hide the value of a result nobody has released.
+ *
+ * The verification chain introduced PRELIMINARY — "a value exists but nobody
+ * has stood behind it" — and this endpoint was returning it to the patient
+ * unfiltered. The effect was backwards: a clinic that turned verification ON,
+ * which is the safety-conscious choice, sent technologist-entered values
+ * straight to the patient, while one that left it off was unaffected.
+ *
+ * The row is kept and the value removed, rather than the row dropped: a
+ * patient should be able to see that a test is pending. `resultStatus` comes
+ * through so the portal can say so.
+ *
+ * This is a presentation boundary, not a security boundary — staff endpoints
+ * still return the unreleased value, because that is the bench worklist.
+ */
+function redactUnreleasedResult<
+  T extends {
+    resultStatus: string;
+    resultValue: string | null;
+    resultUnit: string | null;
+    abnormalFlag: unknown;
+    comment: string | null;
+    reportedAt: Date | null;
+  },
+>(item: T): T {
+  if (isReleased(item.resultStatus as LabResultStatus)) return item;
+  return {
+    ...item,
+    resultValue: null,
+    resultUnit: null,
+    abnormalFlag: null,
+    comment: null,
+    reportedAt: null,
+  };
 }
