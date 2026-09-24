@@ -15,6 +15,7 @@ import {
   Input,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { pesoInputProps, pesosToCentavos } from '@/shared/lib/money';
 import {
   createInvoiceSchema,
   type CreateInvoiceInput,
@@ -34,7 +35,7 @@ export function NewInvoiceDialog({ patientId }: { patientId: string }) {
         <DialogHeader>
           <DialogTitle>New invoice</DialogTitle>
           <DialogDescription>
-            Enter line items in centavos (e.g. ₱1,500.00 = 150000).
+            Enter amounts in pesos (e.g. 1500.00).
           </DialogDescription>
         </DialogHeader>
         <NewInvoiceForm patientId={patientId} onDone={() => setOpen(false)} />
@@ -69,11 +70,11 @@ function NewInvoiceForm({
   const items = watch('items') ?? [];
   const subtotal = items.reduce(
     (sum, it) =>
-      sum + (Number(it.quantity) || 0) * (Number(it.unitPriceCentavos) || 0),
+      sum + (Number(it.quantity) || 0) * pesosToCentavos(it.unitPriceCentavos),
     0,
   );
-  const discount = Number(watch('discountCentavos')) || 0;
-  const tax = Number(watch('taxCentavos')) || 0;
+  const discount = pesosToCentavos(watch('discountCentavos'));
+  const tax = pesosToCentavos(watch('taxCentavos'));
   const total = Math.max(subtotal - discount + tax, 0);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -108,11 +109,11 @@ function NewInvoiceForm({
             </div>
             <div className="col-span-3">
               <FormField
-                label={idx === 0 ? 'Unit (centavos)' : ''}
+                label={idx === 0 ? 'Unit price (₱)' : ''}
                 error={errors.items?.[idx]?.unitPriceCentavos?.message}
               >
                 <Input
-                  type="number"
+                  {...pesoInputProps}
                   {...register(`items.${idx}.unitPriceCentavos`)}
                 />
               </FormField>
@@ -148,13 +149,13 @@ function NewInvoiceForm({
 
       <div className="grid grid-cols-3 gap-3">
         <FormField
-          label="Discount (centavos)"
+          label="Discount (₱)"
           error={errors.discountCentavos?.message}
         >
-          <Input type="number" {...register('discountCentavos')} />
+          <Input {...pesoInputProps} {...register('discountCentavos')} />
         </FormField>
-        <FormField label="Tax (centavos)" error={errors.taxCentavos?.message}>
-          <Input type="number" {...register('taxCentavos')} />
+        <FormField label="Tax (₱)" error={errors.taxCentavos?.message}>
+          <Input {...pesoInputProps} {...register('taxCentavos')} />
         </FormField>
         <FormField label="Notes" error={errors.notes?.message}>
           <Input {...register('notes')} />

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pesosAsCentavos } from '@/shared/lib/money';
 
 export const claimStatusEnum = z.enum([
   'DRAFT',
@@ -29,7 +30,7 @@ export type CreateMembershipInput = z.infer<typeof createMembershipSchema>;
 
 export const fileClaimSchema = z.object({
   membershipId: z.string().min(1, 'pick a membership'),
-  claimedCentavos: z.coerce.number().int().min(0),
+  claimedCentavos: pesosAsCentavos(),
   notes: z.string().max(280).optional(),
 });
 export type FileClaimInput = z.input<typeof fileClaimSchema>;
@@ -38,8 +39,8 @@ export type FileClaimOutput = z.output<typeof fileClaimSchema>;
 export const updateClaimSchema = z.object({
   status: claimStatusEnum.optional(),
   authNumber: z.string().max(80).optional(),
-  approvedCentavos: z.coerce.number().int().min(0).optional(),
-  patientResponsibilityCentavos: z.coerce.number().int().min(0).optional(),
+  approvedCentavos: pesosAsCentavos().optional(),
+  patientResponsibilityCentavos: pesosAsCentavos().optional(),
   denialReason: z.string().max(280).optional(),
   notes: z.string().max(280).optional(),
 });
@@ -47,7 +48,7 @@ export type UpdateClaimInput = z.input<typeof updateClaimSchema>;
 export type UpdateClaimOutput = z.output<typeof updateClaimSchema>;
 
 export const recordPaymentSchema = z.object({
-  amountCentavos: z.coerce.number().int().min(1),
+  amountCentavos: pesosAsCentavos({ min: 0.01 }),
   reference: z.string().max(80).optional(),
 });
 export type RecordPaymentInput = z.input<typeof recordPaymentSchema>;

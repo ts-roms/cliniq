@@ -14,6 +14,7 @@ import {
   Input,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { pesoInputProps } from '@/shared/lib/money';
 import {
   receiveBatchSchema,
   type ReceiveBatchInput,
@@ -55,10 +56,10 @@ export function ReceiveBatchDialog({ itemId }: { itemId: string }) {
               <Input type="number" {...register('receivedQty')} />
             </FormField>
             <FormField
-              label="Unit cost (centavos)"
+              label="Unit cost (₱)"
               error={errors.unitCostCentavos?.message}
             >
-              <Input type="number" {...register('unitCostCentavos')} />
+              <Input {...pesoInputProps} {...register('unitCostCentavos')} />
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-3">

@@ -20,6 +20,7 @@ import {
   useRunMonthlyInvoiceSweep,
   type DentalLabInvoiceStatus,
 } from '@/features/dental-lab';
+import { pesoInputProps, pesosToCentavos } from '@/shared/lib/money';
 
 const STATUSES: DentalLabInvoiceStatus[] = [
   'DRAFT',
@@ -200,7 +201,7 @@ function GenerateFromCases({ onDone }: { onDone: () => void }) {
   const [clinicId, setClinicId] = useState<string>('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dueAt, setDueAt] = useState('');
-  const [taxCents, setTaxCents] = useState('0');
+  const [taxPesos, setTaxPesos] = useState('0');
   const generate = useGenerateInvoiceFromCases();
 
   const { data: cases } = useLabCases({ status: 'DELIVERED' });
@@ -225,7 +226,7 @@ function GenerateFromCases({ onDone }: { onDone: () => void }) {
         clinicTenantId: clinicId,
         caseIds: [...selected],
         dueAt: dueAt || undefined,
-        taxCents: Number(taxCents) || 0,
+        taxCents: pesosToCentavos(taxPesos),
       },
       { onSuccess: () => onDone() },
     );
@@ -274,13 +275,12 @@ function GenerateFromCases({ onDone }: { onDone: () => void }) {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Tax (centavos)
+              Tax (₱)
             </label>
             <input
-              type="number"
-              min={0}
-              value={taxCents}
-              onChange={(e) => setTaxCents(e.target.value)}
+              {...pesoInputProps}
+              value={taxPesos}
+              onChange={(e) => setTaxPesos(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             />
           </div>

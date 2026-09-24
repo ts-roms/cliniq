@@ -25,6 +25,11 @@ import {
   useCancelLabPaymentLink,
   useGenerateLabInvoicePdf,
 } from '@/features/dental-lab';
+import {
+  centavosToPesos,
+  pesoInputProps,
+  pesosToCentavos,
+} from '@/shared/lib/money';
 
 function formatMoney(cents: number, currency: string): string {
   const formatter = new Intl.NumberFormat('en-PH', {
@@ -255,13 +260,15 @@ function EditMetaForm({
     invoice.dueAt ? invoice.dueAt.slice(0, 10) : '',
   );
   const [notes, setNotes] = useState(invoice.notes ?? '');
-  const [taxCents, setTaxCents] = useState(String(invoice.taxCents));
+  const [taxPesos, setTaxPesos] = useState(
+    String(centavosToPesos(invoice.taxCents)),
+  );
 
   function save() {
     update.mutate({
       dueAt: dueAt ? new Date(dueAt).toISOString() : null,
       notes: notes || null,
-      taxCents: Number(taxCents) || 0,
+      taxCents: pesosToCentavos(taxPesos),
     });
   }
 
@@ -284,13 +291,12 @@ function EditMetaForm({
         </div>
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">
-            Tax (centavos)
+            Tax (₱)
           </label>
           <Input
-            type="number"
-            min={0}
-            value={taxCents}
-            onChange={(e) => setTaxCents(e.target.value)}
+            {...pesoInputProps}
+            value={taxPesos}
+            onChange={(e) => setTaxPesos(e.target.value)}
           />
         </div>
         <div className="md:col-span-3">
@@ -395,22 +401,22 @@ function AddItemForm({ invoiceId }: { invoiceId: string }) {
   const add = useAddLabInvoiceItem(invoiceId);
   const [description, setDescription] = useState('');
   const [qty, setQty] = useState('1');
-  const [unitPriceCents, setUnitPriceCents] = useState('');
+  const [unitPricePesos, setUnitPricePesos] = useState('');
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!description.trim() || !unitPriceCents) return;
+    if (!description.trim() || !unitPricePesos) return;
     add.mutate(
       {
         description: description.trim(),
         qty: Number(qty) || 1,
-        unitPriceCents: Number(unitPriceCents),
+        unitPriceCents: pesosToCentavos(unitPricePesos),
       },
       {
         onSuccess: () => {
           setDescription('');
           setQty('1');
-          setUnitPriceCents('');
+          setUnitPricePesos('');
         },
       },
     );
@@ -436,11 +442,10 @@ function AddItemForm({ invoiceId }: { invoiceId: string }) {
       />
       <Input
         required
-        type="number"
-        min={0}
-        value={unitPriceCents}
-        onChange={(e) => setUnitPriceCents(e.target.value)}
-        placeholder="Unit (centavos)"
+        {...pesoInputProps}
+        value={unitPricePesos}
+        onChange={(e) => setUnitPricePesos(e.target.value)}
+        placeholder="Unit price (₱)"
       />
       <Button type="submit" disabled={add.isPending}>
         <Plus className="mr-1 h-4 w-4" aria-hidden /> Add
@@ -471,7 +476,7 @@ function RecordPaymentCard({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const cents = Number(amount);
+    const cents = pesosToCentavos(amount);
     if (!cents) return;
     record.mutate(
       { amountCents: cents, reference: reference || undefined },
@@ -496,12 +501,12 @@ function RecordPaymentCard({
         >
           <Input
             required
-            type="number"
-            min={1}
-            max={outstanding}
+            {...pesoInputProps}
+            min={0.01}
+            max={centavosToPesos(outstanding)}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder={`Amount (centavos, max ${outstanding})`}
+            placeholder={`Amount (₱, max ${centavosToPesos(outstanding).toFixed(2)})`}
           />
           <Input
             value={reference}

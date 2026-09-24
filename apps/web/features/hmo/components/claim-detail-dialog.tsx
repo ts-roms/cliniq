@@ -15,6 +15,7 @@ import {
   Select,
 } from '@org/ui';
 import { FormField } from '@/shared/components/forms/form-field';
+import { centavosToPesos, pesoInputProps } from '@/shared/lib/money';
 import { formatCentavos } from '@/features/billing';
 import {
   recordPaymentSchema,
@@ -56,8 +57,10 @@ function UpdateClaimDialog({ claim }: { claim: HmoClaim }) {
     defaultValues: {
       status: claim.status,
       authNumber: claim.authNumber ?? undefined,
-      approvedCentavos: claim.approvedCentavos,
-      patientResponsibilityCentavos: claim.patientResponsibilityCentavos,
+      approvedCentavos: centavosToPesos(claim.approvedCentavos),
+      patientResponsibilityCentavos: centavosToPesos(
+        claim.patientResponsibilityCentavos,
+      ),
     },
   });
 
@@ -96,17 +99,17 @@ function UpdateClaimDialog({ claim }: { claim: HmoClaim }) {
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField
-              label="Approved (centavos)"
+              label="Approved (₱)"
               error={errors.approvedCentavos?.message}
             >
-              <Input type="number" {...register('approvedCentavos')} />
+              <Input {...pesoInputProps} {...register('approvedCentavos')} />
             </FormField>
             <FormField
-              label="Patient responsibility"
+              label="Patient responsibility (₱)"
               error={errors.patientResponsibilityCentavos?.message}
             >
               <Input
-                type="number"
+                {...pesoInputProps}
                 {...register('patientResponsibilityCentavos')}
               />
             </FormField>
@@ -152,12 +155,12 @@ function RecordHmoPaymentDialog({ claim }: { claim: HmoClaim }) {
     formState: { errors, isSubmitting },
   } = useForm<RecordPaymentInput, unknown, RecordPaymentOutput>({
     resolver: zodResolver(recordPaymentSchema),
-    defaultValues: { amountCentavos: default_ },
+    defaultValues: { amountCentavos: centavosToPesos(default_) },
   });
 
   const onSubmit = handleSubmit(async (values) => {
     await record.mutateAsync({ id: claim.id, input: values });
-    reset({ amountCentavos: default_ });
+    reset({ amountCentavos: centavosToPesos(default_) });
     setOpen(false);
   });
 
@@ -175,11 +178,8 @@ function RecordHmoPaymentDialog({ claim }: { claim: HmoClaim }) {
           {formatCentavos(remainingOnInvoice)}
         </p>
         <form onSubmit={onSubmit} className="space-y-3">
-          <FormField
-            label="Amount (centavos)"
-            error={errors.amountCentavos?.message}
-          >
-            <Input type="number" {...register('amountCentavos')} />
+          <FormField label="Amount (₱)" error={errors.amountCentavos?.message}>
+            <Input {...pesoInputProps} {...register('amountCentavos')} />
           </FormField>
           <FormField
             label="HMO reference / PRA #"
