@@ -2954,6 +2954,7 @@ model LabOrder {
   consultation Consultation?  @relation(fields: [consultationId], references: [id])
   items        LabOrderItem[]
   specimens    Specimen[]
+  reports      LabReport[]
 
   @@unique([tenantId, number])
   @@index([tenantId, patientId, createdAt])
@@ -3075,6 +3076,104 @@ model LabResultVersion {
   @@unique([tenantId, orderItemId, version])
   @@index([tenantId, orderItemId, recordedAt])
   @@map("lab_result_versions")
+}
+
+/// Where a report is in its life. There is no DRAFT: a report is created by
+/// the act of issuing it, because an unsigned lab report is not a document,
+/// it is a query.
+enum LabReportStatus {
+  ISSUED
+  SUPERSEDED
+}
+
+/// A signed laboratory report — the artifact that leaves the building.
+///
+/// Verified results had nowhere to go: there was no report, no signature and
+/// no PDF, so a laboratory could release a result and still not issue
+/// anything a patient or a referring doctor could hold.
+///
+/// The hard part is not producing the document, it is keeping it honest
+/// after results change. A report signed on Tuesday asserts what the results
+/// said on Tuesday; if one is corrected on Wednesday the report is not out
+/// of date, it is a signed document stating something untrue, and nothing in
+/// the row itself would reveal that. `contentHash` is taken over exactly the
+/// values reported, so recomputing it against the current results answers
+/// "is this still what was signed?" — see apps/api/src/labs/reporting.ts.
+///
+/// A stale report is never edited. It is SUPERSEDED by a new version, because
+/// it was genuinely issued and someone may be holding a copy.
+model LabReport {
+  id        String @id @default(cuid())
+  tenantId  String
+  orderId   String
+  patientId String
+
+  /// Per tenant, per month: LR-202609-0001. Allocated atomically through the
+  /// same DocumentSequence the accession and order numbers use.
+  number String
+  /// 1 for the first report on an order, incrementing for each re-issue.
+  version Int             @default(1)
+  status  LabReportStatus @default(ISSUED)
+
+  /// SHA-256 over the released results this report was built from.
+  contentHash String
+
+  issuedAt   DateTime @default(now())
+  issuedById String
+
+  /// The report this one replaces. Set on the NEW report, so the chain reads
+  /// forwards from any version.
+  supersedesId String?    @unique
+  supersedes   LabReport? @relation("LabReportChain", fields: [supersedesId], references: [id])
+  supersededBy LabReport? @relation("LabReportChain")
+
+  order      LabOrder             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  signatures LabReportSignature[]
+
+  @@unique([tenantId, number])
+  /// Unique, not just indexed: two reports on one order cannot share a
+  /// version number, or the supersede chain has no defined order.
+  @@unique([tenantId, orderId, version])
+  @@index([tenantId, patientId, issuedAt])
+  @@map("lab_reports")
+}
+
+/// Who put their name to a report, and to exactly what.
+///
+/// The PRC licence is snapshotted at signing time for the same reason
+/// `Prescription.providerLicense` is: a later edit to the user's licence
+/// details must not retroactively change what appears on a signed document.
+///
+/// `contentHash` is repeated here rather than read through the report,
+/// because what matters is what THIS signer saw. On a re-issued report the
+/// two agree; keeping the column makes that an assertion rather than an
+/// assumption.
+///
+/// Append-only: the application role holds no UPDATE or DELETE. A signature
+/// withdrawn is a superseded report, not a deleted row.
+model LabReportSignature {
+  id       String @id @default(cuid())
+  tenantId String
+  reportId String
+
+  signerId String
+  /// The role the signer held when they signed — a pathologist who later
+  /// becomes an owner still signed as a pathologist.
+  signerRole Role
+
+  signerName    String
+  signerLicense String?
+
+  contentHash String
+  signedAt    DateTime @default(now())
+
+  report LabReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  /// One signature per person per report. Signing twice is a no-op, not a
+  /// second endorsement.
+  @@unique([tenantId, reportId, signerId])
+  @@index([tenantId, reportId, signedAt])
+  @@map("lab_report_signatures")
 }
 
 // ──────────────────────────────────────────────

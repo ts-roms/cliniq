@@ -4771,6 +4771,108 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/orders/{orderId}/reports": {
+      "post": {
+        "operationId": "ReportsController_issue",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "get": {
+        "operationId": "ReportsController_list",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/reports/{id}": {
+      "get": {
+        "operationId": "ReportsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/reports/{id}/sign": {
+      "post": {
+        "operationId": "ReportsController_sign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/tele/sessions": {
       "post": {
         "operationId": "TeleController_create",
