@@ -14,6 +14,7 @@ import type { AuthenticatedUser } from '../auth/decorators/current-user.decorato
 // The report series shares DocumentSequence with order and accession
 // numbers, so all three are allocated the same atomic way.
 import { nextSequenceValue, orderPeriod } from './accession.js';
+import { licenceStatus } from './capability.js';
 import {
   canIssueReport,
   formatReportNumber,
@@ -245,6 +246,7 @@ export class ReportsService {
         where: { id: user.tenantId },
         select: { name: true, settings: true },
       });
+      const lab = await tx.laboratory.findFirst();
       const location = await tx.location.findFirst({
         where: { isPrimary: true, deletedAt: null, active: true },
         select: {
@@ -295,6 +297,17 @@ export class ReportsService {
           name: tenant?.name ?? 'Clinic',
           settings: tenant?.settings as LabReportPdfData['tenant']['settings'],
         },
+        laboratory: lab
+          ? {
+              name: lab.name,
+              dohLtoNumber: lab.dohLtoNumber,
+              category: lab.category,
+              classification: lab.classification,
+              headName: lab.headName,
+              headLicenseNumber: lab.headLicenseNumber,
+              licenceExpired: licenceStatus(lab, new Date()).expired,
+            }
+          : null,
         location,
         patient,
       });

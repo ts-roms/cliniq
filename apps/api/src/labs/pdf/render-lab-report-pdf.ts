@@ -35,6 +35,20 @@ export interface LabReportPdfData {
       branding?: { primaryColor?: string; logoUrl?: string };
     } | null;
   };
+  /**
+   * The licensed laboratory. AO 2021-0037 requires the LTO number and the
+   * head of laboratory on an issued report — a report that cannot name who
+   * is answerable for it is not a compliant document.
+   */
+  laboratory?: {
+    name: string;
+    dohLtoNumber: string | null;
+    category: string;
+    classification: string | null;
+    headName: string | null;
+    headLicenseNumber: string | null;
+    licenceExpired: boolean;
+  } | null;
   location?: {
     name: string;
     addressLine1: string | null;
@@ -81,6 +95,7 @@ export function renderLabReportPdf(data: LabReportPdfData): Promise<Buffer> {
     doc.on('error', reject);
 
     header(doc, data.tenant, data.location);
+    laboratoryBlock(doc, data.laboratory);
     supersededBanner(doc, data.report);
     reportMeta(doc, data.report);
     patientBlock(doc, data.patient);
@@ -136,6 +151,48 @@ function supersededBanner(
     .text(message, { align: 'center' });
   doc.fillColor('#000').font('Helvetica');
   doc.moveDown(0.3);
+  rule(doc);
+}
+
+/**
+ * The laboratory that issued this, and under what licence.
+ *
+ * An expired licence is stated rather than hidden. A report issued during a
+ * lapse is a fact, and a document that quietly omits it is worse than one
+ * that says so plainly.
+ */
+function laboratoryBlock(
+  doc: PDFKit.PDFDocument,
+  lab: LabReportPdfData['laboratory'],
+) {
+  if (!lab) return;
+  doc.moveDown(0.3);
+  doc.font('Helvetica-Bold').fontSize(9).text(lab.name, 40);
+  doc.font('Helvetica').fontSize(8);
+
+  const licence = lab.dohLtoNumber
+    ? `DOH LTO No. ${lab.dohLtoNumber}`
+    : 'DOH LTO number not on file';
+  const cat = [lab.category, lab.classification].filter(Boolean).join(' · ');
+  doc.text(cat ? `${licence}  ·  ${cat}` : licence);
+
+  if (lab.licenceExpired) {
+    doc
+      .fillColor('#b00020')
+      .font('Helvetica-Bold')
+      .text('Licence to Operate has expired.')
+      .fillColor('#000')
+      .font('Helvetica');
+  }
+  if (lab.headName) {
+    doc.text(
+      lab.headLicenseNumber
+        ? `Head of Laboratory: ${lab.headName} · PRC ${lab.headLicenseNumber}`
+        : `Head of Laboratory: ${lab.headName}`,
+    );
+  }
+  doc.fontSize(9);
+  doc.moveDown(0.2);
   rule(doc);
 }
 

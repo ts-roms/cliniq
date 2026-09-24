@@ -1802,22 +1802,23 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 
 Every row below was verified against the source, not inferred from a commit message: the migration, guard, spec or module named was confirmed to exist on `main`. Everything listed here is merged.
 
-| Finding                              | State            | Landed in                                                                                       |
-| ------------------------------------ | ---------------- | ----------------------------------------------------------------------------------------------- |
-| P0-1 portal BOLA                     | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
-| P0-2 critical thresholds             | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
-| P0-2 result verification chain       | fixed            | `20260924220000_lis_result_verification`                                                        |
-| P0-3 critical-result handling        | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
-| P0-4 consultation amendments         | fixed            | `20260924090000_consultation_amendments`                                                        |
-| P0-5 DOH-licensable laboratory       | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
-| P0-6 `push_tokens` RLS               | fixed            | `20260924100000_push_tokens_rls`                                                                |
-| P0-7 file download path              | fixed            | `20260924140000_file_patient_ownership`                                                         |
-| Audit log append-only **in CI**      | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
-| Dental-lab rename                    | mostly done      | see §29 #11                                                                                     |
-| Test catalogue                       | built            | `20260924180000_lis_test_catalogue`                                                             |
-| Specimens + accession                | built            | `20260924200000_lis_specimens`                                                                  |
-| Result verification + history        | built            | `20260924220000_lis_result_verification`                                                        |
-| Signed reports + PDF + portal access | built            | `20260924240000_lis_lab_reports`                                                                |
+| Finding                                     | State            | Landed in                                                                                       |
+| ------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| P0-1 portal BOLA                            | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
+| P0-2 critical thresholds                    | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
+| P0-2 result verification chain              | fixed            | `20260924220000_lis_result_verification`                                                        |
+| P0-3 critical-result handling               | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
+| P0-4 consultation amendments                | fixed            | `20260924090000_consultation_amendments`                                                        |
+| P0-5 DOH-licensable laboratory              | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
+| P0-6 `push_tokens` RLS                      | fixed            | `20260924100000_push_tokens_rls`                                                                |
+| P0-7 file download path                     | fixed            | `20260924140000_file_patient_ownership`                                                         |
+| Audit log append-only **in CI**             | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
+| Dental-lab rename                           | mostly done      | see §29 #11                                                                                     |
+| Test catalogue                              | built            | `20260924180000_lis_test_catalogue`                                                             |
+| Specimens + accession                       | built            | `20260924200000_lis_specimens`                                                                  |
+| Result verification + history               | built            | `20260924220000_lis_result_verification`                                                        |
+| Signed reports + PDF + portal access        | built            | `20260924240000_lis_lab_reports`                                                                |
+| Laboratory LTO profile + service capability | partial          | `20260924300000_lis_laboratory_licence` — reported, not enforced                                |
 
 ## Three things this exercise taught that are worth keeping
 

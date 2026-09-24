@@ -11,6 +11,8 @@ import { SpecimensController } from './specimens.controller.js';
 import { SpecimensService } from './specimens.service.js';
 import { ReportsController } from './reports.controller.js';
 import { ReportsService } from './reports.service.js';
+import { LaboratoryController } from './laboratory.controller.js';
+import { LaboratoryService } from './laboratory.service.js';
 
 @Module({
   controllers: [
@@ -20,6 +22,7 @@ import { ReportsService } from './reports.service.js';
     CatalogueController,
     SpecimensController,
     ReportsController,
+    LaboratoryController,
   ],
   providers: [
     LabsService,
@@ -28,6 +31,7 @@ import { ReportsService } from './reports.service.js';
     CatalogueService,
     SpecimensService,
     ReportsService,
+    LaboratoryService,
   ],
   exports: [LabsService, ReportsService],
 })
