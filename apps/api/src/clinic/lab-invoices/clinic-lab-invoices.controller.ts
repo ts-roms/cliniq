@@ -6,8 +6,8 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../auth/decorators/current-user.decorator.js';
-import { LabInvoicesService } from '../../lab/invoices/lab-invoices.service.js';
-import { InvoiceFilterDto } from '../../lab/invoices/dto/invoice.dto.js';
+import { DentalLabInvoicesService } from '../../dental-lab/invoices/dental-lab-invoices.service.js';
+import { InvoiceFilterDto } from '../../dental-lab/invoices/dto/invoice.dto.js';
 
 /**
  * Clinic-side read-only view of invoices the lab has issued to them.
@@ -19,7 +19,7 @@ import { InvoiceFilterDto } from '../../lab/invoices/dto/invoice.dto.js';
 @ApiBearerAuth('jwt')
 @Controller('clinic/lab-invoices')
 export class ClinicLabInvoicesController {
-  constructor(private readonly invoices: LabInvoicesService) {}
+  constructor(private readonly invoices: DentalLabInvoicesService) {}
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)

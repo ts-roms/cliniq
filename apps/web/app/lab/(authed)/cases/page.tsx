@@ -7,10 +7,10 @@ import {
   CaseStatusPill,
   useLabCases,
   useLabTags,
-  type LabCaseStatus,
-} from '@/features/lab';
+  type DentalLabCaseStatus,
+} from '@/features/dental-lab';
 
-const STATUSES: LabCaseStatus[] = [
+const STATUSES: DentalLabCaseStatus[] = [
   'DRAFT',
   'SUBMITTED',
   'IN_PROGRESS',
@@ -22,7 +22,7 @@ const STATUSES: LabCaseStatus[] = [
 ];
 
 export default function LabCasesInboxPage() {
-  const [status, setStatus] = useState<LabCaseStatus | 'all'>('all');
+  const [status, setStatus] = useState<DentalLabCaseStatus | 'all'>('all');
   const [tagId, setTagId] = useState<string>('');
   const { data, isLoading, error } = useLabCases({
     status: status === 'all' ? undefined : status,
@@ -61,7 +61,7 @@ export default function LabCasesInboxPage() {
               <Select
                 value={status}
                 onChange={(e) =>
-                  setStatus(e.target.value as LabCaseStatus | 'all')
+                  setStatus(e.target.value as DentalLabCaseStatus | 'all')
                 }
                 className="w-44"
               >

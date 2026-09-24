@@ -18,7 +18,7 @@ import {
   ALL_PLANS,
   LAB_PLAN_META,
   PLAN_META,
-  type LabPlan as LabPlanT,
+  type DentalLabPlan as LabPlanT,
   type Plan as PlanT,
 } from '@org/shared-types';
 import type {

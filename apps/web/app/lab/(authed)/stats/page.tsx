@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@org/ui';
-import { useLabStats } from '@/features/lab';
+import { useLabStats } from '@/features/dental-lab';
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Draft',

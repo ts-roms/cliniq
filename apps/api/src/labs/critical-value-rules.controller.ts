@@ -38,10 +38,10 @@ import {
  *
  * Every write is audited.
  */
-@ApiTags('labs')
+@ApiTags('lis')
 @ApiBearerAuth('jwt')
 @RequiresFeature(Features.LABS)
-@Controller('lab/critical-value-rules')
+@Controller('lis/critical-value-rules')
 export class CriticalValueRulesController {
   constructor(private readonly rules: CriticalValueRulesService) {}
 

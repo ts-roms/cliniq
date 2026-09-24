@@ -12,7 +12,7 @@ import {
   labPlanHasFeature,
   planHasFeature,
   type Feature,
-  type LabPlan,
+  type DentalLabPlan,
   type Plan,
 } from '@org/shared-types';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
@@ -72,8 +72,8 @@ export class FeatureGuard implements CanActivate {
     // Pick the right plan ladder based on tenant kind. Lab features are only
     // satisfied by lab plans; clinic features by clinic plans.
     const isLab = tenant.kind === 'LAB';
-    const activePlan: Plan | LabPlan | null = isLab
-      ? (tenant.labPlan as LabPlan | null)
+    const activePlan: Plan | DentalLabPlan | null = isLab
+      ? (tenant.labPlan as DentalLabPlan | null)
       : (tenant.plan as Plan | null);
     if (!activePlan) {
       throw new HttpException(
@@ -89,7 +89,7 @@ export class FeatureGuard implements CanActivate {
     }
 
     const has = isLab
-      ? (f: Feature) => labPlanHasFeature(activePlan as LabPlan, f)
+      ? (f: Feature) => labPlanHasFeature(activePlan as DentalLabPlan, f)
       : (f: Feature) => planHasFeature(activePlan as Plan, f);
     const missing = required.filter((f) => !has(f));
     if (missing.length > 0) {

@@ -13,7 +13,7 @@ import {
   formatLabPlanPrice,
   formatPlanPrice,
   type Feature,
-  type LabPlan,
+  type DentalLabPlan,
   type Plan,
   DEFAULT_SIGNUP_LAB_PLAN,
   DEFAULT_SIGNUP_PLAN,
@@ -269,7 +269,7 @@ function LabCards() {
   );
 }
 
-function LabCard({ plan }: { plan: LabPlan }) {
+function LabCard({ plan }: { plan: DentalLabPlan }) {
   const meta = LAB_PLAN_META[plan];
   // For the marketing card, show a curated subset (the top differentiators).
   const cardFeatures = LAB_FEATURES.slice(0, 9);

@@ -46,7 +46,7 @@ export function homeHrefFor(role: string): string {
   return AUDIT_ROLES.has(role) ? '/dashboard' : '/patients';
 }
 
-// Maps a Plan/LabPlan enum value to a short badge label.
+// Maps a Plan/DentalLabPlan enum value to a short badge label.
 function planBadge(plan: string | null): string {
   switch (plan) {
     case 'PRO':

@@ -27,12 +27,12 @@ model Tenant {
   // See docs/lab-module-plan.md for the rationale.
   kind        TenantKind   @default(CLINIC)
   type        ClinicType   @default(GENERAL)
-  labSpecialty LabSpecialty?
+  labSpecialty DentalLabSpecialty?
   status      TenantStatus @default(TRIAL)
   // Clinic-side subscription. Null on LAB tenants.
   plan        Plan?        @default(STARTER)
   // Lab-side subscription. Null on CLINIC tenants.
-  labPlan     LabPlan?
+  labPlan     DentalLabPlan?
   country     String       @default("PH")
   timezone    String       @default("Asia/Manila")
   currency    String       @default("PHP")
@@ -53,15 +53,15 @@ model Tenant {
   refreshSessions RefreshSession[]
 
   // Lab-side (kind=LAB) connections to clinics that send orders here.
-  labLinks    LabClinicLink[] @relation("LabLinks")
+  labLinks    DentalLabClinicLink[] @relation("LabLinks")
   // Clinic-side (kind=CLINIC) connections to labs they place orders with.
-  clinicLinks LabClinicLink[] @relation("ClinicLinks")
-  // Inverse relations to LabCase (dental lab manufacturing cases).
-  labCases     LabCase[] @relation("LabCases")
-  clinicCases  LabCase[] @relation("ClinicCases")
+  clinicLinks DentalLabClinicLink[] @relation("ClinicLinks")
+  // Inverse relations to DentalLabCase (dental lab manufacturing cases).
+  labCases     DentalLabCase[] @relation("LabCases")
+  clinicCases  DentalLabCase[] @relation("ClinicCases")
   // Invoices issued by this lab vs received by this clinic.
-  labInvoices    LabInvoice[] @relation("LabInvoicesLab")
-  clinicInvoices LabInvoice[] @relation("LabInvoicesClinic")
+  labInvoices    DentalLabInvoice[] @relation("LabInvoicesLab")
+  clinicInvoices DentalLabInvoice[] @relation("LabInvoicesClinic")
 
   @@index([slug])
   @@index([kind])
@@ -72,12 +72,34 @@ model Tenant {
 // LAB ↔ CLINIC LINKING
 // ──────────────────────────────────────────────
 
-enum LabClinicLinkStatus {
+// ──────────────────────────────────────────────
+// DENTAL LABORATORY (crown & bridge manufacturing marketplace)
+// ──────────────────────────────────────────────
+//
+// These models are the dental-lab side of the product: a clinic sends a case
+// to a dental laboratory, which manufactures a prosthetic and invoices for it.
+// They are NOT the clinical laboratory. That is LabOrder / LabOrderItem plus
+// the LIS models to come, and the two were previously indistinguishable —
+// `apps/api/src/lab/` (dental) sat next to `apps/api/src/labs/` (clinical),
+// one character apart, with `LabCase` beside `LabOrder`.
+//
+// The TABLE names deliberately still read `lab_*` rather than `dental_lab_*`.
+// Renaming them would leave every RLS policy and index carrying a stale name
+// on isolation-critical tables, and two services query these tables through
+// raw SQL. The code namespace is where the confusion actually costs time, so
+// that is what was renamed; the physical rename can happen on its own later
+// without touching application logic.
+
+enum DentalLabClinicLinkStatus {
   PENDING    // lab invited the clinic; awaiting clinic response
   ACTIVE     // both sides connected; orders can flow
   REJECTED   // clinic declined
   REVOKED    // lab cancelled the invitation
   SUSPENDED  // temporarily paused by either side
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabClinicLinkStatus")
 }
 
 // Many-to-many between LAB tenants and CLINIC tenants. A lab can have many
@@ -85,11 +107,11 @@ enum LabClinicLinkStatus {
 // unique. See docs/lab-module-plan.md for the rationale on
 // "free access for associated clinics" — once status=ACTIVE, the linked
 // clinic gets the lab-ordering UI even without a paid clinic plan.
-model LabClinicLink {
+model DentalLabClinicLink {
   id              String              @id @default(cuid())
   labTenantId     String
   clinicTenantId  String
-  status          LabClinicLinkStatus @default(PENDING)
+  status          DentalLabClinicLinkStatus @default(PENDING)
   // User on the lab side who initiated the invitation.
   invitedByUserId String
   invitedAt       DateTime            @default(now())
@@ -119,7 +141,7 @@ model LabClinicLink {
 
 // A category/folder in the lab's product catalog. Self-referential for
 // nesting (e.g. "Crowns > Zirconia > Anatomical").
-model LabProductCategory {
+model DentalLabProductCategory {
   id          String  @id @default(cuid())
   tenantId    String  // owning lab
   parentId    String?
@@ -131,15 +153,15 @@ model LabProductCategory {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  parent   LabProductCategory?  @relation("LabProductCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children LabProductCategory[] @relation("LabProductCategoryHierarchy")
-  products LabProduct[]
+  parent   DentalLabProductCategory?  @relation("LabProductCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children DentalLabProductCategory[] @relation("LabProductCategoryHierarchy")
+  products DentalLabProduct[]
 
   @@index([tenantId, parentId])
   @@map("lab_product_categories")
 }
 
-enum LabProductPricingMode {
+enum DentalLabProductPricingMode {
   // Lab sets a fixed price visible to all customers. Default.
   FIXED
   // Lab sets a price per rate profile (Phase 4 feature). Today this behaves
@@ -149,12 +171,16 @@ enum LabProductPricingMode {
   ADJUST_ON_ORDER
   // Variable price based on customer's tier. Phase 4.
   VARIABLE_PER_TIER
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabProductPricingMode")
 }
 
 // A product (e.g. "Zirconia crown - anatomical"). Each product has an
 // optional dynamic form schema captured under `formSchema` and renders
 // inside the order request UI.
-model LabProduct {
+model DentalLabProduct {
   id           String                 @id @default(cuid())
   tenantId     String                 // owning lab
   categoryId   String?
@@ -165,7 +191,7 @@ model LabProduct {
   // ADJUST_ON_ORDER, this is null and the lab fills in on order intake.
   defaultPrice Int?
   currency     String                 @default("PHP")
-  pricingMode  LabProductPricingMode  @default(FIXED)
+  pricingMode  DentalLabProductPricingMode  @default(FIXED)
   // Free-form schema for the dynamic form rendered to the clinic on order.
   // Validated in the service layer; structure is something like:
   // { fields: [{ key, label, type, required, options?: [...] }, ...] }
@@ -181,10 +207,10 @@ model LabProduct {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  category            LabProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  cases               LabCase[]
-  conformityTemplates LabConformityDocTemplate[]
-  consentTemplates    LabConsentTemplate[]
+  category            DentalLabProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  cases               DentalLabCase[]
+  conformityTemplates DentalLabConformityDocTemplate[]
+  consentTemplates    DentalLabConsentTemplate[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, categoryId])
@@ -196,12 +222,16 @@ model LabProduct {
 // LAB ORDERS / CASES
 // ──────────────────────────────────────────────
 
-enum LabCaseUrgency {
+enum DentalLabCaseUrgency {
   STANDARD
   URGENT
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabCaseUrgency")
 }
 
-enum LabCaseStatus {
+enum DentalLabCaseStatus {
   DRAFT             // clinic is composing
   SUBMITTED         // submitted to lab, awaiting review
   IN_PROGRESS       // lab accepted, manufacturing
@@ -210,18 +240,26 @@ enum LabCaseStatus {
   DELIVERED         // received by clinic
   CANCELLED         // cancelled by either side before completion
   REJECTED          // lab rejected (e.g. files unusable)
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabCaseStatus")
 }
 
-enum LabCaseFileStatus {
+enum DentalLabCaseFileStatus {
   PENDING  // S3 PUT not yet confirmed
   READY    // confirmed in S3
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabCaseFileStatus")
 }
 
 // A dental-lab case placed by a CLINIC tenant against a LAB tenant.
 // (Distinct from the clinical `LabOrder` model used for blood work etc. —
 // the dental lab calls these "cases".) Both sides see and mutate the row
 // per the transition matrix in apps/api/src/lab/orders/lab-orders.service.ts.
-model LabCase {
+model DentalLabCase {
   id              String         @id @default(cuid())
   // Sequential per-lab reference number (computed at submit time).
   refNumber       Int?
@@ -232,8 +270,8 @@ model LabCase {
   // ADJUST_ON_ORDER and the lab hasn't filled in yet.
   unitPrice       Int?
   currency        String         @default("PHP")
-  status          LabCaseStatus  @default(DRAFT)
-  urgency         LabCaseUrgency @default(STANDARD)
+  status          DentalLabCaseStatus  @default(DRAFT)
+  urgency         DentalLabCaseUrgency @default(STANDARD)
   dueAt           DateTime?
   // Snapshot of the dynamic form data filled in by the clinic.
   formData        Json?
@@ -258,21 +296,21 @@ model LabCase {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  product LabProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product DentalLabProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
   lab     Tenant     @relation("LabCases",    fields: [labTenantId],    references: [id], onDelete: Cascade)
   clinic  Tenant     @relation("ClinicCases", fields: [clinicTenantId], references: [id], onDelete: Cascade)
 
-  files          LabCaseFile[]
-  phaseEvents    LabCasePhaseEvent[]
-  internalNotes  LabCaseNote[]
-  messages       LabCaseMessage[]
-  tagAssignments    LabCaseTagAssignment[]
-  shipment          LabShipment?
-  materialUsages    LabMaterialUsage[]
-  consentSignatures LabConsentSignature[]
-  invoiceItems      LabInvoiceItem[]
-  treatmentPlans    LabTreatmentPlan[]
-  disputes          LabCaseDispute[]
+  files          DentalLabCaseFile[]
+  phaseEvents    DentalLabCasePhaseEvent[]
+  internalNotes  DentalLabCaseNote[]
+  messages       DentalLabCaseMessage[]
+  tagAssignments    DentalLabCaseTagAssignment[]
+  shipment          DentalLabShipment?
+  materialUsages    DentalLabMaterialUsage[]
+  consentSignatures DentalLabConsentSignature[]
+  invoiceItems      DentalLabInvoiceItem[]
+  treatmentPlans    DentalLabTreatmentPlan[]
+  disputes          DentalLabCaseDispute[]
 
   @@unique([labTenantId, refNumber])
   @@index([labTenantId, status])
@@ -281,10 +319,10 @@ model LabCase {
   @@map("lab_cases")
 }
 
-// File attachment on a LabCase. Stored in S3 via presigned upload; this row
+// File attachment on a DentalLabCase. Stored in S3 via presigned upload; this row
 // is the durable index. Visible to both the lab and the clinic on the
 // owning case. The uploader's tenant (lab or clinic) is tracked.
-model LabCaseFile {
+model DentalLabCaseFile {
   id                 String             @id @default(cuid())
   caseId             String
   s3Key              String             @unique
@@ -293,13 +331,13 @@ model LabCaseFile {
   sizeBytes          Int
   uploadedByUserId   String
   uploadedByTenantId String
-  status             LabCaseFileStatus  @default(PENDING)
+  status             DentalLabCaseFileStatus  @default(PENDING)
 
   createdAt   DateTime  @default(now())
   confirmedAt DateTime?
   deletedAt   DateTime?
 
-  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  case DentalLabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId])
   @@map("lab_case_files")
@@ -311,7 +349,7 @@ model LabCaseFile {
 
 // A material the lab consumes — e.g. zirconia disc, alloy ingot, ceramic.
 // Tenant-owned, free-form category for the lab's own taxonomy.
-model LabMaterial {
+model DentalLabMaterial {
   id             String  @id @default(cuid())
   tenantId       String
   sku            String?
@@ -325,25 +363,29 @@ model LabMaterial {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  lots LabMaterialLot[]
+  lots DentalLabMaterialLot[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, name])
   @@map("lab_materials")
 }
 
-enum LabMaterialLotStatus {
+enum DentalLabMaterialLotStatus {
   ACTIVE     // currently usable
   WAREHOUSE  // received, not yet opened
   FINISHED   // depleted
   DEFECTIVE  // recalled / rejected
   EXPIRED    // past expiration
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabMaterialLotStatus")
 }
 
 // LOT-level traceability. Each receipt of material from a supplier is a row;
 // the lab tracks remaining quantity, supplier, manufacturer, and lifecycle
-// status. Consumed quantity is computed from LabMaterialUsage rows.
-model LabMaterialLot {
+// status. Consumed quantity is computed from DentalLabMaterialUsage rows.
+model DentalLabMaterialLot {
   id             String               @id @default(cuid())
   materialId     String
   lotNumber      String
@@ -357,15 +399,15 @@ model LabMaterialLot {
   unitPriceCents Int?
   receivedAt     DateTime  @default(now())
   expiresAt      DateTime?
-  status         LabMaterialLotStatus @default(ACTIVE)
+  status         DentalLabMaterialLotStatus @default(ACTIVE)
   notes          String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  material LabMaterial          @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  usages   LabMaterialUsage[]
+  material DentalLabMaterial          @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  usages   DentalLabMaterialUsage[]
 
   @@unique([materialId, lotNumber])
   @@index([materialId, status])
@@ -376,7 +418,7 @@ model LabMaterialLot {
 // Material used on a case. Decrements the LOT's remainingQty in the same
 // transaction. caseId is denormalized (also reachable via the case) for
 // fast per-case rollups.
-model LabMaterialUsage {
+model DentalLabMaterialUsage {
   id             String   @id @default(cuid())
   caseId         String
   lotId          String
@@ -384,8 +426,8 @@ model LabMaterialUsage {
   usedAt         DateTime @default(now())
   usedByUserId   String
 
-  case LabCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  lot  LabMaterialLot @relation(fields: [lotId],  references: [id], onDelete: Restrict)
+  case DentalLabCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  lot  DentalLabMaterialLot @relation(fields: [lotId],  references: [id], onDelete: Restrict)
 
   @@index([caseId])
   @@index([lotId])
@@ -400,7 +442,7 @@ model LabMaterialUsage {
 // a PDF when the case ships, attesting the manufacturing complies with
 // applicable regs (PH FDA / ISO 13485 / etc.). Body is markdown with
 // placeholders like {{caseRef}}, {{patient}}, {{lotNumbers}}.
-model LabConformityDocTemplate {
+model DentalLabConformityDocTemplate {
   id        String   @id @default(cuid())
   tenantId  String
   // Optional: attach the template to a specific product. Null = generic.
@@ -413,7 +455,7 @@ model LabConformityDocTemplate {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  product LabProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product DentalLabProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, productId])
   @@map("lab_conformity_doc_templates")
@@ -421,7 +463,7 @@ model LabConformityDocTemplate {
 
 // Consent template — typically signed by the patient or the clinic on the
 // patient's behalf. Same placeholder convention as the conformity template.
-model LabConsentTemplate {
+model DentalLabConsentTemplate {
   id        String   @id @default(cuid())
   tenantId  String
   productId String?
@@ -433,8 +475,8 @@ model LabConsentTemplate {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  product   LabProduct?           @relation(fields: [productId], references: [id], onDelete: SetNull)
-  signatures LabConsentSignature[]
+  product   DentalLabProduct?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  signatures DentalLabConsentSignature[]
 
   @@index([tenantId, productId])
   @@map("lab_consent_templates")
@@ -443,7 +485,7 @@ model LabConsentTemplate {
 // A captured signature on a specific case + template. The image lives in
 // S3 (signatureFileKey is the object key); IP + timestamp anchor it to a
 // session. The clinic captures this on the patient's behalf and signs.
-model LabConsentSignature {
+model DentalLabConsentSignature {
   id              String   @id @default(cuid())
   caseId          String
   templateId      String
@@ -458,8 +500,8 @@ model LabConsentSignature {
   // don't retroactively change what was agreed to.
   bodySnapshot    String
 
-  case     LabCase            @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  template LabConsentTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  case     DentalLabCase            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  template DentalLabConsentTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
 
   @@index([caseId])
   @@index([templateId])
@@ -472,21 +514,29 @@ model LabConsentSignature {
 // a free-form thread of messages from both sides until one side resolves
 // or rejects them.
 
-enum LabCaseDisputeStatus {
+enum DentalLabCaseDisputeStatus {
   OPEN
   RESOLVED
   REJECTED
   WITHDRAWN
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabCaseDisputeStatus")
 }
 
-enum LabCaseDisputeKind {
+enum DentalLabCaseDisputeKind {
   QUALITY     // remake / fit / shade complaint
   BILLING     // amount / line-item disagreement
   DELIVERY    // missing items, wrong patient, lost in shipping
   OTHER
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabCaseDisputeKind")
 }
 
-model LabCaseDispute {
+model DentalLabCaseDispute {
   id              String                 @id @default(cuid())
   caseId          String
   // Snapshot to avoid joins for RLS predicates.
@@ -494,9 +544,9 @@ model LabCaseDispute {
   clinicTenantId  String
   openedByUserId  String
   openedByTenantId String
-  kind            LabCaseDisputeKind     @default(OTHER)
+  kind            DentalLabCaseDisputeKind     @default(OTHER)
   reason          String
-  status          LabCaseDisputeStatus   @default(OPEN)
+  status          DentalLabCaseDisputeStatus   @default(OPEN)
   resolvedByUserId String?
   resolvedAt       DateTime?
   resolutionNotes  String?
@@ -505,8 +555,8 @@ model LabCaseDispute {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  case     LabCase                 @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  messages LabCaseDisputeMessage[]
+  case     DentalLabCase                 @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  messages DentalLabCaseDisputeMessage[]
 
   @@index([labTenantId, status])
   @@index([clinicTenantId, status])
@@ -514,7 +564,7 @@ model LabCaseDispute {
   @@map("lab_case_disputes")
 }
 
-model LabCaseDisputeMessage {
+model DentalLabCaseDisputeMessage {
   id           String    @id @default(cuid())
   disputeId    String
   senderUserId String
@@ -523,50 +573,62 @@ model LabCaseDisputeMessage {
   createdAt    DateTime  @default(now())
   deletedAt    DateTime?
 
-  dispute LabCaseDispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  dispute DentalLabCaseDispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
 
   @@index([disputeId])
   @@map("lab_case_dispute_messages")
 }
 
 // ── Treatment plans ────────────────────────────────────────────────
-// Lab-proposed treatment plan tied to a LabCase. The lab drafts a plan
+// Lab-proposed treatment plan tied to a DentalLabCase. The lab drafts a plan
 // (summary + attached files like STL exports / IPR tables / images), then
 // PROPOSES it to the clinic. The clinic approves, rejects, or asks for a
-// revision; each decision lands in `LabTreatmentPlanApproval` for an
+// revision; each decision lands in `DentalLabTreatmentPlanApproval` for an
 // audit trail. A case may carry multiple revisions over time — the latest
 // non-VOID plan is "active."
 //
-// RLS: two-sided (same pattern as LabCase / LabInvoice). Lab can write
+// RLS: two-sided (same pattern as DentalLabCase / DentalLabInvoice). Lab can write
 // plans; clinic can write approvals. Both can read.
 
-enum LabTreatmentPlanStatus {
+enum DentalLabTreatmentPlanStatus {
   DRAFT       // lab is composing
   PROPOSED    // visible to clinic, awaiting decision
   APPROVED
   REJECTED
   REVISION_REQUESTED  // clinic asked for changes; lab can iterate
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabTreatmentPlanStatus")
 }
 
-enum LabTreatmentPlanFileKind {
+enum DentalLabTreatmentPlanFileKind {
   STL
   IMAGE
   REPORT
   IPR_TABLE
   OTHER
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabTreatmentPlanFileKind")
 }
 
-enum LabTreatmentPlanDecision {
+enum DentalLabTreatmentPlanDecision {
   APPROVED
   REJECTED
   REVISION_REQUESTED
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabTreatmentPlanDecision")
 }
 
-model LabTreatmentPlan {
+model DentalLabTreatmentPlan {
   id              String                @id @default(cuid())
   caseId          String
   // Snapshot of the case's lab/clinic at create time so RLS predicates can
-  // evaluate without joining (mirrors LabInvoice's pattern).
+  // evaluate without joining (mirrors DentalLabInvoice's pattern).
   labTenantId     String
   clinicTenantId  String
   // Sequential revision number per case (1, 2, 3, …). Allocated when the
@@ -575,7 +637,7 @@ model LabTreatmentPlan {
   title           String
   // Markdown summary — the human-readable plan body the clinic decides on.
   summary         String
-  status          LabTreatmentPlanStatus @default(DRAFT)
+  status          DentalLabTreatmentPlanStatus @default(DRAFT)
   proposedAt      DateTime?
   decidedAt       DateTime?
   decidedByUserId String?
@@ -585,9 +647,9 @@ model LabTreatmentPlan {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  case        LabCase                     @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  files       LabTreatmentPlanFile[]
-  approvals   LabTreatmentPlanApproval[]
+  case        DentalLabCase                     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  files       DentalLabTreatmentPlanFile[]
+  approvals   DentalLabTreatmentPlanApproval[]
 
   @@unique([caseId, revision])
   @@index([labTenantId, status])
@@ -596,29 +658,29 @@ model LabTreatmentPlan {
   @@map("lab_treatment_plans")
 }
 
-model LabTreatmentPlanFile {
+model DentalLabTreatmentPlanFile {
   id          String                  @id @default(cuid())
   planId      String
   s3Key       String
   filename    String
   mimeType    String
   sizeBytes   Int
-  kind        LabTreatmentPlanFileKind @default(OTHER)
+  kind        DentalLabTreatmentPlanFileKind @default(OTHER)
   uploadedByUserId   String
   uploadedByTenantId String
   createdAt   DateTime                @default(now())
   deletedAt   DateTime?
 
-  plan LabTreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  plan DentalLabTreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([planId])
   @@map("lab_treatment_plan_files")
 }
 
-model LabTreatmentPlanApproval {
+model DentalLabTreatmentPlanApproval {
   id              String                   @id @default(cuid())
   planId          String
-  decision        LabTreatmentPlanDecision
+  decision        DentalLabTreatmentPlanDecision
   // The clinic-side user who decided. We track tenant alongside so we can
   // verify (in the service layer) that the actor was on the clinic side.
   decidedByUserId String
@@ -629,7 +691,7 @@ model LabTreatmentPlanApproval {
   summarySnapshot String
   decidedAt       DateTime @default(now())
 
-  plan LabTreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  plan DentalLabTreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([planId])
   @@map("lab_treatment_plan_approvals")
@@ -638,7 +700,7 @@ model LabTreatmentPlanApproval {
 // Lab-only note attached to a case. Not visible to the clinic — RLS
 // restricts both reads and writes to the case's labTenantId. Soft-deleted
 // for an audit trail.
-model LabCaseNote {
+model DentalLabCaseNote {
   id           String    @id @default(cuid())
   caseId       String
   authorUserId String
@@ -647,7 +709,7 @@ model LabCaseNote {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  case DentalLabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId, createdAt])
   @@map("lab_case_notes")
@@ -656,7 +718,7 @@ model LabCaseNote {
 // Per-case chat between the lab and the clinic. Both sides can read and
 // post. `senderTenantId` records which side wrote the message — the UI
 // uses it to align bubbles left/right.
-model LabCaseMessage {
+model DentalLabCaseMessage {
   id             String    @id @default(cuid())
   caseId         String
   senderUserId   String
@@ -667,7 +729,7 @@ model LabCaseMessage {
   // for compliance/DSR pipelines.
   deletedAt      DateTime?
 
-  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  case DentalLabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId, createdAt])
   @@map("lab_case_messages")
@@ -675,7 +737,7 @@ model LabCaseMessage {
 
 // Lab-owned tag definition. Reusable across cases. Color is a hex string
 // without the leading `#` (e.g. "f59e0b") for compact storage.
-model LabCaseTag {
+model DentalLabCaseTag {
   id        String    @id @default(cuid())
   tenantId  String    // owning lab
   name      String
@@ -683,7 +745,7 @@ model LabCaseTag {
   createdAt DateTime  @default(now())
   deletedAt DateTime?
 
-  assignments LabCaseTagAssignment[]
+  assignments DentalLabCaseTagAssignment[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -693,7 +755,7 @@ model LabCaseTag {
 // One shipment per case (1:1). Lab creates when marking SHIPPED; clinic
 // (or lab) marks delivered. Carrier + tracking number are free-form so we
 // can capture LBC, J&T, JRS, in-house couriers, etc. without a vocabulary.
-model LabShipment {
+model DentalLabShipment {
   id             String    @id @default(cuid())
   caseId         String    @unique
   carrier        String?
@@ -705,7 +767,7 @@ model LabShipment {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  case DentalLabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId])
   @@map("lab_shipments")
@@ -715,23 +777,27 @@ model LabShipment {
 // LAB BILLING (Phase 4)
 // ──────────────────────────────────────────────
 
-enum LabInvoiceStatus {
+enum DentalLabInvoiceStatus {
   DRAFT      // editable, not yet sent to clinic
   ISSUED     // delivered; awaiting payment
   PAID       // settled in full
   OVERDUE    // past dueAt without full payment
   VOID       // cancelled — kept for audit
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabInvoiceStatus")
 }
 
 // One invoice from a lab to a clinic. Aggregates one-or-more LabCases via
-// LabInvoiceItem rows. Money lives in centavos for tax-safe arithmetic.
-model LabInvoice {
+// DentalLabInvoiceItem rows. Money lives in centavos for tax-safe arithmetic.
+model DentalLabInvoice {
   id              String           @id @default(cuid())
   labTenantId     String
   clinicTenantId  String
   // Sequential per-lab number. Allocated when status flips DRAFT → ISSUED.
   refNumber       Int?
-  status          LabInvoiceStatus @default(DRAFT)
+  status          DentalLabInvoiceStatus @default(DRAFT)
   currency        String           @default("PHP")
   // Computed columns kept denormalized so list endpoints don't aggregate
   // line items per row. Service layer keeps them in sync on mutation.
@@ -759,8 +825,8 @@ model LabInvoice {
   lab    Tenant @relation("LabInvoicesLab",    fields: [labTenantId],    references: [id], onDelete: Cascade)
   clinic Tenant @relation("LabInvoicesClinic", fields: [clinicTenantId], references: [id], onDelete: Cascade)
 
-  items        LabInvoiceItem[]
-  paymentLinks LabPaymentLink[]
+  items        DentalLabInvoiceItem[]
+  paymentLinks DentalLabPaymentLink[]
 
   @@unique([labTenantId, refNumber])
   @@index([labTenantId, status])
@@ -769,11 +835,11 @@ model LabInvoice {
   @@map("lab_invoices")
 }
 
-// One line on an invoice. May reference a specific LabCase (typical) or be
+// One line on an invoice. May reference a specific DentalLabCase (typical) or be
 // freeform (e.g. urgent surcharge, materials passthrough). Once a case is
 // referenced from a non-VOID invoice, it should not appear on another to
 // avoid double-billing — enforced in service code.
-model LabInvoiceItem {
+model DentalLabInvoiceItem {
   id          String  @id @default(cuid())
   invoiceId   String
   caseId      String?
@@ -784,61 +850,69 @@ model LabInvoiceItem {
   amountCents Int
   sortOrder   Int     @default(0)
 
-  invoice LabInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  case    LabCase?   @relation(fields: [caseId],    references: [id], onDelete: SetNull)
+  invoice DentalLabInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  case    DentalLabCase?   @relation(fields: [caseId],    references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
   @@index([caseId])
   @@map("lab_invoice_items")
 }
 
-enum LabPaymentLinkProvider {
+enum DentalLabPaymentLinkProvider {
   PAYMONGO
   GCASH
   MAYA
   STRIPE
   MANUAL  // ad-hoc (bank transfer ref, etc.)
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabPaymentLinkProvider")
 }
 
-enum LabPaymentLinkStatus {
+enum DentalLabPaymentLinkStatus {
   PENDING
   PAID
   EXPIRED
   CANCELLED
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabPaymentLinkStatus")
 }
 
 // One payment URL per attempt to settle an invoice. We just store the
 // provider's URL + external id today — no Phase-4 webhook handling yet.
 // When a webhook integration ships, status transitions are wired here.
-model LabPaymentLink {
+model DentalLabPaymentLink {
   id          String                  @id @default(cuid())
   invoiceId   String
-  provider    LabPaymentLinkProvider  @default(MANUAL)
+  provider    DentalLabPaymentLinkProvider  @default(MANUAL)
   externalId  String?
   url         String?
   amountCents Int
-  status      LabPaymentLinkStatus    @default(PENDING)
+  status      DentalLabPaymentLinkStatus    @default(PENDING)
   expiresAt   DateTime?
   paidAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  invoice LabInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice DentalLabInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId, status])
   @@map("lab_payment_links")
 }
 
-// M:N between LabCase and LabCaseTag.
-model LabCaseTagAssignment {
+// M:N between DentalLabCase and DentalLabCaseTag.
+model DentalLabCaseTagAssignment {
   caseId         String
   tagId          String
   taggedByUserId String
   taggedAt       DateTime @default(now())
 
-  case LabCase    @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  tag  LabCaseTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  case DentalLabCase    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  tag  DentalLabCaseTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([caseId, tagId])
   @@index([tagId])
@@ -850,16 +924,16 @@ model LabCaseTagAssignment {
 // progresses through those phases while in IN_PROGRESS. The current phase
 // is the row with `exitedAt = null`. Past phases are kept for the
 // manufacturing log and stats.
-model LabCasePhaseEvent {
+model DentalLabCasePhaseEvent {
   id              String    @id @default(cuid())
   caseId          String
-  phase           String    // matches one entry from LabProduct.phases
+  phase           String    // matches one entry from DentalLabProduct.phases
   enteredAt       DateTime  @default(now())
   enteredByUserId String
   exitedAt        DateTime?
   notes           String?
 
-  case LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  case DentalLabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId, enteredAt])
   // Only one open phase at a time per case is enforced via a partial
@@ -885,7 +959,7 @@ enum ClinicType {
 
 // Lab specialties — used when Tenant.kind = LAB. Loosely modeled on the
 // dental-lab market segments (single-craft labs vs. full-service).
-enum LabSpecialty {
+enum DentalLabSpecialty {
   CROWN_BRIDGE
   ORTHODONTICS
   IMPLANTOLOGY
@@ -893,6 +967,10 @@ enum LabSpecialty {
   CLEAR_ALIGNERS
   FULL_SERVICE
   OTHER
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabSpecialty")
 }
 
 enum TenantStatus {
@@ -914,10 +992,14 @@ enum Plan {
 // Lab-side subscription tiers. Distinct ladder so we can price labs
 // independently of clinics. Feature mapping in
 // libs/shared-types/src/lib/features.ts (LAB_PLAN_FEATURES, LAB_PLAN_META).
-enum LabPlan {
+enum DentalLabPlan {
   LAB_BASIC
   LAB_STANDARD
   LAB_PREMIUM
+
+  // The Postgres type keeps its original name: the dental-lab
+  // rename is a code-namespace change, not a database migration.
+  @@map("LabPlan")
 }
 
 // ──────────────────────────────────────────────

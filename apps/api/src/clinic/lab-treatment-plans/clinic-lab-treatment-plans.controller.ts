@@ -16,8 +16,8 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../auth/decorators/current-user.decorator.js';
-import { LabTreatmentPlansService } from '../../lab/treatment-plans/lab-treatment-plans.service.js';
-import { DecideTreatmentPlanDto } from '../../lab/treatment-plans/dto/treatment-plan.dto.js';
+import { DentalLabTreatmentPlansService } from '../../dental-lab/treatment-plans/dental-lab-treatment-plans.service.js';
+import { DecideTreatmentPlanDto } from '../../dental-lab/treatment-plans/dto/treatment-plan.dto.js';
 
 /**
  * Clinic-side endpoints for treatment plans. No feature gate — clinics
@@ -29,7 +29,7 @@ import { DecideTreatmentPlanDto } from '../../lab/treatment-plans/dto/treatment-
 @ApiBearerAuth('jwt')
 @Controller('clinic/lab-treatment-plans')
 export class ClinicLabTreatmentPlansController {
-  constructor(private readonly plans: LabTreatmentPlansService) {}
+  constructor(private readonly plans: DentalLabTreatmentPlansService) {}
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
@@ -51,7 +51,7 @@ export class ClinicLabTreatmentPlansController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_treatment_plan.decide',
-    entity: 'LabTreatmentPlan',
+    entity: 'DentalLabTreatmentPlan',
     entityIdFrom: 'param:id',
   })
   decide(

@@ -273,80 +273,80 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get platformAdmin() {
     return this.client.platformAdmin;
   }
-  get labClinicLink() {
-    return this.client.labClinicLink;
+  get dentalLabClinicLink() {
+    return this.client.dentalLabClinicLink;
   }
-  get labProductCategory() {
-    return this.client.labProductCategory;
+  get dentalLabProductCategory() {
+    return this.client.dentalLabProductCategory;
   }
-  get labProduct() {
-    return this.client.labProduct;
+  get dentalLabProduct() {
+    return this.client.dentalLabProduct;
   }
-  get labCase() {
-    return this.client.labCase;
+  get dentalLabCase() {
+    return this.client.dentalLabCase;
   }
-  get labCaseFile() {
-    return this.client.labCaseFile;
+  get dentalLabCaseFile() {
+    return this.client.dentalLabCaseFile;
   }
-  get labCasePhaseEvent() {
-    return this.client.labCasePhaseEvent;
+  get dentalLabCasePhaseEvent() {
+    return this.client.dentalLabCasePhaseEvent;
   }
-  get labCaseNote() {
-    return this.client.labCaseNote;
+  get dentalLabCaseNote() {
+    return this.client.dentalLabCaseNote;
   }
-  get labCaseMessage() {
-    return this.client.labCaseMessage;
+  get dentalLabCaseMessage() {
+    return this.client.dentalLabCaseMessage;
   }
-  get labCaseTag() {
-    return this.client.labCaseTag;
+  get dentalLabCaseTag() {
+    return this.client.dentalLabCaseTag;
   }
-  get labCaseTagAssignment() {
-    return this.client.labCaseTagAssignment;
+  get dentalLabCaseTagAssignment() {
+    return this.client.dentalLabCaseTagAssignment;
   }
-  get labShipment() {
-    return this.client.labShipment;
+  get dentalLabShipment() {
+    return this.client.dentalLabShipment;
   }
-  get labMaterial() {
-    return this.client.labMaterial;
+  get dentalLabMaterial() {
+    return this.client.dentalLabMaterial;
   }
-  get labMaterialLot() {
-    return this.client.labMaterialLot;
+  get dentalLabMaterialLot() {
+    return this.client.dentalLabMaterialLot;
   }
-  get labMaterialUsage() {
-    return this.client.labMaterialUsage;
+  get dentalLabMaterialUsage() {
+    return this.client.dentalLabMaterialUsage;
   }
-  get labConformityDocTemplate() {
-    return this.client.labConformityDocTemplate;
+  get dentalLabConformityDocTemplate() {
+    return this.client.dentalLabConformityDocTemplate;
   }
-  get labConsentTemplate() {
-    return this.client.labConsentTemplate;
+  get dentalLabConsentTemplate() {
+    return this.client.dentalLabConsentTemplate;
   }
-  get labConsentSignature() {
-    return this.client.labConsentSignature;
+  get dentalLabConsentSignature() {
+    return this.client.dentalLabConsentSignature;
   }
-  get labInvoice() {
-    return this.client.labInvoice;
+  get dentalLabInvoice() {
+    return this.client.dentalLabInvoice;
   }
-  get labInvoiceItem() {
-    return this.client.labInvoiceItem;
+  get dentalLabInvoiceItem() {
+    return this.client.dentalLabInvoiceItem;
   }
-  get labPaymentLink() {
-    return this.client.labPaymentLink;
+  get dentalLabPaymentLink() {
+    return this.client.dentalLabPaymentLink;
   }
-  get labTreatmentPlan() {
-    return this.client.labTreatmentPlan;
+  get dentalLabTreatmentPlan() {
+    return this.client.dentalLabTreatmentPlan;
   }
-  get labTreatmentPlanFile() {
-    return this.client.labTreatmentPlanFile;
+  get dentalLabTreatmentPlanFile() {
+    return this.client.dentalLabTreatmentPlanFile;
   }
-  get labTreatmentPlanApproval() {
-    return this.client.labTreatmentPlanApproval;
+  get dentalLabTreatmentPlanApproval() {
+    return this.client.dentalLabTreatmentPlanApproval;
   }
-  get labCaseDispute() {
-    return this.client.labCaseDispute;
+  get dentalLabCaseDispute() {
+    return this.client.dentalLabCaseDispute;
   }
-  get labCaseDisputeMessage() {
-    return this.client.labCaseDisputeMessage;
+  get dentalLabCaseDisputeMessage() {
+    return this.client.dentalLabCaseDisputeMessage;
   }
   get queue() {
     return this.client.queue;

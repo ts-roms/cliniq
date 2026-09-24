@@ -108,7 +108,7 @@ describe('@org/api-e2e critical value rules', () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
       const patientId = await makePatientRecord(client);
 
-      const rule = await client.axios.post('/api/lab/critical-value-rules', {
+      const rule = await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium (serum)',
         unit: 'mmol/L',
@@ -127,7 +127,7 @@ describe('@org/api-e2e critical value rules', () => {
     it('matches the rule by test NAME when the order carries no code', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
       const patientId = await makePatientRecord(client);
-      await client.axios.post('/api/lab/critical-value-rules', {
+      await client.axios.post('/api/lis/critical-value-rules', {
         test: 'potassium',
         label: 'Potassium',
         criticalHigh: 6.0,
@@ -146,7 +146,7 @@ describe('@org/api-e2e critical value rules', () => {
     it("does not apply one tenant's rule to another tenant", async () => {
       const a = await env.makeTenant({ plan: 'PREMIUM' });
       const b = await env.makeTenant({ plan: 'PREMIUM' });
-      await a.client.axios.post('/api/lab/critical-value-rules', {
+      await a.client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6.0,
@@ -162,12 +162,12 @@ describe('@org/api-e2e critical value rules', () => {
 
     it('lets a sex-specific rule win over a general one', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
-      await client.axios.post('/api/lab/critical-value-rules', {
+      await client.axios.post('/api/lis/critical-value-rules', {
         test: 'HGB',
         label: 'Haemoglobin',
         criticalLow: 7.0,
       });
-      await client.axios.post('/api/lab/critical-value-rules', {
+      await client.axios.post('/api/lis/critical-value-rules', {
         test: 'HGB',
         label: 'Haemoglobin (female)',
         criticalLow: 6.5,
@@ -207,7 +207,7 @@ describe('@org/api-e2e critical value rules', () => {
     it('stops applying once the rule is retired', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
       const patientId = await makePatientRecord(client);
-      const rule = await client.axios.post('/api/lab/critical-value-rules', {
+      const rule = await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6.0,
@@ -215,7 +215,7 @@ describe('@org/api-e2e critical value rules', () => {
       expect(await flagFor(client, patientId, '6.8')).toBe('CRITICAL_HIGH');
 
       const retired = await client.axios.delete(
-        `/api/lab/critical-value-rules/${rule.data.id}`,
+        `/api/lis/critical-value-rules/${rule.data.id}`,
       );
       expect(retired.status).toBe(200);
 
@@ -227,7 +227,7 @@ describe('@org/api-e2e critical value rules', () => {
     it('clears a stale flag when the corrected value no longer warrants one', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
       const patientId = await makePatientRecord(client);
-      await client.axios.post('/api/lab/critical-value-rules', {
+      await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6.0,
@@ -280,7 +280,7 @@ describe('@org/api-e2e critical value rules', () => {
     it('beat the configured rule for that order only', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
       const patientId = await makePatientRecord(client);
-      await client.axios.post('/api/lab/critical-value-rules', {
+      await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6.0,
@@ -298,7 +298,7 @@ describe('@org/api-e2e critical value rules', () => {
   describe('rule validation', () => {
     it('refuses a rule with neither limit — it would never fire', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const res = await client.axios.post('/api/lab/critical-value-rules', {
+      const res = await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
       });
@@ -307,7 +307,7 @@ describe('@org/api-e2e critical value rules', () => {
 
     it('refuses an inverted pair', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const res = await client.axios.post('/api/lab/critical-value-rules', {
+      const res = await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalLow: 9,
@@ -336,7 +336,7 @@ describe('@org/api-e2e critical value rules', () => {
 
     it('refuses an inverted age band', async () => {
       const { client } = await env.makeTenant({ plan: 'PREMIUM' });
-      const res = await client.axios.post('/api/lab/critical-value-rules', {
+      const res = await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6,
@@ -350,7 +350,7 @@ describe('@org/api-e2e critical value rules', () => {
   describe('authorization', () => {
     it('DOCTOR can read the limits but not set them', async () => {
       const { tenant, client } = await env.makeTenant({ plan: 'PREMIUM' });
-      await client.axios.post('/api/lab/critical-value-rules', {
+      await client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6.0,
@@ -358,13 +358,13 @@ describe('@org/api-e2e critical value rules', () => {
       const doctor = await env.makeDoctor(tenant);
 
       const read = await doctor.client.axios.get(
-        '/api/lab/critical-value-rules',
+        '/api/lis/critical-value-rules',
       );
       expect(read.status).toBe(200);
       expect(read.data).toHaveLength(1);
 
       const write = await doctor.client.axios.post(
-        '/api/lab/critical-value-rules',
+        '/api/lis/critical-value-rules',
         { test: 'NA', label: 'Sodium', criticalHigh: 160 },
       );
       expect(write.status).toBe(403);
@@ -374,7 +374,7 @@ describe('@org/api-e2e critical value rules', () => {
       const { tenant } = await env.makeTenant({ plan: 'PREMIUM' });
       const patient = await env.makePatient(tenant);
       const read = await patient.client.axios.get(
-        '/api/lab/critical-value-rules',
+        '/api/lis/critical-value-rules',
       );
       expect(read.status).toBe(403);
     });
@@ -382,12 +382,12 @@ describe('@org/api-e2e critical value rules', () => {
     it('tenant B cannot see tenant A rules', async () => {
       const a = await env.makeTenant({ plan: 'PREMIUM' });
       const b = await env.makeTenant({ plan: 'PREMIUM' });
-      await a.client.axios.post('/api/lab/critical-value-rules', {
+      await a.client.axios.post('/api/lis/critical-value-rules', {
         test: 'K',
         label: 'Potassium',
         criticalHigh: 6.0,
       });
-      const res = await b.client.axios.get('/api/lab/critical-value-rules');
+      const res = await b.client.axios.get('/api/lis/critical-value-rules');
       expect(res.status).toBe(200);
       expect(res.data).toEqual([]);
     });

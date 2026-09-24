@@ -3,7 +3,7 @@
  * it through manufacturing, and the lab generates an invoice when delivered.
  *
  * This exercises the cross-tenant relationship logic that's central to the
- * lab module — RLS allows both sides to read the same LabCase, but only
+ * lab module — RLS allows both sides to read the same DentalLabCase, but only
  * the right side can mutate at each step.
  */
 import { bootEnv, type E2EEnv } from './support/harness';
@@ -24,12 +24,12 @@ describe('Lab module e2e', () => {
     const clinic = await env.makeTenant({ kind: 'CLINIC', plan: 'PRO' });
 
     // 1. Lab catalog: create one product so cases have something to bill.
-    const cat = await lab.client.axios.post('/api/lab/categories', {
+    const cat = await lab.client.axios.post('/api/dental-lab/categories', {
       name: 'Crowns',
     });
     expect(cat.status).toBe(201);
 
-    const product = await lab.client.axios.post('/api/lab/products', {
+    const product = await lab.client.axios.post('/api/dental-lab/products', {
       name: 'PFM crown',
       categoryId: cat.data.id,
       defaultPrice: 350000, // 3500.00
@@ -40,9 +40,12 @@ describe('Lab module e2e', () => {
     expect(product.status).toBe(201);
 
     // 2. Lab invites the clinic by slug.
-    const invite = await lab.client.axios.post('/api/lab/clinic-links/invite', {
-      clinicSlug: clinic.tenant.slug,
-    });
+    const invite = await lab.client.axios.post(
+      '/api/dental-lab/clinic-links/invite',
+      {
+        clinicSlug: clinic.tenant.slug,
+      },
+    );
     expect(invite.status).toBe(201);
     expect(invite.data.status).toBe('PENDING');
 
@@ -74,22 +77,28 @@ describe('Lab module e2e', () => {
 
     // 5. Lab accepts → IN_PROGRESS.
     const accept2 = await lab.client.axios.post(
-      `/api/lab/cases/${draft.data.id}/transitions`,
+      `/api/dental-lab/cases/${draft.data.id}/transitions`,
       { status: 'IN_PROGRESS' },
     );
     expect(accept2.status).toBe(200);
 
     // 6. Lab marks completed → AWAITING_PICKUP → DELIVERED.
-    await lab.client.axios.post(`/api/lab/cases/${draft.data.id}/transitions`, {
-      status: 'AWAITING_PICKUP',
-    });
-    await lab.client.axios.post(`/api/lab/cases/${draft.data.id}/transitions`, {
-      status: 'DELIVERED',
-    });
+    await lab.client.axios.post(
+      `/api/dental-lab/cases/${draft.data.id}/transitions`,
+      {
+        status: 'AWAITING_PICKUP',
+      },
+    );
+    await lab.client.axios.post(
+      `/api/dental-lab/cases/${draft.data.id}/transitions`,
+      {
+        status: 'DELIVERED',
+      },
+    );
 
     // 7. Lab generates an invoice from the delivered case.
     const inv = await lab.client.axios.post(
-      '/api/lab/invoices/generate-from-cases',
+      '/api/dental-lab/invoices/generate-from-cases',
       {
         clinicTenantId: clinic.tenant.id,
         caseIds: [draft.data.id],
@@ -102,7 +111,7 @@ describe('Lab module e2e', () => {
 
     // 8. Lab issues it. RefNumber allocated.
     const issued = await lab.client.axios.post(
-      `/api/lab/invoices/${inv.data.id}/issue`,
+      `/api/dental-lab/invoices/${inv.data.id}/issue`,
       {},
     );
     expect(issued.status).toBe(200);
@@ -120,7 +129,7 @@ describe('Lab module e2e', () => {
 
     // 10. Lab records full payment.
     const pay = await lab.client.axios.post(
-      `/api/lab/invoices/${inv.data.id}/payments`,
+      `/api/dental-lab/invoices/${inv.data.id}/payments`,
       { amountCents: 350000, reference: 'BPI-12345' },
     );
     expect(pay.status).toBe(200);
@@ -136,7 +145,7 @@ describe('Lab module e2e', () => {
     // gate (402 — clinic plans don't carry lab features), and even if it
     // did, createDraft's LAB-only assertion would 403. Any of these is
     // fine; what matters is they don't successfully create an invoice.
-    const res = await clinic.client.axios.post('/api/lab/invoices', {
+    const res = await clinic.client.axios.post('/api/dental-lab/invoices', {
       clinicTenantId: clinic.tenant.id,
     });
     expect([400, 401, 402, 403, 404]).toContain(res.status);

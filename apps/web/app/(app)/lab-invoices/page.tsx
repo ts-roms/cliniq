@@ -6,10 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle, Select } from '@org/ui';
 import {
   InvoiceStatusPill,
   useClinicInvoices,
-  type LabInvoiceStatus,
-} from '@/features/lab';
+  type DentalLabInvoiceStatus,
+} from '@/features/dental-lab';
 
-const STATUSES: LabInvoiceStatus[] = ['ISSUED', 'OVERDUE', 'PAID', 'VOID'];
+const STATUSES: DentalLabInvoiceStatus[] = [
+  'ISSUED',
+  'OVERDUE',
+  'PAID',
+  'VOID',
+];
 
 function formatMoney(cents: number, currency: string): string {
   const formatter = new Intl.NumberFormat('en-PH', {
@@ -21,7 +26,7 @@ function formatMoney(cents: number, currency: string): string {
 }
 
 export default function ClinicLabInvoicesPage() {
-  const [status, setStatus] = useState<LabInvoiceStatus | 'all'>('all');
+  const [status, setStatus] = useState<DentalLabInvoiceStatus | 'all'>('all');
   const { data, isLoading, error } = useClinicInvoices({
     status: status === 'all' ? undefined : status,
   });
@@ -42,7 +47,7 @@ export default function ClinicLabInvoicesPage() {
             <Select
               value={status}
               onChange={(e) =>
-                setStatus(e.target.value as LabInvoiceStatus | 'all')
+                setStatus(e.target.value as DentalLabInvoiceStatus | 'all')
               }
               className="w-44"
             >

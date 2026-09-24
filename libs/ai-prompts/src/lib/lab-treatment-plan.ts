@@ -1,6 +1,6 @@
 // Lab treatment plan summary draft prompt.
 // Asks Bedrock (Claude Sonnet) to produce a short markdown summary the lab
-// can use as a starting point for a new LabTreatmentPlan. Output is plain
+// can use as a starting point for a new DentalLabTreatmentPlan. Output is plain
 // markdown (not JSON) since the human reviews + edits it before proposing
 // to the clinic.
 

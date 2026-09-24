@@ -6,7 +6,7 @@ import {
   Length,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LabPlan, Plan, TenantStatus, ClinicType } from '@org/db';
+import { DentalLabPlan, Plan, TenantStatus, ClinicType } from '@org/db';
 
 export class PlatformUpdateTenantDto {
   // `enumName` is required when the enum comes from @org/db (Prisma 7).
@@ -22,13 +22,13 @@ export class PlatformUpdateTenantDto {
   plan?: Plan;
 
   @ApiPropertyOptional({
-    enum: LabPlan,
-    enumName: 'LabPlan',
+    enum: DentalLabPlan,
+    enumName: 'DentalLabPlan',
     description: 'LAB tenants only (400 on a CLINIC tenant)',
   })
   @IsOptional()
-  @IsEnum(LabPlan)
-  labPlan?: LabPlan;
+  @IsEnum(DentalLabPlan)
+  labPlan?: DentalLabPlan;
 
   @ApiPropertyOptional({ enum: TenantStatus, enumName: 'TenantStatus' })
   @IsOptional()

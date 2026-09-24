@@ -22,7 +22,7 @@ import {
   labPlanHasFeature,
   type Feature,
   type Plan,
-  type LabPlan,
+  type DentalLabPlan,
 } from '@org/shared-types';
 import { useQuery } from '@tanstack/react-query';
 import { authControllerMe } from '@org/api-client';
@@ -32,22 +32,26 @@ export interface Entitlements {
   /** Active clinic plan, or null for lab tenants / pre-plan rows. */
   plan: Plan | null;
   /** Active lab plan, or null for clinic tenants / pre-plan rows. */
-  labPlan: LabPlan | null;
+  labPlan: DentalLabPlan | null;
   /** True iff the active plan unlocks `feature`. */
   hasFeature(feature: Feature): boolean;
   /** The lowest plan (clinic or lab, matching tenantKind) that includes the
    *  given feature, or null if no plan in the ladder offers it. Used to
    *  render "Upgrade to PRO" / "PREMIUM" hints. */
-  requiredPlanFor(feature: Feature): Plan | LabPlan | null;
+  requiredPlanFor(feature: Feature): Plan | DentalLabPlan | null;
 }
 
 const CLINIC_LADDER: Plan[] = ['STARTER', 'PRO', 'PREMIUM'];
-const LAB_LADDER: LabPlan[] = ['LAB_BASIC', 'LAB_STANDARD', 'LAB_PREMIUM'];
+const LAB_LADDER: DentalLabPlan[] = [
+  'LAB_BASIC',
+  'LAB_STANDARD',
+  'LAB_PREMIUM',
+];
 
 interface LiveMe {
   tenantKind?: 'CLINIC' | 'LAB';
   plan?: Plan | null;
-  labPlan?: LabPlan | null;
+  labPlan?: DentalLabPlan | null;
 }
 
 export function useEntitlements(): Entitlements {
@@ -70,7 +74,7 @@ export function useEntitlements(): Entitlements {
   const plan = (live.data?.plan ?? session?.user.plan ?? null) as Plan | null;
   const labPlan = (live.data?.labPlan ??
     session?.user.labPlan ??
-    null) as LabPlan | null;
+    null) as DentalLabPlan | null;
   const isLab = (live.data?.tenantKind ?? session?.user.tenantKind) === 'LAB';
 
   return useMemo<Entitlements>(
@@ -81,7 +85,7 @@ export function useEntitlements(): Entitlements {
         if (isLab) return labPlan ? labPlanHasFeature(labPlan, feature) : false;
         return plan ? planHasFeature(plan, feature) : false;
       },
-      requiredPlanFor(feature: Feature): Plan | LabPlan | null {
+      requiredPlanFor(feature: Feature): Plan | DentalLabPlan | null {
         if (isLab) {
           return (
             LAB_LADDER.find((p) => LAB_PLAN_FEATURES[p]?.has(feature)) ?? null

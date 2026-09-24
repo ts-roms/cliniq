@@ -8,7 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { LabClinicLinkStatus } from '@org/db';
+import { DentalLabClinicLinkStatus } from '@org/db';
 import { Actions } from '@org/auth';
 import { Audit } from '../../audit/audit.decorator.js';
 import { Requires } from '../../auth/decorators/requires.decorator.js';
@@ -16,7 +16,7 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../auth/decorators/current-user.decorator.js';
-import { LabClinicLinksService } from '../../lab/clinic-links/lab-clinic-links.service.js';
+import { DentalLabClinicLinksService } from '../../dental-lab/clinic-links/dental-lab-clinic-links.service.js';
 
 /**
  * Clinic-side endpoints for managing incoming lab invitations.
@@ -28,7 +28,7 @@ import { LabClinicLinksService } from '../../lab/clinic-links/lab-clinic-links.s
 @ApiBearerAuth('jwt')
 @Controller('clinic/lab-invitations')
 export class ClinicLabInvitationsController {
-  constructor(private readonly links: LabClinicLinksService) {}
+  constructor(private readonly links: DentalLabClinicLinksService) {}
 
   @Get()
   @Requires(Actions.TENANT_MANAGE)
@@ -41,7 +41,7 @@ export class ClinicLabInvitationsController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_invitation.accept',
-    entity: 'LabClinicLink',
+    entity: 'DentalLabClinicLink',
     entityIdFrom: 'param:id',
   })
   accept(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
@@ -53,7 +53,7 @@ export class ClinicLabInvitationsController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_invitation.reject',
-    entity: 'LabClinicLink',
+    entity: 'DentalLabClinicLink',
     entityIdFrom: 'param:id',
   })
   reject(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
@@ -64,21 +64,21 @@ export class ClinicLabInvitationsController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_invitation.suspend',
-    entity: 'LabClinicLink',
+    entity: 'DentalLabClinicLink',
     entityIdFrom: 'param:id',
   })
   suspend(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.links.setStatus(id, LabClinicLinkStatus.SUSPENDED, user);
+    return this.links.setStatus(id, DentalLabClinicLinkStatus.SUSPENDED, user);
   }
 
   @Patch(':id/reactivate')
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_invitation.reactivate',
-    entity: 'LabClinicLink',
+    entity: 'DentalLabClinicLink',
     entityIdFrom: 'param:id',
   })
   reactivate(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.links.setStatus(id, LabClinicLinkStatus.ACTIVE, user);
+    return this.links.setStatus(id, DentalLabClinicLinkStatus.ACTIVE, user);
   }
 }

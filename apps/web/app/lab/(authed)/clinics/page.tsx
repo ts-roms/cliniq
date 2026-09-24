@@ -16,7 +16,7 @@ import {
   useInviteClinic,
   useLabClinicLinks,
   useRevokeLabInvitation,
-} from '@/features/lab';
+} from '@/features/dental-lab';
 
 export default function LabClinicsPage() {
   const { data, isLoading, error } = useLabClinicLinks();

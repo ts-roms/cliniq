@@ -361,10 +361,10 @@ async function provisionMarketplace(
   const asLab = { authorization: `Bearer ${labToken}` };
   const asClinic = { authorization: `Bearer ${clinicToken}` };
 
-  const category = await post(api, '/api/lab/categories', asLab, {
+  const category = await post(api, '/api/dental-lab/categories', asLab, {
     name: 'Crowns',
   });
-  const product = await post(api, '/api/lab/products', asLab, {
+  const product = await post(api, '/api/dental-lab/products', asLab, {
     name: 'PFM crown',
     categoryId: category.id,
     defaultPrice: 350000,
@@ -373,7 +373,7 @@ async function provisionMarketplace(
     phases: ['Wax-up', 'Casting', 'Porcelain'],
   });
 
-  const invite = await post(api, '/api/lab/clinic-links/invite', asLab, {
+  const invite = await post(api, '/api/dental-lab/clinic-links/invite', asLab, {
     clinicSlug: clinic.slug,
   });
   await post(
@@ -383,34 +383,44 @@ async function provisionMarketplace(
     {},
   );
 
-  const labCase = await post(api, '/api/clinic/lab-cases', asClinic, {
+  const dentalLabCase = await post(api, '/api/clinic/lab-cases', asClinic, {
     labTenantId: lab.id,
     productId: product.id,
     patientLabel: 'Maria Cruz',
     doctorLabel: 'Dr. Reyes',
     urgency: 'STANDARD',
   });
-  await post(api, `/api/clinic/lab-cases/${labCase.id}/transitions`, asClinic, {
-    status: 'SUBMITTED',
-  });
+  await post(
+    api,
+    `/api/clinic/lab-cases/${dentalLabCase.id}/transitions`,
+    asClinic,
+    {
+      status: 'SUBMITTED',
+    },
+  );
   for (const status of ['IN_PROGRESS', 'AWAITING_PICKUP', 'DELIVERED']) {
-    await post(api, `/api/lab/cases/${labCase.id}/transitions`, asLab, {
-      status,
-    });
+    await post(
+      api,
+      `/api/dental-lab/cases/${dentalLabCase.id}/transitions`,
+      asLab,
+      {
+        status,
+      },
+    );
   }
 
   const invoice = await post(
     api,
-    '/api/lab/invoices/generate-from-cases',
+    '/api/dental-lab/invoices/generate-from-cases',
     asLab,
-    { clinicTenantId: clinic.id, caseIds: [labCase.id] },
+    { clinicTenantId: clinic.id, caseIds: [dentalLabCase.id] },
   );
-  await post(api, `/api/lab/invoices/${invoice.id}/issue`, asLab, {});
+  await post(api, `/api/dental-lab/invoices/${invoice.id}/issue`, asLab, {});
 
   return {
     categoryId: category.id as string,
     productId: product.id as string,
-    caseId: labCase.id as string,
+    caseId: dentalLabCase.id as string,
     invoiceId: invoice.id as string,
   };
 }

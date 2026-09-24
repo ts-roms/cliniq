@@ -100,7 +100,7 @@ interface Audience {
 /**
  * Same split as the features section: a clinic and a dental lab are different
  * tenant kinds with different shapes of business. The lab entries track the
- * LabSpecialty enum (single-craft through full-service) and the per-plan
+ * DentalLabSpecialty enum (single-craft through full-service) and the per-plan
  * limits in libs/shared-types — not invented segments.
  */
 const CLINIC_AUDIENCES: Audience[] = [

@@ -15,8 +15,8 @@ import {
   labApi,
   useClinicCase,
   useTransitionClinicCase,
-  type LabCaseStatus,
-} from '@/features/lab';
+  type DentalLabCaseStatus,
+} from '@/features/dental-lab';
 import { useSession } from '@/features/auth';
 
 export default function ClinicLabCaseDetailPage() {
@@ -38,7 +38,9 @@ export default function ClinicLabCaseDetailPage() {
     return <p className="text-sm text-muted-foreground">Case not found.</p>;
 
   // Available transitions from the clinic side.
-  const fromClinic: Partial<Record<LabCaseStatus, LabCaseStatus[]>> = {
+  const fromClinic: Partial<
+    Record<DentalLabCaseStatus, DentalLabCaseStatus[]>
+  > = {
     DRAFT: ['SUBMITTED', 'CANCELLED'],
     SUBMITTED: ['CANCELLED'],
     SHIPPED: ['DELIVERED'],
@@ -201,7 +203,7 @@ export default function ClinicLabCaseDetailPage() {
             </ul>
 
             {(
-              ['DRAFT', 'SUBMITTED', 'IN_PROGRESS'] as LabCaseStatus[]
+              ['DRAFT', 'SUBMITTED', 'IN_PROGRESS'] as DentalLabCaseStatus[]
             ).includes(lc.status) && (
               <label className="block">
                 <input
@@ -224,7 +226,7 @@ export default function ClinicLabCaseDetailPage() {
       </div>
 
       {(
-        ['SHIPPED', 'DELIVERED', 'AWAITING_PICKUP'] as LabCaseStatus[]
+        ['SHIPPED', 'DELIVERED', 'AWAITING_PICKUP'] as DentalLabCaseStatus[]
       ).includes(lc.status) && (
         <Card>
           <CardHeader>

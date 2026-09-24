@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { LabDraftsService } from './lab-drafts.service.js';
+import { LabDraftsService } from './dental-lab-drafts.service.js';
 import {
   LabPlanDraftRequestDto,
   LabPlanDraftResponseDto,

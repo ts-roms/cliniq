@@ -18,15 +18,15 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../auth/decorators/current-user.decorator.js';
-import { LabCasesService } from '../../lab/cases/lab-cases.service.js';
+import { DentalLabCasesService } from '../../dental-lab/cases/dental-lab-cases.service.js';
 import {
   CreateLabCaseDto,
   CreateMessageDto,
   PresignLabCaseFileDto,
   TransitionLabCaseDto,
   UpdateLabCaseDto,
-  LabCaseListQueryDto,
-} from '../../lab/cases/dto/case.dto.js';
+  DentalLabCaseListQueryDto,
+} from '../../dental-lab/cases/dto/case.dto.js';
 
 /**
  * Clinic-side endpoints for placing/managing lab cases.
@@ -37,14 +37,14 @@ import {
 @ApiBearerAuth('jwt')
 @Controller('clinic/lab-cases')
 export class ClinicLabCasesController {
-  constructor(private readonly cases: LabCasesService) {}
+  constructor(private readonly cases: DentalLabCasesService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_case.create',
-    entity: 'LabCase',
+    entity: 'DentalLabCase',
     entityIdFrom: 'result:id',
   })
   create(
@@ -58,7 +58,7 @@ export class ClinicLabCasesController {
   @Requires(Actions.TENANT_MANAGE)
   list(
     @CurrentUser() user: AuthenticatedUser,
-    @Query() query: LabCaseListQueryDto,
+    @Query() query: DentalLabCaseListQueryDto,
   ) {
     return this.cases.listForClinic(user, query);
   }
@@ -73,7 +73,7 @@ export class ClinicLabCasesController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_case.update',
-    entity: 'LabCase',
+    entity: 'DentalLabCase',
     entityIdFrom: 'param:id',
   })
   update(
@@ -89,7 +89,7 @@ export class ClinicLabCasesController {
   @HttpCode(HttpStatus.OK)
   @Audit({
     action: 'clinic.lab_case.transition',
-    entity: 'LabCase',
+    entity: 'DentalLabCase',
     entityIdFrom: 'param:id',
   })
   transition(
@@ -105,7 +105,7 @@ export class ClinicLabCasesController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_case.file.presign',
-    entity: 'LabCase',
+    entity: 'DentalLabCase',
     entityIdFrom: 'param:id',
   })
   presignFile(
@@ -132,7 +132,7 @@ export class ClinicLabCasesController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_case.file.delete',
-    entity: 'LabCaseFile',
+    entity: 'DentalLabCaseFile',
     entityIdFrom: 'param:fileId',
   })
   deleteFile(
@@ -198,7 +198,7 @@ export class ClinicLabCasesController {
   @Requires(Actions.TENANT_MANAGE)
   @Audit({
     action: 'clinic.lab_case.shipment.delivered',
-    entity: 'LabShipment',
+    entity: 'DentalLabShipment',
     entityIdFrom: 'param:id',
   })
   markDelivered(
