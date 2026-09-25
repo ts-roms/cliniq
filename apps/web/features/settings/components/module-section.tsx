@@ -27,7 +27,13 @@ export function ModuleSection({
   children: React.ReactNode;
 }) {
   // The id is the link target used by the consult's "Visit focus" panel.
-  if (enabled) return <div id={`module-${module}`}>{children}</div>;
+  if (enabled) {
+    return (
+      <div id={`module-${module}`} data-test={`module-${module}`}>
+        {children}
+      </div>
+    );
+  }
   if (!hasData) return null;
 
   const meta = CLINIC_MODULE_META[module];

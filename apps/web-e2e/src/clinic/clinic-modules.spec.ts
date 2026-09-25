@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import { loadSeed } from '../utils/seed';
 import { sessionPath } from '../fixtures/sessions';
@@ -28,6 +29,28 @@ async function setModules(page: Page, modules: string[]) {
   expect(res.ok(), `set modules -> ${res.status()}`).toBe(true);
 }
 
+/**
+ * A patient of our own with no specialty records. The seeded patient is shared
+ * by every Playwright project, and the flagged-module case below gives it a
+ * dental chart, so it cannot stand in for "empty" across the matrix.
+ */
+async function createPatient(
+  page: Page,
+  body: { sex: string; dateOfBirth: string },
+): Promise<string> {
+  const rand = randomUUID().slice(0, 8);
+  const res = await page.request.post(`${API}/api/patients`, {
+    data: {
+      mrn: `E2E-MOD-${rand}`.toUpperCase(),
+      firstName: 'Module',
+      lastName: `Probe ${rand}`,
+      ...body,
+    },
+  });
+  expect(res.status(), `create patient -> ${res.status()}`).toBe(201);
+  return (await res.json()).id as string;
+}
+
 test.describe('@web clinical modules', () => {
   test.afterAll(async ({ browser }, testInfo) => {
     // Leave the tenant as every other spec expects to find it. Sessions are
@@ -53,19 +76,72 @@ test.describe('@web clinical modules', () => {
     await expect(card.locator('input[type="checkbox"]')).toHaveCount(5);
   });
 
-  test('an enabled module renders on the chart un-flagged', async ({
+  test('an enabled but empty specialty is offered, and opens un-flagged', async ({
     page,
   }) => {
-    const { clinic } = loadSeed();
     await setModules(page, ALL);
-    await page.goto(`/patients/${clinic.patient.patientId}`);
-    // The dental card's heading is "Odontogram" — assert the real text.
-    await expect(page.getByText('Odontogram').first()).toBeVisible({
-      timeout: 15_000,
+    const patientId = await createPatient(page, {
+      sex: 'FEMALE',
+      dateOfBirth: '1995-06-15',
     });
+    await page.goto(`/patients/${patientId}`);
+
+    // A GENERAL clinic does not open an empty odontogram for every walk-in:
+    // it waits in the Add-a-service bar instead.
+    const bar = page.locator('[data-test="patient-services-bar"]');
+    await expect(bar).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-test="module-dental"]')).toHaveCount(0);
+    // Lab orders are routine everywhere, so they open by default.
+    await expect(page.locator('[data-test="module-lab_orders"]')).toBeVisible();
+
+    await bar.locator('[data-test="offer-module-dental"]').click();
+    await expect(page.locator('[data-test="module-dental"]')).toBeVisible();
+    await expect(page.getByText('Odontogram').first()).toBeVisible();
     await expect(
       page.locator('[data-test="out-of-scope-module-dental"]'),
     ).toHaveCount(0);
+    // Opened, so no longer offered.
+    await expect(bar.locator('[data-test="offer-module-dental"]')).toHaveCount(
+      0,
+    );
+  });
+
+  test('OB is never offered to a male patient, and the chart says why', async ({
+    page,
+  }) => {
+    await setModules(page, ALL);
+    const patientId = await createPatient(page, {
+      sex: 'MALE',
+      dateOfBirth: '1986-01-15',
+    });
+    await page.goto(`/patients/${patientId}`);
+
+    const bar = page.locator('[data-test="patient-services-bar"]');
+    await expect(bar).toBeVisible({ timeout: 15_000 });
+    await expect(bar.locator('[data-test="offer-module-ob"]')).toHaveCount(0);
+    await expect(page.locator('[data-test="module-ob"]')).toHaveCount(0);
+    await expect(
+      bar.locator('[data-test="not-applicable-modules"]'),
+    ).toContainText('Obstetrics');
+    // Everything else the clinic offers is still one click away.
+    await expect(
+      bar.locator('[data-test="offer-module-dental"]'),
+    ).toBeVisible();
+  });
+
+  test('a visit-focus link opens a module that was folded away', async ({
+    page,
+  }) => {
+    await setModules(page, ALL);
+    const patientId = await createPatient(page, {
+      sex: 'MALE',
+      dateOfBirth: '1986-01-15',
+    });
+    // Same href the consult's Visit focus panel renders.
+    await page.goto(`/patients/${patientId}#module-dental`);
+    await expect(page.locator('[data-test="module-dental"]')).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('a disabled module with no records disappears from the chart', async ({
@@ -75,16 +151,24 @@ test.describe('@web clinical modules', () => {
     // The seeded patient has no obstetrics records, so OB should vanish.
     await setModules(page, ['dental', 'lab_orders', 'hmo']);
     await page.goto(`/patients/${clinic.patient.patientId}`);
-    await expect(page.locator('h1, h2, h3').first()).toBeVisible({
-      timeout: 15_000,
-    });
-    // The OB card is gone entirely, banner and all.
+    await expect(
+      page.locator('[data-test="patient-services-bar"]'),
+    ).toBeVisible({ timeout: 15_000 });
+    // The OB card is gone entirely — not rendered, flagged, or offered.
     await expect(
       page.locator('[data-test="out-of-scope-module-ob"]'),
     ).toHaveCount(0);
-    await expect(page.getByText('OB / Pregnancy')).toHaveCount(0);
-    // ...while a module that is still enabled keeps rendering.
-    await expect(page.getByText('Odontogram').first()).toBeVisible();
+    await expect(page.locator('[data-test="module-ob"]')).toHaveCount(0);
+    await expect(page.locator('[data-test="offer-module-ob"]')).toHaveCount(0);
+    // ...while a module that is still enabled stays reachable: rendered if
+    // another project already charted this shared patient, offered if not.
+    await expect(
+      page
+        .locator(
+          '[data-test="module-dental"], [data-test="offer-module-dental"]',
+        )
+        .first(),
+    ).toBeVisible();
   });
 
   test('a disabled module that HOLDS records still renders, flagged', async ({
