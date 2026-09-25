@@ -27,6 +27,13 @@ export interface ReportableResult {
   resultUnit: string | null;
   abnormalFlag: string | null;
   resultStatus: string;
+  /**
+   * The laboratory this test was referred to, when it was not performed
+   * here. AO 2021-0037 requires the report to say so, and it belongs in the
+   * hash: a value produced by another laboratory is a different assertion
+   * about who is answerable for it, even when the number is identical.
+   */
+  referredTo?: string | null;
 }
 
 /**
@@ -46,7 +53,7 @@ export interface ReportableResult {
 export function hashReportContent(
   results: readonly ReportableResult[],
 ): string {
-  const canonical = [...results]
+  const rows = [...results]
     .map((r) => ({
       code: r.testCode ?? '',
       name: r.testName,
@@ -54,16 +61,31 @@ export function hashReportContent(
       unit: r.resultUnit ?? '',
       flag: r.abnormalFlag ?? '',
       status: r.resultStatus,
+      referredTo: r.referredTo ?? '',
     }))
     .sort(
       (a, b) => a.code.localeCompare(b.code) || a.name.localeCompare(b.name),
-    )
+    );
+
+  const canonical = rows
     .map((r) =>
       [r.code, r.name, r.value, r.unit, r.flag, r.status].join('\u001f'),
     )
     .join('\u001e');
 
-  return createHash('sha256').update(canonical, 'utf8').digest('hex');
+  // Referrals are appended as a trailing segment rather than a seventh field
+  // on every row, so a report with nothing referred hashes exactly as it did
+  // before referrals existed. Widening the row tuple would have changed every
+  // hash already stored and marked every issued report as no longer matching
+  // its results — a migration disguised as a refactor.
+  const referrals = rows
+    .filter((r) => r.referredTo !== '')
+    .map((r) => [r.code, r.name, r.referredTo].join('\u001f'))
+    .join('\u001e');
+  const payload =
+    referrals === '' ? canonical : `${canonical}\u001d${referrals}`;
+
+  return createHash('sha256').update(payload, 'utf8').digest('hex');
 }
 
 /**
