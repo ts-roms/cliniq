@@ -171,6 +171,24 @@ export class RecordResultDto {
   @IsString()
   @MaxLength(280)
   comment?: string;
+
+  /**
+   * What produced this result.
+   *
+   * Optional: a laboratory that has not catalogued its instruments must not
+   * be blocked from reporting, and a referred-in result was produced
+   * elsewhere entirely. When supplied, the pair is what makes a lot recall
+   * answerable.
+   */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  equipmentId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  reagentLotId?: string;
 }
 
 /**

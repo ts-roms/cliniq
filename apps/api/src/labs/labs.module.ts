@@ -17,6 +17,8 @@ import { ReferralController } from './referral.controller.js';
 import { ReferralService } from './referral.service.js';
 import { EqapController } from './eqap.controller.js';
 import { EqapService } from './eqap.service.js';
+import { EquipmentController } from './equipment.controller.js';
+import { EquipmentService } from './equipment.service.js';
 
 @Module({
   controllers: [
@@ -29,6 +31,7 @@ import { EqapService } from './eqap.service.js';
     LaboratoryController,
     ReferralController,
     EqapController,
+    EquipmentController,
   ],
   providers: [
     LabsService,
@@ -40,6 +43,7 @@ import { EqapService } from './eqap.service.js';
     LaboratoryService,
     ReferralService,
     EqapService,
+    EquipmentService,
   ],
   exports: [LabsService, ReportsService],
 })
