@@ -2715,6 +2715,125 @@ model LabServiceCapability {
   @@map("lab_service_capabilities")
 }
 
+/// Which control level a material represents.
+enum QcLevel {
+  LOW
+  NORMAL
+  HIGH
+}
+
+/// The outcome of evaluating a control run against the Westgard multirules.
+enum QcOutcome {
+  ACCEPTED
+  WARNING
+  REJECTED
+}
+
+/// A quality-control material — a specimen of known concentration run
+/// alongside patients to show the analytical process is in control.
+///
+/// Lot matters: control material is manufactured in batches and the target
+/// mean shifts between them, so a lot change means re-establishing targets
+/// rather than carrying the old ones forward. Keeping the lot here rather
+/// than as free text is what makes that enforceable.
+model QcMaterial {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  level        QcLevel
+  lotNumber    String
+  manufacturer String?
+  expiresOn    DateTime?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  targets QcTarget[]
+  runs    QcRun[]
+
+  @@unique([tenantId, name, lotNumber])
+  @@index([tenantId, isActive])
+  @@map("qc_materials")
+}
+
+/// The established mean and SD for one material on one test.
+///
+/// Per (material, test) because the same control vial is run for several
+/// analytes and each has its own target. The window exists because targets
+/// are re-established periodically — after a lot change, a recalibration, or
+/// a method change — and a run must be judged against the target that was in
+/// force when it happened, not the one in force now.
+model QcTarget {
+  id       String @id @default(cuid())
+  tenantId String
+
+  materialId String
+  testId     String
+
+  mean Float
+  sd   Float
+  unit String?
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  material QcMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, materialId, testId, effectiveFrom])
+  @@map("qc_targets")
+}
+
+/// One control result, with the rules that were applied to it.
+///
+/// The z-score, the outcome and the violated rules are STORED rather than
+/// recomputed on read. A run is judged against the target in force at the
+/// time; recomputing later — after a lot change or a re-established mean —
+/// would silently rewrite history, and the Levey-Jennings chart an inspector
+/// asks for is a chart of what was decided then.
+model QcRun {
+  id       String @id @default(cuid())
+  tenantId String
+
+  materialId String
+  testId     String
+
+  value Float
+  /// Standard deviations from the target mean, signed.
+  z Float
+  /// The target this was judged against, snapshotted — the row can be
+  /// superseded, and the judgement has to remain explicable.
+  targetMean Float
+  targetSd   Float
+
+  outcome QcOutcome
+  /// Rule codes that fired: 1-3s, 2-2s, R-4s, 4-1s, 10x.
+  violations String[]
+
+  /// What was done about a rejected run. Required before the run can be
+  /// accepted over, which is the part an inspection actually looks for.
+  correctiveAction String?
+
+  runAt         DateTime @default(now())
+  performedById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  material QcMaterial @relation(fields: [materialId], references: [id])
+
+  @@index([tenantId, testId, runAt])
+  @@index([tenantId, materialId, testId, runAt])
+  @@index([tenantId, outcome, runAt])
+  @@map("qc_runs")
+}
+
 /// A laboratory this clinic sends work to.
 ///
 /// AO 2021-0037 permits referral only to a **licensed** laboratory, so the

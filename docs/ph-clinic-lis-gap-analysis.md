@@ -853,7 +853,23 @@ Order placement then becomes: _can this laboratory perform this test?_ → yes, 
 
 Nothing exists. Needed: `ReferralLaboratory` (name, DOH LTO, MOA file, contact, courier), `ReferralOrder`, `ReferralSpecimen` (chain of custody: released-by, courier, released-at, received-at, condition on arrival), `ReferralResult` (external result file + transcribed components + who reviewed it before it entered the patient's chart). The report must state which tests were referred and to which licensed laboratory.
 
-## 6.12 QC / QA — 🔴
+## 6.12 QC / QA — 🟡 PARTIAL (was 🔴)
+
+> **Status: internal QC built** (`20260925100000_lis_quality_control`). `QcMaterial` (keyed by name AND lot, because control material is made in batches and the target mean shifts between them), `QcTarget` (mean, SD, effective window) and `QcRun` (value, z-score, outcome, violated rules, corrective action).
+>
+> The Westgard multirules are a pure evaluator in `apps/api/src/labs/westgard.ts` with 25 unit tests, exactly as this section asked — they are what an inspector asks you to demonstrate, and a rule that cannot be demonstrated in isolation cannot be defended. 1-2s, 1-3s, 2-2s, R-4s, 4-1s and 10x, with the boundaries pinned: exactly 2 SD accepts, because the rule is "beyond", not "at".
+>
+> Three decisions worth knowing:
+>
+> - **1-2s warns, it does not reject.** About one run in twenty lands beyond 2 SD by chance. A laboratory that rejects on it spends its time chasing noise and then starts ignoring the alarm.
+> - **The judgement is stored, not recomputed.** A run is judged against the target in force at the time; re-deriving it after a lot change or a re-established mean would silently rewrite history, and the Levey-Jennings chart an inspector asks for is a chart of what was decided then.
+> - **2-2s is the across-runs variant** (same level, consecutive runs). The within-run reading — both levels in one run beyond 2 SD on the same side — is not implemented, and is said in the module rather than left to be discovered from behaviour.
+>
+> `qc_runs` keeps UPDATE so corrective action can be recorded against a rejection, but loses DELETE. Corrective action is refused on a run that was in control: it is action against real failures that an inspection looks for.
+>
+> Levey-Jennings is a chart over `QcRun` rows, as this section says — the data is there, the chart is a UI concern and is not built.
+>
+> **Still open: calibration records, and EQAP enrolment and submissions** with the result-report file attached as evidence. Those are the remaining half of this section.
 
 Nothing. No QC material, lot, level, run, target mean, SD, CV, Westgard evaluation, Levey-Jennings data, corrective action, calibration, or EQAP participation record. For a DOH-licensed laboratory this is the difference between passing and failing inspection.
 
@@ -1833,25 +1849,25 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 
 Every row below was verified against the source, not inferred from a commit message: the migration, guard, spec or module named was confirmed to exist on `main`. Everything listed here is merged.
 
-| Finding                                        | State            | Landed in                                                                                          |
-| ---------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
-| P0-1 portal BOLA                               | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                     |
-| P0-2 critical thresholds                       | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                             |
-| P0-2 result verification chain                 | fixed            | `20260924220000_lis_result_verification`                                                           |
-| P0-3 critical-result handling                  | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`)    |
-| P0-4 consultation amendments                   | fixed            | `20260924090000_consultation_amendments`                                                           |
-| P0-5 DOH-licensable laboratory                 | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open       |
-| P0-6 `push_tokens` RLS                         | fixed            | `20260924100000_push_tokens_rls`                                                                   |
-| P0-7 file download path                        | fixed            | `20260924140000_file_patient_ownership`                                                            |
-| Audit log append-only **in CI**                | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                    |
-| Dental-lab rename                              | mostly done      | see §29 #11                                                                                        |
-| Test catalogue                                 | built            | `20260924180000_lis_test_catalogue`                                                                |
-| Specimens + accession                          | built            | `20260924200000_lis_specimens`                                                                     |
-| Result verification + history                  | built            | `20260924220000_lis_result_verification`                                                           |
-| Signed reports + PDF + portal access           | built            | `20260924240000_lis_lab_reports`                                                                   |
-| Laboratory LTO profile + service capability    | built            | `20260924300000_lis_laboratory_licence`                                                            |
-| Referral laboratories + capability enforcement | partial          | `20260924320000_lis_referral_labs` — no MOA file, referred tests not yet stated on the report face |
-
+| Finding                                         | State            | Landed in                                                                                          |
+| ----------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
+| P0-1 portal BOLA                                | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                     |
+| P0-2 critical thresholds                        | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                             |
+| P0-2 result verification chain                  | fixed            | `20260924220000_lis_result_verification`                                                           |
+| P0-3 critical-result handling                   | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`)    |
+| P0-4 consultation amendments                    | fixed            | `20260924090000_consultation_amendments`                                                           |
+| P0-5 DOH-licensable laboratory                  | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open       |
+| P0-6 `push_tokens` RLS                          | fixed            | `20260924100000_push_tokens_rls`                                                                   |
+| P0-7 file download path                         | fixed            | `20260924140000_file_patient_ownership`                                                            |
+| Audit log append-only **in CI**                 | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                    |
+| Dental-lab rename                               | mostly done      | see §29 #11                                                                                        |
+| Test catalogue                                  | built            | `20260924180000_lis_test_catalogue`                                                                |
+| Specimens + accession                           | built            | `20260924200000_lis_specimens`                                                                     |
+| Result verification + history                   | built            | `20260924220000_lis_result_verification`                                                           |
+| Signed reports + PDF + portal access            | built            | `20260924240000_lis_lab_reports`                                                                   |
+| Laboratory LTO profile + service capability     | built            | `20260924300000_lis_laboratory_licence`                                                            |
+| Referral laboratories + capability enforcement  | partial          | `20260924320000_lis_referral_labs` — no MOA file, referred tests not yet stated on the report face |
+| Internal QC (materials, targets, Westgard runs) | partial          | `20260925100000_lis_quality_control` — calibration and EQAP still open                             |
 
 ## Three things this exercise taught that are worth keeping
 
