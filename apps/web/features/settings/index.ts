@@ -1,7 +1,7 @@
 export { SettingsForm } from './components/settings-form';
 export { ModuleSection } from './components/module-section';
 export { ModulesCard } from './components/modules-card';
-export { PatientServicesBar } from './components/patient-services-bar';
+export { PatientServicesMenu } from './components/patient-services-menu';
 export {
   useEnabledModules,
   usePatientModuleData,
