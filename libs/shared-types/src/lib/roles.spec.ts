@@ -59,6 +59,21 @@ describe('RBAC matrix', () => {
     }
   });
 
+  it('everyone who can write a consult can start one, and so can ADMIN', () => {
+    expect(rolesThatCan(Actions.CONSULT_START).sort()).toEqual(
+      [...rolesThatCan(Actions.CONSULT_WRITE), 'ADMIN'].sort(),
+    );
+  });
+
+  it('ADMIN can start a consult but not write, complete or result one', () => {
+    // Starting on a clinician's behalf is the whole grant. Writing the note,
+    // completing the visit and entering / releasing results stay clinical.
+    expect(can(Roles.ADMIN, Actions.CONSULT_START)).toBe(true);
+    expect(can(Roles.ADMIN, Actions.CONSULT_WRITE)).toBe(false);
+    expect(can(Roles.ADMIN, Actions.LAB_RESULT_ENTER)).toBe(false);
+    expect(can(Roles.ADMIN, Actions.LAB_RESULT_VERIFY)).toBe(false);
+  });
+
   it('unknown roles never pass', () => {
     expect(can('JANITOR' as never, Actions.PATIENT_READ)).toBe(false);
   });

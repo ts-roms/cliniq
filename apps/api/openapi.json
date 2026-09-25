@@ -11423,6 +11423,10 @@
           "visitTypeId": {
             "type": "string",
             "description": "What this consult is for (VisitType id). Ignored when appointmentId is given and that appointment already carries one — the booking wins."
+          },
+          "providerId": {
+            "type": "string",
+            "description": "The attending clinician (an active OWNER, DOCTOR or NURSE of this clinic), recorded as the provider. Defaults to the caller; REQUIRED when the caller cannot write consults (ADMIN)."
           }
         }
       },

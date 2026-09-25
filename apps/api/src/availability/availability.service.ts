@@ -26,7 +26,11 @@ import type {
 } from './dto/availability.dto.js';
 
 /** Roles that can carry appointments. Matches what the schedule UI offers. */
-const PROVIDER_ROLES: readonly Role[] = [Role.OWNER, Role.DOCTOR, Role.NURSE];
+export const PROVIDER_ROLES: readonly Role[] = [
+  Role.OWNER,
+  Role.DOCTOR,
+  Role.NURSE,
+];
 
 const DEFAULT_TZ = 'Asia/Manila';
 
