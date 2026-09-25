@@ -6,6 +6,7 @@ import {
   ALL_CLINIC_MODULES,
   isClinicModule,
   type ClinicModule,
+  type ClinicType,
 } from '@org/shared-types';
 import { useTenantSettings } from './use-settings';
 
@@ -20,14 +21,19 @@ import { useTenantSettings } from './use-settings';
  */
 export function useEnabledModules(): {
   modules: ClinicModule[];
+  clinicType: ClinicType | null;
   isLoading: boolean;
 } {
   const settings = useTenantSettings();
-  const raw = (settings.data as { modules?: unknown } | undefined)?.modules;
+  const data = settings.data as
+    | { modules?: unknown; type?: string | null }
+    | undefined;
+  const raw = data?.modules;
   const modules = Array.isArray(raw)
     ? raw.filter(isClinicModule)
     : [...ALL_CLINIC_MODULES];
-  return { modules, isLoading: settings.isLoading };
+  const clinicType = (data?.type ?? null) as ClinicType | null;
+  return { modules, clinicType, isLoading: settings.isLoading };
 }
 
 export const patientModuleKeys = {
@@ -49,7 +55,10 @@ export function usePatientModuleData(patientId: string) {
       const { data, error } = await patientsControllerModuleData({
         path: { id: patientId },
       });
-      if (error || !data) return {};
+      // Thrown, not swallowed into `{}`: an empty answer reads as "no
+      // records anywhere" and would fold real history into the Add-a-service
+      // bar. The chart treats an error as "unknown" and opens everything.
+      if (error || !data) throw new Error('Failed to load patient modules');
       return data as Partial<Record<ClinicModule, boolean>>;
     },
   });
