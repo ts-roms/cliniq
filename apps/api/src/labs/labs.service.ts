@@ -50,6 +50,15 @@ import {
   statusOnEntry,
   type VerificationPolicy,
 } from './verification.js';
+import {
+  canRelease,
+  readSupervisionPolicy,
+  supervisionFor,
+  type PathologistOfRecord,
+  type ReleasingRole,
+  type SupervisionPolicy,
+  type SupervisionStamp,
+} from './supervision.js';
 
 @Injectable()
 export class LabsService {
@@ -398,6 +407,14 @@ export class LabsService {
       const now = new Date();
       const status = statusOnEntry(policy);
 
+      // With verification off, keying a result in also releases it — so this
+      // is a release and RA 5527 applies to it. With verification on it is
+      // not, and demanding a supervising pathologist to record a PRELIMINARY
+      // value would refuse bench work that nobody has put their name to yet.
+      const supervision = isReleased(status)
+        ? await this.resolveSupervision(tx, user)
+        : undefined;
+
       const updatedItem = await tx.labOrderItem.update({
         where: { id: itemId },
         data: {
@@ -435,6 +452,7 @@ export class LabsService {
         abnormalFlag: flag ?? null,
         comment: dto.comment ?? item.comment,
         status,
+        supervision,
       });
 
       await this.advanceSpecimen(tx, item.specimenId);
@@ -558,6 +576,8 @@ export class LabsService {
       );
       if (!verdict.ok) throw new BadRequestException(verdict.reason);
 
+      const supervision = await this.resolveSupervision(tx, user);
+
       const now = new Date();
       const updated = await tx.labOrderItem.update({
         where: { id: itemId },
@@ -576,6 +596,7 @@ export class LabsService {
         abnormalFlag: item.abnormalFlag,
         comment: item.comment,
         status: LabResultStatus.FINAL,
+        supervision,
       });
 
       await this.advanceSpecimen(tx, item.specimenId);
@@ -635,6 +656,12 @@ export class LabsService {
       const verdict = canAmend(item.resultStatus as never);
       if (!verdict.ok) throw new BadRequestException(verdict.reason);
 
+      // A correction puts a new value on the chart under the corrector's
+      // name, so it is a release too and carries its own supervision. It is
+      // not inherited from the original: the person answerable for the
+      // corrected value is whoever is answerable now.
+      const supervision = await this.resolveSupervision(tx, user);
+
       const resolution = await this.resolveFlag(
         tx,
         item,
@@ -667,6 +694,7 @@ export class LabsService {
         comment: dto.comment ?? item.comment,
         status: LabResultStatus.CORRECTED,
         reason: dto.reason,
+        supervision,
       });
 
       const order = await tx.labOrder.findFirst({
@@ -757,6 +785,71 @@ export class LabsService {
   }
 
   /**
+   * Who is answerable for a release, and whether an unsupervised one is
+   * refused.
+   *
+   * RA 5527: a medical technologist practises under the supervision of a
+   * pathologist. The pathologist of record lives on the laboratory profile as
+   * free text rather than a user reference, because they are frequently a
+   * visiting consultant with no account here — see `Laboratory`.
+   *
+   * A tenant with no laboratory profile at all resolves to nobody on file,
+   * which is recorded rather than thrown: the rules live in ./supervision.ts
+   * and decide what that means.
+   */
+  private async supervisionContext(
+    tx: PrismaClient,
+    tenantId: string,
+  ): Promise<{
+    policy: SupervisionPolicy;
+    pathologist: PathologistOfRecord | null;
+  }> {
+    const [tenant, lab] = await Promise.all([
+      tx.tenant.findFirst({
+        where: { id: tenantId },
+        select: { settings: true },
+      }),
+      tx.laboratory.findFirst({
+        where: { tenantId },
+        select: { pathologistName: true, pathologistLicenseNumber: true },
+      }),
+    ]);
+    return {
+      policy: readSupervisionPolicy(tenant?.settings),
+      pathologist: lab
+        ? {
+            name: lab.pathologistName,
+            licenseNumber: lab.pathologistLicenseNumber,
+          }
+        : null,
+    };
+  }
+
+  /**
+   * Resolve the supervision for a release, refusing it when the clinic
+   * enforces supervision and there is nobody to name.
+   *
+   * Separate from `canVerify`, which asks whether the RESULT is in a state to
+   * be released. Both have to pass, and keeping them apart lets a clinic
+   * require supervision without also requiring a separate verifier — one
+   * technologist on the bench, a pathologist answerable for the laboratory,
+   * which is the common arrangement.
+   */
+  private async resolveSupervision(
+    tx: PrismaClient,
+    user: AuthenticatedUser,
+  ): Promise<SupervisionStamp> {
+    const { policy, pathologist } = await this.supervisionContext(
+      tx,
+      user.tenantId,
+    );
+    const role = user.role as ReleasingRole;
+    const verdict = canRelease(role, pathologist, policy);
+    if (!verdict.ok) throw new BadRequestException(verdict.reason);
+    return supervisionFor(role, pathologist);
+  }
+
+  /**
    * Append one row to a result's history.
    *
    * The version number is allocated from the rows already there, inside the
@@ -776,6 +869,13 @@ export class LabsService {
       comment: string | null;
       status: LabResultStatus;
       reason?: string;
+      /**
+       * Who was answerable for this act, when it was a release and the
+       * releaser needed a supervisor. Undefined for an entry that released
+       * nothing, and for a release by someone who carried the authority
+       * themselves — see ./supervision.ts.
+       */
+      supervision?: SupervisionStamp;
     },
   ) {
     const last = await tx.labResultVersion.findFirst({
@@ -798,6 +898,17 @@ export class LabsService {
         reason:
           v.status === LabResultStatus.CORRECTED ? (v.reason ?? null) : null,
         recordedById: user.userId,
+        // Snapshotted so that editing the laboratory profile later cannot
+        // change who supervised this act. SELF writes nothing: naming a
+        // supervisor for a pathologist's own release would misstate it.
+        supervisorName:
+          v.supervision?.kind === 'SUPERVISED'
+            ? v.supervision.supervisorName
+            : null,
+        supervisorLicense:
+          v.supervision?.kind === 'SUPERVISED'
+            ? v.supervision.supervisorLicense
+            : null,
       },
     });
   }

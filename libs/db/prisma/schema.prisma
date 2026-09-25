@@ -3706,10 +3706,27 @@ model LabResultVersion {
   recordedById String
   recordedAt   DateTime @default(now())
 
+  /// The pathologist under whose supervision this act was performed, as
+  /// RA 5527 requires for a medical technologist. Snapshotted, not a
+  /// relation: the pathologist of record is frequently a visiting consultant
+  /// with no account here (see `Laboratory`), and editing the laboratory
+  /// profile next year must not change who supervised a result last year.
+  ///
+  /// Null means the release needed no supervisor — a pathologist or a
+  /// physician released it, and naming a supervisor would misstate what
+  /// happened — OR that nobody was on file, which is the finding. The two are
+  /// told apart by the releaser's role, which `LabReportSignature` records.
+  supervisorName    String?
+  supervisorLicense String?
+
   item LabOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, orderItemId, version])
   @@index([tenantId, orderItemId, recordedAt])
+  /// "Show me the results released with no supervising pathologist" — the
+  /// question an inspection actually asks. Partial: in a compliant laboratory
+  /// almost every row is supervised, and indexing those would be dead weight.
+  @@index([tenantId, recordedAt], map: "lab_result_versions_unsupervised_idx")
   @@map("lab_result_versions")
 }
 
@@ -3798,6 +3815,13 @@ model LabReportSignature {
 
   signerName    String
   signerLicense String?
+
+  /// The pathologist the signer acted under, when they needed one. Same
+  /// snapshot rule as `signerLicense` directly above, and for the same
+  /// reason: what matters is what was true when the name went on the
+  /// document.
+  supervisorName    String?
+  supervisorLicense String?
 
   contentHash String
   signedAt    DateTime @default(now())

@@ -1,4 +1,9 @@
 import PDFDocument from 'pdfkit';
+import {
+  needsSupervision,
+  supervisionNotice,
+  type ReleasingRole,
+} from '../supervision.js';
 import { supersededNotice } from '../reporting.js';
 
 export interface LabReportPdfData {
@@ -29,6 +34,12 @@ export interface LabReportPdfData {
       signerName: string;
       signerRole: string;
       signerLicense: string | null;
+      /**
+       * The pathologist this signer acted under, where RA 5527 required one.
+       * Null when the signer carried the authority themselves.
+       */
+      supervisorName: string | null;
+      supervisorLicense: string | null;
       signedAt: Date;
     }>;
   };
@@ -50,6 +61,14 @@ export interface LabReportPdfData {
     classification: string | null;
     headName: string | null;
     headLicenseNumber: string | null;
+    /**
+     * The pathologist of record. Captured on the laboratory profile since
+     * `20260924300000_lis_laboratory_licence` but never printed until now —
+     * the document named who ran the laboratory and not who was answerable
+     * for its results, which is what RA 5527 is about.
+     */
+    pathologistName: string | null;
+    pathologistLicenseNumber: string | null;
     licenceExpired: boolean;
   } | null;
   location?: {
@@ -193,6 +212,13 @@ function laboratoryBlock(
       lab.headLicenseNumber
         ? `Head of Laboratory: ${lab.headName} · PRC ${lab.headLicenseNumber}`
         : `Head of Laboratory: ${lab.headName}`,
+    );
+  }
+  if (lab.pathologistName) {
+    doc.text(
+      lab.pathologistLicenseNumber
+        ? `Pathologist of Record: ${lab.pathologistName} · PRC ${lab.pathologistLicenseNumber}`
+        : `Pathologist of Record: ${lab.pathologistName}`,
     );
   }
   doc.fontSize(9);
@@ -344,6 +370,28 @@ function signatureBlock(
         ? `${role} · PRC Licence No. ${sig.signerLicense}`
         : `${role} · licence not on file`,
     );
+    // Who the signer answered to. The wording comes from
+    // ./supervision.ts rather than being assembled here, because pdfkit
+    // compresses its streams and a test cannot read text back out of a
+    // generated PDF — the same reason `supersededNotice()` was extracted.
+    const notice = supervisionNotice(
+      sig.supervisorName
+        ? {
+            kind: 'SUPERVISED',
+            supervisorName: sig.supervisorName,
+            supervisorLicense: sig.supervisorLicense,
+          }
+        : needsSupervision(sig.signerRole as ReleasingRole)
+          ? { kind: 'UNSUPERVISED' }
+          : { kind: 'SELF' },
+    );
+    if (notice) {
+      // An unsupervised release is stated in red, the same decision as an
+      // expired Licence to Operate. A document that quietly omits it reads
+      // as compliance.
+      if (sig.supervisorName) doc.text(notice);
+      else doc.fillColor('#b00020').text(notice).fillColor('#000');
+    }
     doc.text(`Signed ${formatDateTime(sig.signedAt)}`);
     doc.fontSize(9);
   }
