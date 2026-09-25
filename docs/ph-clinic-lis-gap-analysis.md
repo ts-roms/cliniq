@@ -861,7 +861,22 @@ Minimum viable set: `QCMaterial`, `QCLot` (level, target mean, target SD, expiry
 
 Levey-Jennings is a **chart over `QCRun` rows** — build the data model first, the chart is a UI concern. Westgard rules (1₃ₛ, 2₂ₛ, R₄ₛ, 4₁ₛ, 10ₓ) should be a pure evaluator function in `libs/` with unit tests, not scattered in a service.
 
-## 6.13 Equipment & reagents — 🔴
+## 6.13 Equipment & reagents — ✅ BUILT (was 🔴)
+
+> **Status: built** (`20260925120000_lis_equipment_reagents`). `Equipment` (with calibration interval and status), `Calibration` (append-only) and `ReagentLot`, plus the traceability columns this section asked for: `LabOrderItem.equipmentId` and `.reagentLotId`, recorded at result entry.
+>
+> **The recall query works** — `GET /api/lis/reagent-lots/:id/results` returns every result a lot produced, with the order number and patient. That is what this section meant by "that traceability is the whole point", and it is what turns a recall from an unanswerable question into a query.
+>
+> This section was right that inventory is the wrong model, and the reason is sharper than storage temperature: **a reagent has two clocks and the earlier one wins.** The manufacturer's printed expiry on the sealed vial, and a much shorter in-use stability that starts when it is opened. A lot three months from its printed date can be unusable because it was opened four weeks ago, and FEFO consumption has no way to express that.
+>
+> Two decisions worth review:
+>
+> - **An expired reagent refuses the result; an overdue calibration only warns.** Deliberate asymmetry. An expired reagent produces a number that means nothing; an overdue calibration produces one that is probably fine and possibly drifting. Blocking the second would leave a laboratory unable to report anything the morning a service visit slips, which is how people learn to work around a system rather than with it.
+> - **The foreign keys are `RESTRICT`, not Prisma's default `SET NULL`.** Deleting an instrument or a lot must not quietly sever the link to the results it produced — that link is the entire reason these tables exist. `prisma migrate diff` caught the mismatch between the migration and the schema, and an e2e asserts the delete actually fails.
+>
+> A laboratory that records none of this is unaffected: fitness returns ok with no warnings when nothing is on file.
+>
+> **Still open: `EquipmentMaintenance`** (service visits as distinct from calibration), and storage-condition monitoring.
 
 Neither exists. `InventoryItem`/`StockBatch`/`StockMovement` are clinic supplies (FEFO consumption) and are **not** a fit for reagents: no storage temperature, no open-vial expiry, no QC status per lot, no applicable-tests link. Build `Equipment` + `EquipmentMaintenance` + `Calibration`, and `Reagent` + `ReagentLot` separately; link `LabResult.equipmentId` and `LabResult.reagentLotId` so a recalled lot can be traced to every result it produced. That traceability is the whole point.
 
@@ -1833,24 +1848,25 @@ QC/QA suite and EQAP records (first release after MVP — licensing depends on i
 
 Every row below was verified against the source, not inferred from a commit message: the migration, guard, spec or module named was confirmed to exist on `main`. Everything listed here is merged.
 
-| Finding                                        | State            | Landed in                                                                                       |
-| ---------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| P0-1 portal BOLA                               | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
-| P0-2 critical thresholds                       | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
-| P0-2 result verification chain                 | fixed            | `20260924220000_lis_result_verification`                                                        |
-| P0-3 critical-result handling                  | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
-| P0-4 consultation amendments                   | fixed            | `20260924090000_consultation_amendments`                                                        |
-| P0-5 DOH-licensable laboratory                 | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
-| P0-6 `push_tokens` RLS                         | fixed            | `20260924100000_push_tokens_rls`                                                                |
-| P0-7 file download path                        | fixed            | `20260924140000_file_patient_ownership`                                                         |
-| Audit log append-only **in CI**                | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
-| Dental-lab rename                              | mostly done      | see §29 #11                                                                                     |
-| Test catalogue                                 | built            | `20260924180000_lis_test_catalogue`                                                             |
-| Specimens + accession                          | built            | `20260924200000_lis_specimens`                                                                  |
-| Result verification + history                  | built            | `20260924220000_lis_result_verification`                                                        |
-| Signed reports + PDF + portal access           | built            | `20260924240000_lis_lab_reports`                                                                |
-| Laboratory LTO profile + service capability    | built            | `20260924300000_lis_laboratory_licence`                                                         |
-| Referral laboratories + capability enforcement | built            | `20260924320000_lis_referral_labs` — referred tests stated on the report; MOA file still open   |
+| Finding                                             | State            | Landed in                                                                                       |
+| --------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| P0-1 portal BOLA                                    | fixed            | `PORTAL_READ` + `PortalScopeGuard` + `portal-boundary.spec.ts`                                  |
+| P0-2 critical thresholds                            | fixed            | `20260923180000_critical_value_rules`, `apps/api/src/labs/flagging.ts`                          |
+| P0-2 result verification chain                      | fixed            | `20260924220000_lis_result_verification`                                                        |
+| P0-3 critical-result handling                       | fixed            | `20260924120000_critical_result_notifications` (+ `20260924160000_critical_rule_notify_window`) |
+| P0-4 consultation amendments                        | fixed            | `20260924090000_consultation_amendments`                                                        |
+| P0-5 DOH-licensable laboratory                      | partially closed | catalogue, specimens, verification chain; QC, equipment, licence profile, reports still open    |
+| P0-6 `push_tokens` RLS                              | fixed            | `20260924100000_push_tokens_rls`                                                                |
+| P0-7 file download path                             | fixed            | `20260924140000_file_patient_ownership`                                                         |
+| Audit log append-only **in CI**                     | fixed            | `.github/workflows/ci.yml` — replay migration `REVOKE`s after the blanket grant                 |
+| Dental-lab rename                                   | mostly done      | see §29 #11                                                                                     |
+| Test catalogue                                      | built            | `20260924180000_lis_test_catalogue`                                                             |
+| Specimens + accession                               | built            | `20260924200000_lis_specimens`                                                                  |
+| Result verification + history                       | built            | `20260924220000_lis_result_verification`                                                        |
+| Signed reports + PDF + portal access                | built            | `20260924240000_lis_lab_reports`                                                                |
+| Laboratory LTO profile + service capability         | built            | `20260924300000_lis_laboratory_licence`                                                         |
+| Referral laboratories + capability enforcement      | built            | `20260924320000_lis_referral_labs` — referred tests stated on the report; MOA file still open   |
+| Equipment, calibration, reagent lots + recall trace | built            | `20260925120000_lis_equipment_reagents` — maintenance records still open                        |
 
 ## Three things this exercise taught that are worth keeping
 

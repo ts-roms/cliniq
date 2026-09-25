@@ -2806,6 +2806,121 @@ model LabReferral {
   @@map("lab_referrals")
 }
 
+enum EquipmentStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+/// An analyser or other instrument that produces results.
+///
+/// Separate from `InventoryItem`: that models clinic consumables with FEFO
+/// consumption, and an analyser is not consumed. What matters here is
+/// whether the instrument was fit to produce a given result, and which
+/// results it produced — see the traceability columns on `LabOrderItem`.
+model Equipment {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  manufacturer String?
+  model        String?
+  serialNumber String?
+  location     String?
+
+  status EquipmentStatus @default(ACTIVE)
+
+  /// How often this instrument must be calibrated. Null means the
+  /// laboratory has not set one, which is reported as "no interval" rather
+  /// than "never due" — treating unset as compliant is how an instrument
+  /// goes two years without calibration and nothing says so.
+  calibrationIntervalDays Int?
+
+  commissionedOn DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  calibrations Calibration[]
+  reagentLots  ReagentLot[]
+  results      LabOrderItem[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+  @@map("equipment")
+}
+
+/// A calibration event.
+///
+/// Append-only: a calibration is evidence the instrument was adjusted to a
+/// known standard on a given day. The next one supersedes it in relevance,
+/// never in the record.
+model Calibration {
+  id       String @id @default(cuid())
+  tenantId String
+
+  equipmentId String
+  /// Null for a whole-instrument calibration; set when only one analyte was
+  /// recalibrated, which is the common case on a chemistry analyser.
+  testId String?
+
+  calibratedAt   DateTime @default(now())
+  performedById  String
+  /// The calibrator material and its lot, as used.
+  calibratorLot  String?
+  passed         Boolean  @default(true)
+  notes          String?
+
+  createdAt DateTime @default(now())
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, equipmentId, calibratedAt])
+  @@index([tenantId, equipmentId, testId, calibratedAt])
+  @@map("calibrations")
+}
+
+/// A lot of diagnostic reagent.
+///
+/// Deliberately NOT `StockBatch`. A reagent has two clocks and the earlier
+/// one wins: the manufacturer's printed expiry on the unopened vial, and a
+/// much shorter in-use stability that starts when it is opened. A lot three
+/// months from its printed date can be unusable because it was opened four
+/// weeks ago, and inventory has no way to say that.
+model ReagentLot {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  lotNumber    String
+  manufacturer String?
+
+  expiresOn DateTime?
+  /// When the vial was first opened. Null while sealed — the in-use clock
+  /// starts on opening, not on receipt.
+  openedOn DateTime?
+  /// Days usable once opened.
+  openStabilityDays Int?
+
+  receivedOn DateTime?
+  /// Which instrument it is loaded on, when it is dedicated to one.
+  equipmentId String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  equipment Equipment?     @relation(fields: [equipmentId], references: [id])
+  results   LabOrderItem[]
+
+  @@unique([tenantId, name, lotNumber])
+  @@index([tenantId, isActive, expiresOn])
+  @@map("reagent_lots")
+}
+
 enum LabResultType {
   NUMERIC
   TEXT
@@ -3283,16 +3398,35 @@ model LabOrderItem {
   /// split between them.
   specimenId String?
 
+  /// What produced this result. Recorded at entry, nullable because a
+  /// laboratory that has not catalogued its instruments must not be blocked
+  /// from reporting, and because a referred-in result was produced
+  /// elsewhere entirely.
+  ///
+  /// This pair is the point of §6.13: when a reagent lot is recalled, these
+  /// columns are what turn "which results are affected" from an
+  /// unanswerable question into a query.
+  equipmentId  String?
+  reagentLotId String?
+
   order    LabOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   test     LaboratoryTest? @relation(fields: [testId], references: [id])
-  specimen Specimen?      @relation(fields: [specimenId], references: [id])
-  versions LabResultVersion[]
-  referral LabReferral?
+  specimen   Specimen?          @relation(fields: [specimenId], references: [id])
+  /// Restrict, not the default SetNull: deleting an instrument or a lot must
+  /// not quietly sever the link from the results it produced. That link is
+  /// the entire reason these tables exist.
+  equipment  Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  reagentLot ReagentLot? @relation(fields: [reagentLotId], references: [id], onDelete: Restrict)
+  versions   LabResultVersion[]
+  referral   LabReferral?
 
   @@index([tenantId, orderId])
   @@index([tenantId, testId])
   @@index([tenantId, specimenId])
   @@index([tenantId, resultStatus])
+  /// The recall query: every result a given lot produced.
+  @@index([tenantId, reagentLotId])
+  @@index([tenantId, equipmentId])
   @@map("lab_order_items")
 }
 

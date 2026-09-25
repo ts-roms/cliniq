@@ -5290,6 +5290,169 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/equipment": {
+      "get": {
+        "operationId": "EquipmentController_listEquipment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "put": {
+        "operationId": "EquipmentController_upsertEquipment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertEquipmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/equipment/calibrations": {
+      "post": {
+        "operationId": "EquipmentController_recordCalibration",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCalibrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/equipment/{id}/calibrations": {
+      "get": {
+        "operationId": "EquipmentController_listCalibrations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/reagent-lots": {
+      "get": {
+        "operationId": "EquipmentController_listReagentLots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "put": {
+        "operationId": "EquipmentController_upsertReagentLot",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertReagentLotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/reagent-lots/{id}/results": {
+      "get": {
+        "operationId": "EquipmentController_resultsFromLot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/tele/sessions": {
       "post": {
         "operationId": "TeleController_create",
@@ -12087,6 +12250,12 @@
           },
           "comment": {
             "type": "string"
+          },
+          "equipmentId": {
+            "type": "string"
+          },
+          "reagentLotId": {
+            "type": "string"
           }
         },
         "required": ["resultValue"]
@@ -12592,6 +12761,116 @@
             "type": "string"
           }
         }
+      },
+      "EquipmentStatus": {
+        "type": "string",
+        "enum": ["ACTIVE", "MAINTENANCE", "RETIRED"]
+      },
+      "UpsertEquipmentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EquipmentStatus"
+              }
+            ]
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "calibrationIntervalDays": {
+            "type": "number",
+            "description": "How often calibration is due. Omit when the laboratory has not set one — that is reported as \"no interval\", not as compliant."
+          },
+          "commissionedOn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["name", "status"]
+      },
+      "RecordCalibrationDto": {
+        "type": "object",
+        "properties": {
+          "equipmentId": {
+            "type": "string"
+          },
+          "testId": {
+            "type": "string",
+            "description": "Set when only one analyte was recalibrated, which is the common case on a chemistry analyser. Omit for a whole-instrument calibration."
+          },
+          "calibratedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Defaults to now."
+          },
+          "calibratorLot": {
+            "type": "string",
+            "description": "The calibrator material and its lot."
+          },
+          "passed": {
+            "type": "boolean",
+            "default": true
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": ["equipmentId"]
+      },
+      "UpsertReagentLotDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "lotNumber": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "expiresOn": {
+            "format": "date-time",
+            "type": "string",
+            "description": "The manufacturer's printed expiry."
+          },
+          "openedOn": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the vial was first opened. The in-use clock starts here."
+          },
+          "openStabilityDays": {
+            "type": "number",
+            "description": "Days usable once opened."
+          },
+          "receivedOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "equipmentId": {
+            "type": "string",
+            "description": "The instrument it is loaded on."
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": ["name", "lotNumber"]
       },
       "CreateSessionDto": {
         "type": "object",
