@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { auditChanges } from '../audit/audit-trail.js';
 import { PrismaService, type InputJsonValue } from '@org/db';
 import {
   resolveClinicModules,
@@ -111,6 +112,11 @@ export class SettingsService {
           : {}),
       };
 
+      // Diffed one level down, against the merged result rather than the
+      // DTO: settings is a single JSON column, so diffing the column would
+      // record the whole blob as one change on every edit and say nothing
+      // about which switch moved.
+      auditChanges(prev, next);
       return tx.tenant.update({
         where: { id: user.tenantId },
         data: { settings: next as InputJsonValue },

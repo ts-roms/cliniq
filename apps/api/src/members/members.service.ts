@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { auditChanges } from '../audit/audit-trail.js';
 import { ConfigService } from '@nestjs/config';
 import { MemberStatus, PrismaService, Role, type PrismaClient } from '@org/db';
 import { generateOpaqueToken, hashToken } from '@org/auth';
@@ -103,6 +104,10 @@ export class MembersService {
         const target = await this.loadStaffMember(tx, memberId, actor);
         this.assertCanTouch(target.role, actor);
         if (target.role === dto.role) return target;
+        // Who may act in this clinic is the change an audit most often has to
+        // answer for, and the previous role is the part that is otherwise
+        // unrecoverable once it is overwritten.
+        auditChanges({ role: target.role }, { role: dto.role });
         if (target.role === Role.OWNER && dto.role !== Role.OWNER) {
           await this.assertNotLastOwner(tx, actor.tenantId, target.id);
         }

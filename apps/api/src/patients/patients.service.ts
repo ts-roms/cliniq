@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { auditChanges } from '../audit/audit-trail.js';
 import { PrismaService } from '@org/db';
 import { ClinicModules, type ClinicModule } from '@org/shared-types';
 import type { CreatePatientDto } from './dto/create-patient.dto.js';
@@ -139,9 +140,10 @@ export class PatientsService {
 
   async update(id: string, dto: UpdatePatientDto, user: AuthenticatedUser) {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      // The whole row, not just the mrn: the audit trail records what
+      // changed, and it can only do that against what was there before.
       const existing = await tx.patient.findFirst({
         where: { id, deletedAt: null },
-        select: { id: true, mrn: true },
       });
       if (!existing) throw new NotFoundException(`Patient ${id} not found`);
 
@@ -157,6 +159,9 @@ export class PatientsService {
         }
       }
 
+      // Against the DTO rather than the row read back, so the trail records
+      // what the request asked for and not every column the write touched.
+      auditChanges(existing, dto as Record<string, unknown>);
       return tx.patient.update({ where: { id }, data: dto });
     });
   }

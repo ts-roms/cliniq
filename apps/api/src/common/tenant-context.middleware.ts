@@ -44,7 +44,10 @@ export class TenantContextMiddleware implements NestMiddleware {
         : randomUUID();
     res.setHeader('x-request-id', requestId);
 
-    TenantContext.run({ tenantId, userId, requestId }, () => next());
+    TenantContext.run(
+      { tenantId, userId, requestId, changes: [], changeReason: null },
+      () => next(),
+    );
   }
 
   private async resolveTenantId(req: Request): Promise<string | null> {
@@ -109,10 +112,33 @@ function extractAccessTokenForContext(req: Request): string | null {
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 
+/**
+ * One field a service changed during this request.
+ *
+ * Declared here rather than imported from the audit module so that common/
+ * does not depend on a feature module; `FieldChange` in
+ * ../audit/changes.ts is structurally identical, so either side assigns to
+ * the other without a cast.
+ */
+export interface AuditedChange {
+  field: string;
+  before: unknown;
+  after: unknown;
+}
+
 export interface RequestContext {
   tenantId: string | null;
   userId: string | null;
   requestId: string | null;
+  /**
+   * Appended by services as they mutate things, drained by AuditInterceptor
+   * when the request succeeds. Lives on the request context rather than being
+   * threaded through service signatures, because the alternative is a
+   * parameter on every mutating method in the application.
+   */
+  changes?: AuditedChange[];
+  /** The stated reason for those changes, where the request carried one. */
+  changeReason?: string | null;
 }
 
 class TenantContextImpl {
@@ -136,6 +162,44 @@ class TenantContextImpl {
 
   requestId(): string | null {
     return this.als.getStore()?.requestId ?? null;
+  }
+
+  /**
+   * Record what a service just changed, for the audit interceptor to pick up.
+   *
+   * Reads the store directly rather than going through `current()`, which
+   * returns a fresh object when there is none — pushing into that would
+   * silently discard the changes. Outside a request (background jobs, tests
+   * calling a service directly) this is a no-op, which is the right
+   * behaviour: there is no audit row to attach them to.
+   */
+  addChanges(changes: readonly AuditedChange[], reason?: string | null): void {
+    const store = this.als.getStore();
+    if (!store || changes.length === 0) {
+      // A reason with no changes is not worth an entry, but a reason given
+      // alongside changes recorded by an earlier call in the same request is.
+      if (store && reason) store.changeReason = reason;
+      return;
+    }
+    (store.changes ??= []).push(...changes);
+    if (reason) store.changeReason = reason;
+  }
+
+  /**
+   * Take everything recorded so far and clear it.
+   *
+   * Cleared on read so that a second audited action in the same request —
+   * an interceptor firing for a nested call — cannot inherit the first one's
+   * changes and report them twice.
+   */
+  drainChanges(): { changes: AuditedChange[]; reason: string | null } {
+    const store = this.als.getStore();
+    if (!store) return { changes: [], reason: null };
+    const changes = store.changes ?? [];
+    const reason = store.changeReason ?? null;
+    store.changes = [];
+    store.changeReason = null;
+    return { changes, reason };
   }
 }
 

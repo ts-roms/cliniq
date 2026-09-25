@@ -1510,12 +1510,28 @@ model AuditLog {
   ip               String?
   userAgent        String?
   metadata         Json?
+
+  /// What changed, as [{field, before, after}]. Built by
+  /// apps/api/src/audit/changes.ts, which redacts values by field name before
+  /// they reach here — the row cannot be edited afterwards, so anything
+  /// written in error stays written. Null when the action changed nothing
+  /// (a read, a login) or when the diff found no differences.
+  changes          Json?
+  /// The stated reason, where the domain already requires one: amendments and
+  /// corrections. Lifted onto the trail so a reader does not have to go and
+  /// find the domain record to learn why.
+  reason           String?
+
   occurredAt       DateTime @default(now())
 
   @@index([tenantId, occurredAt])
   @@index([entityType, entityId])
   @@index([action])
   @@index([onBehalfOfUserId])
+  /// The rows that carry change detail at all — what an export or a review
+  /// queue scans for. Partial in the migration: most audit rows are reads and
+  /// logins that change nothing.
+  @@index([tenantId, occurredAt], map: "audit_logs_with_changes_idx")
   @@map("audit_logs")
 }
 

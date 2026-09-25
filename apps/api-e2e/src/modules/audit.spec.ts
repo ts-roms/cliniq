@@ -4,7 +4,7 @@
  * The audit interceptor logs every mutating action automatically, so we
  * trigger a few writes and then read them back.
  */
-import { bootEnv, type E2EEnv } from '../support/harness';
+import { bootEnv, type E2EEnv, type E2EClient } from '../support/harness';
 
 describe('@org/api-e2e audit module', () => {
   let env: E2EEnv;
@@ -16,6 +16,32 @@ describe('@org/api-e2e audit module', () => {
   afterAll(async () => {
     await env?.cleanup();
   });
+
+  /**
+   * Re-read until the audit row appears.
+   *
+   * AuditService writes fire-and-forget, so that an audit failure can never
+   * break the request it describes — which means the response can arrive
+   * before the row exists. These tests asserted immediately and passed on the
+   * assumption that the next HTTP round trip was slower than the insert; under
+   * a busy serial run it is not, and the suite failed on timing rather than on
+   * behaviour.
+   */
+  async function auditUntil(
+    client: E2EClient,
+    query: string,
+    predicate: (items: Array<{ action: string }>) => boolean,
+  ) {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const res = await client.axios.get(query);
+      expect(res.status).toBe(200);
+      if (Array.isArray(res.data.items) && predicate(res.data.items)) {
+        return res;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    throw new Error(`audit rows never arrived for ${query}`);
+  }
 
   describe('happy path', () => {
     it('OWNER can list audit entries (paginated)', async () => {
@@ -30,8 +56,11 @@ describe('@org/api-e2e audit module', () => {
         sex: 'MALE',
       });
 
-      const res = await client.axios.get('/api/audit');
-      expect(res.status).toBe(200);
+      const res = await auditUntil(
+        client,
+        '/api/audit',
+        (items) => items.length > 0,
+      );
       expect(Array.isArray(res.data.items)).toBe(true);
       expect(res.data.items.length).toBeGreaterThan(0);
       // Pagination envelope.
@@ -51,8 +80,11 @@ describe('@org/api-e2e audit module', () => {
         sex: 'MALE',
       });
 
-      const res = await client.axios.get('/api/audit?action=patient');
-      expect(res.status).toBe(200);
+      const res = await auditUntil(
+        client,
+        '/api/audit?action=patient',
+        (items) => items.length > 0,
+      );
       expect(
         res.data.items.every((it: { action: string }) =>
           it.action.startsWith('patient'),

@@ -15,6 +15,7 @@ import {
   type PrismaClient,
 } from '@org/db';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
+import { auditChanges } from '../audit/audit-trail.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { LaboratoryService } from './laboratory.service.js';
 import { EquipmentService } from './equipment.service.js';
@@ -671,6 +672,19 @@ export class LabsService {
       const flag = dto.abnormalFlag ?? resolution.flag;
       const now = new Date();
       const previousValue = item.resultValue;
+
+      // A correction is the change a chart reader most needs explained, and
+      // the reason is already mandatory here. Lifting both onto the audit row
+      // means the trail answers "what was it before, and why" without having
+      // to join the version history.
+      auditChanges(
+        { resultValue: previousValue, resultUnit: item.resultUnit },
+        {
+          resultValue: dto.resultValue,
+          resultUnit: dto.resultUnit ?? item.resultUnit,
+        },
+        dto.reason,
+      );
 
       const updated = await tx.labOrderItem.update({
         where: { id: itemId },
