@@ -15,6 +15,8 @@ import { LaboratoryController } from './laboratory.controller.js';
 import { LaboratoryService } from './laboratory.service.js';
 import { ReferralController } from './referral.controller.js';
 import { ReferralService } from './referral.service.js';
+import { EqapController } from './eqap.controller.js';
+import { EqapService } from './eqap.service.js';
 import { EquipmentController } from './equipment.controller.js';
 import { EquipmentService } from './equipment.service.js';
 
@@ -28,6 +30,7 @@ import { EquipmentService } from './equipment.service.js';
     ReportsController,
     LaboratoryController,
     ReferralController,
+    EqapController,
     EquipmentController,
   ],
   providers: [
@@ -39,6 +42,7 @@ import { EquipmentService } from './equipment.service.js';
     ReportsService,
     LaboratoryService,
     ReferralService,
+    EqapService,
     EquipmentService,
   ],
   exports: [LabsService, ReportsService],
