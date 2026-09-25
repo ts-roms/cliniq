@@ -17,6 +17,7 @@ import {
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { LaboratoryService } from './laboratory.service.js';
+import { EquipmentService } from './equipment.service.js';
 import { ReferralService } from './referral.service.js';
 import { readReferralPolicy, routeTest } from './referral.js';
 import type {
@@ -59,6 +60,7 @@ export class LabsService {
     private readonly notif: NotificationsService,
     private readonly laboratory: LaboratoryService,
     private readonly referrals: ReferralService,
+    private readonly equipment: EquipmentService,
   ) {}
 
   // ── Orders ─────────────────────────────────────────
@@ -367,6 +369,20 @@ export class LabsService {
         );
       }
 
+      // Is the instrument and lot fit to produce this result? Refuses on
+      // things that make the number meaningless — an expired reagent, a lot
+      // past its in-use stability, equipment out of service — and warns on
+      // things worth knowing that do not invalidate it, such as an overdue
+      // calibration. Returns ok with no warnings when nothing is recorded,
+      // so a laboratory that has not catalogued its instruments is
+      // unaffected.
+      const fitness = await this.equipment.checkFitness(
+        tx,
+        dto.equipmentId ?? null,
+        dto.reagentLotId ?? null,
+      );
+      if (!fitness.ok) throw new BadRequestException(fitness.reason);
+
       const policy = await this.verificationPolicy(tx, user.tenantId);
 
       // An explicitly-supplied flag still needs limits resolved, because a
@@ -399,6 +415,12 @@ export class LabsService {
           // With verification off, entering a result also releases it. Both
           // stamps name the same person, which is the honest record of what
           // happened rather than a blank where the releaser should be.
+          // Traceability: what produced this result. §6.13's whole point —
+          // when a lot is recalled these columns answer "which results are
+          // affected". `?? undefined` so re-recording without them does not
+          // erase a link established earlier.
+          equipmentId: dto.equipmentId ?? undefined,
+          reagentLotId: dto.reagentLotId ?? undefined,
           verifiedById: isReleased(status) ? user.userId : null,
           verifiedAt: isReleased(status) ? now : null,
           // Only a released result has been reported to anyone.
@@ -505,7 +527,7 @@ export class LabsService {
           });
         }
       }
-      return updatedItem;
+      return { ...updatedItem, warnings: fitness.warnings };
     });
   }
 
