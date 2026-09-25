@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   PatientContactCard,
@@ -28,10 +28,17 @@ import { ObCard, UltrasoundCard } from '@/features/ob';
 import { useCan } from '@/features/auth';
 import {
   ModuleSection,
+  PatientServicesBar,
   useEnabledModules,
   usePatientModuleData,
 } from '@/features/settings';
-import { Actions, ClinicModules } from '@org/shared-types';
+import {
+  Actions,
+  ClinicModules,
+  isClinicModule,
+  resolvePatientModules,
+  type ClinicModule,
+} from '@org/shared-types';
 
 export default function PatientDetailPage({
   params,
@@ -47,16 +54,86 @@ export default function PatientDetailPage({
   const canReadConsults = can(Actions.CONSULT_READ);
   const canReadBilling = can(Actions.BILLING_READ);
 
-  // What this clinic practises, and what this patient actually has on file.
-  // A module that is off still renders when the patient has records in it.
-  const { modules } = useEnabledModules();
-  const moduleData = usePatientModuleData(id);
-  const shows = (m: (typeof ClinicModules)[keyof typeof ClinicModules]) => ({
-    enabled: modules.includes(m),
-    hasData: moduleData.data?.[m] === true,
-  });
-
   const patient = usePatient(id);
+
+  // What this clinic practises, what this patient has on file, and who the
+  // patient is decide which specialty cards open. Anything with records always
+  // renders (flagged if the clinic has since switched it off); empty modules
+  // open only when they are the clinic's specialty or the clinician opens
+  // them from the Add-a-service bar. See resolvePatientModules.
+  const {
+    modules,
+    clinicType,
+    isLoading: modulesLoading,
+  } = useEnabledModules();
+  const moduleData = usePatientModuleData(id);
+  const [opened, setOpened] = useState<ClinicModule[]>([]);
+  const [scrollTo, setScrollTo] = useState<ClinicModule | null>(null);
+
+  const decisions = useMemo(() => {
+    if (!patient.data) return null;
+    return resolvePatientModules({
+      enabled: modules,
+      // If we cannot tell what is on file, open everything the clinic offers
+      // rather than risk folding real history away.
+      hasData: moduleData.isError
+        ? Object.fromEntries(modules.map((m) => [m, true]))
+        : (moduleData.data ?? {}),
+      patient: patient.data,
+      clinicType,
+      opened,
+    });
+  }, [
+    patient.data,
+    modules,
+    clinicType,
+    moduleData.data,
+    moduleData.isError,
+    opened,
+  ]);
+
+  const open = useCallback((m: ClinicModule) => {
+    setOpened((prev) => (prev.includes(m) ? prev : [...prev, m]));
+    setScrollTo(m);
+  }, []);
+
+  // The consult's Visit focus panel links to /patients/:id#module-<m>. The
+  // target may be folded into the Add-a-service bar, so open it first.
+  useEffect(() => {
+    const fromHash = () => {
+      const m = window.location.hash.replace(/^#module-/, '');
+      if (isClinicModule(m)) open(m);
+    };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+    return () => window.removeEventListener('hashchange', fromHash);
+  }, [open]);
+
+  useEffect(() => {
+    if (!scrollTo) return;
+    const el = document.getElementById(`module-${scrollTo}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setScrollTo(null);
+  }, [scrollTo, decisions]);
+
+  const section = (m: ClinicModule, card: React.ReactNode) => {
+    const d = decisions?.find((x) => x.module === m);
+    if (!d || (d.placement !== 'shown' && d.placement !== 'out_of_scope')) {
+      return null;
+    }
+    return (
+      <ModuleSection
+        module={m}
+        enabled={d.placement === 'shown'}
+        hasData={d.placement === 'out_of_scope'}
+      >
+        {card}
+      </ModuleSection>
+    );
+  };
+  const servicesLoading = modulesLoading || moduleData.isLoading;
+
   const consults = useConsultationsForPatient(id, {
     enabled: canReadConsults,
   });
@@ -107,33 +184,47 @@ export default function PatientDetailPage({
         <AllergiesCard patientId={patient.data.id} />
         <MedicationsCard patientId={patient.data.id} />
         <ConditionsCard patientId={patient.data.id} />
-        <ModuleSection module={ClinicModules.HMO} {...shows(ClinicModules.HMO)}>
-          <HmoCardsCard patientId={patient.data.id} />
-        </ModuleSection>
+        {!servicesLoading &&
+          section(
+            ClinicModules.HMO,
+            <HmoCardsCard patientId={patient.data.id} />,
+          )}
       </div>
+      {servicesLoading ? (
+        <p
+          className="text-sm text-muted-foreground"
+          data-test="patient-services-loading"
+        >
+          Loading services…
+        </p>
+      ) : (
+        decisions && (
+          <PatientServicesBar
+            decisions={decisions}
+            enabled={modules}
+            onOpen={open}
+          />
+        )
+      )}
       <div className="space-y-6">
         <PrescriptionsCard patientId={patient.data.id} />
-        <ModuleSection
-          module={ClinicModules.LAB_ORDERS}
-          {...shows(ClinicModules.LAB_ORDERS)}
-        >
-          <LabOrdersCard patientId={patient.data.id} />
-        </ModuleSection>
-        <ModuleSection
-          module={ClinicModules.DENTAL}
-          {...shows(ClinicModules.DENTAL)}
-        >
-          <DentalChartCard patientId={patient.data.id} />
-        </ModuleSection>
-        <ModuleSection module={ClinicModules.OB} {...shows(ClinicModules.OB)}>
-          <ObCard patientId={patient.data.id} />
-        </ModuleSection>
-        <ModuleSection
-          module={ClinicModules.ULTRASOUND}
-          {...shows(ClinicModules.ULTRASOUND)}
-        >
-          <UltrasoundCard patientId={patient.data.id} />
-        </ModuleSection>
+        {!servicesLoading && (
+          <>
+            {section(
+              ClinicModules.LAB_ORDERS,
+              <LabOrdersCard patientId={patient.data.id} />,
+            )}
+            {section(
+              ClinicModules.DENTAL,
+              <DentalChartCard patientId={patient.data.id} />,
+            )}
+            {section(ClinicModules.OB, <ObCard patientId={patient.data.id} />)}
+            {section(
+              ClinicModules.ULTRASOUND,
+              <UltrasoundCard patientId={patient.data.id} />,
+            )}
+          </>
+        )}
         {canReadBilling && <InvoicesCard patientId={patient.data.id} />}
       </div>
     </div>

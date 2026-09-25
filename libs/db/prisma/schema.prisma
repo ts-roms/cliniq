@@ -2715,6 +2715,125 @@ model LabServiceCapability {
   @@map("lab_service_capabilities")
 }
 
+/// Which control level a material represents.
+enum QcLevel {
+  LOW
+  NORMAL
+  HIGH
+}
+
+/// The outcome of evaluating a control run against the Westgard multirules.
+enum QcOutcome {
+  ACCEPTED
+  WARNING
+  REJECTED
+}
+
+/// A quality-control material — a specimen of known concentration run
+/// alongside patients to show the analytical process is in control.
+///
+/// Lot matters: control material is manufactured in batches and the target
+/// mean shifts between them, so a lot change means re-establishing targets
+/// rather than carrying the old ones forward. Keeping the lot here rather
+/// than as free text is what makes that enforceable.
+model QcMaterial {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  level        QcLevel
+  lotNumber    String
+  manufacturer String?
+  expiresOn    DateTime?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  targets QcTarget[]
+  runs    QcRun[]
+
+  @@unique([tenantId, name, lotNumber])
+  @@index([tenantId, isActive])
+  @@map("qc_materials")
+}
+
+/// The established mean and SD for one material on one test.
+///
+/// Per (material, test) because the same control vial is run for several
+/// analytes and each has its own target. The window exists because targets
+/// are re-established periodically — after a lot change, a recalibration, or
+/// a method change — and a run must be judged against the target that was in
+/// force when it happened, not the one in force now.
+model QcTarget {
+  id       String @id @default(cuid())
+  tenantId String
+
+  materialId String
+  testId     String
+
+  mean Float
+  sd   Float
+  unit String?
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  material QcMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, materialId, testId, effectiveFrom])
+  @@map("qc_targets")
+}
+
+/// One control result, with the rules that were applied to it.
+///
+/// The z-score, the outcome and the violated rules are STORED rather than
+/// recomputed on read. A run is judged against the target in force at the
+/// time; recomputing later — after a lot change or a re-established mean —
+/// would silently rewrite history, and the Levey-Jennings chart an inspector
+/// asks for is a chart of what was decided then.
+model QcRun {
+  id       String @id @default(cuid())
+  tenantId String
+
+  materialId String
+  testId     String
+
+  value Float
+  /// Standard deviations from the target mean, signed.
+  z Float
+  /// The target this was judged against, snapshotted — the row can be
+  /// superseded, and the judgement has to remain explicable.
+  targetMean Float
+  targetSd   Float
+
+  outcome QcOutcome
+  /// Rule codes that fired: 1-3s, 2-2s, R-4s, 4-1s, 10x.
+  violations String[]
+
+  /// What was done about a rejected run. Required before the run can be
+  /// accepted over, which is the part an inspection actually looks for.
+  correctiveAction String?
+
+  runAt         DateTime @default(now())
+  performedById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  material QcMaterial @relation(fields: [materialId], references: [id])
+
+  @@index([tenantId, testId, runAt])
+  @@index([tenantId, materialId, testId, runAt])
+  @@index([tenantId, outcome, runAt])
+  @@map("qc_runs")
+}
+
 /// A laboratory this clinic sends work to.
 ///
 /// AO 2021-0037 permits referral only to a **licensed** laboratory, so the
@@ -2804,6 +2923,234 @@ model LabReferral {
   @@index([tenantId, status, sentAt])
   @@index([tenantId, referralLaboratoryId])
   @@map("lab_referrals")
+}
+/// An external quality assessment scheme operator.
+///
+/// The NRL programmes, RIQAS, CAP and so on. Kept as a record rather than
+/// free text on the enrolment because a laboratory typically participates
+/// in several and an inspector asks which.
+model EqapProvider {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name          String
+  contactPerson String?
+  email         String?
+  website       String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  enrolments EqapEnrolment[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("eqap_providers")
+}
+
+/// The laboratory's participation in one programme.
+///
+/// Scoped to a section rather than a single test: schemes are sold by
+/// discipline — a chemistry survey, a haematology survey — and enrolling per
+/// analyte would misrepresent what was actually bought.
+model EqapEnrolment {
+  id       String @id @default(cuid())
+  tenantId String
+
+  providerId      String
+  /// The scheme name as the provider calls it.
+  programme       String
+  /// The provider's enrolment or participant number. This is what an
+  /// inspector matches against the certificate on the wall.
+  enrolmentNumber String?
+
+  /// The LabSection this programme covers, when it maps to one.
+  sectionId String?
+
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  provider    EqapProvider     @relation(fields: [providerId], references: [id])
+  submissions EqapSubmission[]
+
+  @@unique([tenantId, providerId, programme])
+  @@index([tenantId, validUntil])
+  @@map("eqap_enrolments")
+}
+
+/// One survey round.
+///
+/// The provider sends an unknown specimen, the laboratory reports a value,
+/// and the provider returns how far that sat from the peer consensus as a
+/// standard deviation index. That SDI is the point: internal QC measures
+/// against the laboratory's OWN mean and cannot see a whole-laboratory bias.
+///
+/// `reportFileId` is the evidence an inspection asks for — the provider's
+/// own report, attached. Held as a FileObject with a null patientId, which
+/// makes it staff-only by construction: this is institutional evidence, not
+/// patient data.
+model EqapSubmission {
+  id       String @id @default(cuid())
+  tenantId String
+
+  enrolmentId String
+  /// The provider's identifier for this round.
+  roundRef    String
+  /// The analyte, when the round covers one. Null for a whole-panel survey.
+  testId      String?
+
+  dueOn         DateTime?
+  submittedAt   DateTime?
+  submittedById String?
+
+  /// What we reported.
+  reportedValue Float?
+  /// What the provider said the peer group reported.
+  peerMean      Float?
+  peerSd        Float?
+  /// Standard deviation index from the peer consensus. Null until scored.
+  sdi           Float?
+
+  /// The provider's report, as evidence.
+  reportFileId String?
+
+  /// What was done about an unacceptable result. Its absence against a
+  /// failure is the finding — laboratories fail surveys; not looking into it
+  /// is what an inspection objects to.
+  correctiveAction String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrolment EqapEnrolment @relation(fields: [enrolmentId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, enrolmentId, roundRef, testId])
+  @@index([tenantId, enrolmentId, dueOn])
+  @@map("eqap_submissions")
+}
+
+
+
+enum EquipmentStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+/// An analyser or other instrument that produces results.
+///
+/// Separate from `InventoryItem`: that models clinic consumables with FEFO
+/// consumption, and an analyser is not consumed. What matters here is
+/// whether the instrument was fit to produce a given result, and which
+/// results it produced — see the traceability columns on `LabOrderItem`.
+model Equipment {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  manufacturer String?
+  model        String?
+  serialNumber String?
+  location     String?
+
+  status EquipmentStatus @default(ACTIVE)
+
+  /// How often this instrument must be calibrated. Null means the
+  /// laboratory has not set one, which is reported as "no interval" rather
+  /// than "never due" — treating unset as compliant is how an instrument
+  /// goes two years without calibration and nothing says so.
+  calibrationIntervalDays Int?
+
+  commissionedOn DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  calibrations Calibration[]
+  reagentLots  ReagentLot[]
+  results      LabOrderItem[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+  @@map("equipment")
+}
+
+/// A calibration event.
+///
+/// Append-only: a calibration is evidence the instrument was adjusted to a
+/// known standard on a given day. The next one supersedes it in relevance,
+/// never in the record.
+model Calibration {
+  id       String @id @default(cuid())
+  tenantId String
+
+  equipmentId String
+  /// Null for a whole-instrument calibration; set when only one analyte was
+  /// recalibrated, which is the common case on a chemistry analyser.
+  testId String?
+
+  calibratedAt   DateTime @default(now())
+  performedById  String
+  /// The calibrator material and its lot, as used.
+  calibratorLot  String?
+  passed         Boolean  @default(true)
+  notes          String?
+
+  createdAt DateTime @default(now())
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, equipmentId, calibratedAt])
+  @@index([tenantId, equipmentId, testId, calibratedAt])
+  @@map("calibrations")
+}
+
+/// A lot of diagnostic reagent.
+///
+/// Deliberately NOT `StockBatch`. A reagent has two clocks and the earlier
+/// one wins: the manufacturer's printed expiry on the unopened vial, and a
+/// much shorter in-use stability that starts when it is opened. A lot three
+/// months from its printed date can be unusable because it was opened four
+/// weeks ago, and inventory has no way to say that.
+model ReagentLot {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name         String
+  lotNumber    String
+  manufacturer String?
+
+  expiresOn DateTime?
+  /// When the vial was first opened. Null while sealed — the in-use clock
+  /// starts on opening, not on receipt.
+  openedOn DateTime?
+  /// Days usable once opened.
+  openStabilityDays Int?
+
+  receivedOn DateTime?
+  /// Which instrument it is loaded on, when it is dedicated to one.
+  equipmentId String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  equipment Equipment?     @relation(fields: [equipmentId], references: [id])
+  results   LabOrderItem[]
+
+  @@unique([tenantId, name, lotNumber])
+  @@index([tenantId, isActive, expiresOn])
+  @@map("reagent_lots")
 }
 
 enum LabResultType {
@@ -3283,16 +3630,35 @@ model LabOrderItem {
   /// split between them.
   specimenId String?
 
+  /// What produced this result. Recorded at entry, nullable because a
+  /// laboratory that has not catalogued its instruments must not be blocked
+  /// from reporting, and because a referred-in result was produced
+  /// elsewhere entirely.
+  ///
+  /// This pair is the point of §6.13: when a reagent lot is recalled, these
+  /// columns are what turn "which results are affected" from an
+  /// unanswerable question into a query.
+  equipmentId  String?
+  reagentLotId String?
+
   order    LabOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   test     LaboratoryTest? @relation(fields: [testId], references: [id])
-  specimen Specimen?      @relation(fields: [specimenId], references: [id])
-  versions LabResultVersion[]
-  referral LabReferral?
+  specimen   Specimen?          @relation(fields: [specimenId], references: [id])
+  /// Restrict, not the default SetNull: deleting an instrument or a lot must
+  /// not quietly sever the link from the results it produced. That link is
+  /// the entire reason these tables exist.
+  equipment  Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  reagentLot ReagentLot? @relation(fields: [reagentLotId], references: [id], onDelete: Restrict)
+  versions   LabResultVersion[]
+  referral   LabReferral?
 
   @@index([tenantId, orderId])
   @@index([tenantId, testId])
   @@index([tenantId, specimenId])
   @@index([tenantId, resultStatus])
+  /// The recall query: every result a given lot produced.
+  @@index([tenantId, reagentLotId])
+  @@index([tenantId, equipmentId])
   @@map("lab_order_items")
 }
 
