@@ -26,4 +26,14 @@ export class StartConsultationDto {
   @IsOptional()
   @IsString()
   visitTypeId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The attending clinician (an active OWNER, DOCTOR or NURSE of this ' +
+      'clinic), recorded as the provider. Defaults to the caller; REQUIRED ' +
+      'when the caller cannot write consults (ADMIN).',
+  })
+  @IsOptional()
+  @IsString()
+  providerId?: string;
 }

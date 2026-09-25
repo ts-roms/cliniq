@@ -9,6 +9,7 @@ import {
 } from '@/features/patients';
 import {
   ConsultationsCard,
+  StartConsultForDialog,
   useConsultationsForPatient,
   useStartConsultation,
 } from '@/features/consultations';
@@ -168,6 +169,11 @@ export default function PatientDetailPage({
         patient={patient.data}
         onStartConsult={
           can(Actions.CONSULT_WRITE) ? () => startConsult.mutate() : undefined
+        }
+        startConsultAction={
+          can(Actions.CONSULT_START) ? (
+            <StartConsultForDialog patientId={patient.data.id} />
+          ) : undefined
         }
         isStarting={startConsult.isPending}
         serviceActions={

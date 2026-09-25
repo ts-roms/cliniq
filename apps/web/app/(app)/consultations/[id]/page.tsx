@@ -18,6 +18,8 @@ import { ConsultLabsPanel } from '@/features/labs';
 import { StartTelePanel } from '@/features/tele';
 import { VisitFocusPanel } from '@/features/visit-types';
 import { useElapsedSeconds, formatDuration } from '@/shared/hooks/use-elapsed';
+import { useCan } from '@/features/auth';
+import { Actions } from '@org/shared-types';
 
 export default function ConsultationDetailPage({
   params,
@@ -25,6 +27,8 @@ export default function ConsultationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const can = useCan();
+  const canWrite = can(Actions.CONSULT_WRITE);
 
   const consult = useConsultation(id);
   const suggestions = useSuggestions(id);
@@ -53,7 +57,11 @@ export default function ConsultationDetailPage({
   }
 
   const c = consult.data;
-  const locked = c.status === 'COMPLETED' || !!c.lockedAt;
+  const completed = c.status === 'COMPLETED' || !!c.lockedAt;
+  // A role that can open or read a consult but not write it (ADMIN starts
+  // one for a clinician) sees it view-only rather than an editor the api
+  // would 403 on every save.
+  const locked = completed || !canWrite;
 
   return (
     <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
@@ -71,6 +79,16 @@ export default function ConsultationDetailPage({
           plan: soapSectionText(c.plan),
         }}
       />
+
+      {!canWrite && !completed && (
+        <p
+          className="mt-4 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+          data-test="consult-view-only"
+        >
+          View only — the attending clinician writes and completes this
+          consultation.
+        </p>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

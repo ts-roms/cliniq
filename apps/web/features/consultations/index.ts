@@ -1,6 +1,7 @@
 export { ConsultationsCard } from './components/consultations-card';
 export { SoapEditor } from './components/soap-editor';
 export { CompleteConsultDialog } from './components/complete-consult-dialog';
+export { StartConsultForDialog } from './components/start-consult-for-dialog';
 export { SoapDraftPanel } from './components/soap-draft-panel';
 export { soapSectionText } from './lib/soap-text';
 export {

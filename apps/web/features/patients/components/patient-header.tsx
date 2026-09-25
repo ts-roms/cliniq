@@ -8,8 +8,13 @@ import type { Patient } from '../schemas/patient';
 
 interface Props {
   patient: Patient;
-  /** Omitted when the signed-in role cannot start consultations. */
+  /** One-click start for roles that write consults themselves. */
   onStartConsult?: () => void;
+  /**
+   * Rendered instead of the one-click button for a role that may open a
+   * consult but not write it (ADMIN picks the attending clinician first).
+   */
+  startConsultAction?: React.ReactNode;
   isStarting: boolean;
   /** Rendered beside Export — the chart's "Add service" menu. */
   serviceActions?: React.ReactNode;
@@ -18,6 +23,7 @@ interface Props {
 export function PatientHeader({
   patient: p,
   onStartConsult,
+  startConsultAction,
   isStarting,
   serviceActions,
 }: Props) {
@@ -45,10 +51,12 @@ export function PatientHeader({
           <FileDsrDialog patientId={p.id} />
           <DeletePatientButton patient={p} />
           <EditPatientDialog patient={p} />
-          {onStartConsult && (
+          {onStartConsult ? (
             <Button onClick={onStartConsult} disabled={isStarting}>
               {isStarting ? 'Starting…' : 'Start consultation'}
             </Button>
+          ) : (
+            startConsultAction
           )}
         </div>
       </div>

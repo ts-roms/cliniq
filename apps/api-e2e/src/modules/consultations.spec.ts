@@ -83,7 +83,7 @@ describe('@org/api-e2e consultations module', () => {
   });
 
   describe('RBAC denial', () => {
-    it('RECEPTIONIST cannot start a consultation (lacks CONSULT_WRITE)', async () => {
+    it('RECEPTIONIST cannot start a consultation (lacks CONSULT_START)', async () => {
       const { tenant, client } = await env.makeTenant();
       const patientId = await seedPatient(client, 'CON-RBAC-001');
       const receptionist = await env.makeReceptionist(tenant);
@@ -92,6 +92,92 @@ describe('@org/api-e2e consultations module', () => {
         patientId,
       });
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe("ADMIN starts a consult on a clinician's behalf", () => {
+    it('must name the attending clinician', async () => {
+      const { tenant, client } = await env.makeTenant();
+      const patientId = await seedPatient(client, 'CON-ADM-001');
+      const admin = await env.makeAdmin(tenant);
+
+      const bare = await admin.client.axios.post('/api/consultations', {
+        patientId,
+      });
+      expect(bare.status).toBe(400);
+
+      // Naming themselves is the same as naming nobody.
+      const self = await admin.client.axios.post('/api/consultations', {
+        patientId,
+        providerId: admin.userId,
+      });
+      expect(self.status).toBe(400);
+    });
+
+    it('records the chosen doctor as provider, and cannot write the note', async () => {
+      const { tenant, client } = await env.makeTenant();
+      const patientId = await seedPatient(client, 'CON-ADM-002');
+      const admin = await env.makeAdmin(tenant);
+      const doctor = await env.makeDoctor(tenant);
+
+      const started = await admin.client.axios.post('/api/consultations', {
+        patientId,
+        providerId: doctor.userId,
+      });
+      expect(started.status).toBe(201);
+      expect(started.data.providerId).toBe(doctor.userId);
+      const id = started.data.id as string;
+
+      // Starting is the whole grant: the note and completion stay clinical.
+      const write = await admin.client.axios.patch(`/api/consultations/${id}`, {
+        subjective: { chiefComplaint: 'Cough' },
+      });
+      expect(write.status).toBe(403);
+      const complete = await admin.client.axios.post(
+        `/api/consultations/${id}/complete`,
+      );
+      expect(complete.status).toBe(403);
+
+      // ...while the doctor it was opened for carries on as normal.
+      const byDoctor = await doctor.client.axios.patch(
+        `/api/consultations/${id}`,
+        { subjective: { chiefComplaint: 'Cough' } },
+      );
+      expect(byDoctor.status).toBe(200);
+    });
+
+    it('rejects a provider who is not a clinician of this clinic', async () => {
+      const a = await env.makeTenant();
+      const b = await env.makeTenant();
+      const patientId = await seedPatient(a.client, 'CON-ADM-003');
+      const admin = await env.makeAdmin(a.tenant);
+      const receptionist = await env.makeReceptionist(a.tenant);
+      const otherClinicDoctor = await env.makeDoctor(b.tenant);
+
+      for (const providerId of [
+        receptionist.userId,
+        otherClinicDoctor.userId,
+      ]) {
+        const res = await admin.client.axios.post('/api/consultations', {
+          patientId,
+          providerId,
+        });
+        expect(res.status).toBe(400);
+      }
+    });
+
+    it('a NURSE may open one for a doctor', async () => {
+      const { tenant, client } = await env.makeTenant();
+      const patientId = await seedPatient(client, 'CON-ADM-004');
+      const doctor = await env.makeDoctor(tenant);
+      const nurse = await env.makeNurse(tenant);
+
+      const res = await nurse.client.axios.post('/api/consultations', {
+        patientId,
+        providerId: doctor.userId,
+      });
+      expect(res.status).toBe(201);
+      expect(res.data.providerId).toBe(doctor.userId);
     });
   });
 

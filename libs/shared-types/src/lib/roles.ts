@@ -49,6 +49,13 @@ export const Actions = {
   PORTAL_READ: 'portal:read',
   CONSULT_READ: 'consult:read',
   CONSULT_WRITE: 'consult:write',
+  // Open a consult (POST /consultations) — and nothing else. Everyone with
+  // CONSULT_WRITE holds it, plus ADMIN, so the front office can open the
+  // encounter when the patient is roomed. A holder WITHOUT CONSULT_WRITE must
+  // name the attending clinician, who becomes the provider of record: ADMIN
+  // never appears as a consult's provider and still cannot write the note,
+  // complete the visit or touch results.
+  CONSULT_START: 'consult:start',
   RX_WRITE: 'rx:write',
   RX_SIGN: 'rx:sign',
   BILLING_READ: 'billing:read',
@@ -80,6 +87,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.PATIENT_WRITE,
     Actions.CONSULT_READ,
     Actions.CONSULT_WRITE,
+    Actions.CONSULT_START,
     Actions.RX_WRITE,
     Actions.RX_SIGN,
     Actions.BILLING_READ,
@@ -103,6 +111,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.PATIENT_READ,
     Actions.PATIENT_WRITE,
     Actions.CONSULT_READ,
+    Actions.CONSULT_START,
     Actions.BILLING_READ,
     Actions.BILLING_WRITE,
     Actions.INVENTORY_READ,
@@ -115,6 +124,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.PATIENT_WRITE,
     Actions.CONSULT_READ,
     Actions.CONSULT_WRITE,
+    Actions.CONSULT_START,
     Actions.RX_WRITE,
     Actions.RX_SIGN,
     Actions.BILLING_READ,
@@ -131,6 +141,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.PATIENT_WRITE,
     Actions.CONSULT_READ,
     Actions.CONSULT_WRITE,
+    Actions.CONSULT_START,
     Actions.INVENTORY_READ,
     Actions.INVENTORY_WRITE,
     Actions.TELE_HOST,
@@ -155,6 +166,7 @@ const matrix: Record<Role, ReadonlySet<Action>> = {
     Actions.PATIENT_READ,
     Actions.CONSULT_READ,
     Actions.CONSULT_WRITE,
+    Actions.CONSULT_START,
     Actions.LAB_RESULT_ENTER,
     Actions.LAB_RESULT_VERIFY,
   ]),

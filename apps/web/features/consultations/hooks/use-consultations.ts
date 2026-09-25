@@ -34,11 +34,23 @@ export function useConsultationsForPatient(
 export function useStartConsultation(patientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    /**
+     * `providerId` opens the consult for another clinician, who becomes the
+     * provider of record. Required when the caller cannot write consults
+     * (ADMIN) — the api answers 400 without it.
+     */
+    mutationFn: async (vars: { providerId?: string } | void) => {
       const { data, error } = await consultationsControllerStart({
-        body: { patientId },
+        body: { patientId, providerId: vars?.providerId },
       });
-      if (error || !data) throw new Error('Failed to start consultation');
+      if (error || !data) {
+        const msg = (error as { message?: string | string[] } | undefined)
+          ?.message;
+        throw new Error(
+          (Array.isArray(msg) ? msg.join(', ') : msg) ||
+            'Failed to start consultation',
+        );
+      }
       return data;
     },
     onSuccess: () => {

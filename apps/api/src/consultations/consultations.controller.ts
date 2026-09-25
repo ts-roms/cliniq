@@ -37,7 +37,9 @@ export class ConsultationsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Requires(Actions.CONSULT_WRITE)
+  // CONSULT_START, not CONSULT_WRITE: ADMIN may open a consult on a
+  // clinician's behalf (providerId required — see the service).
+  @Requires(Actions.CONSULT_START)
   @Audit({
     action: 'consult.start',
     entity: 'Consultation',

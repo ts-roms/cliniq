@@ -11,8 +11,11 @@ import {
   ConsultStatus,
   AiSuggestionStatus,
   AiSuggestionKind,
+  MemberStatus,
   type InputJsonValue,
 } from '@org/db';
+import { Actions, can } from '@org/auth';
+import { PROVIDER_ROLES } from '../availability/availability.service.js';
 import {
   canTransition,
   transitionData,
@@ -53,12 +56,41 @@ export class ConsultationsService {
    * is a 400), the appointment moves to IN_PROGRESS in the same transaction,
    * and completing the consult later completes the appointment. Without it,
    * this is a walk-in / ad-hoc consult and needs `patientId`.
+   *
+   * The provider of record is the caller unless `providerId` names another
+   * clinician. A caller who cannot write consults (ADMIN, via CONSULT_START)
+   * MUST name one: the chart should never show a non-clinician as the
+   * attending provider. Who actually opened it stays in the audit log.
    */
   async start(dto: StartConsultationDto, user: AuthenticatedUser) {
     if (!dto.patientId && !dto.appointmentId) {
       throw new BadRequestException('patientId or appointmentId is required');
     }
+    const onBehalf = !!dto.providerId && dto.providerId !== user.userId;
+    if (!onBehalf && !can(user.role, Actions.CONSULT_WRITE)) {
+      throw new BadRequestException(
+        'providerId is required: choose the attending doctor or nurse',
+      );
+    }
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
+      const providerId = onBehalf ? dto.providerId! : user.userId;
+      if (onBehalf) {
+        const member = await tx.tenantUser.findFirst({
+          where: {
+            tenantId: user.tenantId,
+            userId: providerId,
+            status: MemberStatus.ACTIVE,
+            role: { in: [...PROVIDER_ROLES] },
+          },
+          select: { id: true },
+        });
+        if (!member) {
+          throw new BadRequestException(
+            'providerId must be an active doctor, nurse or owner of this clinic',
+          );
+        }
+      }
+
       let patientId = dto.patientId;
       let visitTypeId = dto.visitTypeId;
 
@@ -114,7 +146,7 @@ export class ConsultationsService {
         data: {
           tenantId: user.tenantId,
           patientId: patient.id,
-          providerId: user.userId,
+          providerId,
           appointmentId: dto.appointmentId ?? null,
           visitTypeId: visitTypeId ?? null,
           startedAt: new Date(),
@@ -123,6 +155,7 @@ export class ConsultationsService {
       });
       this.logger.log(
         `Consult ${consult.id} started for patient ${patient.id} by ${user.userId}` +
+          (onBehalf ? ` for provider ${providerId}` : '') +
           (dto.appointmentId ? ` (appointment ${dto.appointmentId})` : ''),
       );
       return consult;
