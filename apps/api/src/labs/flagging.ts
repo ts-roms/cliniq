@@ -58,11 +58,16 @@ export interface CriticalLimits {
 }
 
 /**
- * A configured critical-limit rule, narrowed by patient demographics and
- * bounded in time. Shaped to match the `CriticalValueRule` row but kept as a
- * plain interface so this module never imports Prisma.
+ * Anything narrowed by patient demographics and bounded in time.
+ *
+ * Both configured critical limits and configured reference intervals are this
+ * shape, and both are selected the same way — most specific wins. The
+ * narrowing was written for critical limits first; reference ranges reuse it
+ * rather than growing a second, subtly different copy, because two selection
+ * rules that disagree about which row applies is exactly the kind of defect
+ * nobody notices until a paediatric result reads normal.
  */
-export interface CriticalValueRuleLike extends CriticalLimits {
+export interface NarrowedRule {
   /** Inclusive lower bound on age in days. Null = no lower bound. */
   ageMinDays: number | null;
   /** Exclusive upper bound on age in days. Null = no upper bound. */
@@ -71,6 +76,25 @@ export interface CriticalValueRuleLike extends CriticalLimits {
   sex: PatientSex | null;
   effectiveFrom: Date;
   effectiveTo: Date | null;
+}
+
+/**
+ * A configured critical-limit rule. Shaped to match the `CriticalValueRule`
+ * row but kept as a plain interface so this module never imports Prisma.
+ */
+export interface CriticalValueRuleLike extends NarrowedRule, CriticalLimits {}
+
+/**
+ * A configured reference interval, shaped to match the `ReferenceRange` row.
+ *
+ * This is what §6.5 of the gap analysis asked for: a reference interval that
+ * knows about age and sex, so that a paediatric haemoglobin and an adult male
+ * haemoglobin are not flagged against the same numbers — which is what
+ * happened while the interval lived as two nullable columns on the order item.
+ */
+export interface ReferenceRangeLike extends NarrowedRule {
+  lowerLimit: number | null;
+  upperLimit: number | null;
 }
 
 export interface PatientContext {
@@ -109,7 +133,7 @@ export function normaliseTestKey(
  * whose date of birth we do not have.
  */
 export function ruleApplies(
-  rule: CriticalValueRuleLike,
+  rule: NarrowedRule,
   patient: PatientContext,
   at: Date,
 ): boolean {
@@ -138,7 +162,7 @@ export function ruleApplies(
  * to the most recently effective rule, so re-issuing limits is just inserting
  * a row with a later `effectiveFrom`.
  */
-export function selectCriticalRule<T extends CriticalValueRuleLike>(
+export function selectRule<T extends NarrowedRule>(
   rules: readonly T[],
   patient: PatientContext,
   at: Date,
@@ -150,24 +174,91 @@ export function selectCriticalRule<T extends CriticalValueRuleLike>(
   );
 }
 
+/**
+ * Pick the critical-limit rule to apply.
+ *
+ * Kept as its own name because that is what the call sites read as, and
+ * because a reader of `resolveFlag` should not have to work out which kind of
+ * rule a bare `selectRule` is choosing.
+ */
+export const selectCriticalRule = selectRule;
+
+/**
+ * Pick the reference interval to apply. Same selection as critical limits,
+ * deliberately — see `NarrowedRule`.
+ */
+export const selectReferenceRange = selectRule;
+
 /** >0 when `a` is more specific than `b`. */
-function compareSpecificity(
-  a: CriticalValueRuleLike,
-  b: CriticalValueRuleLike,
-): number {
-  const score = (r: CriticalValueRuleLike) =>
+function compareSpecificity(a: NarrowedRule, b: NarrowedRule): number {
+  const score = (r: NarrowedRule) =>
     (r.sex !== null ? 2 : 0) +
     (r.ageMinDays !== null || r.ageMaxDays !== null ? 1 : 0);
   const byScore = score(a) - score(b);
   if (byScore !== 0) return byScore;
 
   // Both banded (or both not): the tighter band is the more specific.
-  const span = (r: CriticalValueRuleLike) =>
+  const span = (r: NarrowedRule) =>
     (r.ageMaxDays ?? Number.MAX_SAFE_INTEGER) - (r.ageMinDays ?? 0);
   const bySpan = span(b) - span(a);
   if (bySpan !== 0) return bySpan;
 
   return a.effectiveFrom.getTime() - b.effectiveFrom.getTime();
+}
+
+/** Where the reference interval applied to a result came from. */
+export type ReferenceSource = 'ORDER' | 'CONFIGURED' | 'NONE';
+
+/**
+ * Decide which reference interval applies to a result.
+ *
+ * Precedence, and the reason for it:
+ *
+ *   1. **What is on the order item wins.** Those two columns are how a
+ *      referred-in report is transcribed and how an orderer states a range
+ *      that came with an outside result. Overriding them from the tenant's
+ *      configuration would silently restate someone else's laboratory's
+ *      interval as our own.
+ *   2. **Otherwise the configured `ReferenceRange` for this analyte**,
+ *      narrowed to the patient — which is the entire point of §6.5. A
+ *      paediatric haemoglobin and an adult male haemoglobin are different
+ *      intervals, and while the interval lived only on the order item they
+ *      were flagged against the same numbers.
+ *   3. **Otherwise nothing**, and `deriveFlag` declines to call the result
+ *      NORMAL. Saying nothing is safe; inventing an interval is not — the same
+ *      principle that governs critical limits at the top of this file.
+ *
+ * A configured row is used only if it actually carries a limit. A row with
+ * neither bound set narrows nothing and must not shadow the next-best match.
+ */
+export function resolveReference<T extends ReferenceRangeLike>(
+  onOrder: ReferenceLimits,
+  configured: readonly T[],
+  patient: PatientContext,
+  at: Date,
+): { limits: ReferenceLimits; source: ReferenceSource; range: T | null } {
+  if (onOrder.referenceLow !== null || onOrder.referenceHigh !== null) {
+    return { limits: onOrder, source: 'ORDER', range: null };
+  }
+  const usable = configured.filter(
+    (r) => r.lowerLimit !== null || r.upperLimit !== null,
+  );
+  const range = selectReferenceRange(usable, patient, at);
+  if (!range) {
+    return {
+      limits: { referenceLow: null, referenceHigh: null },
+      source: 'NONE',
+      range: null,
+    };
+  }
+  return {
+    limits: {
+      referenceLow: range.lowerLimit,
+      referenceHigh: range.upperLimit,
+    },
+    source: 'CONFIGURED',
+    range,
+  };
 }
 
 /**

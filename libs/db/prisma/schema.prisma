@@ -3428,6 +3428,63 @@ enum LabOrderStatus {
 /// Rows are never edited in place to change a limit — insert a new row with a
 /// later `effectiveFrom` and close the old one with `effectiveTo`, so a result
 /// flagged last year can still be explained by the limits in force then.
+/// A reference interval that knows who the patient is.
+///
+/// Gap analysis 6.5. The interval used to live as two nullable floats on the
+/// order item, copied from whatever the orderer typed, with no age, sex or
+/// effective-date dimension — so a paediatric haemoglobin and an adult male
+/// haemoglobin were flagged against the same numbers. 11 g/dL is normal in a
+/// two-year-old and anaemia in an adult man, and nothing could tell them apart.
+///
+/// Keyed on `testKey` like `CriticalValueRule`, not on a `TestComponent` id:
+/// an order item may have no catalogue link (ad-hoc orders, referred-in
+/// results), and matching the two kinds of configured limit by different keys
+/// would let a result find its critical limits and miss its interval. The
+/// selection logic is shared too — see `NarrowedRule` in
+/// apps/api/src/labs/flagging.ts.
+///
+/// The two columns on `LabOrderItem` remain and still win: that is how a
+/// referred-in report states the interval it came with.
+model ReferenceRange {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Normalised by normaliseTestKey(), exactly as CriticalValueRule is.
+  testKey String
+  /// What staff see, e.g. "Haemoglobin (female)".
+  label   String
+  unit    String?
+
+  /// Optional demographic narrowing. Null on all three = applies to any
+  /// patient. ageMinDays is inclusive, ageMaxDays exclusive. Days, not years,
+  /// because neonatal intervals change week to week.
+  ageMinDays Int?
+  ageMaxDays Int?
+  sex        Sex?
+
+  lowerLimit Float?
+  upperLimit Float?
+  /// The interval as it reads for a result that is not a number: "Negative",
+  /// "<1:40". Shown on the configuration screen; flagging does not consume it,
+  /// because deriveFlag() is numeric-only by design.
+  textualRange String?
+
+  note String?
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  items LabOrderItem[]
+
+  @@index([tenantId, testKey, effectiveFrom])
+  @@map("reference_ranges")
+}
+
 model CriticalValueRule {
   id       String @id @default(cuid())
   tenantId String
@@ -3657,6 +3714,18 @@ model LabOrderItem {
   equipmentId  String?
   reagentLotId String?
 
+  /// The configured `ReferenceRange` this result was judged against, when it
+  /// was. The interval itself is snapshotted into referenceLow/High above so
+  /// the report cannot drift from it; this says where that snapshot came from.
+  ///
+  /// Null means the interval arrived with the order — a referred-in report
+  /// transcribed from another laboratory — and is not ours to overwrite. Set
+  /// means we resolved it and may resolve it again when the value is re-entered
+  /// or corrected. Without this column the two are indistinguishable, and a
+  /// result re-entered after a mis-configured interval was fixed would
+  /// silently keep the wrong one.
+  referenceRangeId String?
+
   order    LabOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   test     LaboratoryTest? @relation(fields: [testId], references: [id])
   specimen   Specimen?          @relation(fields: [specimenId], references: [id])
@@ -3665,6 +3734,9 @@ model LabOrderItem {
   /// the entire reason these tables exist.
   equipment  Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
   reagentLot ReagentLot? @relation(fields: [reagentLotId], references: [id], onDelete: Restrict)
+  /// Restrict for the same reason: the link from a result to the interval that
+  /// judged it is the reason the column exists.
+  referenceRange ReferenceRange? @relation(fields: [referenceRangeId], references: [id], onDelete: Restrict)
   versions   LabResultVersion[]
   referral   LabReferral?
 
@@ -3675,6 +3747,7 @@ model LabOrderItem {
   /// The recall query: every result a given lot produced.
   @@index([tenantId, reagentLotId])
   @@index([tenantId, equipmentId])
+  @@index([tenantId, referenceRangeId])
   @@map("lab_order_items")
 }
 

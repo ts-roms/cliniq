@@ -4369,6 +4369,117 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/reference-ranges": {
+      "get": {
+        "operationId": "ReferenceRangesController_list",
+        "parameters": [
+          {
+            "name": "includeExpired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "post": {
+        "operationId": "ReferenceRangesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReferenceRangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/reference-ranges/{id}": {
+      "patch": {
+        "operationId": "ReferenceRangesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReferenceRangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "delete": {
+        "operationId": "ReferenceRangesController_retire",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/lis/critical-results": {
       "get": {
         "operationId": "CriticalResultsController_list",
@@ -12705,6 +12816,83 @@
             "format": "date-time",
             "type": "string",
             "description": "When this rule stops applying. Must be after effectiveFrom."
+          }
+        }
+      },
+      "Sex": {
+        "type": "string",
+        "enum": ["FEMALE", "MALE", "OTHER", "UNDISCLOSED"],
+        "description": "Omit to apply to any sex."
+      },
+      "CreateReferenceRangeDto": {
+        "type": "object",
+        "properties": {
+          "test": {
+            "type": "string",
+            "description": "The analyte, as a code or a name. Normalised the same way critical-value rules are, so \"K\", \" k \" and \"K.\" land on one key."
+          },
+          "label": {
+            "type": "string",
+            "description": "What staff see, e.g. \"Haemoglobin (female)\"."
+          },
+          "unit": {
+            "type": "string"
+          },
+          "ageMinDays": {
+            "type": "number",
+            "description": "Inclusive lower bound on patient age in days. Days, not years, because neonatal intervals change week to week."
+          },
+          "ageMaxDays": {
+            "type": "number",
+            "description": "Exclusive upper bound, in days."
+          },
+          "sex": {
+            "description": "Omit to apply to any sex.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sex"
+              }
+            ]
+          },
+          "lowerLimit": {
+            "type": "number",
+            "description": "Lower bound of the normal interval."
+          },
+          "upperLimit": {
+            "type": "number",
+            "description": "Upper bound of the normal interval."
+          },
+          "textualRange": {
+            "type": "string",
+            "description": "The interval as it reads for a non-numeric result: \"Negative\", \"<1:40\". Shown to staff; flagging is numeric-only and does not consume it."
+          },
+          "note": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Defaults to now."
+          }
+        },
+        "required": ["test", "label"]
+      },
+      "UpdateReferenceRangeDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "effectiveTo": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this interval stops applying."
           }
         }
       },

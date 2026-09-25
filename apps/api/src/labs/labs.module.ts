@@ -3,6 +3,8 @@ import { LabsController } from './labs.controller.js';
 import { LabsService } from './labs.service.js';
 import { CriticalValueRulesController } from './critical-value-rules.controller.js';
 import { CriticalValueRulesService } from './critical-value-rules.service.js';
+import { ReferenceRangesController } from './reference-ranges.controller.js';
+import { ReferenceRangesService } from './reference-ranges.service.js';
 import { CriticalResultsController } from './critical-results.controller.js';
 import { CriticalResultsService } from './critical-results.service.js';
 import { CatalogueController } from './catalogue.controller.js';
@@ -26,6 +28,7 @@ import { EquipmentService } from './equipment.service.js';
   controllers: [
     LabsController,
     CriticalValueRulesController,
+    ReferenceRangesController,
     CriticalResultsController,
     CatalogueController,
     SpecimensController,
@@ -39,6 +42,7 @@ import { EquipmentService } from './equipment.service.js';
   providers: [
     LabsService,
     CriticalValueRulesService,
+    ReferenceRangesService,
     CriticalResultsService,
     CatalogueService,
     SpecimensService,
