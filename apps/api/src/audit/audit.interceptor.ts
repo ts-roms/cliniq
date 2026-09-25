@@ -9,6 +9,8 @@ import { Observable, tap } from 'rxjs';
 import type { Request } from 'express';
 import { AuditService } from './audit.service.js';
 import { AUDIT_META_KEY, type AuditMeta } from './audit.decorator.js';
+import { readReason } from './changes.js';
+import { TenantContext } from '../common/tenant-context.middleware.js';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator.js';
 
 @Injectable()
@@ -38,6 +40,10 @@ export class AuditInterceptor implements NestInterceptor {
       tap({
         next: (result) => {
           const entityId = resolveEntityId(meta, req, result);
+          // Whatever the services changed during this request. Drained, so a
+          // second audited handler in the same request cannot report the
+          // first one's changes a second time.
+          const { changes, reason } = TenantContext.drainChanges();
           // Fire-and-forget — audit must never block the response.
           this.audit.record({
             tenantId: req.user?.tenantId ?? null,
@@ -50,9 +56,19 @@ export class AuditInterceptor implements NestInterceptor {
             ip,
             userAgent,
             metadata: { method: req.method, path: req.originalUrl ?? req.url },
+            changes,
+            // A reason recorded by the service wins over one read off the
+            // body: the service knows which field it actually used.
+            reason: reason ?? readReason(req.body),
           });
         },
         error: (err) => {
+          // Discarded, not recorded. A request that threw changed nothing —
+          // the transaction rolled back — so attaching the diff a service
+          // computed before the failure would assert a change that never
+          // happened. Draining rather than ignoring also stops it leaking
+          // into the next audited action on this request.
+          TenantContext.drainChanges();
           this.audit.record({
             tenantId: req.user?.tenantId ?? null,
             userId: req.user?.userId ?? null,

@@ -13,6 +13,10 @@ export interface AuditEntry {
   ip?: string | null;
   userAgent?: string | null;
   metadata?: Record<string, unknown>;
+  /** What changed, as [{field, before, after}]. Already redacted. */
+  changes?: ReadonlyArray<{ field: string; before: unknown; after: unknown }>;
+  /** The stated reason, where the request carried one. */
+  reason?: string | null;
 }
 
 @Injectable()
@@ -47,6 +51,19 @@ export class AuditService {
         ip: entry.ip ?? null,
         userAgent: entry.userAgent ?? null,
         metadata: (entry.metadata ?? null) as never,
+        reason: entry.reason ?? null,
+        // OMITTED, not null, when there is nothing to record.
+        //
+        // Handing JS `null` to a Prisma `Json?` field writes JSON `null`
+        // ('null'::jsonb), not SQL NULL — so `changes IS NULL` is false and
+        // jsonb_typeof() returns 'null'. The CHECK constraint added with this
+        // column caught that immediately: every audit row without changes
+        // failed to write, which is every login, register and create. The
+        // failure was swallowed by the catch below, as it is designed to be,
+        // so nothing surfaced except the rows quietly not being there.
+        //
+        // Leaving the key out lets the column default to a real SQL NULL.
+        ...(entry.changes?.length ? { changes: entry.changes as never } : {}),
       };
       if (entry.tenantId) {
         await this.prisma.withTenant(
