@@ -5463,6 +5463,178 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/qc/materials": {
+      "get": {
+        "operationId": "QcController_listMaterials",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "put": {
+        "operationId": "QcController_upsertMaterial",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertQcMaterialDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/qc/targets": {
+      "put": {
+        "operationId": "QcController_setTarget",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetQcTargetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/qc/runs": {
+      "post": {
+        "operationId": "QcController_recordRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordQcRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "get": {
+        "operationId": "QcController_listRuns",
+        "parameters": [
+          {
+            "name": "testId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "materialId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outcome",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QcOutcome"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/qc/runs/{id}/corrective-action": {
+      "post": {
+        "operationId": "QcController_correctiveAction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectiveActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/lis/equipment": {
       "get": {
         "operationId": "EquipmentController_listEquipment",
@@ -13042,6 +13214,102 @@
             "description": "What was done about an unacceptable result. Its absence against a failure is the finding."
           }
         }
+      },
+      "QcLevel": {
+        "type": "string",
+        "enum": ["LOW", "NORMAL", "HIGH"]
+      },
+      "UpsertQcMaterialDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "level": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QcLevel"
+              }
+            ]
+          },
+          "lotNumber": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "expiresOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": ["name", "level", "lotNumber"]
+      },
+      "SetQcTargetDto": {
+        "type": "object",
+        "properties": {
+          "materialId": {
+            "type": "string"
+          },
+          "testId": {
+            "type": "string"
+          },
+          "mean": {
+            "type": "number"
+          },
+          "sd": {
+            "type": "number",
+            "description": "Must be greater than zero."
+          },
+          "unit": {
+            "type": "string"
+          }
+        },
+        "required": ["materialId", "testId", "mean", "sd"]
+      },
+      "RecordQcRunDto": {
+        "type": "object",
+        "properties": {
+          "materialId": {
+            "type": "string"
+          },
+          "testId": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "runAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Defaults to now."
+          },
+          "peerZScores": {
+            "description": "z-scores of the other control levels run at the same time. R-4s compares against these — only the bench knows what was actually run together.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["materialId", "testId", "value"]
+      },
+      "QcOutcome": {
+        "type": "string",
+        "enum": ["ACCEPTED", "WARNING", "REJECTED"]
+      },
+      "CorrectiveActionDto": {
+        "type": "object",
+        "properties": {
+          "correctiveAction": {
+            "type": "string"
+          }
+        },
+        "required": ["correctiveAction"]
       },
       "EquipmentStatus": {
         "type": "string",
