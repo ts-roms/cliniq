@@ -109,6 +109,13 @@ export default defineRailway(() => {
       ],
     },
     start: 'node dist/main.js',
+    // Apply pending migrations before the new version takes traffic. Runs in
+    // the api image as the Postgres superuser (MIGRATE_DATABASE_URL =
+    // ${{Postgres.DATABASE_URL}}): the api's own DATABASE_URL is the
+    // RLS-bound cliniq_app role, which cannot create tables or change
+    // grants. A failed migration fails the deploy, so the previous version
+    // keeps serving instead of new code running on an old schema.
+    preDeploy: 'npm run migrate:deploy',
     healthcheck: '/api/health',
     healthcheckTimeout: 120,
     replicas: { sfo: 1 },
@@ -125,6 +132,7 @@ export default defineRailway(() => {
       JANITOR_ENABLED: preserve(),
       JWT_EXPIRES_IN: preserve(),
       JWT_SECRET: preserve(),
+      MIGRATE_DATABASE_URL: preserve(),
       NODE_ENV: preserve(),
       PORT: preserve(),
       PORTAL_BASE_URL: preserve(),

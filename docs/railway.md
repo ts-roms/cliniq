@@ -93,14 +93,19 @@ sed -e "s/PASSWORD 'cliniq_app'/PASSWORD '<app-password>'/" \
 DATABASE_URL="$PUB?schema=public" pnpm --dir libs/db exec prisma migrate deploy
 
 # 3. grants on the tables the migrations just created (default privileges
-#    only cover tables created *after* the ALTER DEFAULT PRIVILEGES)
+#    only cover tables created *after* the ALTER DEFAULT PRIVILEGES).
+#    FIRST BOOTSTRAP ONLY — see the warning below.
 psql "$PUB" -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cliniq_app;
                 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cliniq_app;"
 ```
 
-Repeat steps 2–3 whenever a PR adds files under `libs/db/prisma/migrations/`
-(idempotent). Migrations do not run on deploy — see
-[Run migrations](#run-migrations) for why.
+After the bootstrap, migrations apply themselves on every api deploy — see
+[Run migrations](#run-migrations).
+
+> **Never re-run step 3 on a live database.** Later migrations deliberately
+> REVOKE privileges (`audit_logs` and `consultation_amendments` are
+> append-only, `icd_codes` is read-only); a blanket `GRANT … ON ALL TABLES`
+> silently undoes them. New tables are covered by the default privileges.
 
 ### Service env vars
 
@@ -114,6 +119,7 @@ Reference variables (`${{...}}`) resolve at deploy time.
 | `NODE_ENV`                                                                | `production`                                                                                                                           |
 | `CLINIQ_APP_DB_PASSWORD`                                                  | the `cliniq_app` password you created above                                                                                            |
 | `DATABASE_URL`                                                            | `postgresql://cliniq_app:${{CLINIQ_APP_DB_PASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}?schema=public` |
+| `MIGRATE_DATABASE_URL`                                                    | `${{Postgres.DATABASE_URL}}` — superuser URL, used **only** by the pre-deploy `npm run migrate:deploy`                                 |
 | `JWT_SECRET`                                                              | 32+ random chars                                                                                                                       |
 | `JWT_EXPIRES_IN` / `REFRESH_TOKEN_EXPIRES_IN`                             | `15m` / `7d`                                                                                                                           |
 | `AI_SERVICE_URL`                                                          | `http://${{ai-service.RAILWAY_PRIVATE_DOMAIN}}:4100`                                                                                   |
@@ -180,35 +186,30 @@ curl -I https://<web-domain>
 
 ### Run migrations
 
-**Migrations run manually**, not on every deploy. The `preDeployCommand`
-was removed from [`apps/api/railway.json`](../apps/api/railway.json) because
-Railway's pre-deploy stage failed to run prisma reliably on this stack. The
-fix-forward flow:
+**Migrations run on every api deploy**, before the new version takes
+traffic. `.railway/railway.ts` gives the api a pre-deploy command,
+`npm run migrate:deploy` (defined in `apps/api/package.json`), which runs
+`prisma migrate deploy` from `node_modules/@org/db` inside the api image as
+the Postgres superuser (`MIGRATE_DATABASE_URL`). The api's own
+`DATABASE_URL` is the RLS-bound `cliniq_app` role and cannot run DDL.
+
+If a migration fails, the deploy fails and the previous version keeps
+serving. Read the deployment's pre-deploy logs, fix forward with a new
+migration, and merge again. Before this existed, merges shipped new code onto
+an old schema and cards failed with Prisma `column … does not exist`.
+
+Why it works now when an earlier attempt did not: the image's `node_modules`
+is root-owned and the api runs as `nestjs`, so prisma could not download its
+schema engine at run time ("Can't write to …/@prisma/engines"). The api
+Dockerfile's `deploy` stage now fetches the engine at build time.
+
+To apply migrations by hand (e.g. to inspect status first), from a checkout:
 
 ```bash
-# Get the Postgres public URL from the dashboard:
-#   cliniq-postgres → Connect → Public Network → copy DATABASE_URL.
-# Then run from your local machine:
-DATABASE_URL='postgresql://postgres:<password>@<public-host>:<port>/railway' \
-  pnpm --dir libs/db exec prisma migrate deploy
+DATABASE_URL='postgresql://postgres:<password>@<public-host>:<port>/railway'   pnpm --dir libs/db exec prisma migrate status   # or: migrate deploy
 ```
 
-Idempotent — re-runs are no-ops once everything's applied. Run this any
-time you merge a PR with new files in `libs/db/prisma/migrations/`.
-
-> **To re-enable on-deploy migrations later**, add this back to the
-> `deploy` block in [`apps/api/railway.json`](../apps/api/railway.json):
->
-> ```json
-> "preDeployCommand": "cd /app/node_modules/@org/db && ./node_modules/.bin/prisma migrate deploy"
-> ```
->
-> Then debug whatever was making it fail silently. Known blocker: the api
-> image runs as the unprivileged `nestjs` user and its `node_modules` is
-> root-owned, while `prisma migrate` wants to download the schema engine into
-> `node_modules/@prisma/engines` on first run — so it fails with "Can't write
-> to …/@prisma/engines". The `docker/migrate.Dockerfile` image (runs as root,
-> ships only libs/db) is the supported way to apply migrations.
+Idempotent: re-runs do nothing once everything is applied.
 
 ### Seed data
 

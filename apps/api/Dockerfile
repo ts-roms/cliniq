@@ -71,21 +71,32 @@ RUN pnpm exec nx sync \
 FROM build AS deploy
 RUN pnpm --filter=@org/api deploy --prod --frozen-lockfile --ignore-scripts \
       --config.inject-workspace-packages=true /deploy
+# `--ignore-scripts` skips @prisma/engines' postinstall, so the schema engine
+# that `prisma migrate deploy` needs is not in the tree. Fetch it here: the
+# runner's node_modules is root-owned and read-only, so prisma cannot download
+# it at run time and Railway's pre-deploy step (`npm run migrate:deploy`)
+# would fail. openssl lets prisma pick the same musl/openssl-3 engine the
+# runner uses.
+RUN apk add --no-cache openssl \
+ && cd /deploy/node_modules/@org/db \
+ && ./node_modules/.bin/prisma version
 
 # ── runner ────────────────────────────────────────
 # The api bundle uses webpack-node-externals, so node_modules is required
 # at runtime (not bundled) — but only the deploy tree above, ~0.4 GB
 # instead of the 1.3 GB root prod install.
 FROM node:22-alpine AS runner
-# corepack is enabled so a pre-deploy hook can run
-# `pnpm exec prisma migrate deploy` (prisma + the schema ship inside
-# node_modules/@org/db).
+# Railway's pre-deploy step runs `npm run migrate:deploy` in this image:
+# prisma, its schema engine and the migrations ship inside
+# node_modules/@org/db (see the deploy stage and apps/api/package.json).
 RUN corepack enable \
  && apk add --no-cache wget tini openssl \
  && addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001 -G nodejs
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
+# Keeps npm's "new version available" banner out of the pre-deploy logs.
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # node_modules is read-only at runtime, so it is copied root-owned:
 # `--chown` makes BuildKit rewrite ownership file-by-file across the whole
