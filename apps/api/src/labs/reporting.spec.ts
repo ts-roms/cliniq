@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   canIssueReport,
   formatReportNumber,
@@ -206,5 +207,91 @@ describe('supersededNotice', () => {
     ]) {
       expect(supersededNotice(r)).toMatch(/Do not act on this copy/);
     }
+  });
+});
+
+describe('referred tests in the hash', () => {
+  it('leaves a report with nothing referred hashing exactly as before', () => {
+    // The backward-compatibility claim, pinned against an independent
+    // reimplementation of the PRE-CHANGE canonical form rather than a
+    // hard-coded digest. Referrals are appended as a trailing segment rather
+    // than widening every row precisely so this holds: widening it would
+    // have changed every hash already stored and marked every issued report
+    // as no longer matching its results.
+    const legacy = (rs: ReportableResult[]) =>
+      createHash('sha256')
+        .update(
+          [...rs]
+            .map((r) => ({
+              code: r.testCode ?? '',
+              name: r.testName,
+              value: r.resultValue ?? '',
+              unit: r.resultUnit ?? '',
+              flag: r.abnormalFlag ?? '',
+              status: r.resultStatus,
+            }))
+            .sort(
+              (a, b) =>
+                a.code.localeCompare(b.code) || a.name.localeCompare(b.name),
+            )
+            .map((r) =>
+              [r.code, r.name, r.value, r.unit, r.flag, r.status].join(''),
+            )
+            .join(''),
+          'utf8',
+        )
+        .digest('hex');
+
+    const rs = [result(), result({ testCode: 'NA', testName: 'Sodium' })];
+    expect(hashReportContent(rs)).toBe(legacy(rs));
+
+    // Absent, null and undefined must all be indistinguishable, or old rows
+    // would hash differently depending on how they were loaded.
+    expect(hashReportContent([result()])).toBe(
+      hashReportContent([result({ referredTo: null })]),
+    );
+    expect(hashReportContent([result()])).toBe(
+      hashReportContent([result({ referredTo: undefined })]),
+    );
+  });
+
+  it('changes once a test is referred', () => {
+    // A value produced by another laboratory is a different assertion about
+    // who is answerable for it, even when the number is identical.
+    expect(
+      hashReportContent([result({ referredTo: 'Hi-Precision' })]),
+    ).not.toBe(hashReportContent([result()]));
+  });
+
+  it('distinguishes one destination from another', () => {
+    expect(
+      hashReportContent([result({ referredTo: 'Hi-Precision' })]),
+    ).not.toBe(hashReportContent([result({ referredTo: 'Makati Med' })]));
+  });
+
+  it('still ignores the order results come back in', () => {
+    const a = [
+      result({ testCode: 'K', referredTo: 'Hi-Precision' }),
+      result({ testCode: 'NA' }),
+    ];
+    const b = [
+      result({ testCode: 'NA' }),
+      result({ testCode: 'K', referredTo: 'Hi-Precision' }),
+    ];
+    expect(hashReportContent(a)).toBe(hashReportContent(b));
+  });
+
+  it('notices a referral moving from one test to another', () => {
+    // Same destination, different test: the report says something different
+    // about which result came from where.
+    const a = [
+      result({ testCode: 'K', referredTo: 'Hi-Precision' }),
+      result({ testCode: 'NA' }),
+    ];
+    const b = [
+      result({ testCode: 'K' }),
+      result({ testCode: 'NA', referredTo: 'Hi-Precision' }),
+    ];
+    expect(hashReportContent(a)).not.toBe(hashReportContent(b));
   });
 });
