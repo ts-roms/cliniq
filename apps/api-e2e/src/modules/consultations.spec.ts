@@ -128,6 +128,19 @@ describe('@org/api-e2e consultations module', () => {
       expect(started.data.providerId).toBe(doctor.userId);
       const id = started.data.id as string;
 
+      // Detail and list both name the attending clinician, so the chart can
+      // show who the consult is with rather than who opened it.
+      const detail = await admin.client.axios.get(`/api/consultations/${id}`);
+      expect(detail.status).toBe(200);
+      expect(detail.data.provider?.id).toBe(doctor.userId);
+      expect(typeof detail.data.provider?.name).toBe('string');
+      const list = await admin.client.axios.get('/api/consultations', {
+        params: { patientId },
+      });
+      expect(
+        list.data.find((c: { id: string }) => c.id === id)?.provider?.id,
+      ).toBe(doctor.userId);
+
       // Starting is the whole grant: the note and completion stay clinical.
       const write = await admin.client.axios.patch(`/api/consultations/${id}`, {
         subjective: { chiefComplaint: 'Cough' },

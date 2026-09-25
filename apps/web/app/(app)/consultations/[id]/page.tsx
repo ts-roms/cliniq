@@ -71,6 +71,7 @@ export default function ConsultationDetailPage({
         endedAt={c.endedAt ?? null}
         status={c.status}
         patientId={c.patientId}
+        providerName={c.provider?.name ?? null}
         locked={locked}
         soap={{
           subjective: soapSectionText(c.subjective),
@@ -85,8 +86,15 @@ export default function ConsultationDetailPage({
           className="mt-4 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
           data-test="consult-view-only"
         >
-          View only — the attending clinician writes and completes this
-          consultation.
+          View only —{' '}
+          {c.provider?.name ? (
+            <span className="font-medium text-foreground">
+              {c.provider.name}
+            </span>
+          ) : (
+            'the attending clinician'
+          )}{' '}
+          writes and completes this consultation.
         </p>
       )}
 
@@ -100,6 +108,7 @@ export default function ConsultationDetailPage({
               plan: c.plan ?? null,
             }}
             locked={locked}
+            lockedLabel={completed ? 'Locked' : 'View only'}
             isSaving={updateSoap.isPending}
             lastSavedAt={lastSavedAt}
             onSave={async (note) => {
@@ -139,6 +148,7 @@ function ConsultHeader({
   endedAt,
   status,
   patientId,
+  providerName,
   locked,
   soap,
 }: {
@@ -147,6 +157,7 @@ function ConsultHeader({
   endedAt: string | null;
   status: string;
   patientId: string;
+  providerName: string | null;
   locked: boolean;
   soap: {
     subjective: string | null;
@@ -180,7 +191,14 @@ function ConsultHeader({
             Consultation
           </h1>
           <p className="text-sm text-muted-foreground">
-            {status} · started {new Date(startedAt).toLocaleString()} ·{' '}
+            {status}
+            {providerName && (
+              <>
+                {' · with '}
+                <span data-test="consult-provider">{providerName}</span>
+              </>
+            )}{' '}
+            · started {new Date(startedAt).toLocaleString()} ·{' '}
             <span className="tabular-nums">{formatDuration(totalSec)}</span>
             {endedAt ? '' : ' (running)'}
           </p>

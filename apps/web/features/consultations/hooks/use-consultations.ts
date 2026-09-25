@@ -51,7 +51,7 @@ export function useStartConsultation(patientId: string) {
             'Failed to start consultation',
         );
       }
-      return data;
+      return data as unknown as Consultation;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
