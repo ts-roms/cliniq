@@ -2806,6 +2806,119 @@ model LabReferral {
   @@map("lab_referrals")
 }
 
+/// An external quality assessment scheme operator.
+///
+/// The NRL programmes, RIQAS, CAP and so on. Kept as a record rather than
+/// free text on the enrolment because a laboratory typically participates
+/// in several and an inspector asks which.
+model EqapProvider {
+  id       String @id @default(cuid())
+  tenantId String
+
+  name          String
+  contactPerson String?
+  email         String?
+  website       String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  enrolments EqapEnrolment[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("eqap_providers")
+}
+
+/// The laboratory's participation in one programme.
+///
+/// Scoped to a section rather than a single test: schemes are sold by
+/// discipline — a chemistry survey, a haematology survey — and enrolling per
+/// analyte would misrepresent what was actually bought.
+model EqapEnrolment {
+  id       String @id @default(cuid())
+  tenantId String
+
+  providerId      String
+  /// The scheme name as the provider calls it.
+  programme       String
+  /// The provider's enrolment or participant number. This is what an
+  /// inspector matches against the certificate on the wall.
+  enrolmentNumber String?
+
+  /// The LabSection this programme covers, when it maps to one.
+  sectionId String?
+
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  provider    EqapProvider     @relation(fields: [providerId], references: [id])
+  submissions EqapSubmission[]
+
+  @@unique([tenantId, providerId, programme])
+  @@index([tenantId, validUntil])
+  @@map("eqap_enrolments")
+}
+
+/// One survey round.
+///
+/// The provider sends an unknown specimen, the laboratory reports a value,
+/// and the provider returns how far that sat from the peer consensus as a
+/// standard deviation index. That SDI is the point: internal QC measures
+/// against the laboratory's OWN mean and cannot see a whole-laboratory bias.
+///
+/// `reportFileId` is the evidence an inspection asks for — the provider's
+/// own report, attached. Held as a FileObject with a null patientId, which
+/// makes it staff-only by construction: this is institutional evidence, not
+/// patient data.
+model EqapSubmission {
+  id       String @id @default(cuid())
+  tenantId String
+
+  enrolmentId String
+  /// The provider's identifier for this round.
+  roundRef    String
+  /// The analyte, when the round covers one. Null for a whole-panel survey.
+  testId      String?
+
+  dueOn         DateTime?
+  submittedAt   DateTime?
+  submittedById String?
+
+  /// What we reported.
+  reportedValue Float?
+  /// What the provider said the peer group reported.
+  peerMean      Float?
+  peerSd        Float?
+  /// Standard deviation index from the peer consensus. Null until scored.
+  sdi           Float?
+
+  /// The provider's report, as evidence.
+  reportFileId String?
+
+  /// What was done about an unacceptable result. Its absence against a
+  /// failure is the finding — laboratories fail surveys; not looking into it
+  /// is what an inspection objects to.
+  correctiveAction String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrolment EqapEnrolment @relation(fields: [enrolmentId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, enrolmentId, roundRef, testId])
+  @@index([tenantId, enrolmentId, dueOn])
+  @@map("eqap_submissions")
+}
+
+
 enum LabResultType {
   NUMERIC
   TEXT

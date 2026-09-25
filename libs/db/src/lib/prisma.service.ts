@@ -285,6 +285,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get labReferral() {
     return this.client.labReferral;
   }
+  get eqapProvider() {
+    return this.client.eqapProvider;
+  }
+  get eqapEnrolment() {
+    return this.client.eqapEnrolment;
+  }
+  get eqapSubmission() {
+    return this.client.eqapSubmission;
+  }
   get teleSession() {
     return this.client.teleSession;
   }

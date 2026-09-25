@@ -5290,6 +5290,179 @@
         "tags": ["lis"]
       }
     },
+    "/api/lis/eqap/providers": {
+      "get": {
+        "operationId": "EqapController_listProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "put": {
+        "operationId": "EqapController_upsertProvider",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertEqapProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/eqap/enrolments": {
+      "get": {
+        "operationId": "EqapController_listEnrolments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      },
+      "put": {
+        "operationId": "EqapController_upsertEnrolment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertEqapEnrolmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/eqap/enrolments/{id}/submissions": {
+      "get": {
+        "operationId": "EqapController_listSubmissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/eqap/submissions": {
+      "post": {
+        "operationId": "EqapController_submitRound",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitEqapRoundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
+    "/api/lis/eqap/submissions/{id}/result": {
+      "post": {
+        "operationId": "EqapController_recordResult",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordEqapResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": ["lis"]
+      }
+    },
     "/api/tele/sessions": {
       "post": {
         "operationId": "TeleController_create",
@@ -12590,6 +12763,114 @@
           },
           "notes": {
             "type": "string"
+          }
+        }
+      },
+      "UpsertEqapProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "contactPerson": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": ["name"]
+      },
+      "UpsertEqapEnrolmentDto": {
+        "type": "object",
+        "properties": {
+          "providerId": {
+            "type": "string"
+          },
+          "programme": {
+            "type": "string",
+            "description": "The scheme name as the provider calls it."
+          },
+          "enrolmentNumber": {
+            "type": "string",
+            "description": "The participant number. This is what an inspector matches against the certificate on the wall."
+          },
+          "sectionId": {
+            "type": "string",
+            "description": "The LabSection this programme covers."
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["providerId", "programme"]
+      },
+      "SubmitEqapRoundDto": {
+        "type": "object",
+        "properties": {
+          "enrolmentId": {
+            "type": "string"
+          },
+          "roundRef": {
+            "type": "string",
+            "description": "The provider's identifier for this round."
+          },
+          "testId": {
+            "type": "string",
+            "description": "The analyte. Omit for a whole-panel survey."
+          },
+          "dueOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Defaults to now."
+          },
+          "reportedValue": {
+            "type": "number",
+            "description": "The value we reported."
+          }
+        },
+        "required": ["enrolmentId", "roundRef"]
+      },
+      "RecordEqapResultDto": {
+        "type": "object",
+        "properties": {
+          "sdi": {
+            "type": "number",
+            "description": "Standard deviation index, if given."
+          },
+          "peerMean": {
+            "type": "number"
+          },
+          "peerSd": {
+            "type": "number",
+            "description": "Must be greater than zero."
+          },
+          "reportedValue": {
+            "type": "number"
+          },
+          "reportFileId": {
+            "type": "string",
+            "description": "The provider's report, as a FileObject id. This is the evidence an inspection asks for."
+          },
+          "correctiveAction": {
+            "type": "string",
+            "description": "What was done about an unacceptable result. Its absence against a failure is the finding."
           }
         }
       },
