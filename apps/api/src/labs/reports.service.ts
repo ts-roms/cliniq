@@ -61,7 +61,18 @@ export class ReportsService {
     return this.prisma.withTenant(user.tenantId, user.userId, async (tx) => {
       const order = await tx.labOrder.findFirst({
         where: { id: orderId, deletedAt: null },
-        include: { items: true },
+        // The referral relation is not optional here. The content hash
+        // includes the destination, and `load()` reads it — so issuing
+        // without it would hash `referredTo: null`, disagree with every
+        // subsequent read, and mark the report stale the moment anyone
+        // opened it.
+        include: {
+          items: {
+            include: {
+              referral: { include: { laboratory: { select: { name: true } } } },
+            },
+          },
+        },
       });
       if (!order) throw new NotFoundException(`Lab order ${orderId} not found`);
 
@@ -219,6 +230,13 @@ export class ReportsService {
                   referenceHigh: true,
                   abnormalFlag: true,
                   resultStatus: true,
+                  referral: {
+                    select: {
+                      laboratory: {
+                        select: { name: true, dohLtoNumber: true },
+                      },
+                    },
+                  },
                 },
                 orderBy: { createdAt: 'asc' },
               },
@@ -285,6 +303,8 @@ export class ReportsService {
             referenceHigh: i.referenceHigh,
             abnormalFlag: i.abnormalFlag,
             resultStatus: i.resultStatus,
+            referredTo: i.referral?.laboratory.name ?? null,
+            referredToLto: i.referral?.laboratory.dohLtoNumber ?? null,
           })),
           signatures: report.signatures.map((s) => ({
             signerName: s.signerName,
@@ -337,7 +357,18 @@ export class ReportsService {
             },
             orderBy: { signedAt: 'asc' },
           },
-          order: { select: { number: true, items: true } },
+          order: {
+            select: {
+              number: true,
+              items: {
+                include: {
+                  referral: {
+                    include: { laboratory: { select: { name: true } } },
+                  },
+                },
+              },
+            },
+          },
         },
         orderBy: { issuedAt: 'desc' },
         take: 50,
@@ -378,6 +409,11 @@ export class ReportsService {
                 referenceHigh: true,
                 abnormalFlag: true,
                 resultStatus: true,
+                referral: {
+                  select: {
+                    laboratory: { select: { name: true, dohLtoNumber: true } },
+                  },
+                },
               },
               orderBy: { createdAt: 'asc' },
             },
@@ -400,7 +436,12 @@ export class ReportsService {
     orderId: string,
     contentHash: string,
   ): Promise<boolean> {
-    const items = await tx.labOrderItem.findMany({ where: { orderId } });
+    const items = await tx.labOrderItem.findMany({
+      where: { orderId },
+      include: {
+        referral: { include: { laboratory: { select: { name: true } } } },
+      },
+    });
     return !reportIsCurrent(contentHash, toReportable(items));
   }
 
@@ -444,6 +485,13 @@ function toReportable(
     resultUnit: string | null;
     abnormalFlag: string | null;
     resultStatus: string;
+    /**
+     * REQUIRED, not optional. The destination is part of the content hash,
+     * so a caller that forgets to load the relation would hash `null`,
+     * disagree with every other caller, and mark the report stale. Making
+     * it required turns that silent divergence into a compile error.
+     */
+    referral: { laboratory: { name: string } } | null;
   }>,
 ): ReportableResult[] {
   return items.map((i) => ({
@@ -453,5 +501,10 @@ function toReportable(
     resultUnit: i.resultUnit,
     abnormalFlag: i.abnormalFlag,
     resultStatus: i.resultStatus,
+    // Carried into the hash: a value produced by another laboratory is a
+    // different assertion about who is answerable for it. `?? null` rather
+    // than leaving it undefined, so a row loaded without the relation and
+    // one loaded with no referral hash alike.
+    referredTo: i.referral?.laboratory.name ?? null,
   }));
 }

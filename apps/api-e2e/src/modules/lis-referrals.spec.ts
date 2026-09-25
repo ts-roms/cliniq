@@ -325,6 +325,90 @@ describe('LIS referral laboratories', () => {
     });
   });
 
+  describe('the report', () => {
+    /** Refer a test, get it back, record and release the result. */
+    async function referredAndResulted(client: E2EClient) {
+      const { patientId, testId } = await labWithTest(client);
+      const dest = await destination(client);
+      await sendOut(client, testId, dest.id);
+      const ord = await order(client, patientId, testId);
+      expect(ord.status).toBe(201);
+      expect(ord.data.referred).toHaveLength(1);
+
+      const worklist = await client.axios.get('/api/lis/referrals');
+      const ref = worklist.data[0];
+      await client.axios.patch(`/api/lis/referrals/${ref.id}/sent`, {});
+      await client.axios.patch(`/api/lis/referrals/${ref.id}/received`, {
+        externalRef: 'HP-9',
+      });
+
+      const res = await client.axios.patch(
+        `/api/lab-orders/${ord.data.id}/items/${ord.data.items[0].id}`,
+        { resultValue: '5.4' },
+      );
+      expect(res.status).toBe(200);
+      return ord.data;
+    }
+
+    it('issues, and stays current after issue', async () => {
+      // The assertion that matters. The content hash now includes the
+      // referral destination, and it is computed independently at issue and
+      // on read. If either query forgot to load the referral the two would
+      // disagree and every referred report would read as stale the moment
+      // someone opened it.
+      const { client } = await env.makeTenant({ plan: 'PREMIUM' });
+      const ord = await referredAndResulted(client);
+
+      const report = await client.axios.post(
+        `/api/lis/orders/${ord.id}/reports`,
+        {},
+      );
+      expect(report.status).toBe(201);
+      expect(report.data.isCurrent).toBe(true);
+
+      const reread = await client.axios.get(
+        `/api/lis/reports/${report.data.id}`,
+      );
+      expect(reread.data.isCurrent).toBe(true);
+    });
+
+    it('produces a PDF naming the referral laboratory', async () => {
+      // AO 2021-0037 requires the report to state which tests were referred
+      // and to which. The PDF is compressed, so this asserts a real document
+      // comes back; the block's wording is unit-tested.
+      const { client } = await env.makeTenant({ plan: 'PREMIUM' });
+      const ord = await referredAndResulted(client);
+      const report = await client.axios.post(
+        `/api/lis/orders/${ord.id}/reports`,
+        {},
+      );
+      const pdf = await client.axios.get(
+        `/api/lis/reports/${report.data.id}/pdf`,
+        { responseType: 'arraybuffer' },
+      );
+      expect(pdf.status).toBe(200);
+      expect(Buffer.from(pdf.data).subarray(0, 5).toString('latin1')).toBe(
+        '%PDF-',
+      );
+    });
+
+    it('cannot be issued while the referred test is still out', async () => {
+      // Nothing has come back, so the result is PENDING and there is nothing
+      // to sign for.
+      const { client } = await env.makeTenant({ plan: 'PREMIUM' });
+      const { patientId, testId } = await labWithTest(client);
+      const dest = await destination(client);
+      await sendOut(client, testId, dest.id);
+      const ord = await order(client, patientId, testId);
+
+      const report = await client.axios.post(
+        `/api/lis/orders/${ord.data.id}/reports`,
+        {},
+      );
+      expect(report.status).toBe(400);
+    });
+  });
+
   describe('the record', () => {
     it('cannot be deleted by the application role', async () => {
       // A referral records a specimen leaving the building. It can be

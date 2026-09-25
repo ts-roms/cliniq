@@ -294,6 +294,24 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get qcRun() {
     return this.client.qcRun;
   }
+  get eqapProvider() {
+    return this.client.eqapProvider;
+  }
+  get eqapEnrolment() {
+    return this.client.eqapEnrolment;
+  }
+  get eqapSubmission() {
+    return this.client.eqapSubmission;
+  }
+  get equipment() {
+    return this.client.equipment;
+  }
+  get calibration() {
+    return this.client.calibration;
+  }
+  get reagentLot() {
+    return this.client.reagentLot;
+  }
   get teleSession() {
     return this.client.teleSession;
   }

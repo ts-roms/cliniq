@@ -21,6 +21,9 @@ export interface LabReportPdfData {
       referenceHigh: number | null;
       abnormalFlag: string | null;
       resultStatus: string;
+      /** The laboratory it was referred to, when not performed here. */
+      referredTo?: string | null;
+      referredToLto?: string | null;
     }>;
     signatures: Array<{
       signerName: string;
@@ -100,6 +103,7 @@ export function renderLabReportPdf(data: LabReportPdfData): Promise<Buffer> {
     reportMeta(doc, data.report);
     patientBlock(doc, data.patient);
     resultsTable(doc, data.report.results);
+    referralBlock(doc, data.report.results);
     signatureBlock(doc, data.report.signatures);
     footer(doc, data.report);
 
@@ -248,7 +252,12 @@ function resultsTable(
   doc.font('Helvetica').fontSize(9);
   for (const r of results) {
     const y = doc.y;
-    const name = r.testCode ? `${r.testName} (${r.testCode})` : r.testName;
+    // A dagger rather than the laboratory's name inline: the name would not
+    // fit the column, and repeating it on every row of a send-out panel
+    // buries it. The block below says who each one went to.
+    const name =
+      (r.testCode ? `${r.testName} (${r.testCode})` : r.testName) +
+      (r.referredTo ? ' †' : '');
     doc.text(name, cols[0], y, { width: cols[1] - cols[0] - 6 });
     const rowY = y;
 
@@ -271,6 +280,35 @@ function resultsTable(
     doc.moveDown(0.35);
   }
   doc.moveDown(0.3);
+  rule(doc);
+}
+
+/**
+ * Which tests were referred, and to which laboratory.
+ *
+ * AO 2021-0037 requires this on the face of the report. A referred result
+ * that reads as though it were produced in-house misrepresents who is
+ * answerable for it — and the destination's own LTO number is what shows
+ * the referral was to a licensed laboratory.
+ */
+function referralBlock(
+  doc: PDFKit.PDFDocument,
+  results: LabReportPdfData['report']['results'],
+) {
+  const referred = results.filter((r) => r.referredTo);
+  if (referred.length === 0) return;
+
+  doc.moveDown(0.4);
+  doc.font('Helvetica-Bold').fontSize(8).text('† REFERRED TESTS', 40);
+  doc.font('Helvetica').fontSize(8);
+  for (const r of referred) {
+    const lto = r.referredToLto
+      ? ` (DOH LTO No. ${r.referredToLto})`
+      : ' (LTO number not on file)';
+    doc.text(`${r.testName} — performed by ${r.referredTo}${lto}`, 40);
+  }
+  doc.fontSize(9);
+  doc.moveDown(0.2);
   rule(doc);
 }
 
