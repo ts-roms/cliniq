@@ -6,6 +6,8 @@ export interface Consultation {
   startedAt: string;
   endedAt: string | null;
   lockedAt?: string | null;
+  /** The attending clinician (provider of record). */
+  provider?: { id: string; name: string } | null;
 }
 
 export interface SoapNote {

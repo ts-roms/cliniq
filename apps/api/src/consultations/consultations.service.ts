@@ -168,6 +168,9 @@ export class ConsultationsService {
         where: { patientId, deletedAt: null },
         orderBy: { startedAt: 'desc' },
         take: 50,
+        // Who is seeing the patient: an ADMIN can open a consult for a
+        // clinician, so "who started it" is no longer "who it is with".
+        include: { provider: { select: { id: true, name: true } } },
       });
     });
   }
@@ -177,6 +180,7 @@ export class ConsultationsService {
       const consult = await tx.consultation.findFirst({
         where: { id, deletedAt: null },
         include: {
+          provider: { select: { id: true, name: true } },
           suggestions: { orderBy: { createdAt: 'desc' } },
           // Ascending: the chart renders the amendment trail in the order it
           // happened, and the last entry is the current content.

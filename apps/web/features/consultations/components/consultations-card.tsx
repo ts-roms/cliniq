@@ -48,6 +48,11 @@ function ConsultationRow({ consult: c }: { consult: Consultation }) {
         <span className="ml-2 text-muted-foreground">
           {new Date(c.startedAt).toLocaleString()}
         </span>
+        {c.provider?.name && (
+          <span className="ml-2 text-muted-foreground">
+            · {c.provider.name}
+          </span>
+        )}
       </div>
       <Link
         href={`/consultations/${c.id}`}

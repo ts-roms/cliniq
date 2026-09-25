@@ -10,6 +10,8 @@ import { soapSectionText } from '../lib/soap-text';
 interface Props {
   initial: SoapNote;
   locked: boolean;
+  /** Shown instead of "Locked" — e.g. "View only" for a read-only role. */
+  lockedLabel?: string;
   onSave: (note: SoapNote) => void;
   isSaving: boolean;
   /** ISO timestamp of last successful save; null until first save. */
@@ -48,6 +50,7 @@ const SECTIONS: Array<{
 export function SoapEditor({
   initial,
   locked,
+  lockedLabel = 'Locked',
   onSave,
   isSaving,
   lastSavedAt,
@@ -104,6 +107,7 @@ export function SoapEditor({
             isDirty={isDirty}
             lastSavedAt={lastSavedAt}
             locked={locked}
+            lockedLabel={lockedLabel}
           />
         </div>
         <Button
@@ -111,7 +115,7 @@ export function SoapEditor({
           onClick={saveNow}
           disabled={locked || isSaving || !isDirty}
         >
-          {isSaving ? 'Saving…' : locked ? 'Locked' : 'Save'}
+          {isSaving ? 'Saving…' : locked ? lockedLabel : 'Save'}
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -135,16 +139,18 @@ function SaveStatus({
   isDirty,
   lastSavedAt,
   locked,
+  lockedLabel,
 }: {
   isSaving: boolean;
   isDirty: boolean;
   lastSavedAt: string | null;
   locked: boolean;
+  lockedLabel: string;
 }) {
   const elapsed = useElapsedSeconds(lastSavedAt);
 
   if (locked)
-    return <span className="text-xs text-muted-foreground">Locked</span>;
+    return <span className="text-xs text-muted-foreground">{lockedLabel}</span>;
   if (isSaving)
     return <span className="text-xs text-muted-foreground">Saving…</span>;
   if (isDirty)

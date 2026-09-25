@@ -1,6 +1,8 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@org/ui';
+import { Actions } from '@org/shared-types';
+import { useCan } from '@/features/auth';
 import type { LabAbnormalFlag } from '../schemas/labs';
 import { useLabOrdersForConsultation } from '../hooks/use-labs';
 import { NewLabOrderDialog } from './new-order-dialog';
@@ -22,15 +24,20 @@ export function ConsultLabsPanel({
   consultationId: string;
 }) {
   const { data, isLoading } = useLabOrdersForConsultation(consultationId);
+  // Ordering is POST /lab-orders (consult:write); a view-only role (ADMIN)
+  // would only get a 403.
+  const canOrder = useCan()(Actions.CONSULT_WRITE);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Labs</CardTitle>
-        <NewLabOrderDialog
-          patientId={patientId}
-          consultationId={consultationId}
-        />
+        {canOrder && (
+          <NewLabOrderDialog
+            patientId={patientId}
+            consultationId={consultationId}
+          />
+        )}
       </CardHeader>
       <CardContent>
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}

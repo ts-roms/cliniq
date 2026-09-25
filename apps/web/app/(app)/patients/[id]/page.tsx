@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   PatientContactCard,
   PatientHeader,
@@ -139,6 +140,7 @@ export default function PatientDetailPage({
     enabled: canReadConsults,
   });
   const startConsult = useStartConsultation(id);
+  const router = useRouter();
 
   if (patient.isLoading) {
     return (
@@ -168,7 +170,14 @@ export default function PatientDetailPage({
       <PatientHeader
         patient={patient.data}
         onStartConsult={
-          can(Actions.CONSULT_WRITE) ? () => startConsult.mutate() : undefined
+          can(Actions.CONSULT_WRITE)
+            ? () =>
+                startConsult.mutate(undefined, {
+                  // Straight into the note: staying on the chart gave no
+                  // sign anything had happened.
+                  onSuccess: (c) => router.push(`/consultations/${c.id}`),
+                })
+            : undefined
         }
         startConsultAction={
           can(Actions.CONSULT_START) ? (
