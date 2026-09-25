@@ -38,8 +38,11 @@ import {
   isAbnormal,
   isCritical,
   normaliseTestKey,
+  resolveReference,
   selectCriticalRule,
   type PatientSex,
+  type PatientContext,
+  type ReferenceLimits,
   type ResultFlag,
 } from './flagging.js';
 import {
@@ -427,6 +430,21 @@ export class LabsService {
           // was recorded first. Recording a result always (re)states its flag.
           abnormalFlag: flag ?? null,
           comment: dto.comment ?? item.comment,
+          // The interval this result was judged against, written onto the
+          // item. It is a snapshot for the reason the report needs one: the
+          // PDF prints the interval beside the value, and reading the
+          // configuration back years later would show whatever is in force
+          // then rather than what the result was actually judged against.
+          // Only written when it came from configuration — when the orderer
+          // supplied it, it is already here.
+          ...(resolution.referenceRangeId !== null ||
+          item.referenceRangeId !== null
+            ? {
+                referenceLow: resolution.referenceLow,
+                referenceHigh: resolution.referenceHigh,
+                referenceRangeId: resolution.referenceRangeId,
+              }
+            : {}),
           resultStatus: status,
           enteredById: user.userId,
           enteredAt: now,
@@ -693,6 +711,18 @@ export class LabsService {
           resultUnit: dto.resultUnit ?? item.resultUnit,
           abnormalFlag: flag ?? null,
           comment: dto.comment ?? item.comment,
+          // A correction re-judges the value, so it records the interval it
+          // was judged against now — the configuration may have moved since
+          // the original result, and the corrected value was not compared to
+          // the old interval.
+          ...(resolution.referenceRangeId !== null ||
+          item.referenceRangeId !== null
+            ? {
+                referenceLow: resolution.referenceLow,
+                referenceHigh: resolution.referenceHigh,
+                referenceRangeId: resolution.referenceRangeId,
+              }
+            : {}),
           resultStatus: LabResultStatus.CORRECTED,
           verifiedById: user.userId,
           verifiedAt: now,
@@ -1068,6 +1098,12 @@ export class LabsService {
       testName: string;
       referenceLow: number | null;
       referenceHigh: number | null;
+      /**
+       * Set when the interval above was resolved from configuration by an
+       * earlier pass, null when it arrived with the order. Without it the two
+       * are indistinguishable and a stale interval would persist forever.
+       */
+      referenceRangeId: string | null;
       criticalLow: number | null;
       criticalHigh: number | null;
       orderId: string;
@@ -1075,12 +1111,79 @@ export class LabsService {
     resultValue: string,
     tenantId: string,
   ): Promise<FlagResolution> {
-    const reference = {
+    const onOrder: ReferenceLimits = {
       referenceLow: item.referenceLow,
       referenceHigh: item.referenceHigh,
     };
+    const now = new Date();
+    const testKey = normaliseTestKey(item.testCode, item.testName);
 
-    // 1. Per-order override short-circuits the lookup entirely.
+    // The patient, needed to narrow both kinds of configured limit. Loaded
+    // once, and only when there is something to narrow — most results have no
+    // configuration behind them and this is on the hot path for every result
+    // keyed in.
+    let patientCtx: PatientContext | null = null;
+    const patient = async (): Promise<PatientContext> => {
+      if (patientCtx) return patientCtx;
+      const order = await tx.labOrder.findFirst({
+        where: { id: item.orderId },
+        select: { patient: { select: { dateOfBirth: true, sex: true } } },
+      });
+      patientCtx = {
+        ageDays: ageInDays(order?.patient?.dateOfBirth ?? null, now),
+        sex: (order?.patient?.sex ?? null) as PatientSex | null,
+      };
+      return patientCtx;
+    };
+
+    // ── the reference interval ────────────────────────────
+    //
+    // An interval the ORDERER supplied wins and is never touched: those two
+    // columns are how a referred-in report states the interval it arrived
+    // with, and restating our own configuration over it would attribute
+    // another laboratory's interval to us.
+    //
+    // An interval WE resolved on an earlier pass is re-resolved rather than
+    // preserved, because the configuration may have been corrected since and a
+    // result being re-keyed or amended should be judged against what the
+    // laboratory believes now. `referenceRangeId` is the only thing that tells
+    // the two apart — the columns themselves look identical either way, which
+    // is exactly the bug this column exists to fix.
+    const ownedByUs = item.referenceRangeId !== null;
+    let reference = onOrder;
+    let referenceRangeId: string | null = item.referenceRangeId;
+    if (
+      (ownedByUs ||
+        (onOrder.referenceLow === null && onOrder.referenceHigh === null)) &&
+      testKey !== ''
+    ) {
+      const ranges = await tx.referenceRange.findMany({
+        where: {
+          tenantId,
+          testKey,
+          deletedAt: null,
+          effectiveFrom: { lte: now },
+          OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }],
+        },
+      });
+      // Resolve against an EMPTY order interval when the one on the item is
+      // ours, so resolveReference() does not short-circuit on our own snapshot.
+      const asSupplied: ReferenceLimits = ownedByUs
+        ? { referenceLow: null, referenceHigh: null }
+        : onOrder;
+      const resolved = resolveReference(
+        asSupplied,
+        ranges,
+        await patient(),
+        now,
+      );
+      reference = resolved.limits;
+      referenceRangeId = resolved.range?.id ?? null;
+    }
+
+    // ── the critical limits ───────────────────────────────
+    //
+    // Per-order override short-circuits the lookup entirely.
     if (item.criticalLow !== null || item.criticalHigh !== null) {
       const limits = {
         criticalLow: item.criticalLow,
@@ -1091,14 +1194,20 @@ export class LabsService {
         ...limits,
         ruleId: null,
         notifyWithinMinutes: DEFAULT_CRITICAL_NOTIFY_MINUTES,
+        referenceLow: reference.referenceLow,
+        referenceHigh: reference.referenceHigh,
+        referenceRangeId,
       };
     }
 
-    const testKey = normaliseTestKey(item.testCode, item.testName);
-    if (testKey === '')
-      return noCriticalLimits(deriveFlag(resultValue, reference));
+    if (testKey === '') {
+      return noCriticalLimits(
+        deriveFlag(resultValue, reference),
+        reference,
+        referenceRangeId,
+      );
+    }
 
-    const now = new Date();
     const rules = await tx.criticalValueRule.findMany({
       where: {
         tenantId,
@@ -1109,20 +1218,21 @@ export class LabsService {
       },
     });
     if (rules.length === 0) {
-      return noCriticalLimits(deriveFlag(resultValue, reference));
+      return noCriticalLimits(
+        deriveFlag(resultValue, reference),
+        reference,
+        referenceRangeId,
+      );
     }
 
-    const order = await tx.labOrder.findFirst({
-      where: { id: item.orderId },
-      select: { patient: { select: { dateOfBirth: true, sex: true } } },
-    });
-    const patient = {
-      ageDays: ageInDays(order?.patient?.dateOfBirth ?? null, now),
-      sex: (order?.patient?.sex ?? null) as PatientSex | null,
-    };
-
-    const rule = selectCriticalRule(rules, patient, now);
-    if (!rule) return noCriticalLimits(deriveFlag(resultValue, reference));
+    const rule = selectCriticalRule(rules, await patient(), now);
+    if (!rule) {
+      return noCriticalLimits(
+        deriveFlag(resultValue, reference),
+        reference,
+        referenceRangeId,
+      );
+    }
 
     const limits = {
       criticalLow: rule.criticalLow,
@@ -1134,6 +1244,9 @@ export class LabsService {
       ruleId: rule.id,
       notifyWithinMinutes:
         rule.notifyWithinMinutes ?? DEFAULT_CRITICAL_NOTIFY_MINUTES,
+      referenceLow: reference.referenceLow,
+      referenceHigh: reference.referenceHigh,
+      referenceRangeId,
     };
   }
 
@@ -1184,21 +1297,41 @@ function toDbFlag(flag: ResultFlag | undefined): LabAbnormalFlag | undefined {
  */
 const DEFAULT_CRITICAL_NOTIFY_MINUTES = 60;
 
-/** The flag plus the critical limits that produced it (if any). */
+/**
+ * The flag, the critical limits that produced it, and the reference interval
+ * it was judged against.
+ *
+ * The interval is returned so the caller can write it onto the order item. It
+ * is a snapshot, for the reason every other snapshot in this codebase is one:
+ * the report prints the interval beside the value, and re-reading the
+ * configuration years later would show the interval in force then rather than
+ * the one the result was actually judged against.
+ */
 interface FlagResolution {
   flag: LabAbnormalFlag | undefined;
   criticalLow: number | null;
   criticalHigh: number | null;
   ruleId: string | null;
   notifyWithinMinutes: number;
+  referenceLow: number | null;
+  referenceHigh: number | null;
+  /** Null unless the interval came from a configured `ReferenceRange`. */
+  referenceRangeId: string | null;
 }
 
-function noCriticalLimits(flag: ResultFlag | undefined): FlagResolution {
+function noCriticalLimits(
+  flag: ResultFlag | undefined,
+  reference: ReferenceLimits = { referenceLow: null, referenceHigh: null },
+  referenceRangeId: string | null = null,
+): FlagResolution {
   return {
     flag: toDbFlag(flag),
     criticalLow: null,
     criticalHigh: null,
     ruleId: null,
     notifyWithinMinutes: DEFAULT_CRITICAL_NOTIFY_MINUTES,
+    referenceLow: reference.referenceLow,
+    referenceHigh: reference.referenceHigh,
+    referenceRangeId,
   };
 }

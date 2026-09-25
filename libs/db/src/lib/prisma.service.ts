@@ -234,6 +234,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get labOrderItem() {
     return this.client.labOrderItem;
   }
+  get referenceRange() {
+    return this.client.referenceRange;
+  }
   get criticalValueRule() {
     return this.client.criticalValueRule;
   }

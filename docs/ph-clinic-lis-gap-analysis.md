@@ -36,7 +36,7 @@ What is not there:
 
 - **The clinical laboratory was two tables** at the time of the audit: `LabOrder` + `LabOrderItem`, with the result a free-text string inline on the order item. No test catalog, no specimen, no accession number, no reference-range entity, no verification or validation step, no QC, no equipment, no reagent lot, no referral laboratory, no sections, no TAT targets, no critical-value rule or acknowledgement.
 
-  _Since then_ the catalogue (`LaboratoryTest`, `TestComponent`, `LabSection`), specimens with atomic accession numbering and append-only rejections, configured critical-value rules, and acknowledged/escalated critical-result notifications have shipped. The result verification chain, signed reports, the laboratory licence profile with its service-capability gate, referral laboratories, equipment and calibration and reagent lots with the recall trace, EQAP enrolment and submissions, and internal QC with Westgard evaluation have all since shipped. Pathologist supervision of released results, which RA 5527 requires, has shipped too. **What remains is no longer a licensing blocker**: a standalone `ReferenceRange` entity, `EquipmentMaintenance` and storage-condition monitoring, the referral MOA file, the `LAB_RECEPTION` and `CASHIER` roles, and verification of PRC numbers against the PRC register. See §6 and §30.
+  _Since then_ the catalogue (`LaboratoryTest`, `TestComponent`, `LabSection`), specimens with atomic accession numbering and append-only rejections, configured critical-value rules, and acknowledged/escalated critical-result notifications have shipped. The result verification chain, signed reports, the laboratory licence profile with its service-capability gate, referral laboratories, equipment and calibration and reagent lots with the recall trace, EQAP enrolment and submissions, and internal QC with Westgard evaluation have all since shipped. Pathologist supervision of released results, which RA 5527 requires, has shipped too. Reference intervals that know the patient's age and sex have shipped too. **What remains is no longer a licensing blocker**: `EquipmentMaintenance` and storage-condition monitoring, the referral MOA file, the `LAB_RECEPTION` and `CASHIER` roles, and verification of PRC numbers against the PRC register. See §6 and §30.
 
 - **The ~35 `Lab*` models are a dental laboratory marketplace**, not a clinical lab. `LabCase`, `LabProduct`, `LabMaterialLot`, `LabShipment`, `LabTreatmentPlan`, `LabInvoice`, `LabCaseDispute` model crown-and-bridge manufacturing workflow between a clinic and a dental lab. This is a substantial, well-built module — and it is a naming collision that will confuse every engineer who joins after this. `apps/api/src/dental-lab/` (dental) and `apps/api/src/labs/` (clinical) differ by one character.
 - **A P0 patient-portal authorization hole.** `PATIENT` role holds `PATIENT_READ` (`libs/shared-types/src/lib/roles.ts:118`), and ~30 staff endpoints are gated on `PATIENT_READ` alone with no self-scoping. A portal patient can call `GET /api/patients`, `GET /api/patients/:id`, `GET /api/patients/:id/export`, `GET /api/lab-orders/:id`, `GET /api/prescriptions/:id/pdf` and read every other patient in their clinic. RLS stops cross-tenant; nothing stops patient→patient.
@@ -277,19 +277,20 @@ Not a bug — a scope gap, listed as P0 because it is the stated product goal. A
 
 > **Status: partially closed, and the remainder is the licensing-critical part.**
 >
-> | Built                                                                                                                         | Still missing                                           |
-> | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-> | Test catalogue — `LaboratoryTest`, `TestComponent`, `LabSection` (`20260924180000_lis_test_catalogue`)                        | A standalone `ReferenceRange` entity                    |
-> | Specimens, accession numbers, append-only rejections (`20260924200000_lis_specimens`)                                         | `EquipmentMaintenance` and storage-condition monitoring |
-> | Configured critical-value rules (`20260923180000_critical_value_rules`)                                                       | The referral MOA file                                   |
-> | Acknowledged critical-result notifications (`20260924120000_critical_result_notifications`)                                   | The Levey-Jennings chart (UI over `QcRun`)              |
-> | Result verification chain (`20260924220000_lis_result_verification`); signed reports + PDF (`20260924240000_lis_lab_reports`) | PRC numbers verified against the PRC register           |
-> | `Laboratory` licence profile + `LabServiceCapability` (`20260924300000_lis_laboratory_licence`)                               |                                                         |
-> | Referral laboratories (`20260924320000_lis_referral_labs`)                                                                    |                                                         |
-> | Equipment, calibration, reagent lots + recall trace (`20260925120000_lis_equipment_reagents`)                                 |                                                         |
-> | Internal QC — materials, targets, Westgard runs (`20260925100000_lis_quality_control`)                                        |                                                         |
-> | EQAP enrolment, rounds and participation (`20260925140000_lis_eqap`)                                                          |                                                         |
-> | Pathologist supervision of released results (`20260925160000_lis_supervision`)                                                |                                                         |
+> | Built                                                                                                                         | Still missing                                                  |
+> | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+> | Test catalogue — `LaboratoryTest`, `TestComponent`, `LabSection` (`20260924180000_lis_test_catalogue`)                        | `EquipmentMaintenance` and storage-condition monitoring        |
+> | Specimens, accession numbers, append-only rejections (`20260924200000_lis_specimens`)                                         | The referral MOA file                                          |
+> | Configured critical-value rules (`20260923180000_critical_value_rules`)                                                       | The Levey-Jennings chart (UI over `QcRun`)                     |
+> | Acknowledged critical-result notifications (`20260924120000_critical_result_notifications`)                                   | PRC numbers verified against the PRC register                  |
+> | Result verification chain (`20260924220000_lis_result_verification`); signed reports + PDF (`20260924240000_lis_lab_reports`) | `textualRange` applied to flagging (needs a coded-result type) |
+> | `Laboratory` licence profile + `LabServiceCapability` (`20260924300000_lis_laboratory_licence`)                               |                                                                |
+> | Referral laboratories (`20260924320000_lis_referral_labs`)                                                                    |                                                                |
+> | Equipment, calibration, reagent lots + recall trace (`20260925120000_lis_equipment_reagents`)                                 |                                                                |
+> | Internal QC — materials, targets, Westgard runs (`20260925100000_lis_quality_control`)                                        |                                                                |
+> | EQAP enrolment, rounds and participation (`20260925140000_lis_eqap`)                                                          |                                                                |
+> | Pathologist supervision of released results (`20260925160000_lis_supervision`)                                                |                                                                |
+> | Reference intervals with age and sex (`20260925200000_lis_reference_ranges`)                                                  |                                                                |
 >
 > A DOH licence turns on the right-hand column, not the left. The catalogue and specimen work make the laboratory _operable_; it does not make it _licensable_.
 
@@ -574,7 +575,21 @@ model TestComponent {              // the analytes a test reports
 
 A panel is a `LaboratoryTest` with `isPanel = true` whose `TestComponent` rows are its analytes — or, for reflex/profile panels, a `TestPanelMember` join to child tests. Order items reference `testId`; results reference `componentId`.
 
-## 6.5 Reference ranges — 🟠
+## 6.5 Reference ranges — ✅ BUILT (was 🟠)
+
+> **Status: built** (`20260925200000_lis_reference_ranges`). `ReferenceRange` carries the interval plus the age band, sex and effective window, and `resolveFlag` consults it for every numeric result. The paediatric case the section describes below now works: 11.5 g/dL reads NORMAL in a two-year-old against 11–14 and LOW in an adult man against 13–17, from the same two configured rows.
+>
+> **Keyed on `testKey`, not on a `TestComponent` id** as the sketch below has it. An order item may have no catalogue link at all — ad-hoc orders, and referred-in results transcribed from another laboratory — and matching the two kinds of configured limit by different join keys would let a result find its critical limits and miss its interval. The selection logic is shared outright rather than copied: `ruleApplies` and the most-specific-wins comparison in `flagging.ts` are now generic over a `NarrowedRule`, because two selection rules that disagree about which row applies is exactly the defect nobody notices until a paediatric result reads normal.
+>
+> Three decisions worth knowing:
+>
+> - **The interval on the order item wins.** Those two columns are how a referred-in report states the interval it arrived with; restating our own configuration over it would attribute another laboratory's interval to us.
+> - **No configured interval means no verdict**, not NORMAL. The same principle that governs critical limits: saying nothing is safe, inventing an interval is not. A patient whose age falls between two configured bands gets no interval rather than the nearest one, because the nearest one is a guess.
+> - **`condition`, `methodId` and `equipmentId` are deliberately not modelled**, though the sketch lists them. Nothing supplies any of them at result-entry time, so a row narrowed on one could never be selected — and a configured interval that silently never applies is worse than an absent column, because the laboratory believes it is covered.
+>
+> **The bug this found.** §6.8 below already says to "pin the reference range id … onto the result row", and the reason turned out to be sharper than drift. The resolved interval is written onto `LabOrderItem.referenceLow/High` so the report cannot drift from it — but those are the same two columns an orderer fills in, so once written the two were indistinguishable. A result re-keyed after a mis-configured interval was corrected silently kept the wrong interval, and an amendment was judged against a stale one. `referenceRangeId` on the item is what tells them apart: set means we resolved it and may resolve it again, null means it came with the order and is not ours to overwrite. It also answers "which configured interval produced this flag", which is what a clinician asks. Both cases are pinned by tests.
+>
+> **Still open: `textualRange` is stored and shown but not applied** — flagging is numeric-only by design, so a "Negative" interval is configuration a human reads rather than something the software enforces. Closing that needs the coded-result type the catalogue work deferred.
 
 Current: two nullable floats on the order item, `referenceLow`/`referenceHigh`, copied from whatever the orderer typed.
 
@@ -1952,6 +1967,7 @@ Every row below was verified against the source, not inferred from a commit mess
 | Internal QC (materials, targets, Westgard runs)     | built       | `20260925100000_lis_quality_control` — Levey-Jennings chart is a UI concern                                                                 |
 | Pathologist supervision of released results         | built       | `20260925160000_lis_supervision` — PRC numbers are still unverified against the register                                                    |
 | S6 audit before/after + reason                      | fixed       | `20260925180000_audit_change_detail` — wired on four routes; the rest record the act only                                                   |
+| 6.5 reference-range entity                          | built       | `20260925200000_lis_reference_ranges` — age and sex narrowing; `textualRange` not yet applied to flagging                                   |
 
 ## Three things this exercise taught that are worth keeping
 
