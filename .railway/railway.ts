@@ -86,6 +86,9 @@ export default defineRailway(() => {
     healthcheckTimeout: 120,
     replicas: { sfo: 1 },
     env: {
+      // Where the web's /api/* rewrite forwards to (apps/web/next.config.js).
+      // Set in the dashboard; without it here `config apply` deletes it.
+      API_PROXY_TARGET: preserve(),
       HOSTNAME: preserve(),
       NEXT_PUBLIC_API_URL: preserve(),
       NODE_ENV: preserve(),
