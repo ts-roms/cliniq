@@ -13508,6 +13508,16 @@
           }
         }
       },
+      "LabSupervisionDto": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Refuse a release by anyone other than a pathologist or physician when no pathologist of record is on file for the laboratory."
+          }
+        }
+      },
       "OperatingHourDto": {
         "type": "object",
         "properties": {
@@ -13543,6 +13553,9 @@
           },
           "labCapability": {
             "$ref": "#/components/schemas/LabCapabilityDto"
+          },
+          "labSupervision": {
+            "$ref": "#/components/schemas/LabSupervisionDto"
           },
           "operatingHours": {
             "type": "array",

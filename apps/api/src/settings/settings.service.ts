@@ -57,7 +57,7 @@ export class SettingsService {
    * Shallow-merge into the existing settings JSON. Undefined keys are kept,
    * explicit nulls clear them. operatingHours and acceptedPaymentMethods are
    * arrays — replaced wholesale, not merged element-wise. branding, extras,
-   * labVerification and labCapability are merged one level deeper, so a partial update does
+   * labVerification, labCapability and labSupervision are merged one level deeper, so a partial update does
    * not clear the sibling keys.
    */
   async update(dto: UpdateSettingsDto, user: AuthenticatedUser) {
@@ -98,6 +98,14 @@ export class SettingsService {
               labCapability: {
                 ...((prev.labCapability as object) ?? {}),
                 ...dto.labCapability,
+              },
+            }
+          : {}),
+        ...(dto.labSupervision
+          ? {
+              labSupervision: {
+                ...((prev.labSupervision as object) ?? {}),
+                ...dto.labSupervision,
               },
             }
           : {}),

@@ -23,6 +23,12 @@ import {
   type ReportableResult,
 } from './reporting.js';
 import {
+  canRelease,
+  readSupervisionPolicy,
+  supervisionFor,
+  type ReleasingRole,
+} from './supervision.js';
+import {
   renderLabReportPdf,
   type LabReportPdfData,
 } from './pdf/render-lab-report-pdf.js';
@@ -310,6 +316,8 @@ export class ReportsService {
             signerName: s.signerName,
             signerRole: s.signerRole,
             signerLicense: s.signerLicense,
+            supervisorName: s.supervisorName,
+            supervisorLicense: s.supervisorLicense,
             signedAt: s.signedAt,
           })),
         },
@@ -325,6 +333,8 @@ export class ReportsService {
               classification: lab.classification,
               headName: lab.headName,
               headLicenseNumber: lab.headLicenseNumber,
+              pathologistName: lab.pathologistName,
+              pathologistLicenseNumber: lab.pathologistLicenseNumber,
               licenceExpired: licenceStatus(lab, new Date()).expired,
             }
           : null,
@@ -353,6 +363,8 @@ export class ReportsService {
               signerName: true,
               signerRole: true,
               signerLicense: true,
+              supervisorName: true,
+              supervisorLicense: true,
               signedAt: true,
             },
             orderBy: { signedAt: 'asc' },
@@ -458,10 +470,40 @@ export class ReportsService {
     contentHash: string,
     user: AuthenticatedUser,
   ) {
-    const signer = await tx.user.findFirst({
-      where: { id: user.userId },
-      select: { name: true, prcLicenseNumber: true },
-    });
+    const [signer, tenant, lab] = await Promise.all([
+      tx.user.findFirst({
+        where: { id: user.userId },
+        select: { name: true, prcLicenseNumber: true },
+      }),
+      tx.tenant.findFirst({
+        where: { id: user.tenantId },
+        select: { settings: true },
+      }),
+      tx.laboratory.findFirst({
+        where: { tenantId: user.tenantId },
+        select: { pathologistName: true, pathologistLicenseNumber: true },
+      }),
+    ]);
+
+    // RA 5527: a technologist signs under a pathologist. The same snapshot
+    // rule as the signer's own licence just below — what matters is who was
+    // answerable when the name went on the document, not who is on the
+    // profile when someone reads it back years later.
+    const role = user.role as ReleasingRole;
+    const pathologist = lab
+      ? {
+          name: lab.pathologistName,
+          licenseNumber: lab.pathologistLicenseNumber,
+        }
+      : null;
+    const verdict = canRelease(
+      role,
+      pathologist,
+      readSupervisionPolicy(tenant?.settings),
+    );
+    if (!verdict.ok) throw new BadRequestException(verdict.reason);
+    const supervision = supervisionFor(role, pathologist);
+
     return tx.labReportSignature.create({
       data: {
         tenantId: user.tenantId,
@@ -470,6 +512,12 @@ export class ReportsService {
         signerRole: user.role as Role,
         signerName: signer?.name ?? 'Unknown',
         signerLicense: signer?.prcLicenseNumber ?? null,
+        supervisorName:
+          supervision.kind === 'SUPERVISED' ? supervision.supervisorName : null,
+        supervisorLicense:
+          supervision.kind === 'SUPERVISED'
+            ? supervision.supervisorLicense
+            : null,
         contentHash,
       },
     });

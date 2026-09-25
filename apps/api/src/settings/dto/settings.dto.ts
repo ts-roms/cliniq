@@ -108,6 +108,27 @@ export class LabCapabilityDto {
   enforce?: boolean;
 }
 
+/**
+ * Pathologist supervision of released results — RA 5527.
+ *
+ * Off by default, like the two policies above and for the same reason: a
+ * clinic that has not yet filled in its laboratory profile would otherwise be
+ * unable to release any result, and results that never reach the ordering
+ * doctor are a worse patient-safety problem than a supervision record with a
+ * gap in it. The supervising pathologist is recorded on every release either
+ * way; this only decides whether an unsupervised one is refused.
+ */
+export class LabSupervisionDto {
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Refuse a release by anyone other than a pathologist or physician when no pathologist of record is on file for the laboratory.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+}
+
 export class UpdateSettingsDto {
   @ApiPropertyOptional({ type: BrandingDto })
   @IsOptional()
@@ -126,6 +147,12 @@ export class UpdateSettingsDto {
   @ValidateNested()
   @Type(() => LabCapabilityDto)
   labCapability?: LabCapabilityDto;
+
+  @ApiPropertyOptional({ type: LabSupervisionDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LabSupervisionDto)
+  labSupervision?: LabSupervisionDto;
 
   @ApiPropertyOptional({ type: [OperatingHourDto] })
   @IsOptional()
