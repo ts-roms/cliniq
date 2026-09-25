@@ -28,7 +28,7 @@ import { ObCard, UltrasoundCard } from '@/features/ob';
 import { useCan } from '@/features/auth';
 import {
   ModuleSection,
-  PatientServicesBar,
+  PatientServicesMenu,
   useEnabledModules,
   usePatientModuleData,
 } from '@/features/settings';
@@ -170,6 +170,16 @@ export default function PatientDetailPage({
           can(Actions.CONSULT_WRITE) ? () => startConsult.mutate() : undefined
         }
         isStarting={startConsult.isPending}
+        serviceActions={
+          !servicesLoading &&
+          decisions && (
+            <PatientServicesMenu
+              decisions={decisions}
+              enabled={modules}
+              onOpen={open}
+            />
+          )
+        }
       />
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
         <PatientContactCard patient={patient.data} />
@@ -190,22 +200,6 @@ export default function PatientDetailPage({
             <HmoCardsCard patientId={patient.data.id} />,
           )}
       </div>
-      {servicesLoading ? (
-        <p
-          className="text-sm text-muted-foreground"
-          data-test="patient-services-loading"
-        >
-          Loading services…
-        </p>
-      ) : (
-        decisions && (
-          <PatientServicesBar
-            decisions={decisions}
-            enabled={modules}
-            onOpen={open}
-          />
-        )
-      )}
       <div className="space-y-6">
         <PrescriptionsCard patientId={patient.data.id} />
         {!servicesLoading && (

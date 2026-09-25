@@ -29,6 +29,16 @@ async function setModules(page: Page, modules: string[]) {
   expect(res.ok(), `set modules -> ${res.status()}`).toBe(true);
 }
 
+/** Opens the header's "Add service" menu and returns its popover. */
+async function openServicesMenu(page: Page) {
+  await page
+    .locator('[data-test="add-service-button"]')
+    .click({ timeout: 15_000 });
+  const menu = page.locator('[data-test="patient-services-menu"]');
+  await expect(menu).toBeVisible();
+  return menu;
+}
+
 /**
  * A patient of our own with no specialty records. The seeded patient is shared
  * by every Playwright project, and the flagged-module case below gives it a
@@ -87,23 +97,27 @@ test.describe('@web clinical modules', () => {
     await page.goto(`/patients/${patientId}`);
 
     // A GENERAL clinic does not open an empty odontogram for every walk-in:
-    // it waits in the Add-a-service bar instead.
-    const bar = page.locator('[data-test="patient-services-bar"]');
-    await expect(bar).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('[data-test="module-dental"]')).toHaveCount(0);
+    // it waits in the header's Add-service menu instead.
     // Lab orders are routine everywhere, so they open by default.
-    await expect(page.locator('[data-test="module-lab_orders"]')).toBeVisible();
+    await expect(page.locator('[data-test="module-lab_orders"]')).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.locator('[data-test="module-dental"]')).toHaveCount(0);
 
-    await bar.locator('[data-test="offer-module-dental"]').click();
+    const menu = await openServicesMenu(page);
+    await menu.locator('[data-test="offer-module-dental"]').click();
+    // Choosing an entry closes the menu.
+    await expect(menu).toBeHidden();
     await expect(page.locator('[data-test="module-dental"]')).toBeVisible();
     await expect(page.getByText('Odontogram').first()).toBeVisible();
     await expect(
       page.locator('[data-test="out-of-scope-module-dental"]'),
     ).toHaveCount(0);
     // Opened, so no longer offered.
-    await expect(bar.locator('[data-test="offer-module-dental"]')).toHaveCount(
-      0,
-    );
+    const again = await openServicesMenu(page);
+    await expect(
+      again.locator('[data-test="offer-module-dental"]'),
+    ).toHaveCount(0);
   });
 
   test('OB is never offered to a male patient, and the chart says why', async ({
@@ -116,8 +130,7 @@ test.describe('@web clinical modules', () => {
     });
     await page.goto(`/patients/${patientId}`);
 
-    const bar = page.locator('[data-test="patient-services-bar"]');
-    await expect(bar).toBeVisible({ timeout: 15_000 });
+    const bar = await openServicesMenu(page);
     await expect(bar.locator('[data-test="offer-module-ob"]')).toHaveCount(0);
     await expect(page.locator('[data-test="module-ob"]')).toHaveCount(0);
     await expect(
@@ -151,24 +164,24 @@ test.describe('@web clinical modules', () => {
     // The seeded patient has no obstetrics records, so OB should vanish.
     await setModules(page, ['dental', 'lab_orders', 'hmo']);
     await page.goto(`/patients/${clinic.patient.patientId}`);
-    await expect(
-      page.locator('[data-test="patient-services-bar"]'),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-test="module-lab_orders"]')).toBeVisible({
+      timeout: 15_000,
+    });
     // The OB card is gone entirely — not rendered, flagged, or offered.
     await expect(
       page.locator('[data-test="out-of-scope-module-ob"]'),
     ).toHaveCount(0);
     await expect(page.locator('[data-test="module-ob"]')).toHaveCount(0);
-    await expect(page.locator('[data-test="offer-module-ob"]')).toHaveCount(0);
     // ...while a module that is still enabled stays reachable: rendered if
     // another project already charted this shared patient, offered if not.
-    await expect(
-      page
-        .locator(
-          '[data-test="module-dental"], [data-test="offer-module-dental"]',
-        )
-        .first(),
-    ).toBeVisible();
+    // HMO is enabled and uncharted here, so the menu always has an entry.
+    const menu = await openServicesMenu(page);
+    await expect(menu.locator('[data-test="offer-module-ob"]')).toHaveCount(0);
+    if ((await page.locator('[data-test="module-dental"]').count()) === 0) {
+      await expect(
+        menu.locator('[data-test="offer-module-dental"]'),
+      ).toBeVisible();
+    }
   });
 
   test('a disabled module that HOLDS records still renders, flagged', async ({

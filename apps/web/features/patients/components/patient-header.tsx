@@ -11,12 +11,15 @@ interface Props {
   /** Omitted when the signed-in role cannot start consultations. */
   onStartConsult?: () => void;
   isStarting: boolean;
+  /** Rendered beside Export — the chart's "Add service" menu. */
+  serviceActions?: React.ReactNode;
 }
 
 export function PatientHeader({
   patient: p,
   onStartConsult,
   isStarting,
+  serviceActions,
 }: Props) {
   return (
     <div className="mb-6">
@@ -38,6 +41,7 @@ export function PatientHeader({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ExportPatientButton patient={p} />
+          {serviceActions}
           <FileDsrDialog patientId={p.id} />
           <DeletePatientButton patient={p} />
           <EditPatientDialog patient={p} />
